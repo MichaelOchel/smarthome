@@ -6,9 +6,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
-import org.eclipse.smarthome.binding.digitalstrom.handler.DsDeviceHandler;
+import org.eclipse.smarthome.binding.digitalstrom.handler.DsSceneHandler;
 import org.eclipse.smarthome.binding.digitalstrom.handler.DssBridgeHandler;
-import org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.digitalSTROMListener.DeviceStatusListener;
 import org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.digitalSTROMListener.SceneStatusListener;
 import org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.digitalSTROMStructure.digitalSTROMScene.InternalScene;
 import org.eclipse.smarthome.config.discovery.AbstractDiscoveryService;
@@ -16,6 +15,8 @@ import org.eclipse.smarthome.config.discovery.DiscoveryResult;
 import org.eclipse.smarthome.config.discovery.DiscoveryResultBuilder;
 import org.eclipse.smarthome.core.thing.ThingTypeUID;
 import org.eclipse.smarthome.core.thing.ThingUID;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * The {@link DsSceneDiscoveryService} discovered all DigitalSTROM-Devices
@@ -26,7 +27,7 @@ import org.eclipse.smarthome.core.thing.ThingUID;
  */
 public class DsSceneDiscoveryService extends AbstractDiscoveryService implements SceneStatusListener {
 
-    // private final static Logger logger = LoggerFactory.getLogger(DsSceneDiscoveryService.class);
+    private final static Logger logger = LoggerFactory.getLogger(DsSceneDiscoveryService.class);
 
     private DssBridgeHandler digitalSTROMBridgeHandler;
 
@@ -59,30 +60,36 @@ public class DsSceneDiscoveryService extends AbstractDiscoveryService implements
 
     @Override
     protected void startScan() {
-        for (InternalScene scene : digitalSTROMBridgeHandler.getScenes()) {
-            onSceneAddedInternal(scene);
+        if (digitalSTROMBridgeHandler.getScenes() != null) {
+            for (InternalScene scene : digitalSTROMBridgeHandler.getScenes()) {
+                onSceneAddedInternal(scene);
+            }
         }
     }
 
     @Override
     public Set<ThingTypeUID> getSupportedThingTypes() {
-        return DsDeviceHandler.SUPPORTED_THING_TYPES;// union auf alle!
+        return DsSceneHandler.SUPPORTED_THING_TYPES;// union auf alle!
     }
 
     private void onSceneAddedInternal(InternalScene scene) {
+        if (scene != null) {
+            ThingUID thingUID = getThingUID(scene);
+            if (thingUID != null) {
+                ThingUID bridgeUID = digitalSTROMBridgeHandler.getThing().getUID();
+                Map<String, Object> properties = new HashMap<>(4);
+                properties.put(SCENE_NAME, scene.getSceneName());
+                properties.put(SCENE_ZONE_ID, scene.getZoneID());
+                properties.put(SCENE_GROUP_ID, scene.getGroupID());
+                properties.put(SCENE_ID, scene.getSceneID());
+                DiscoveryResult discoveryResult = DiscoveryResultBuilder.create(thingUID).withProperties(properties)
+                        .withBridge(bridgeUID).withLabel(scene.getSceneName()).build();
 
-        ThingUID thingUID = getThingUID(scene);
-        if (thingUID != null) {
-            ThingUID bridgeUID = digitalSTROMBridgeHandler.getThing().getUID();
-            Map<String, Object> properties = new HashMap<>(4);
-            properties.put(SCENE_NAME, scene.getSceneName());
-            properties.put(SCENE_ZONE_ID, scene.getZoneID());
-            properties.put(SCENE_GROUP_ID, scene.getGroupID());
-            properties.put(SCENE_ID, scene.getSceneID());
-            DiscoveryResult discoveryResult = DiscoveryResultBuilder.create(thingUID).withProperties(properties)
-                    .withBridge(bridgeUID).withLabel(scene.getSceneName()).build();
+                thingDiscovered(discoveryResult);
 
-            thingDiscovered(discoveryResult);
+            } else {
+                logger.debug("discovered unsupported scene: name '{}' with id {}", scene.getSceneName(), scene.getID());
+            }
         }
 
     }
@@ -102,7 +109,7 @@ public class DsSceneDiscoveryService extends AbstractDiscoveryService implements
 
     @Override
     public String getID() {
-        return DeviceStatusListener.DEVICE_DESCOVERY;
+        return SceneStatusListener.SCENE_DESCOVERY;
     }
 
     @Override

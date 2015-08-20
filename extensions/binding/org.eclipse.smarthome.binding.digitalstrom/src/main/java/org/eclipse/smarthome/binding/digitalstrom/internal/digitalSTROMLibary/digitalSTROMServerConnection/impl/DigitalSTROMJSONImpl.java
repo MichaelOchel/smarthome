@@ -31,7 +31,7 @@ import org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.di
 import org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.digitalSTROMStructure.digitalSTROMDevices.deviceParameters.SensorIndexEnum;
 import org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.digitalSTROMStructure.digitalSTROMDevices.impl.JSONDeviceImpl;
 import org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.digitalSTROMStructure.digitalSTROMScene.constants.Scene;
-import org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.digitalSTROMStructure.digitalSTROMScene.constants.ZoneSceneEnum;
+import org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.digitalSTROMStructure.digitalSTROMScene.constants.SceneEnum;
 import org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.digitalSTROMStructure.impl.JSONApartmentImpl;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
@@ -230,7 +230,7 @@ public class DigitalSTROMJSONImpl implements DigitalSTROMAPI {
 
     @Override
     public boolean callZoneScene(String token, int id, String name, int groupID, String groupName,
-            ZoneSceneEnum sceneNumber, boolean force) {
+            SceneEnum sceneNumber, boolean force) {
         if (sceneNumber != null && validZoneScene(sceneNumber.getSceneNumber(), id)
                 && (withParameterZoneId(id) || name != null)) {
             String response = null;
@@ -458,7 +458,7 @@ public class DigitalSTROMJSONImpl implements DigitalSTROMAPI {
 
     @Override
     public boolean undoZoneScene(String token, int zoneID, String zoneName, int groupID, String groupName,
-            ZoneSceneEnum sceneNumber) {
+            SceneEnum sceneNumber) {
         if (sceneNumber != null && validZoneScene(sceneNumber.getSceneNumber(), zoneID)
                 && (withParameterZoneId(zoneID) || zoneName != null)) {
             String response = null;
@@ -1061,25 +1061,39 @@ public class DigitalSTROMJSONImpl implements DigitalSTROMAPI {
     }
 
     @Override
-    public List<CachedMeteringValue> getLatest(String token, MeteringTypeEnum type, String from,
+    public List<CachedMeteringValue> getLatest(String token, MeteringTypeEnum type, List<String> meterDSIDs,
             MeteringUnitsEnum unit) {
-        if (type != null && from != null) {
+        if (type != null && meterDSIDs != null) {
+
+            String jsonMeterList = ".meters(";
+            for (int i = 0; i < meterDSIDs.size(); i++) {
+                if (!meterDSIDs.get(i).isEmpty()) {
+                    jsonMeterList += meterDSIDs.get(i);
+                    if (i < meterDSIDs.size() - 1 && !meterDSIDs.get(i + 1).isEmpty()) {
+                        jsonMeterList += ",";
+                    } else {
+                        break;
+                    }
+                }
+            }
+            jsonMeterList += ")";
+
             String response = null;
 
             if (unit != null && type != MeteringTypeEnum.consumption) {
                 response = transport.execute(JSONRequestConstants.JSON_METERING_GET_LATEST
                         + JSONRequestConstants.PARAMETER_TOKEN + token + JSONRequestConstants.INFIX_PARAMETER_TYPE
-                        + type.name() + JSONRequestConstants.INFIX_PARAMETER_FROM + from
+                        + type.name() + JSONRequestConstants.INFIX_PARAMETER_FROM + jsonMeterList
                         + JSONRequestConstants.INFIX_PARAMETER_UNIT + unit.name());
             } else {
                 response = transport.execute(JSONRequestConstants.JSON_METERING_GET_LATEST
                         + JSONRequestConstants.PARAMETER_TOKEN + token + JSONRequestConstants.INFIX_PARAMETER_TYPE
-                        + type.name() + JSONRequestConstants.INFIX_PARAMETER_FROM + from);
+                        + type.name() + JSONRequestConstants.INFIX_PARAMETER_FROM + jsonMeterList);
             }
 
             JSONObject responseObj = JSONResponseHandler.toJSONObject(response);
-            System.out.println(response);
-            System.out.println(JSONResponseHandler.checkResponse(responseObj));
+            // System.out.println(response);
+            // System.out.println(JSONResponseHandler.checkResponse(responseObj));
             if (JSONResponseHandler.checkResponse(responseObj)) {
                 JSONObject latestObj = JSONResponseHandler.getResultJSONObject(responseObj);
 

@@ -67,8 +67,10 @@ public class DsDeviceDiscoveryService extends AbstractDiscoveryService implement
 
     @Override
     protected void startScan() {
-        for (Device device : digitalSTROMBridgeHandler.getDevices()) {
-            onDeviceAddedInternal(device);
+        if (digitalSTROMBridgeHandler.getDevices() != null) {
+            for (Device device : digitalSTROMBridgeHandler.getDevices()) {
+                onDeviceAddedInternal(device);
+            }
         }
     }
 
@@ -91,7 +93,7 @@ public class DsDeviceDiscoveryService extends AbstractDiscoveryService implement
                 properties.put(DigitalSTROMBindingConstants.DEVICE_ZONE_ID, device.getZoneId());
                 properties.put(DigitalSTROMBindingConstants.DEVICE_FUNCTIONAL_COLOR_GROUP,
                         device.getFunctionalColorGroup());
-                properties.put(DigitalSTROMBindingConstants.DEVICE_METER_ID, device.getMeterDSID());
+                properties.put(DigitalSTROMBindingConstants.DEVICE_METER_ID, device.getMeterDSID().getValue());
                 if (device.getName() != null) {
                     properties.put(DEVICE_NAME, device.getName());
                 } else {
@@ -109,8 +111,8 @@ public class DsDeviceDiscoveryService extends AbstractDiscoveryService implement
             // ggf. mögliche outputvalues hinzufügen
             logger.debug(
                     "discovered device without output value, don't add to inbox. "
-                            + "Device information: hardware info: {}, dSUID: {}, output value: {}",
-                    device.getHWinfo(), device.getDSUID(), device.getOutputMode());
+                            + "Device information: hardware info: {}, dSUID: {}, device-name: {}, output value: {}",
+                    device.getHWinfo(), device.getDSUID(), device.getName(), device.getOutputMode());
         }
     }
 

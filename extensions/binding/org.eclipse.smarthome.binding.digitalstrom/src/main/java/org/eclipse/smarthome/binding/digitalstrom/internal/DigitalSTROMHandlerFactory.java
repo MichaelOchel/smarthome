@@ -63,12 +63,13 @@ public class DigitalSTROMHandlerFactory extends BaseThingHandlerFactory {
             ThingUID bridgeUID) {
         if (DssBridgeHandler.SUPPORTED_THING_TYPES.contains(thingTypeUID)) {
             ThingUID digitalStromUID = getBridgeThingUID(thingTypeUID, thingUID, configuration);
+            System.out.println("digitalStromUID: " + digitalStromUID);
             return super.createThing(thingTypeUID, configuration, digitalStromUID, null);
         }
 
         if (DsDeviceHandler.SUPPORTED_THING_TYPES.contains(thingTypeUID)) {
-            ThingUID dssLightUID = getDeviceUID(thingTypeUID, thingUID, configuration, bridgeUID);
-            return super.createThing(thingTypeUID, configuration, dssLightUID, bridgeUID);
+            ThingUID dsDeviceUID = getDeviceUID(thingTypeUID, thingUID, configuration, bridgeUID);
+            return super.createThing(thingTypeUID, configuration, dsDeviceUID, bridgeUID);
         }
 
         if (DsSceneHandler.SUPPORTED_THING_TYPES.contains(thingTypeUID)) {
@@ -91,11 +92,13 @@ public class DigitalSTROMHandlerFactory extends BaseThingHandlerFactory {
 
         if (DssBridgeHandler.SUPPORTED_THING_TYPES.contains(thing.getThingTypeUID())) {
             DssBridgeHandler handler = new DssBridgeHandler((Bridge) thing, connMan);
+
             registerServices(handler);
             return handler;
         }
 
         if (DsDeviceHandler.SUPPORTED_THING_TYPES.contains(thing.getThingTypeUID())) {
+
             return new DsDeviceHandler(thing);
         }
 
@@ -111,7 +114,9 @@ public class DigitalSTROMHandlerFactory extends BaseThingHandlerFactory {
             DsDeviceDiscoveryService deviceDiscoveryService = new DsDeviceDiscoveryService(handler);
 
             DsSceneDiscoveryService sceneDiscoveryService = new DsSceneDiscoveryService(handler);
-            DigitalSTROMThingTypeProvider thingTypeProvider = new DigitalSTROMThingTypeProvider(handler);
+            DigitalSTROMThingTypeProvider thingTypeProvider = new DigitalSTROMThingTypeProvider();
+            handler.registerThingTypeProvider(thingTypeProvider);
+
             deviceDiscoveryService.activate();
             sceneDiscoveryService.activate();
             this.discoveryServiceRegs.put(handler.getThing().getUID(), bundleContext.registerService(
@@ -191,8 +196,9 @@ public class DigitalSTROMHandlerFactory extends BaseThingHandlerFactory {
     private boolean checkUserPassword(Configuration configuration) {
         if ((configuration.get(USER_NAME) != null && configuration.get(PASSWORD) != null)
                 && (!configuration.get(USER_NAME).toString().trim().isEmpty()
-                        && !configuration.get(PASSWORD).toString().trim().isEmpty())) // notwendig?
+                        && !configuration.get(PASSWORD).toString().trim().isEmpty())) { // notwendig?
             return true;
+        }
         return false;
     }
 }

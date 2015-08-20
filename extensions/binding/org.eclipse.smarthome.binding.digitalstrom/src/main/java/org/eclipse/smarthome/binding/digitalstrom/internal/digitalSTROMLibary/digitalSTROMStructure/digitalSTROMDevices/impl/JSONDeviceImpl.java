@@ -670,12 +670,16 @@ public class JSONDeviceImpl implements Device {
     @Override
     public void checkSceneConfig(Short sceneNumber, int prio) {
         if (!containsSceneConfig(sceneNumber)) {
-            addEshThingStateUpdate(
-                    new DeviceStateUpdateImpl(DeviceStateUpdate.UPDATE_SCENE_CONFIG, prio + sceneNumber));
+            System.out.println(
+                    "Add " + DeviceStateUpdate.UPDATE_SCENE_CONFIG + " with prio " + prio + " to deviceStateUpdates");
+            this.deviceStateUpdates
+                    .add(new DeviceStateUpdateImpl(DeviceStateUpdate.UPDATE_SCENE_CONFIG, prio + sceneNumber));
         }
         if (sceneOutputMap.get(sceneNumber) == null) {
-            addEshThingStateUpdate(
-                    new DeviceStateUpdateImpl(DeviceStateUpdate.UPDATE_SCENE_OUTPUT, prio + sceneNumber));
+            System.out.println(
+                    "Add " + DeviceStateUpdate.UPDATE_SCENE_OUTPUT + " with prio " + prio + " to deviceStateUpdates");
+            this.deviceStateUpdates
+                    .add(new DeviceStateUpdateImpl(DeviceStateUpdate.UPDATE_SCENE_OUTPUT, prio + sceneNumber));
         }
     }
 

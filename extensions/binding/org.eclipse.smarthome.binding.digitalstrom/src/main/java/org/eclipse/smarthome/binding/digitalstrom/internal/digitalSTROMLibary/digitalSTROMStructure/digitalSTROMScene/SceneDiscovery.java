@@ -15,10 +15,14 @@ import org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.di
 import org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.digitalSTROMStructure.digitalSTROMScene.constants.ZoneSceneEnum;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class SceneDiscovery {
 
     // private HttpTransport transport = null;
+
+    private static final Logger logger = LoggerFactory.getLogger(SceneDiscovery.class);
 
     private List<InternalScene> namedScenes = new LinkedList<InternalScene>();
     private boolean genList = false;
@@ -431,8 +435,13 @@ public class SceneDiscovery {
     }
 
     public void sceneDiscoverd(InternalScene scene) {
-        if (this.discovery != null)
+        if (this.discovery != null) {
             this.discovery.onSceneAdded(scene);
+            // logger.debug("Inform scene discovery aboud added scene with id: " + scene.getID());
+        } else {
+            logger.debug("Can't inform scene discovery aboud added scene with id: " + scene.getID()
+                    + " because scene discovery is disabled");
+        }
         this.sceneManager.addInternalScene(scene);
     }
 

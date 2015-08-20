@@ -21,7 +21,7 @@ import org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.di
 import org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.digitalSTROMStructure.digitalSTROMDevices.deviceParameters.MeteringUnitsEnum;
 import org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.digitalSTROMStructure.digitalSTROMDevices.deviceParameters.SensorIndexEnum;
 import org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.digitalSTROMStructure.digitalSTROMScene.constants.Scene;
-import org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.digitalSTROMStructure.digitalSTROMScene.constants.ZoneSceneEnum;
+import org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.digitalSTROMStructure.digitalSTROMScene.constants.SceneEnum;
 
 /**
  * digitalSTROM-API based on dSS-Version 1.14.5
@@ -81,7 +81,7 @@ public interface DigitalSTROMAPI {
      * @return true on success
      */
     public boolean callZoneScene(String token, int id, String name, int groupID, String groupName,
-            ZoneSceneEnum sceneNumber, boolean force);
+            SceneEnum sceneNumber, boolean force);
 
     /**
      * Turns on the device. This will call SceneMax on the device
@@ -293,7 +293,7 @@ public interface DigitalSTROMAPI {
      * @param unit optional
      * @return
      */
-    public List<CachedMeteringValue> getLatest(String token, MeteringTypeEnum type, String from,
+    public List<CachedMeteringValue> getLatest(String token, MeteringTypeEnum type, List<String> meterDSIDs,
             MeteringUnitsEnum unit);
 
     // TODO: Doc
@@ -310,6 +310,6 @@ public interface DigitalSTROMAPI {
     boolean undoApartmentScene(String token, int groupID, String groupName, Scene sceneNumber);
 
     boolean undoZoneScene(String token, int zoneID, String zoneName, int groupID, String groupName,
-            ZoneSceneEnum sceneNumber);
+            SceneEnum sceneNumber);
 
 }

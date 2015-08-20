@@ -111,4 +111,8 @@ public interface DigitalSTROMSceneManager {
     public void addEcho(String internalSceneID);
 
     public List<InternalScene> getScenes();
+
+    boolean scenesGenerated();
+
+    void generateScenes();
 }

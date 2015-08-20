@@ -15,6 +15,7 @@ import java.util.List;
 import java.util.Set;
 
 import org.eclipse.smarthome.binding.digitalstrom.DigitalSTROMBindingConstants;
+import org.eclipse.smarthome.binding.digitalstrom.internal.DigitalSTROMThingTypeProvider;
 import org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.digitalSTROMConfiguration.DigitalSTROMConfig;
 import org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.digitalSTROMListener.DeviceStatusListener;
 import org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.digitalSTROMListener.DigitalSTROMConnectionListener;
@@ -66,6 +67,10 @@ public class DssBridgeHandler extends BaseBridgeHandler
     private DigitalSTROMSceneManager sceneMan;
     private DigitalSTROMDeviceStatusManager devStatMan;
 
+    private List<SceneStatusListener> sceneListener;
+    private List<DeviceStatusListener> devListener;
+    private DigitalSTROMThingTypeProvider thingTypeProvider = null;
+
     public DssBridgeHandler(Bridge bridge, DigitalSTROMConnectionManager connectionManager) {
         super(bridge);
         this.connMan = connectionManager;
@@ -87,7 +92,8 @@ public class DssBridgeHandler extends BaseBridgeHandler
             this.structMan = new DigitalSTROMStructureManagerImpl();
             this.sceneMan = new DigitalSTROMSceneManagerImpl(this.connMan, this.structMan);
             this.devStatMan = new DigitalSTROMDeviceStatusManagerImpl(this.connMan, this.structMan, this.sceneMan);
-
+            structMan.generateZoneGroupNames(connMan);
+            // this.devStatMan.registerTotalPowerConsumptionListener(this);
             this.devStatMan.start();
 
             if (!connMan.checkConnection()) {
@@ -117,6 +123,24 @@ public class DssBridgeHandler extends BaseBridgeHandler
                         .toString();
             }
 
+            if (this.thingTypeProvider != null) {
+                this.thingTypeProvider.registerConnectionManagerHandler(connMan);
+            }
+
+            if (this.devListener != null) {
+                for (DeviceStatusListener listener : this.devListener) {
+                    this.registerDeviceStatusListener(listener);
+                }
+                this.devListener = null;
+            }
+
+            if (this.sceneListener != null) {
+                for (SceneStatusListener listener : this.sceneListener) {
+                    this.registerSceneStatusListener(listener);
+                }
+                this.sceneListener = null;
+            }
+
         } else {
             logger.warn("Cannot connect to DigitalSTROMSever. Host address is not set.");
         }
@@ -144,9 +168,17 @@ public class DssBridgeHandler extends BaseBridgeHandler
 
     @Override
     public void handleRemoval() {
+        if (connMan == null) {
+            Configuration configuration = this.getConfig();
+            this.connMan = new DigitalSTROMConnectionManagerImpl(configuration.get(HOST).toString(),
+                    configuration.get(USER_NAME).toString(), configuration.get(PASSWORD).toString(),
+                    configuration.get(APPLICATION_TOKEN).toString(), false, this);
+        }
+
         if (connMan.removeApplicationToken()) {
             updateStatus(ThingStatus.REMOVED);
         }
+        this.connMan = null;
     }
     /**** methods to store DeviceStatusListener ****/
 
@@ -166,7 +198,15 @@ public class DssBridgeHandler extends BaseBridgeHandler
             } else {
                 throw new NullPointerException("It's not allowed to pass a null ID.");
             }
+        } else {
+            devListener = new LinkedList<DeviceStatusListener>();
+            devListener.add(deviceStatusListener);
         }
+
+    }
+
+    public synchronized void registerThingTypeProvider(DigitalSTROMThingTypeProvider thingTypeProvider) {
+        this.thingTypeProvider = thingTypeProvider;
     }
 
     /**
@@ -190,7 +230,7 @@ public class DssBridgeHandler extends BaseBridgeHandler
      * @param deviceStatusListener
      */
     public synchronized void registerSceneStatusListener(SceneStatusListener sceneStatusListener) {
-        if (this.devStatMan != null) {
+        if (this.sceneMan != null) {
             if (sceneStatusListener == null) {
                 throw new NullPointerException("It's not allowed to pass a null DeviceStatusListener.");
             }
@@ -200,7 +240,11 @@ public class DssBridgeHandler extends BaseBridgeHandler
             } else {
                 throw new NullPointerException("It's not allowed to pass a null ID.");
             }
+        } else {
+            sceneListener = new LinkedList<SceneStatusListener>();
+            sceneListener.add(sceneStatusListener);
         }
+
     }
 
     /**
@@ -209,7 +253,7 @@ public class DssBridgeHandler extends BaseBridgeHandler
      * @param devicetatusListener
      */
     public void unregisterSceneStatusListener(SceneStatusListener sceneStatusListener) {
-        if (this.devStatMan != null) {
+        if (this.sceneMan != null) {
             if (sceneStatusListener.getID() != null) {
                 this.sceneMan.unregisterSceneListener(sceneStatusListener);
             } else {

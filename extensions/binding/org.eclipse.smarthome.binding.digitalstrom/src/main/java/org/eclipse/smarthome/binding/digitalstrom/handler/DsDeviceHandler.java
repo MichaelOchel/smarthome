@@ -9,7 +9,9 @@ package org.eclipse.smarthome.binding.digitalstrom.handler;
 
 import static org.eclipse.smarthome.binding.digitalstrom.DigitalSTROMBindingConstants.*;
 
+import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -83,7 +85,11 @@ public class DsDeviceHandler extends BaseThingHandler implements DeviceStatusLis
 
         if (!configdSID.isEmpty()) {
             dSID = configdSID;
-            updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.HANDLER_MISSING_ERROR, "Bridge is missig");
+            if (this.dssBridgeHandler == null) {
+                updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.HANDLER_MISSING_ERROR, "Bridge is missig");
+            } else {
+                bridgeHandlerInitialized(dssBridgeHandler, this.getBridge());
+            }
 
         } else {
             updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.CONFIGURATION_ERROR, "dSID is missig");
@@ -92,15 +98,14 @@ public class DsDeviceHandler extends BaseThingHandler implements DeviceStatusLis
 
     @Override
     protected void bridgeHandlerInitialized(ThingHandler thingHandler, Bridge bridge) {
-        if (dSID != null) { // kann das überhaupt null werden?
+        logger.debug("bridge ist da!!!!!!!!!!!!!!!!!!!!");
+        if (dSID != null) {
             if (thingHandler instanceof DssBridgeHandler) {
+                // note: this call implicitly registers our handler as a listener on the bridge
+
                 this.dssBridgeHandler = (DssBridgeHandler) thingHandler;
                 this.dssBridgeHandler.registerDeviceStatusListener(this);
 
-                // note: this call implicitly registers our handler as a listener on the bridge
-                ThingStatusInfo statusInfo = bridge.getStatusInfo();
-                updateStatus(statusInfo.getStatus(), statusInfo.getStatusDetail(), statusInfo.getDescription());
-                logger.debug("Set status on {}", getThing().getStatus());
             }
         }
     }
@@ -283,30 +288,64 @@ public class DsDeviceHandler extends BaseThingHandler implements DeviceStatusLis
     @Override
     public synchronized void onDeviceRemoved(Device device) {
         this.device = null;
-        updateStatus(ThingStatus.OFFLINE); // TODO: stimmt das?
+        updateStatus(ThingStatus.OFFLINE);
     }
 
     @Override
     public synchronized void onDeviceAdded(Device device) {
         if (device.isPresent()) {
-            updateStatus(ThingStatus.ONLINE);
-            onDeviceStateInitial(device);
-            logger.debug("Add sensor prioritys to device");
-            Configuration config = getThing().getConfiguration();
-            String powerConsumptionPrio = config.get(DigitalSTROMBindingConstants.POWER_CONSUMTION_REFRESH_PRIORITY)
-                    .toString();
-            String energyMeterPrio = config.get(DigitalSTROMBindingConstants.ENERGY_METER_REFRESH_PRIORITY).toString();
-            String electricMeterPrio = config.get(DigitalSTROMBindingConstants.ELECTRIC_METER_REFRESH_PRIORITY)
-                    .toString();
-            logger.debug(powerConsumptionPrio + ", " + energyMeterPrio + ", " + electricMeterPrio);
-
-            device.setSensorDataRefreshPriority(powerConsumptionPrio, energyMeterPrio, electricMeterPrio);
-
-            checkSensorChannel(powerConsumptionPrio, energyMeterPrio, electricMeterPrio);
+            this.device = device;
+            ThingStatusInfo statusInfo = this.dssBridgeHandler.getThing().getStatusInfo();
+            updateStatus(statusInfo.getStatus(), statusInfo.getStatusDetail(), statusInfo.getDescription());
+            logger.debug("Set status on {}", getThing().getStatus());
+            /*
+             * boolean configChanged = false;
+             *
+             * logger.debug("Add sensor prioritys to device");
+             * Configuration config = getThing().getConfiguration();
+             * String powerConsumptionPrio = DigitalSTROMBindingConstants.REFRESH_PRIORITY_NEVER;
+             * if (config.get(DigitalSTROMBindingConstants.POWER_CONSUMTION_REFRESH_PRIORITY) != null) {
+             * powerConsumptionPrio = config.get(DigitalSTROMBindingConstants.POWER_CONSUMTION_REFRESH_PRIORITY)
+             * .toString();
+             * } else {
+             * config.put(DigitalSTROMBindingConstants.POWER_CONSUMTION_REFRESH_PRIORITY,
+             * DigitalSTROMBindingConstants.REFRESH_PRIORITY_NEVER);
+             * configChanged = true;
+             * }
+             *
+             * String energyMeterPrio = DigitalSTROMBindingConstants.REFRESH_PRIORITY_NEVER;
+             * if (config.get(DigitalSTROMBindingConstants.ENERGY_METER_REFRESH_PRIORITY) != null) {
+             * powerConsumptionPrio = config.get(DigitalSTROMBindingConstants.ENERGY_METER_REFRESH_PRIORITY)
+             * .toString();
+             * } else {
+             * config.put(DigitalSTROMBindingConstants.ENERGY_METER_REFRESH_PRIORITY,
+             * DigitalSTROMBindingConstants.REFRESH_PRIORITY_NEVER);
+             * configChanged = true;
+             * }
+             *
+             * String electricMeterPrio = DigitalSTROMBindingConstants.REFRESH_PRIORITY_NEVER;
+             * if (config.get(DigitalSTROMBindingConstants.ELECTRIC_METER_REFRESH_PRIORITY) != null) {
+             * powerConsumptionPrio = config.get(DigitalSTROMBindingConstants.ELECTRIC_METER_REFRESH_PRIORITY)
+             * .toString();
+             * } else {
+             * config.put(DigitalSTROMBindingConstants.ELECTRIC_METER_REFRESH_PRIORITY,
+             * DigitalSTROMBindingConstants.REFRESH_PRIORITY_NEVER);
+             * configChanged = true;
+             * }
+             * if (configChanged) {
+             * super.updateConfiguration(config);
+             * configChanged = false;
+             * }
+             * logger.debug(powerConsumptionPrio + ", " + energyMeterPrio + ", " + electricMeterPrio);
+             *
+             * device.setSensorDataRefreshPriority(powerConsumptionPrio, energyMeterPrio, electricMeterPrio);
+             */
+            // checkSensorChannel(powerConsumptionPrio, energyMeterPrio, electricMeterPrio);
             checkOutputChannel();
+            // onDeviceStateInitial(device);
 
-            saveConfigSceneSpecificationIntoDevice(device);
-            logger.debug("Load saved scene specification into device");
+            // saveConfigSceneSpecificationIntoDevice(device);
+            // logger.debug("Load saved scene specification into device");
         } else {
             onDeviceRemoved(device);
         }
@@ -346,38 +385,72 @@ public class DsDeviceHandler extends BaseThingHandler implements DeviceStatusLis
     }
 
     private void checkOutputChannel() {
-        if (device.isDimmable() && currentChannel != CHANNEL_BRIGHTNESS) {
+        if (device == null) {
+            logger.debug("device is null!!!!!!!!!!");
+            return;
+        }
+        logger.debug(currentChannel);
+        logger.debug("Channel brightness?: "
+                + (device.isDimmable() && (currentChannel == null || currentChannel != CHANNEL_BRIGHTNESS)));
+        if (device.isDimmable() && (currentChannel == null || currentChannel != CHANNEL_BRIGHTNESS)) {
             loadOutputChannel(CHANNEL_BRIGHTNESS, "Dimmer");
-        } else if (device.isRollershutter() && currentChannel != CHANNEL_SHADE) {
+        } else if (device.isRollershutter() && (currentChannel != null || currentChannel != CHANNEL_SHADE)) {
             loadOutputChannel(CHANNEL_SHADE, "Rollershutter");
-        } else if (currentChannel != CHANNEL_LIGHT_SWITCH) {
+        } else if (!device.isDimmable() && (currentChannel != null || currentChannel != CHANNEL_LIGHT_SWITCH)) {
             loadOutputChannel(CHANNEL_LIGHT_SWITCH, "Switch");
         }
     }
 
     private void loadOutputChannel(String channelId, String item) {
-        Channel channel = ChannelBuilder.create(new ChannelUID(this.getThing().getUID(), channelId), item).build();
-        ThingBuilder thingBuilder = editThing();
+        Set<String> tags = new HashSet<String>();
+        tags.add("Light");
 
-        if (currentChannel == null) {
-            thingBuilder.withChannel(channel);
-            currentChannel = channelId;
-            updateThing(thingBuilder.build());
-            return;
-        }
-        List<Channel> channelList = this.getThing().getChannels();
-        Iterator<Channel> channelInter = channelList.iterator();
-        while (channelInter.hasNext()) {
-            if (channelInter.next().getUID().getId().equals(currentChannel)) {
-                channelInter.remove();
-                break;
+        Channel channel = ChannelBuilder.create(new ChannelUID(this.getThing().getUID(), channelId), item).build();
+        currentChannel = channelId;
+        logger.debug("channel = " + channel.getUID());
+
+        // ChannelDefinition channelDef;
+
+        // if (currentChannel == null) {
+
+        // thingBuilder.withChannel(channel);
+        // currentChannel = channelId;
+        /*
+         * Thing thing = thingBuilder.build();
+         * logger.debug("Thing = " + thing);
+         * updateThing(thing);
+         */
+        // return;
+        // }
+
+        List<Channel> channelList = new LinkedList<Channel>(this.getThing().getChannels());
+        if (!channelList.isEmpty()) {
+
+            for (int i = 0; i < channelList.size(); i++) {
+                // if (channelList.get(i).getUID().getId().contains(currentChannel)) {
+                if (channelList.get(i).getUID().getId().contains(CHANNEL_BRIGHTNESS)
+                        || channelList.get(i).getUID().getId().contains(CHANNEL_SHADE)
+                        || channelList.get(i).getUID().getId().contains(CHANNEL_LIGHT_SWITCH)) {
+                    logger.debug(channelList.get(i).getUID().getId());
+                    channelList.remove(i);
+                    // break;
+                }
             }
         }
 
         channelList.add(channel);
+        logger.debug(channelList.toString());
+        ThingBuilder thingBuilder = editThing();
         thingBuilder.withChannels(channelList);
-        currentChannel = channelId;
         updateThing(thingBuilder.build());
+        logger.debug("load channel: {} with item: {}", channelId, item);
+    }
+
+    @Override
+    public void thingUpdated(Thing thing) {
+        dispose();
+        this.thing = thing;
+        initialize();
     }
 
     private void onDeviceStateInitial(Device device) {
@@ -402,6 +475,7 @@ public class DsDeviceHandler extends BaseThingHandler implements DeviceStatusLis
             updateState(new ChannelUID(getThing().getUID(), CHANNEL_POWER_CONSUMPTION),
                     new DecimalType(device.getPowerConsumption()));
         }
+        // TOTO: rollershutter hinzufügen und dimm+switch unterscheiden
     }
 
     @Override
@@ -505,7 +579,7 @@ public class DsDeviceHandler extends BaseThingHandler implements DeviceStatusLis
                 checkOutputChannel();
                 break;
         }
-
+        super.updateConfiguration(config);
     }
 
     @Override

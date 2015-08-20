@@ -10,8 +10,12 @@ import org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.di
 import org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.digitalSTROMServerConnection.DigitalSTROMAPI;
 import org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.digitalSTROMStructure.digitalSTROMDevices.Device;
 import org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.digitalSTROMStructure.digitalSTROMDevices.deviceParameters.DSID;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public abstract class AbstractSensorJobExecutor {
+
+    private Logger logger = LoggerFactory.getLogger(AbstractSensorJobExecutor.class);
 
     private boolean shutdown = false;
 
@@ -22,14 +26,13 @@ public abstract class AbstractSensorJobExecutor {
 
     private DigitalSTROMConnectionManager connectionManager = null;
 
-    // private Logger logger = LoggerFactory.getLogger(SensorJobExecutor.class);
-
     private List<CircuitScheduler> circuitSchedulerList = Collections
             .synchronizedList(new LinkedList<CircuitScheduler>());
 
     Thread executer = new Thread() {
         @Override
         public void run() {
+            logger.debug("start SensorJobExecuter");
             while (!shutdown) {
                 lowestNextExecutionTime = System.currentTimeMillis() + DigitalSTROMConfig.SENSOR_READING_WAIT_TIME;
                 boolean noMoreJobs = true;
@@ -70,7 +73,7 @@ public abstract class AbstractSensorJobExecutor {
 
     /**
      * Creates a new SensorJobExecuter.
-     * 
+     *
      * @param digitalSTROMAPI
      * @param dssBrideHandler
      */
@@ -82,7 +85,7 @@ public abstract class AbstractSensorJobExecutor {
 
     /**
      * Stops the SensorJobExecuter Thread.
-     * 
+     *
      */
     public synchronized void shutdown() {
         this.shutdown = true;
@@ -90,7 +93,7 @@ public abstract class AbstractSensorJobExecutor {
 
     /**
      * Restarts the SensorJobExecuter Thread.
-     * 
+     *
      */
     public synchronized void wakeUp() {
         this.shutdown = false;
@@ -106,7 +109,7 @@ public abstract class AbstractSensorJobExecutor {
 
     /**
      * Adds a high priority SensorJob to the SensorJobExecuter.
-     * 
+     *
      * @param sensorJob
      */
     protected void addHighPriorityJob(SensorJob sensorJob) {
@@ -116,7 +119,7 @@ public abstract class AbstractSensorJobExecutor {
 
     /**
      * Adds a medium priority SensorJob to the SensorJobExecuter.
-     * 
+     *
      * @param sensorJob
      */
     protected void addMediumPriorityJob(SensorJob sensorJob) {
@@ -126,7 +129,7 @@ public abstract class AbstractSensorJobExecutor {
 
     /**
      * Adds a low priority SensorJob to the SensorJobExecuter.
-     * 
+     *
      * @param sensorJob
      */
     protected void addLowPriorityJob(SensorJob sensorJob) {
@@ -135,7 +138,7 @@ public abstract class AbstractSensorJobExecutor {
     }
 
     /**
-     * 
+     *
      * @param sensorJob
      */
     protected void addSensorJobToCircuitScheduler(SensorJob sensorJob) {
@@ -167,7 +170,7 @@ public abstract class AbstractSensorJobExecutor {
 
     /**
      * Removes all SensorJobs of a specific ds-device.
-     * 
+     *
      * @param dsid of the ds-device
      */
     /*

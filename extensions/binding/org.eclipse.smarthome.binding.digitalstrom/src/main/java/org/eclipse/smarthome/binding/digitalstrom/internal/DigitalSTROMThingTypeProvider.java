@@ -10,11 +10,13 @@ import java.util.Locale;
 
 import org.eclipse.smarthome.binding.digitalstrom.DigitalSTROMBindingConstants;
 import org.eclipse.smarthome.binding.digitalstrom.handler.DsDeviceHandler;
-import org.eclipse.smarthome.binding.digitalstrom.handler.DssBridgeHandler;
 import org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.digitalSTROMManager.DigitalSTROMConnectionManager;
 import org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.digitalSTROMStructure.digitalSTROMDevices.Device;
 import org.eclipse.smarthome.core.thing.ThingTypeUID;
 import org.eclipse.smarthome.core.thing.binding.ThingTypeProvider;
+import org.eclipse.smarthome.core.thing.type.ChannelDefinition;
+import org.eclipse.smarthome.core.thing.type.ChannelType;
+import org.eclipse.smarthome.core.thing.type.ChannelTypeUID;
 import org.eclipse.smarthome.core.thing.type.ThingType;
 
 public class DigitalSTROMThingTypeProvider implements ThingTypeProvider {
@@ -24,14 +26,11 @@ public class DigitalSTROMThingTypeProvider implements ThingTypeProvider {
     HashMap<String, ThingType> thingTypeMapEN = new HashMap<String, ThingType>();
     HashMap<String, ThingType> thingTypeMapDE = new HashMap<String, ThingType>();
 
-    DigitalSTROMThingTypeProvider(DssBridgeHandler handler) {
-        System.out.println(handler);
-        System.out.println(handler.getThing());
-        System.out.println(handler.getThing().getBridgeUID());
-
+    DigitalSTROMThingTypeProvider() {
         supportedBridgeTypeUIDs.add(DigitalSTROMBindingConstants.THING_TYPE_DSS_BRIDGE.toString());
+    }
 
-        DigitalSTROMConnectionManager connMan = handler.getConnectionManager();
+    public void registerConnectionManagerHandler(DigitalSTROMConnectionManager connMan) {
         if (connMan != null) {
             if (connMan.checkConnection()) {
                 generateReachableThingTypes(
@@ -85,6 +84,11 @@ public class DigitalSTROMThingTypeProvider implements ThingTypeProvider {
     private final String SW_DE = "(schwarz)";
     private final String SW_FUNC_DE = "Joker";
 
+    private ChannelDefinition chanDefBrigh = new ChannelDefinition("brightness",
+            new ChannelType(new ChannelTypeUID("digitalstrom:brightness"), false, "Dimmer", "Dimm channel",
+                    "this is a channel to to dimm an light Device", "light", null, null, null),
+            null, "Dimm channel", "this is a channel to to dimm an light Device");
+
     private ThingType generateThingType(ThingTypeUID thingTypeUID, Locale locale) {
         return generateThingType(thingTypeUID.getId(), locale, thingTypeUID);
 
@@ -124,6 +128,8 @@ public class DigitalSTROMThingTypeProvider implements ThingTypeProvider {
             if (thingTypeUID == null) {
                 thingTypeUID = new ThingTypeUID(DigitalSTROMBindingConstants.BINDING_ID, hwInfo);
             }
+            List<ChannelDefinition> channelList = new LinkedList<ChannelDefinition>();
+            channelList.add(chanDefBrigh);
             ThingType thingTypeEN = new ThingType(thingTypeUID, supportedBridgeTypeUIDs, labelEN, descEN, null, null,
                     null, new URI(DigitalSTROMBindingConstants.DEVICE_CONFIG));
             this.thingTypeMapEN.put(hwInfo, thingTypeEN);

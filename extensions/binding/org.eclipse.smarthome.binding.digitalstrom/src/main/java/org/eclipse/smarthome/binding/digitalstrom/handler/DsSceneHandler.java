@@ -11,6 +11,7 @@ import org.eclipse.smarthome.core.thing.Bridge;
 import org.eclipse.smarthome.core.thing.ChannelUID;
 import org.eclipse.smarthome.core.thing.Thing;
 import org.eclipse.smarthome.core.thing.ThingStatus;
+import org.eclipse.smarthome.core.thing.ThingStatusDetail;
 import org.eclipse.smarthome.core.thing.ThingStatusInfo;
 import org.eclipse.smarthome.core.thing.ThingTypeUID;
 import org.eclipse.smarthome.core.thing.binding.BaseThingHandler;
@@ -52,21 +53,31 @@ public class DsSceneHandler extends BaseThingHandler implements SceneStatusListe
     }
 
     @Override
+    public void initialize() {
+        logger.debug("Initializing DigitalSTROM Scene handler.");
+        if (this.dssBridgeHandler == null) {
+            updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.HANDLER_MISSING_ERROR, "Bridge is missig");
+        } else {
+            bridgeHandlerInitialized(dssBridgeHandler, this.getBridge());
+        }
+
+    }
+
+    @Override
     protected void bridgeHandlerInitialized(ThingHandler thingHandler, Bridge bridge) {
         String configZoneID = getConfig().get(DigitalSTROMBindingConstants.SCENE_ZONE_ID).toString().toLowerCase();
         String configGroupID = getConfig().get(DigitalSTROMBindingConstants.SCENE_GROUP_ID).toString().toLowerCase();
         String configSceneID = getConfig().get(DigitalSTROMBindingConstants.SCENE_ID).toString().toLowerCase();
 
+        logger.debug("zoneID: " + configZoneID);
         if (!configSceneID.isEmpty()) {
             this.sceneId = Short.parseShort(configSceneID);
 
             if (thingHandler instanceof DssBridgeHandler) {
                 this.dssBridgeHandler = (DssBridgeHandler) thingHandler;
-                // this.dssBridgeHandler.registerDeviceStatusListener(dSUID, this);
 
-                // note: this call implicitly registers our handler as a listener on the bridge
-                ThingStatusInfo statusInfo = bridge.getStatusInfo();
-                updateStatus(statusInfo.getStatus(), statusInfo.getStatusDetail(), statusInfo.getDescription());
+                updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.CONFIGURATION_PENDING,
+                        "waiting for listener registartion");
                 logger.debug("Set status on {}", getThing().getStatus());
 
             }
@@ -77,15 +88,23 @@ public class DsSceneHandler extends BaseThingHandler implements SceneStatusListe
             } else {
 
                 try {
-                    zoneID = Integer.getInteger(configZoneID);
-                    if (strucMan.checkZoneID(zoneID)) {
+                    zoneID = Integer.parseInt(configZoneID);
+                    logger.debug("zoneID: " + zoneID);
+                    if (!strucMan.checkZoneID(zoneID)) {
                         zoneID = null;
+                        updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.CONFIGURATION_ERROR, "Configured zone '"
+                                + configZoneID + "' does not exist, please check your configuration.");
+                        return;
                     }
+
                 } catch (NumberFormatException e) {
+
                     this.zoneID = strucMan.getZoneId(configZoneID);
 
                     if (this.zoneID == -1) {
                         logger.error("Can not found zone id or zone name {}!", configZoneID);
+                        updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.CONFIGURATION_ERROR, "Configured zone '"
+                                + configGroupID + "' does not exist, please check your configuration.");
                         return;
                     }
                 }
@@ -95,11 +114,16 @@ public class DsSceneHandler extends BaseThingHandler implements SceneStatusListe
                 groupID = 0;
 
             } else {
+
                 try {
                     groupID = Short.parseShort(configGroupID);
-                    if (strucMan.checkZoneGroupID(zoneID, groupID)) {
+                    if (!strucMan.checkZoneGroupID(zoneID, groupID)) {
                         groupID = null;
+                        updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.CONFIGURATION_ERROR, "Configured group '"
+                                + configGroupID + "' does not exist, please check your configuration.");
+                        return;
                     }
+
                 } catch (NumberFormatException e) {
                     String zoneName = strucMan.getZoneName(zoneID);
                     this.groupID = strucMan.getZoneGroupId(zoneName, configGroupID);
@@ -107,10 +131,13 @@ public class DsSceneHandler extends BaseThingHandler implements SceneStatusListe
 
                 if (this.groupID == null) {
                     logger.error("Can not found group id or group name {}!", configZoneID);
+                    updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.CONFIGURATION_ERROR, "Configured group '"
+                            + configGroupID + "' does not exist, please check your configuration.");
                     return;
                 }
 
-                this.sceneThingID = this.zoneID + "-" + this.groupID + "-" + this.sceneId;
+                this.sceneThingID = zoneID + "-" + groupID + "-" + sceneId;
+                this.dssBridgeHandler.registerSceneStatusListener(this);
             }
         }
     }
@@ -176,6 +203,12 @@ public class DsSceneHandler extends BaseThingHandler implements SceneStatusListe
 
     @Override
     public void onSceneAdded(InternalScene scene) {
+        logger.debug("Scene {} added", scene.getID());
+        if (this.dssBridgeHandler != null) {
+            ThingStatusInfo statusInfo = this.dssBridgeHandler.getThing().getStatusInfo();
+            updateStatus(statusInfo.getStatus(), statusInfo.getStatusDetail(), statusInfo.getDescription());
+            logger.debug("Set status on {}", getThing().getStatus());
+        }
         this.scene = scene;
         onSceneStateChanged(scene.isActive());
     }

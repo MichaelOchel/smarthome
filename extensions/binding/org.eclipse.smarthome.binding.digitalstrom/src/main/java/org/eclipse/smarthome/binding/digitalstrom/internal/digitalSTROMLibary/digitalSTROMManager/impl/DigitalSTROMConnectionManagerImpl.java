@@ -114,7 +114,7 @@ public class DigitalSTROMConnectionManagerImpl implements DigitalSTROMConnection
     @Override
     public synchronized boolean checkConnection() {
         int code = this.digitalSTROMClient.checkConnection(sessionToken);
-        System.out.println("connection code: " + code);
+
         switch (code) {
             case HttpURLConnection.HTTP_OK:
                 if (!lastConnectionState) {

@@ -46,7 +46,7 @@ public abstract class BaseThingHandlerFactory implements ThingHandlerFactory {
     /**
      * Initializes the {@link BaseThingHandlerFactory}. If this method is
      * overridden by a sub class, the implementing method must call <code>super.activate(componentContext)</code> first.
-     * 
+     *
      * @param componentContext
      *            component context (must not be null)
      */
@@ -63,7 +63,7 @@ public abstract class BaseThingHandlerFactory implements ThingHandlerFactory {
      * Disposes the {@link BaseThingHandlerFactory}. If this method is
      * overridden by a sub class, the implementing method must call <code>super.deactivate(componentContext)</code>
      * first.
-     * 
+     *
      * @param componentContext
      *            component context (must not be null)
      */
@@ -117,7 +117,7 @@ public abstract class BaseThingHandlerFactory implements ThingHandlerFactory {
         if (thingHandler instanceof BaseThingHandler) {
             ((BaseThingHandler) thingHandler).postInitialize();
         }
-        
+
         ServiceRegistration<ThingHandler> serviceRegistration = registerAsService(thing, thingHandler);
         thingHandlers.put(thing.getUID().toString(), serviceRegistration);
     }
@@ -188,7 +188,7 @@ public abstract class BaseThingHandlerFactory implements ThingHandlerFactory {
 
     /**
      * Returns the {@link ThingType} which is represented by the given {@link ThingTypeUID}.
-     * 
+     *
      * @param thingTypeUID the unique id of the thing type
      * @return the thing type represented by the given unique id
      */
@@ -235,10 +235,10 @@ public abstract class BaseThingHandlerFactory implements ThingHandlerFactory {
     @Override
     public Thing createThing(ThingTypeUID thingTypeUID, Configuration configuration, ThingUID thingUID,
             ThingUID bridgeUID) {
-        if(thingTypeUID == null) {
+        if (thingTypeUID == null) {
             throw new IllegalArgumentException("Thing Type UID must not be null");
         }
-        if(thingUID == null) {
+        if (thingUID == null) {
             thingUID = ThingFactory.generateRandomThingUID(thingTypeUID);
         }
         ThingType thingType = getThingTypeByUID(thingTypeUID);

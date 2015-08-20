@@ -27,7 +27,7 @@ public class JSONResponseHandler {
 
     /**
      * Checks the DigitalSTROM-JSON response and return true if it wars successful, otherwise false
-     * 
+     *
      * @param jsonResponse
      * @return true on success
      */
@@ -38,7 +38,7 @@ public class JSONResponseHandler {
             return jsonResponse.get(JSONApiResponseKeysEnum.RESPONSE_OK.getKey()).toString()
                     .equals(JSONApiResponseKeysEnum.RESPONSE_SUCCESSFUL.getKey());
         } else {
-            System.err.println("error in json request. Error message : "
+            System.err.println("JSONResponseHandler: error in json request. Error message : "
                     + jsonResponse.get(JSONApiResponseKeysEnum.RESPONSE_MESSAGE).toString());
         }
         return false;
@@ -47,7 +47,7 @@ public class JSONResponseHandler {
     /**
      * Returns the {@link JSONObject} from the given DigitalSTROM-JSON response {@link String} or null if the json
      * response wars empty.
-     * 
+     *
      * @param jsonResponse
      * @return jsonObject
      */
@@ -56,7 +56,7 @@ public class JSONResponseHandler {
             try {
                 return (JSONObject) new JSONParser().parse(jsonResponse);
             } catch (ParseException e) {
-                System.err.println(e.getLocalizedMessage());
+                System.err.println("JSONResponseHandler: " + e.getLocalizedMessage());
             }
         }
         return null;
@@ -64,7 +64,7 @@ public class JSONResponseHandler {
 
     /**
      * Returns the result {@link JSONObject} from the given DigitalSTROM-JSON response {@link JSONObject}.
-     * 
+     *
      * @param jsonObject
      * @return json result object
      */

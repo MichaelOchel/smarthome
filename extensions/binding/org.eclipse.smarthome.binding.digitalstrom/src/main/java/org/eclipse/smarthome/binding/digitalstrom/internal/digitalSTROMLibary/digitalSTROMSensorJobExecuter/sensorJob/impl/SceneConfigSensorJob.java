@@ -13,6 +13,8 @@ import org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.di
 import org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.digitalSTROMStructure.digitalSTROMDevices.Device;
 import org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.digitalSTROMStructure.digitalSTROMDevices.deviceParameters.DSID;
 import org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.digitalSTROMStructure.digitalSTROMDevices.deviceParameters.DeviceSceneSpec;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * The {@link SceneConfigSensorJob} is the implementation of a {@link SensorJob}
@@ -26,8 +28,7 @@ import org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.di
  */
 public class SceneConfigSensorJob implements SensorJob {
 
-    // private static final Logger logger = LoggerFactory
-    // .getLogger(SceneOutputValueSensorJob.class);
+    private static final Logger logger = LoggerFactory.getLogger(SceneOutputValueSensorJob.class);
 
     private Device device = null;
     private short sceneId = 0;
@@ -37,7 +38,7 @@ public class SceneConfigSensorJob implements SensorJob {
 
     /**
      * Creates a new {@link SceneConfigSensorJob} with the given scene id.
-     * 
+     *
      * @param device
      * @param sceneId
      * @param dssBridgeHandler
@@ -56,9 +57,8 @@ public class SceneConfigSensorJob implements SensorJob {
 
         if (sceneConfig != null) {
             device.addSceneConfig(sceneId, sceneConfig);
-            // logger.info
-            System.out.println("UPDATED scene configuration for dsid: " + this.device.getDSID() + ", sceneID: "
-                    + sceneId + ", configuration: " + sceneConfig.toString());
+            logger.debug("UPDATED scene configuration for dsid: " + this.device.getDSID() + ", sceneID: " + sceneId
+                    + ", configuration: " + sceneConfig.toString());
 
         }
     }

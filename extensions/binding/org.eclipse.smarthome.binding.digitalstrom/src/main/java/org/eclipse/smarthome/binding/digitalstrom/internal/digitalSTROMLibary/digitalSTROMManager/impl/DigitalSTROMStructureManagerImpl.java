@@ -14,8 +14,12 @@ import org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.di
 import org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.digitalSTROMStructure.digitalSTROMDevices.deviceParameters.DSID;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class DigitalSTROMStructureManagerImpl implements DigitalSTROMStructureManager {
+
+    private Logger logger = LoggerFactory.getLogger(DigitalSTROMStructureManagerImpl.class);
 
     private Map<Integer, HashMap<Short, List<Device>>> zoneGroupDeviceMap;
     private Map<DSID, Device> deviceMap;
@@ -137,12 +141,12 @@ public class DigitalSTROMStructureManagerImpl implements DigitalSTROMStructureMa
 
     @Override
     public boolean checkZoneID(int zoneID) {
-        return this.zoneGroupDeviceMap.containsKey(zoneID);
+        return this.getGroupsFromZoneX(zoneID) != null;
     }
 
     @Override
     public boolean checkZoneGroupID(int zoneID, short groupID) {
-        return this.getGroupsFromZoneX(zoneID) != null ? this.getGroupsFromZoneX(zoneID).get(groupID) != null : false;
+        return this.getGroupsFromZoneX(zoneID) != null ? (this.getGroupsFromZoneX(zoneID).get(groupID) != null) : false;
     }
 
     @SuppressWarnings("unchecked")
@@ -316,12 +320,13 @@ public class DigitalSTROMStructureManagerImpl implements DigitalSTROMStructureMa
     }
 
     private void addDevicetoZoneXGroupX(int zoneID, short groupID, Device device) {
+        if (zoneGroupDeviceMap == null) {
+            zoneGroupDeviceMap = Collections.synchronizedMap(new HashMap<Integer, HashMap<Short, List<Device>>>());
+        }
         HashMap<Short, List<Device>> groupXHashMap = this.zoneGroupDeviceMap.get(zoneID);
         if (groupXHashMap == null) {
             groupXHashMap = new HashMap<Short, List<Device>>();
-            if (zoneGroupDeviceMap == null) {
-                zoneGroupDeviceMap = Collections.synchronizedMap(new HashMap<Integer, HashMap<Short, List<Device>>>());
-            }
+
             this.zoneGroupDeviceMap.put(zoneID, groupXHashMap);
         }
         List<Device> groupDeviceList = groupXHashMap.get(groupID);

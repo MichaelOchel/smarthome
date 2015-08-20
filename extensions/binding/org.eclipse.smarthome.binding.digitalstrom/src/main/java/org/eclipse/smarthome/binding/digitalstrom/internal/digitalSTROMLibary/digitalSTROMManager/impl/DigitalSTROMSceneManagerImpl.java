@@ -15,10 +15,15 @@ import org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.di
 import org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.digitalSTROMStructure.digitalSTROMScene.InternalScene;
 import org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.digitalSTROMStructure.digitalSTROMScene.SceneDiscovery;
 import org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.digitalSTROMStructure.digitalSTROMScene.constants.EventPropertyEnum;
+import org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.digitalSTROMStructure.digitalSTROMScene.constants.SceneEnum;
 import org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.digitalSTROMStructure.digitalSTROMScene.sceneEvent.EventItem;
 import org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.digitalSTROMStructure.digitalSTROMScene.sceneEvent.EventListener;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class DigitalSTROMSceneManagerImpl implements DigitalSTROMSceneManager {
+
+    private Logger logger = LoggerFactory.getLogger(DigitalSTROMSceneManagerImpl.class);
 
     private List<String> echoBox = Collections.synchronizedList(new LinkedList<String>());
     private Map<String, InternalScene> internalSceneMap = Collections
@@ -28,6 +33,8 @@ public class DigitalSTROMSceneManagerImpl implements DigitalSTROMSceneManager {
     private DigitalSTROMStructureManager structureManager;
     private DigitalSTROMConnectionManager connectionManager;
     private SceneDiscovery discovery;
+
+    private boolean scenesGenerated = false;
 
     public DigitalSTROMSceneManagerImpl(DigitalSTROMConnectionManager connectionManager,
             DigitalSTROMStructureManager structureManager) {
@@ -41,8 +48,10 @@ public class DigitalSTROMSceneManagerImpl implements DigitalSTROMSceneManager {
     }
 
     public void stop() {
-        this.eventListener.shutdown();
-        this.eventListener = null;
+        if (this.eventListener != null) {
+            this.eventListener.shutdown();
+            this.eventListener = null;
+        }
     }
 
     @Override
@@ -150,9 +159,6 @@ public class DigitalSTROMSceneManagerImpl implements DigitalSTROMSceneManager {
             intScene.activateScene();
         } else {
             intScene = createNewScene(sceneID);
-            // addInternalScene(intScene);
-            // discovery oder hier listener?
-
             if (intScene != null) {
                 discovery.sceneDiscoverd(intScene);
                 intScene.activateScene();
@@ -168,14 +174,41 @@ public class DigitalSTROMSceneManagerImpl implements DigitalSTROMSceneManager {
                     .getReferenceDeviceListFromZoneXGroupX(intScene.getZoneID(), intScene.getGroupID()));
             this.internalSceneMap.put(intScene.getID(), intScene);
 
+            // TODO: zone/group/device Überprüfung einbauen sonst falsche scene; rückgabe boolean wegen discovery
+        } else {
+            String oldSceneName = this.internalSceneMap.get(intScene.getID()).getSceneName();
+            String newSceneName = intScene.getSceneName();
+            if ((oldSceneName.contains("Zone:") && oldSceneName.contains("Group:") && oldSceneName.contains("Scene:"))
+                    && !(newSceneName.contains("Zone:") && newSceneName.contains("Group:")
+                            && newSceneName.contains("Scene:"))) {
+                this.internalSceneMap.get(intScene.getID()).setSceneName(newSceneName);
+            }
         }
     }
 
     private InternalScene createNewScene(String sceneID) {
         String[] sceneData = sceneID.split("-");
         if (sceneData.length == 3) {
-            InternalScene intScene = new InternalScene(Integer.parseInt(sceneData[0]), Short.parseShort(sceneData[1]),
-                    Short.parseShort(sceneData[2]), null);
+            int zoneID = Integer.parseInt(sceneData[0]);
+            short groupID = Short.parseShort(sceneData[1]);
+            short sceneNumber = Short.parseShort(sceneData[2]);
+            String sceneName = null;
+            if (SceneEnum.getScene(sceneNumber) != null) {
+                if (structureManager.getZoneName(zoneID) != null) {
+                    sceneName = "Zone: " + structureManager.getZoneName(zoneID);
+                    if (structureManager.getZoneGroupName(zoneID, groupID) != null) {
+                        sceneName = sceneName + " Group: " + structureManager.getZoneGroupName(zoneID, groupID);
+                    } else {
+                        sceneName = sceneName + " Group: " + groupID;
+                    }
+                } else {
+                    sceneName = "Zone: " + zoneID + " Group: " + groupID;
+                }
+                sceneName = sceneName + " Scene: "
+                        + SceneEnum.getScene(sceneNumber).toString().toLowerCase().replace("_", " ");
+            }
+
+            InternalScene intScene = new InternalScene(zoneID, groupID, sceneNumber, sceneName);
 
             return intScene;
         } else {
@@ -243,16 +276,19 @@ public class DigitalSTROMSceneManagerImpl implements DigitalSTROMSceneManager {
     public void registerSceneListener(SceneStatusListener sceneListener) {
         if (sceneListener != null) {
             String id = sceneListener.getID();
+            logger.debug("register SceneListener with id: " + id);
             if (id.equals(SceneStatusListener.SCENE_DESCOVERY)) {
                 this.discovery = new SceneDiscovery(this);
                 discovery.registerSceneStatusListener(sceneListener);
-                discovery.generateAllScenes(connectionManager, structureManager);
+                // discovery.generateAllScenes(connectionManager, structureManager);
             } else {
                 InternalScene intScene = this.internalSceneMap.get(sceneListener.getID());
                 if (intScene != null) {
                     intScene.registerSceneListener(sceneListener);
                 } else {
-                    // TODO: Fehlermeldung
+                    logger.debug("can't find scene form listener with id: {} create new scene.", id);
+                    addInternalScene(createNewScene(id));
+                    registerSceneListener(sceneListener);
                 }
             }
         } else {
@@ -279,6 +315,17 @@ public class DigitalSTROMSceneManagerImpl implements DigitalSTROMSceneManager {
             // TODO: Fehlermeldung
         }
 
+    }
+
+    @Override
+    public boolean scenesGenerated() {
+        return scenesGenerated;
+    }
+
+    @Override
+    public void generateScenes() {
+        discovery.generateAllScenes(connectionManager, structureManager);
+        scenesGenerated = true;
     }
 
     @Override

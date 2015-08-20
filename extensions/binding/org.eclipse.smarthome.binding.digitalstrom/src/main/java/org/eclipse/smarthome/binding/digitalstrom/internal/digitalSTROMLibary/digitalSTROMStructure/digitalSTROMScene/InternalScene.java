@@ -79,7 +79,7 @@ public class InternalScene {
 
     /**
      * Returned true if this Scene is active, otherwise false.
-     * 
+     *
      * @return active? (true = yes | false = no)
      */
     public boolean isActive() {
@@ -111,8 +111,12 @@ public class InternalScene {
         } else {
             prio = 2000;
         }
-        for (Device device : devices) {
-            device.checkSceneConfig(SCENE_ID, prio);
+        // System.out.println("deivces = " + devices);
+        if (devices != null) {
+            for (Device device : devices) {
+                // System.out.println("check device " + device.getDSID().getValue());
+                device.checkSceneConfig(SCENE_ID, prio);
+            }
         }
     }
 
@@ -140,7 +144,7 @@ public class InternalScene {
 
     /**
      * This method have a device to call if this scene was active and the device state has change.
-     * 
+     *
      * @param sceneNumber
      */
     public void deviceSceneChanged(short sceneNumber) {
@@ -152,7 +156,7 @@ public class InternalScene {
 
     /**
      * Returns the Scene name.
-     * 
+     *
      * @return scene name
      */
     public String getSceneName() {
@@ -161,7 +165,7 @@ public class InternalScene {
 
     /**
      * Sets the Scene name to the given scene name.
-     * 
+     *
      * @param sceneName
      */
     public void setSceneName(String sceneName) {
@@ -170,7 +174,7 @@ public class InternalScene {
 
     /**
      * Returns the Scene id of this scene call.
-     * 
+     *
      * @return scene id
      */
     public Short getSceneID() {
@@ -179,7 +183,7 @@ public class InternalScene {
 
     /**
      * Returns the group id of this scene call.
-     * 
+     *
      * @return group id
      */
     public Short getGroupID() {
@@ -188,7 +192,7 @@ public class InternalScene {
 
     /**
      * Returns the zone id of this scene call.
-     * 
+     *
      * @return zone id
      */
     public Integer getZoneID() {
@@ -197,7 +201,7 @@ public class InternalScene {
 
     /**
      * Returns the id of this scene call.
-     * 
+     *
      * @return scene call id
      */
     public String getID() {
