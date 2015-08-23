@@ -18,12 +18,10 @@ import org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.di
 import org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.digitalSTROMStructure.digitalSTROMScene.constants.SceneEnum;
 import org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.digitalSTROMStructure.digitalSTROMScene.sceneEvent.EventItem;
 import org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.digitalSTROMStructure.digitalSTROMScene.sceneEvent.EventListener;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class DigitalSTROMSceneManagerImpl implements DigitalSTROMSceneManager {
 
-    private Logger logger = LoggerFactory.getLogger(DigitalSTROMSceneManagerImpl.class);
+    // private Logger logger = LoggerFactory.getLogger(DigitalSTROMSceneManagerImpl2.class);
 
     private List<String> echoBox = Collections.synchronizedList(new LinkedList<String>());
     private Map<String, InternalScene> internalSceneMap = Collections
@@ -276,7 +274,7 @@ public class DigitalSTROMSceneManagerImpl implements DigitalSTROMSceneManager {
     public void registerSceneListener(SceneStatusListener sceneListener) {
         if (sceneListener != null) {
             String id = sceneListener.getID();
-            logger.debug("register SceneListener with id: " + id);
+            // logger.debug("register SceneListener with id: " + id);
             if (id.equals(SceneStatusListener.SCENE_DESCOVERY)) {
                 this.discovery = new SceneDiscovery(this);
                 discovery.registerSceneStatusListener(sceneListener);
@@ -286,7 +284,7 @@ public class DigitalSTROMSceneManagerImpl implements DigitalSTROMSceneManager {
                 if (intScene != null) {
                     intScene.registerSceneListener(sceneListener);
                 } else {
-                    logger.debug("can't find scene form listener with id: {} create new scene.", id);
+                    // logger.debug("can't find scene form listener with id: {} create new scene.", id);
                     addInternalScene(createNewScene(id));
                     registerSceneListener(sceneListener);
                 }
@@ -325,7 +323,13 @@ public class DigitalSTROMSceneManagerImpl implements DigitalSTROMSceneManager {
     @Override
     public void generateScenes() {
         discovery.generateAllScenes(connectionManager, structureManager);
+        // discovery.generateAppartmentScence();
         scenesGenerated = true;
+    }
+
+    @Override
+    public boolean isDiscoveryRegistrated() {
+        return this.discovery != null;
     }
 
     @Override

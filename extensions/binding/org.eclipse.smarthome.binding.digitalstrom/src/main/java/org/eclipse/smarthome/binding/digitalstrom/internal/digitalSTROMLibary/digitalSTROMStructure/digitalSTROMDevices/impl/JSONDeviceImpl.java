@@ -10,9 +10,11 @@ package org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.d
 
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.digitalSTROMConfiguration.DigitalSTROMConfig;
 import org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.digitalSTROMListener.DeviceStatusListener;
@@ -670,16 +672,22 @@ public class JSONDeviceImpl implements Device {
     @Override
     public void checkSceneConfig(Short sceneNumber, int prio) {
         if (!containsSceneConfig(sceneNumber)) {
-            System.out.println(
-                    "Add " + DeviceStateUpdate.UPDATE_SCENE_CONFIG + " with prio " + prio + " to deviceStateUpdates");
-            this.deviceStateUpdates
-                    .add(new DeviceStateUpdateImpl(DeviceStateUpdate.UPDATE_SCENE_CONFIG, prio + sceneNumber));
+
+            if (this.deviceStateUpdates
+                    .add(new DeviceStateUpdateImpl(DeviceStateUpdate.UPDATE_SCENE_CONFIG, prio + sceneNumber))) {
+                // System.out.println(
+                // "Device " + dsid.getValue() + " add " + DeviceStateUpdate.UPDATE_SCENE_CONFIG + " with prio "
+                // + prio + " to deviceStateUpdates, is-Device-Uptodate: " + this.isDeviceUpToDate());
+            }
         }
         if (sceneOutputMap.get(sceneNumber) == null) {
-            System.out.println(
-                    "Add " + DeviceStateUpdate.UPDATE_SCENE_OUTPUT + " with prio " + prio + " to deviceStateUpdates");
-            this.deviceStateUpdates
-                    .add(new DeviceStateUpdateImpl(DeviceStateUpdate.UPDATE_SCENE_OUTPUT, prio + sceneNumber));
+
+            if (this.deviceStateUpdates
+                    .add(new DeviceStateUpdateImpl(DeviceStateUpdate.UPDATE_SCENE_OUTPUT, prio + sceneNumber))) {
+                // System.out.println(
+                // "Device " + dsid.getValue() + " add " + DeviceStateUpdate.UPDATE_SCENE_OUTPUT + " with prio "
+                // + prio + " to deviceStateUpdates, is-Device-Uptodate: " + this.isDeviceUpToDate());
+            }
         }
     }
 
@@ -904,6 +912,13 @@ public class JSONDeviceImpl implements Device {
                 listener.onSceneConfigAdded(sceneId);
             }
         }
+    }
+
+    @Override
+    public List<Short> getSavedScenes() {
+        Set<Short> bothKeySet = new HashSet<Short>(sceneOutputMap.keySet());
+        bothKeySet.addAll(sceneConfigMap.keySet());
+        return new LinkedList<Short>(bothKeySet);
     }
 
     @Override

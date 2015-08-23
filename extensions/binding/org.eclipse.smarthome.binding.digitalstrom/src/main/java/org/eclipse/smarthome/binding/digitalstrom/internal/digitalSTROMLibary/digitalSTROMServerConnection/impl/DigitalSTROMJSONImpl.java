@@ -644,18 +644,18 @@ public class DigitalSTROMJSONImpl implements DigitalSTROMAPI {
                             + JSONRequestConstants.PARAMETER_TOKEN + token + JSONRequestConstants.INFIX_PARAMETER_DSID
                             + dsid.getValue() + JSONRequestConstants.INFIX_PARAMETER_NAME + name
                             + JSONRequestConstants.INFIX_PARAMETER_CLASS + class_.getClassIndex()
-                            + JSONRequestConstants.INFIX_PARAMETER_INDEX + index);
+                            + JSONRequestConstants.INFIX_PARAMETER_INDEX + index, 4000, 20000);
                 } else {
                     response = transport.execute(JSONRequestConstants.JSON_DEVICE_GET_CONFIG
                             + JSONRequestConstants.PARAMETER_TOKEN + token + JSONRequestConstants.INFIX_PARAMETER_DSID
                             + dsid.getValue() + JSONRequestConstants.INFIX_PARAMETER_CLASS + class_.getClassIndex()
-                            + JSONRequestConstants.INFIX_PARAMETER_INDEX + index);
+                            + JSONRequestConstants.INFIX_PARAMETER_INDEX + index, 4000, 20000);
                 }
             } else if (name != null) {
                 response = transport.execute(JSONRequestConstants.JSON_DEVICE_GET_CONFIG
                         + JSONRequestConstants.PARAMETER_TOKEN + token + JSONRequestConstants.INFIX_PARAMETER_NAME
                         + name + JSONRequestConstants.INFIX_PARAMETER_CLASS + class_.getClassIndex()
-                        + JSONRequestConstants.INFIX_PARAMETER_INDEX + index);
+                        + JSONRequestConstants.INFIX_PARAMETER_INDEX + index, 4000, 20000);
             }
 
             JSONObject responseObj = JSONResponseHandler.toJSONObject(response);
@@ -1316,7 +1316,8 @@ public class DigitalSTROMJSONImpl implements DigitalSTROMAPI {
         String response = null;
 
         response = transport.execute(
-                "json/device/getSceneValue?dsid=" + dsid.toString() + "&sceneID=" + sceneId + "&token" + token);
+                "/json/device/getSceneValue?dsid=" + dsid.toString() + "&sceneID=" + sceneId + "&token=" + token, 4000,
+                20000);
 
         JSONObject responseObj = JSONResponseHandler.toJSONObject(response);
 

@@ -64,6 +64,18 @@ public class DsSceneHandler extends BaseThingHandler implements SceneStatusListe
     }
 
     @Override
+    public void dispose() {
+        logger.debug("Handler disposes. Unregistering listener.");
+        if (sceneThingID != null) {
+            DssBridgeHandler dssBridgeHandler = getDssBridgeHandler();
+            if (dssBridgeHandler != null) {
+                getDssBridgeHandler().unregisterSceneStatusListener(this);
+            }
+            sceneThingID = null;
+        }
+    }
+
+    @Override
     protected void bridgeHandlerInitialized(ThingHandler thingHandler, Bridge bridge) {
         String configZoneID = getConfig().get(DigitalSTROMBindingConstants.SCENE_ZONE_ID).toString().toLowerCase();
         String configGroupID = getConfig().get(DigitalSTROMBindingConstants.SCENE_GROUP_ID).toString().toLowerCase();

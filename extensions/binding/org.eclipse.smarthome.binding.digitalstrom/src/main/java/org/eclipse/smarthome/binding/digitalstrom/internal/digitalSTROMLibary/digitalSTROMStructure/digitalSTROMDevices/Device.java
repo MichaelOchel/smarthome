@@ -486,4 +486,6 @@ public interface Device {
 
     public void setOutputMode(OutputModeEnum newOutputMode);
 
+    List<Short> getSavedScenes();
+
 }

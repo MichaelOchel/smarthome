@@ -9,7 +9,6 @@ package org.eclipse.smarthome.binding.digitalstrom.handler;
 
 import static org.eclipse.smarthome.binding.digitalstrom.DigitalSTROMBindingConstants.*;
 
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
@@ -61,8 +60,7 @@ public class DsDeviceHandler extends BaseThingHandler implements DeviceStatusLis
 
     private Logger logger = LoggerFactory.getLogger(DsDeviceHandler.class);
 
-    public final static Set<ThingTypeUID> SUPPORTED_THING_TYPES = Sets.newHashSet(THING_TYPE_GE_KM200,
-            THING_TYPE_GE_KL200);
+    public final static Set<ThingTypeUID> SUPPORTED_THING_TYPES = Sets.newHashSet();// THING_TYPE_GE_KM200,THING_TYPE_GE_KL200
 
     private String dSID = null;
 
@@ -98,10 +96,14 @@ public class DsDeviceHandler extends BaseThingHandler implements DeviceStatusLis
 
     @Override
     protected void bridgeHandlerInitialized(ThingHandler thingHandler, Bridge bridge) {
-        logger.debug("bridge ist da!!!!!!!!!!!!!!!!!!!!");
         if (dSID != null) {
             if (thingHandler instanceof DssBridgeHandler) {
-                // note: this call implicitly registers our handler as a listener on the bridge
+                this.dssBridgeHandler = (DssBridgeHandler) thingHandler;
+
+                updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.CONFIGURATION_PENDING,
+                        "waiting for listener registartion");
+                logger.debug("Set status on {}", getThing().getStatus());
+                // note: this call implicitly registers our handler as a device-listener on the bridge
 
                 this.dssBridgeHandler = (DssBridgeHandler) thingHandler;
                 this.dssBridgeHandler.registerDeviceStatusListener(this);
@@ -293,15 +295,17 @@ public class DsDeviceHandler extends BaseThingHandler implements DeviceStatusLis
 
     @Override
     public synchronized void onDeviceAdded(Device device) {
-        if (device.isPresent()) {
+        if (device != null && device.isPresent()) {
             this.device = device;
             ThingStatusInfo statusInfo = this.dssBridgeHandler.getThing().getStatusInfo();
             updateStatus(statusInfo.getStatus(), statusInfo.getStatusDetail(), statusInfo.getDescription());
             logger.debug("Set status on {}", getThing().getStatus());
+
+            // load sensor priorities into the device
             /*
              * boolean configChanged = false;
              *
-             * logger.debug("Add sensor prioritys to device");
+             * logger.debug("Add sensor priorities to device");
              * Configuration config = getThing().getConfiguration();
              * String powerConsumptionPrio = DigitalSTROMBindingConstants.REFRESH_PRIORITY_NEVER;
              * if (config.get(DigitalSTROMBindingConstants.POWER_CONSUMTION_REFRESH_PRIORITY) != null) {
@@ -340,12 +344,22 @@ public class DsDeviceHandler extends BaseThingHandler implements DeviceStatusLis
              *
              * device.setSensorDataRefreshPriority(powerConsumptionPrio, energyMeterPrio, electricMeterPrio);
              */
+            // check and load sensor channels of the thing
             // checkSensorChannel(powerConsumptionPrio, energyMeterPrio, electricMeterPrio);
+
+            // check and load output channel of the thing
             checkOutputChannel();
+
+            // load first channel values
             // onDeviceStateInitial(device);
 
-            // saveConfigSceneSpecificationIntoDevice(device);
-            // logger.debug("Load saved scene specification into device");
+            // load scene configurations persistently into the thing
+            for (Short i : device.getSavedScenes()) {
+                onSceneConfigAdded(i);
+            }
+
+            saveConfigSceneSpecificationIntoDevice(device);
+            logger.debug("Load saved scene specification into device");
         } else {
             onDeviceRemoved(device);
         }
@@ -353,13 +367,17 @@ public class DsDeviceHandler extends BaseThingHandler implements DeviceStatusLis
     }
 
     private void checkSensorChannel(String powerConsumptionPrio, String energyMeterPrio, String electricMeterPrio) {
-        List<Channel> channelList = this.getThing().getChannels();
-        Iterator<Channel> channelInter = channelList.iterator();
-        while (channelInter.hasNext()) {
-            if (channelInter.next().getUID().getId().equals(CHANNEL_POWER_CONSUMPTION)
-                    || channelInter.next().getUID().getId().equals(CHANNEL_ENERGY_METER)
-                    || channelInter.next().getUID().getId().equals(CHANNEL_ENERGY_METER)) {
-                channelInter.remove();
+        List<Channel> channelList = new LinkedList<Channel>(this.getThing().getChannels());
+
+        // if sensor channels are loaded delete these channels
+        if (channelList.size() > 1) {
+            Iterator<Channel> channelInter = channelList.iterator();
+            while (channelInter.hasNext()) {
+                if (channelInter.next().getUID().getId().equals(CHANNEL_POWER_CONSUMPTION)
+                        || channelInter.next().getUID().getId().equals(CHANNEL_ENERGY_METER)
+                        || channelInter.next().getUID().getId().equals(CHANNEL_ENERGY_METER)) {
+                    channelInter.remove();
+                }
             }
         }
 
@@ -386,7 +404,7 @@ public class DsDeviceHandler extends BaseThingHandler implements DeviceStatusLis
 
     private void checkOutputChannel() {
         if (device == null) {
-            logger.debug("device is null!!!!!!!!!!");
+            logger.debug("Can not load a channel without an device!");
             return;
         }
         logger.debug(currentChannel);
@@ -397,23 +415,23 @@ public class DsDeviceHandler extends BaseThingHandler implements DeviceStatusLis
         } else if (device.isRollershutter() && (currentChannel != null || currentChannel != CHANNEL_SHADE)) {
             loadOutputChannel(CHANNEL_SHADE, "Rollershutter");
         } else if (!device.isDimmable() && (currentChannel != null || currentChannel != CHANNEL_LIGHT_SWITCH)) {
+            // TODO: plugin-Adapter channel? or only a switch channel for all devices with switched output-mode?
+            // We don't know black(joker) devices controls e.g. they can be a plug-in-adapter;
+            // Another option can be loading a light_switch channel for the functional_color_group yellow
+            // and a general switch channel for the black color group
             loadOutputChannel(CHANNEL_LIGHT_SWITCH, "Switch");
         }
     }
 
     private void loadOutputChannel(String channelId, String item) {
-        Set<String> tags = new HashSet<String>();
-        tags.add("Light");
-
         Channel channel = ChannelBuilder.create(new ChannelUID(this.getThing().getUID(), channelId), item).build();
         currentChannel = channelId;
         logger.debug("channel = " + channel.getUID());
 
-        // ChannelDefinition channelDef;
-
+        // if no output channel is loaded, add only the output channel
         // if (currentChannel == null) {
 
-        // thingBuilder.withChannel(channel);
+        // thingBuilder.withChannel(channel); // Immutable List exception or similar
         // currentChannel = channelId;
         /*
          * Thing thing = thingBuilder.build();
@@ -427,19 +445,20 @@ public class DsDeviceHandler extends BaseThingHandler implements DeviceStatusLis
         if (!channelList.isEmpty()) {
 
             for (int i = 0; i < channelList.size(); i++) {
+                // delete current load output channel
                 // if (channelList.get(i).getUID().getId().contains(currentChannel)) {
+                // why sometimes are more than one channel from the same type are loaded?
                 if (channelList.get(i).getUID().getId().contains(CHANNEL_BRIGHTNESS)
                         || channelList.get(i).getUID().getId().contains(CHANNEL_SHADE)
                         || channelList.get(i).getUID().getId().contains(CHANNEL_LIGHT_SWITCH)) {
                     logger.debug(channelList.get(i).getUID().getId());
                     channelList.remove(i);
-                    // break;
                 }
             }
         }
 
         channelList.add(channel);
-        logger.debug(channelList.toString());
+        // logger.debug(channelList.toString());
         ThingBuilder thingBuilder = editThing();
         thingBuilder.withChannels(channelList);
         updateThing(thingBuilder.build());
@@ -448,6 +467,8 @@ public class DsDeviceHandler extends BaseThingHandler implements DeviceStatusLis
 
     @Override
     public void thingUpdated(Thing thing) {
+        // TODO: perhaps our own sequence, because we not really need to dispose() and initialize() the thing after an
+        // update
         dispose();
         this.thing = thing;
         initialize();
@@ -455,11 +476,12 @@ public class DsDeviceHandler extends BaseThingHandler implements DeviceStatusLis
 
     private void onDeviceStateInitial(Device device) {
         if (device != null) {
+            // TODO: add rollershutter and check loaded channels e.g. brightness/switch sensor channels (may we need an
+            // array or something else to find out if sensor channels are loaded)
             logger.debug("initial channel update");
             updateState(new ChannelUID(getThing().getUID(), CHANNEL_BRIGHTNESS),
                     new PercentType(fromValueToPercent(device.getOutputValue(), device.getMaxOutputValue())));
 
-            // nötig oder passiert das von selbst
             if (device.isOn()) {
                 updateState(new ChannelUID(getThing().getUID(), CHANNEL_BRIGHTNESS), OnOffType.ON);
             } else {
@@ -475,12 +497,11 @@ public class DsDeviceHandler extends BaseThingHandler implements DeviceStatusLis
             updateState(new ChannelUID(getThing().getUID(), CHANNEL_POWER_CONSUMPTION),
                     new DecimalType(device.getPowerConsumption()));
         }
-        // TOTO: rollershutter hinzufügen und dimm+switch unterscheiden
+
     }
 
     @Override
     public synchronized void onSceneConfigAdded(short sceneId) {
-        // TODO: save DeviceSceneSpec persistent to Thing
         String saveScene = "";
         DeviceSceneSpec sceneSpec = device.getSceneConfig(sceneId);
         if (sceneSpec != null) {
@@ -507,9 +528,11 @@ public class DsDeviceHandler extends BaseThingHandler implements DeviceStatusLis
     @SuppressWarnings("null")
     private void saveConfigSceneSpecificationIntoDevice(Device device) {
         if (device != null) {
-            // TODO: get persistence saved DeviceSceneSpec from Thing and save it in the Device, must call after Bride
-            // is
-            // added to ThingHandler
+            /*
+             * get persistently saved DeviceSceneSpec from Thing and save it in the Device, have to call after the
+             * device is
+             * added (onDeviceAdded()) to ThingHandler
+             */
             Map<String, String> propertries = this.getThing().getProperties();
             String sceneSave;
             for (short i = 0; i < 128; i++) {

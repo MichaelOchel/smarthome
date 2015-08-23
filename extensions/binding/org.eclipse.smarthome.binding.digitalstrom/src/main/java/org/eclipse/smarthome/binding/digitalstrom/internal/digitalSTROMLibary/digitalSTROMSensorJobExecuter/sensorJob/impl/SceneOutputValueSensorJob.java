@@ -56,7 +56,7 @@ public class SceneOutputValueSensorJob implements SensorJob {
 
         if (sceneValue != -1) {
             this.device.setSceneOutputValue(this.sceneId, sceneValue);
-            logger.debug("UPDATED sceneOutputValue for dsid: " + this.device.getDSID() + ", sceneID: " + sceneId
+            logger.info("UPDATED sceneOutputValue for dsid: " + this.device.getDSID() + ", sceneID: " + sceneId
                     + ", value: " + sceneValue);
 
         }

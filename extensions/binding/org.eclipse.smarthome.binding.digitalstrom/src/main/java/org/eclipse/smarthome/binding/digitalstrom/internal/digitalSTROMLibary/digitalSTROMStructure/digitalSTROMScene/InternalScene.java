@@ -91,7 +91,7 @@ public class InternalScene {
             this.devices.add(device);
         }
         int prio = 0;
-        if (this.listener == null) {
+        if (this.listener != null) {
             prio = 1000;
         } else {
             prio = 2000;
@@ -106,7 +106,7 @@ public class InternalScene {
 
     public void checkDeviceSceneConfig() {
         int prio = 0;
-        if (this.listener == null) {
+        if (this.listener != null) {
             prio = 1000;
         } else {
             prio = 2000;

@@ -23,7 +23,7 @@ public class DigitalSTROMConfig {
     public static int BIN_CHECK_TIME = DEFAULT_BIN_CHECK_TIME; // in milliseconds
 
     // Device update config
-    public static final int DEFAULT_POLLING_FREQUENCY = 60; // in seconds
+    public static final int DEFAULT_POLLING_FREQUENCY = 30000; // in seconds
     public static int POLLING_FREQUENCY = DEFAULT_POLLING_FREQUENCY; // in seconds
 
     /* Sensordata */

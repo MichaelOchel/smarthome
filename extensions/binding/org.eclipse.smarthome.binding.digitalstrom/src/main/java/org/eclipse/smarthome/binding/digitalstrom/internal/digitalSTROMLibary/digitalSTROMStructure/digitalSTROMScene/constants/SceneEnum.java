@@ -88,8 +88,8 @@ public enum SceneEnum implements Scene {
     PRESET_44(31), // Set output value to Preset 44
 
     DEEP_OFF(68),
-    STANDBY(67),
     ENERGY_OVERLOAD(66),
+    STANDBY(67),
     ZONE_ACTIVE(75),
     ALARM_SIGNAL(74),
     AUTO_STANDBY(64),
@@ -98,7 +98,18 @@ public enum SceneEnum implements Scene {
     SLEEPING(69),
     WAKEUP(70),
     DOOR_BELL(73),
-    PANIC(65);
+    PANIC(65),
+    FIRE(76),
+    ALARM_1(74),
+    ALARM_2(83),
+    ALARM_3(84),
+    ALARM_4(85),
+    WIND(86),
+    NO_WIND(87),
+    RAIN(88),
+    NO_RAIN(89),
+    HAIL(90),
+    NO_HAIL(91);
 
     private final int sceneNumber;
 

@@ -29,7 +29,8 @@ public abstract class AbstractSensorJobExecutor {
     private List<CircuitScheduler> circuitSchedulerList = Collections
             .synchronizedList(new LinkedList<CircuitScheduler>());
 
-    Thread executer = new Thread() {
+    Thread executer = null;
+    Runnable executerRunnable = new Runnable() {
         @Override
         public void run() {
             logger.debug("start SensorJobExecuter");
@@ -61,7 +62,9 @@ public abstract class AbstractSensorJobExecutor {
                     } else {
                         sleepTime = lowestNextExecutionTime - System.currentTimeMillis();
                         if (sleepTime > 0) {
-                            sleep(sleepTime);
+                            synchronized (this) {
+                                wait(sleepTime);
+                            }
                         }
                     }
                 } catch (InterruptedException e) {
@@ -104,6 +107,8 @@ public abstract class AbstractSensorJobExecutor {
      * Starts the SensorJobExecuter Thread.
      */
     public void startExecuter() {
+        this.shutdown = false;
+        this.executer = new Thread(executerRunnable);
         executer.start();
     }
 

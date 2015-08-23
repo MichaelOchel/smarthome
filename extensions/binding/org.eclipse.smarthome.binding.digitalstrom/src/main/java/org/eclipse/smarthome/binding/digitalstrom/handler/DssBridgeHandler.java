@@ -84,11 +84,12 @@ public class DssBridgeHandler extends BaseBridgeHandler
             logger.debug("Initializing DigitalSTROM Manager.");
             if (connMan == null) {
                 this.connMan = new DigitalSTROMConnectionManagerImpl(configuration.get(HOST).toString(),
-                        configuration.get(USER_NAME).toString(), configuration.get(PASSWORD).toString(),
-                        configuration.get(APPLICATION_TOKEN).toString(), false, this);
+                        configuration.get(USER_NAME).toString(), configuration.get(PASSWORD).toString(), null, false,
+                        this);// configuration.get(APPLICATION_TOKEN).toString()
             } else {
                 connMan.registerConnectionListener(this);
             }
+
             this.structMan = new DigitalSTROMStructureManagerImpl();
             this.sceneMan = new DigitalSTROMSceneManagerImpl(this.connMan, this.structMan);
             this.devStatMan = new DigitalSTROMDeviceStatusManagerImpl(this.connMan, this.structMan, this.sceneMan);
@@ -96,9 +97,6 @@ public class DssBridgeHandler extends BaseBridgeHandler
             // this.devStatMan.registerTotalPowerConsumptionListener(this);
             this.devStatMan.start();
 
-            if (!connMan.checkConnection()) {
-                return;
-            }
             // get Configurations
             if (configuration.get(DigitalSTROMBindingConstants.SENSOR_DATA_UPDATE_INTERVALL) != null
                     && !configuration.get(DigitalSTROMBindingConstants.SENSOR_DATA_UPDATE_INTERVALL).toString().trim()
@@ -330,12 +328,6 @@ public class DssBridgeHandler extends BaseBridgeHandler
     }
 
     public List<Device> getDevices() {
-        // hmmm welches ist richtig
-        // if(connMan != null){
-        // if(connMan.checkConnection()){
-        // return connMan.getDigitalSTROMAPI().getApartmentDevices(connMan.getSessionToken(), false);
-        // }
-        // }
         return this.structMan.getDeviceMap() != null ? new LinkedList<Device>(this.structMan.getDeviceMap().values())
                 : null;
     }

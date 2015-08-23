@@ -115,4 +115,6 @@ public interface DigitalSTROMSceneManager {
     boolean scenesGenerated();
 
     void generateScenes();
+
+    boolean isDiscoveryRegistrated();
 }

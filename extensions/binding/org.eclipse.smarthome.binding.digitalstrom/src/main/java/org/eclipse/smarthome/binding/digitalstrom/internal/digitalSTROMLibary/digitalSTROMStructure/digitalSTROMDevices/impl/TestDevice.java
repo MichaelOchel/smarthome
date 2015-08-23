@@ -1148,6 +1148,12 @@ public class TestDevice implements Device {
          */
     }
 
+    @Override
+    public List<Short> getSavedScenes() {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
     // List<SceneStatusListener> sceneStatusListeners;
 
     /*
