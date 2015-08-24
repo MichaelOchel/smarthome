@@ -1,3 +1,10 @@
+/**
+ * Copyright (c) 2014-2015 openHAB UG (haftungsbeschraenkt) and others.
+ * All rights reserved. This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License v1.0
+ * which accompanies this distribution, and is available at
+ * http://www.eclipse.org/legal/epl-v10.html
+ */
 package org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.digitalSTROMStructure.digitalSTROMDevices.deviceParameters;
 /**
  * Copyright (c) 2010-2014, openHAB.org and others.
@@ -12,6 +19,8 @@ import org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.di
 import org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.digitalSTROMStructure.digitalSTROMScene.constants.Scene;
 import org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.digitalSTROMStructure.digitalSTROMScene.constants.SceneEnum;
 import org.json.simple.JSONObject;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * @author Alexander Betker
@@ -19,7 +28,7 @@ import org.json.simple.JSONObject;
  */
 public class JSONDeviceSceneSpecImpl implements DeviceSceneSpec {
 
-    // private static final Logger logger = LoggerFactory.getLogger(JSONDeviceSceneSpecImpl.class);
+    private static final Logger logger = LoggerFactory.getLogger(JSONDeviceSceneSpecImpl.class);
 
     private Scene scene = null;
     private boolean dontcare = false;
@@ -34,8 +43,7 @@ public class JSONDeviceSceneSpecImpl implements DeviceSceneSpec {
                 val = Integer.parseInt(
                         jObject.get(JSONApiResponseKeysEnum.DEVICE_GET_SCENE_MODE_SCENE_ID.getKey()).toString());
             } catch (java.lang.NumberFormatException e) {
-                // logger.error
-                System.err.println("NumberFormatException by getting sceneID: "
+                logger.error("NumberFormatException by getting sceneID: "
                         + jObject.get(JSONApiResponseKeysEnum.DEVICE_GET_SCENE_MODE_SCENE_ID.getKey()).toString());
             }
 

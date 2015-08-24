@@ -1,3 +1,10 @@
+/**
+ * Copyright (c) 2014-2015 openHAB UG (haftungsbeschraenkt) and others.
+ * All rights reserved. This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License v1.0
+ * which accompanies this distribution, and is available at
+ * http://www.eclipse.org/legal/epl-v10.html
+ */
 package org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.digitalSTROMConfiguration;
 
 public class DigitalSTROMConfig {
@@ -15,9 +22,14 @@ public class DigitalSTROMConfig {
     /* Internal Configurations */
 
     // Trash Bin Config
-    public static final int DEFAULT_TRASH_DEVICE_DELEATE_TIME = 7;// days after the trash devices get deleted
-    public static int TRASH_DEVICE_DELEATE_TIME = DEFAULT_TRASH_DEVICE_DELEATE_TIME;// days after the trash devices get
-                                                                                    // deleted
+    /**
+     * default days after the trash devices get deleted
+     */
+    public static final int DEFAULT_TRASH_DEVICE_DELEATE_TIME = 7;
+    /**
+     * sets days after the trash devices get deleted
+     */
+    public static int TRASH_DEVICE_DELEATE_TIME = DEFAULT_TRASH_DEVICE_DELEATE_TIME;
 
     public static final int DEFAULT_BIN_CHECK_TIME = 360000; // in milliseconds
     public static int BIN_CHECK_TIME = DEFAULT_BIN_CHECK_TIME; // in milliseconds

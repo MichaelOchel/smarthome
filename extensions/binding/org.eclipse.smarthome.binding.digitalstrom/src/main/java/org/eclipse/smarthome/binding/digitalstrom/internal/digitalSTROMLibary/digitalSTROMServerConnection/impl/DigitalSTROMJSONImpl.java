@@ -1,3 +1,10 @@
+/**
+ * Copyright (c) 2014-2015 openHAB UG (haftungsbeschraenkt) and others.
+ * All rights reserved. This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License v1.0
+ * which accompanies this distribution, and is available at
+ * http://www.eclipse.org/legal/epl-v10.html
+ */
 package org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.digitalSTROMServerConnection.impl;
 /**
  * Copyright (c) 2010-2014, openHAB.org and others.
@@ -1092,8 +1099,6 @@ public class DigitalSTROMJSONImpl implements DigitalSTROMAPI {
             }
 
             JSONObject responseObj = JSONResponseHandler.toJSONObject(response);
-            // System.out.println(response);
-            // System.out.println(JSONResponseHandler.checkResponse(responseObj));
             if (JSONResponseHandler.checkResponse(responseObj)) {
                 JSONObject latestObj = JSONResponseHandler.getResultJSONObject(responseObj);
 

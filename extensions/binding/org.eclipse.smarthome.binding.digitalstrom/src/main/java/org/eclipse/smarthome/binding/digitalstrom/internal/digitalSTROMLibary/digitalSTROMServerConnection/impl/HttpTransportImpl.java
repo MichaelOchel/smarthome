@@ -1,3 +1,10 @@
+/**
+ * Copyright (c) 2014-2015 openHAB UG (haftungsbeschraenkt) and others.
+ * All rights reserved. This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License v1.0
+ * which accompanies this distribution, and is available at
+ * http://www.eclipse.org/legal/epl-v10.html
+ */
 package org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.digitalSTROMServerConnection.impl;
 /**
  * Copyright (c) 2010-2014, openHAB.org and others.
@@ -36,6 +43,8 @@ import javax.net.ssl.X509TrustManager;
 
 import org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.digitalSTROMConfiguration.DigitalSTROMConfig;
 import org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.digitalSTROMServerConnection.HttpTransport;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * The {@link HttpTransportImpl} executes an request to the DigitalSTROM-Server.
@@ -62,7 +71,7 @@ public class HttpTransportImpl implements HttpTransport {
     private final String HOSTNAME_WRONG = "HTTPS hostname wrong";
     private final String UNKOWN_HOST = "unknownHost";
 
-    // private static final Logger logger = LoggerFactory.getLogger(HttpTransport.class);
+    private static final Logger logger = LoggerFactory.getLogger(HttpTransportImpl.class);
 
     private String uri;
     private String trustedCertPath;
@@ -97,7 +106,7 @@ public class HttpTransportImpl implements HttpTransport {
 
         // Check SSL Certificate
         if (DigitalSTROMConfig.TRUST_CERT_PATH != null) {
-            System.out.println("Certification path is set, generate the certification and accept it.");
+            logger.debug("Certification path is set, generate the certification and accept it.");
             trustedCertPath = DigitalSTROMConfig.TRUST_CERT_PATH;
 
             File dssCert = new File(trustedCertPath);
@@ -105,7 +114,7 @@ public class HttpTransportImpl implements HttpTransport {
                 try {
                     certInputStream = new FileInputStream(dssCert);
                 } catch (FileNotFoundException e) {
-                    System.err.println("Can't find a certificationfile at the certificationpath: " + trustedCertPath
+                    logger.error("Can't find a certificationfile at the certificationpath: " + trustedCertPath
                             + "\nPlease check the path!");
                 }
             } else {
@@ -114,7 +123,7 @@ public class HttpTransportImpl implements HttpTransport {
             setupWithCertPath();
             String conCheck = this.checkConnection();
             if (conCheck != null && conCheck.contains(CERT_EXCEPTION)) {
-                System.err.println("Invalid certification at path " + this.trustedCertPath);
+                logger.error("Invalid certification at path " + this.trustedCertPath);
 
             }
 
@@ -128,7 +137,7 @@ public class HttpTransportImpl implements HttpTransport {
             uri = "https://" + uri;
         if (uri.split(":").length != 3)
             uri = uri + ":8080";
-        System.out.println(uri);
+        logger.debug(uri);
         return uri;
     }
 
@@ -163,7 +172,7 @@ public class HttpTransportImpl implements HttpTransport {
                         connection.connect();
                         responseCode = connection.getResponseCode();
                     } catch (SocketTimeoutException e) {
-                        System.out.println(e.getMessage() + " : " + request);
+                        logger.debug(e.getMessage() + " : " + request);
                         return null;
                     }
 
@@ -186,7 +195,7 @@ public class HttpTransportImpl implements HttpTransport {
                 }
 
             } catch (MalformedURLException e) {
-                System.err.println(
+                logger.error(
                         "MalformedURLException by executing jsonRequest: " + request + " ; " + e.getLocalizedMessage());
 
             } catch (IOException e) {
@@ -219,7 +228,7 @@ public class HttpTransportImpl implements HttpTransport {
                         connection.connect();
                         return connection.getResponseCode();
                     } catch (SocketTimeoutException e) {
-                        System.out.println(e.getMessage() + " : " + testRequest);
+                        logger.debug(e.getMessage() + " : " + testRequest);
                         return -4;
                     }
                 }
@@ -227,13 +236,12 @@ public class HttpTransportImpl implements HttpTransport {
             } catch (java.net.ConnectException e) {
                 return -3;
             } catch (MalformedURLException e) {
-                System.err.println("MalformedURLException by executing jsonRequest: " + testRequest + " ; "
+                logger.error("MalformedURLException by executing jsonRequest: " + testRequest + " ; "
                         + e.getLocalizedMessage());
                 return -2;
 
             } catch (IOException e) {
-                System.err.println(
-                        "IOException by executing jsonRequest: " + testRequest + " ; " + e.getLocalizedMessage());
+                logger.error("IOException by executing jsonRequest: " + testRequest + " ; " + e.getLocalizedMessage());
             } finally {
                 if (connection != null)
                     connection.disconnect();
@@ -245,29 +253,29 @@ public class HttpTransportImpl implements HttpTransport {
     /**** SSL Check ****/
 
     private void checkSSLCert() {
-        System.out.println("Check SSL Certificate");
+        logger.debug("Check SSL Certificate");
         String conCheck = checkConnection();
         if (conCheck != null) {
             switch (conCheck) {
                 case CERT_EXCEPTION:
-                    System.out.println("No certification installated");
+                    logger.debug("No certification installated");
                     trustedCertPath = DigitalSTROMConfig.TRUST_CERT_PATH;
                     if (trustedCertPath != null && !trustedCertPath.isEmpty()) {
-                        System.out.println("Certification path is set, generate the certification and accept it.");
+                        logger.debug("Certification path is set, generate the certification and accept it.");
                         setupWithCertPath();
                         conCheck = checkConnection();
                         if (conCheck != null && conCheck.contains(CERT_EXCEPTION)) {
-                            System.err.println("Invalid certification at path " + this.trustedCertPath);
+                            logger.error("Invalid certification at path " + this.trustedCertPath);
                             return;
                         }
                         // checkSSLCert();
                     } else {
                         // check SSL certificate is installated
-                        System.out.println("No certification path is set, accept all certifications.");
+                        logger.debug("No certification path is set, accept all certifications.");
                         setupAcceptAllSSLCertificats();
                         conCheck = checkConnection();
                         if (conCheck != null && conCheck.contains(CERT_EXCEPTION)) {
-                            System.err.println("Invalid certification at parth " + this.trustedCertPath);
+                            logger.error("Invalid certification at parth " + this.trustedCertPath);
                             return;
                         }
                         checkSSLCert();
@@ -275,11 +283,11 @@ public class HttpTransportImpl implements HttpTransport {
                     break;
                 case HOSTNAME_VERIFIER:
 
-                    System.out.println("Can't verifi hostname, accept hostname: dss.local.");
+                    logger.debug("Can't verifi hostname, accept hostname: dss.local.");
                     this.setupHostnameVerifierForDssLocal();
                     conCheck = checkConnection();
                     if (conCheck != null && conCheck.contains(HOSTNAME_VERIFIER)) {
-                        System.out.println("Can't verifi hostname, accept all hostnames");
+                        logger.debug("Can't verifi hostname, accept all hostnames");
                         this.setupHostnameVerifier();
                     }
                     checkSSLCert();
@@ -290,7 +298,7 @@ public class HttpTransportImpl implements HttpTransport {
                     return;
             }
         } else {
-            System.out.println("All right, SSL Certificate is installeted");
+            logger.debug("All right, SSL Certificate is installeted");
         }
 
     }
@@ -306,12 +314,12 @@ public class HttpTransportImpl implements HttpTransport {
             e.printStackTrace();
         } catch (IOException e) {
             String msg = e.getMessage();
-            System.out.println(msg);
+            logger.debug(msg);
             if (e instanceof javax.net.ssl.SSLHandshakeException) {
-                System.out.println(e.getMessage());
+                logger.debug(e.getMessage());
                 if (msg.contains(CERT_EXCEPTION) || msg.contains(PKIX_PATH_FAILD)) {
                     if (msg.contains(HOSTNAME_VERIFIER)) {
-                        // System.out.println("Hostname");
+                        // logger.debug("Hostname");
                         return HOSTNAME_VERIFIER;
                     }
                     return CERT_EXCEPTION;
@@ -322,7 +330,7 @@ public class HttpTransportImpl implements HttpTransport {
                 return HOSTNAME_VERIFIER;
             }
             if (e instanceof java.net.UnknownHostException) {
-                System.err.println("Can't find host: " + msg);
+                logger.error("Can't find host: " + msg);
                 return UNKOWN_HOST;
             }
             e.printStackTrace();
@@ -376,7 +384,7 @@ public class HttpTransportImpl implements HttpTransport {
         } catch (CertificateException e) {
             // TODO Auto-generated catch block
             if (e.getMessage().contains(NO_CERT_AT_PATH)) {
-                System.err.println("Can't find a certificationfile at the certificationpath: " + trustedCertPath
+                logger.error("Can't find a certificationfile at the certificationpath: " + trustedCertPath
                         + "\nPlease check the path!");
                 return;
             } else {

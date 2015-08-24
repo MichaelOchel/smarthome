@@ -1,6 +1,5 @@
 /**
- * Copyright (c) 2010-2014, openHAB.org and others.
- *
+ * Copyright (c) 2014-2015 openHAB UG (haftungsbeschraenkt) and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -31,6 +30,8 @@ import org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.di
 import org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.digitalSTROMStructure.digitalSTROMScene.InternalScene;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * The {@link JSONDeviceImpl} is the implementation of the {@link Device}.
@@ -41,7 +42,7 @@ import org.json.simple.JSONObject;
  */
 public class JSONDeviceImpl implements Device {
 
-    // private static final Logger logger = LoggerFactory.getLogger(JSONDeviceImpl.class);
+    private static final Logger logger = LoggerFactory.getLogger(JSONDeviceImpl.class);
 
     private DSID dsid = null;
 
@@ -151,7 +152,7 @@ public class JSONDeviceImpl implements Device {
             try {
                 this.zoneId = Integer.parseInt(zoneStr);
             } catch (java.lang.NumberFormatException e) {
-                System.err.println("NumberFormatException by parsing zoneId: " + zoneStr);
+                logger.error("NumberFormatException by parsing zoneId: " + zoneStr);
             }
         }
 
@@ -165,7 +166,7 @@ public class JSONDeviceImpl implements Device {
                     try {
                         tmp = Short.parseShort(value);
                     } catch (java.lang.NumberFormatException e) {
-                        System.err.println("NumberFormatException by parsing groups: " + value);
+                        logger.error("NumberFormatException by parsing groups: " + value);
                     }
 
                     if (tmp != -1) {
@@ -183,7 +184,7 @@ public class JSONDeviceImpl implements Device {
             try {
                 tmp = Integer.parseInt(object.get(JSONApiResponseKeysEnum.DEVICE_OUTPUT_MODE.getKey()).toString());
             } catch (java.lang.NumberFormatException e) {
-                System.err.println("NumberFormatException by parsing outputmode: "
+                logger.error("NumberFormatException by parsing outputmode: "
                         + object.get(JSONApiResponseKeysEnum.DEVICE_OUTPUT_MODE.getKey()).toString());
             }
 
@@ -672,22 +673,13 @@ public class JSONDeviceImpl implements Device {
     @Override
     public void checkSceneConfig(Short sceneNumber, int prio) {
         if (!containsSceneConfig(sceneNumber)) {
+            this.deviceStateUpdates
+                    .add(new DeviceStateUpdateImpl(DeviceStateUpdate.UPDATE_SCENE_CONFIG, prio + sceneNumber));
 
-            if (this.deviceStateUpdates
-                    .add(new DeviceStateUpdateImpl(DeviceStateUpdate.UPDATE_SCENE_CONFIG, prio + sceneNumber))) {
-                // System.out.println(
-                // "Device " + dsid.getValue() + " add " + DeviceStateUpdate.UPDATE_SCENE_CONFIG + " with prio "
-                // + prio + " to deviceStateUpdates, is-Device-Uptodate: " + this.isDeviceUpToDate());
-            }
         }
         if (sceneOutputMap.get(sceneNumber) == null) {
-
-            if (this.deviceStateUpdates
-                    .add(new DeviceStateUpdateImpl(DeviceStateUpdate.UPDATE_SCENE_OUTPUT, prio + sceneNumber))) {
-                // System.out.println(
-                // "Device " + dsid.getValue() + " add " + DeviceStateUpdate.UPDATE_SCENE_OUTPUT + " with prio "
-                // + prio + " to deviceStateUpdates, is-Device-Uptodate: " + this.isDeviceUpToDate());
-            }
+            this.deviceStateUpdates
+                    .add(new DeviceStateUpdateImpl(DeviceStateUpdate.UPDATE_SCENE_OUTPUT, prio + sceneNumber));
         }
     }
 
@@ -1067,7 +1059,7 @@ public class JSONDeviceImpl implements Device {
             case DigitalSTROMConfig.REFRESH_PRIORITY_NEVER:
                 return null;
             default:
-                System.err.println("Sensor data update priority do not exist! Please check the input!");
+                logger.error("Sensor data update priority do not exist! Please check the input!");
                 return null;
         }
         return priority;
@@ -1207,7 +1199,7 @@ public class JSONDeviceImpl implements Device {
     }
 
     private void setCachedMeterData() {
-        System.out.println("load cached sensor data");
+        logger.debug("load cached sensor data");
         Integer[] cachedSensorData = this.cachedSensorMeterData.get(this.getOutputValue());
         if (cachedSensorData != null) {
             if (cachedSensorData[0] != null
@@ -1244,7 +1236,7 @@ public class JSONDeviceImpl implements Device {
         }
         /*
          * if(isAddToESH){
-         * System.out.println("Add deviceStatusUpdate command {} to eshThingUpdates" + deviceStateUpdate.getType());
+         * logger.debug("Add deviceStatusUpdate command {} to eshThingUpdates" + deviceStateUpdate.getType());
          * this.eshThingStateUpdates.add(deviceStateUpdate);
          * }else{
          * this.eshThingStateUpdates.clear();

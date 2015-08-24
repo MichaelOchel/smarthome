@@ -1,3 +1,10 @@
+/**
+ * Copyright (c) 2014-2015 openHAB UG (haftungsbeschraenkt) and others.
+ * All rights reserved. This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License v1.0
+ * which accompanies this distribution, and is available at
+ * http://www.eclipse.org/legal/epl-v10.html
+ */
 package org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.digitalSTROMStructure.digitalSTROMScene;
 
 import java.util.Collections;
@@ -6,7 +13,6 @@ import java.util.List;
 
 import org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.digitalSTROMListener.SceneStatusListener;
 import org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.digitalSTROMStructure.digitalSTROMDevices.Device;
-import org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.digitalSTROMStructure.digitalSTROMDevices.impl.TestDevice;
 
 public class InternalScene {
 
@@ -111,10 +117,8 @@ public class InternalScene {
         } else {
             prio = 2000;
         }
-        // System.out.println("deivces = " + devices);
         if (devices != null) {
             for (Device device : devices) {
-                // System.out.println("check device " + device.getDSID().getValue());
                 device.checkSceneConfig(SCENE_ID, prio);
             }
         }
@@ -131,7 +135,7 @@ public class InternalScene {
         }
     }
 
-    public void removeDevice(TestDevice device) {
+    public void removeDevice(Device device) {
         this.devices.remove(device);
     }
 

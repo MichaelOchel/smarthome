@@ -1,3 +1,10 @@
+/**
+ * Copyright (c) 2014-2015 openHAB UG (haftungsbeschraenkt) and others.
+ * All rights reserved. This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License v1.0
+ * which accompanies this distribution, and is available at
+ * http://www.eclipse.org/legal/epl-v10.html
+ */
 package org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.digitalSTROMManager.impl;
 
 import java.net.HttpURLConnection;
@@ -45,6 +52,12 @@ public class DigitalSTROMConnectionManagerImpl implements DigitalSTROMConnection
     }
 
     public DigitalSTROMConnectionManagerImpl(String host, String username, String password,
+            DigitalSTROMConnectionListener connectionListener) {
+        this.connListener = connectionListener;
+        init(host, -1, -1, username, password, null);
+    }
+
+    public DigitalSTROMConnectionManagerImpl(String host, String username, String password, String applicationToken,
             DigitalSTROMConnectionListener connectionListener) {
         this.connListener = connectionListener;
         init(host, -1, -1, username, password, null);

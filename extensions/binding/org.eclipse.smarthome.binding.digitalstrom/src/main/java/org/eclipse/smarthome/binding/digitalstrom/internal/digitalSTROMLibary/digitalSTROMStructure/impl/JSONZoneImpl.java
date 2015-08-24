@@ -1,3 +1,10 @@
+/**
+ * Copyright (c) 2014-2015 openHAB UG (haftungsbeschraenkt) and others.
+ * All rights reserved. This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License v1.0
+ * which accompanies this distribution, and is available at
+ * http://www.eclipse.org/legal/epl-v10.html
+ */
 package org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.digitalSTROMStructure.impl;
 /**
  * Copyright (c) 2010-2014, openHAB.org and others.
@@ -18,6 +25,8 @@ import org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.di
 import org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.digitalSTROMStructure.digitalSTROMDevices.impl.JSONDeviceImpl;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * @author Alexander Betker
@@ -25,7 +34,7 @@ import org.json.simple.JSONObject;
  */
 public class JSONZoneImpl implements Zone {
 
-    // private static final Logger logger = LoggerFactory.getLogger(JSONZoneImpl.class);
+    private static final Logger logger = LoggerFactory.getLogger(JSONZoneImpl.class);
 
     private int zoneId = 0;
     private String name = null;
@@ -56,8 +65,7 @@ public class JSONZoneImpl implements Zone {
             try {
                 this.zoneId = Integer.parseInt(zoneIdStr);
             } catch (java.lang.NumberFormatException e) {
-                // logger.error
-                System.out.println("NumberFormatException by getting zoneID: " + zoneIdStr);
+                logger.error("NumberFormatException by getting zoneID: " + zoneIdStr);
             }
         }
 

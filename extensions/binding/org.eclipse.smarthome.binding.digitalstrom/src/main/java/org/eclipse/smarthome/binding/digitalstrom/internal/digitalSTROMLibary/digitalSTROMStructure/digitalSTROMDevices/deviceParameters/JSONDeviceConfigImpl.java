@@ -1,3 +1,10 @@
+/**
+ * Copyright (c) 2014-2015 openHAB UG (haftungsbeschraenkt) and others.
+ * All rights reserved. This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License v1.0
+ * which accompanies this distribution, and is available at
+ * http://www.eclipse.org/legal/epl-v10.html
+ */
 package org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.digitalSTROMStructure.digitalSTROMDevices.deviceParameters;
 /**
  * Copyright (c) 2010-2014, openHAB.org and others.
@@ -10,6 +17,8 @@ package org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.d
 
 import org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.digitalSTROMServerConnection.constants.JSONApiResponseKeysEnum;
 import org.json.simple.JSONObject;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * @author Alexander Betker
@@ -17,7 +26,7 @@ import org.json.simple.JSONObject;
  */
 public class JSONDeviceConfigImpl implements DeviceConfig {
 
-    // private static final Logger logger = LoggerFactory.getLogger(JSONDeviceConfigImpl.class);
+    private static final Logger logger = LoggerFactory.getLogger(JSONDeviceConfigImpl.class);
 
     private int class_ = -1;
     private int index = -1;
@@ -29,8 +38,7 @@ public class JSONDeviceConfigImpl implements DeviceConfig {
                 class_ = Integer
                         .parseInt(object.get(JSONApiResponseKeysEnum.DEVICE_GET_CONFIG_CLASS.getKey()).toString());
             } catch (java.lang.NumberFormatException e) {
-                // logger.error
-                System.err.println("NumberFormatException by getting class: "
+                logger.error("NumberFormatException by getting class: "
                         + object.get(JSONApiResponseKeysEnum.DEVICE_GET_CONFIG_CLASS.getKey()).toString());
             }
         }
@@ -40,8 +48,7 @@ public class JSONDeviceConfigImpl implements DeviceConfig {
                 index = Integer
                         .parseInt(object.get(JSONApiResponseKeysEnum.DEVICE_GET_CONFIG_INDEX.getKey()).toString());
             } catch (java.lang.NumberFormatException e) {
-                // logger.error
-                System.err.println("NumberFormatException by getting index: "
+                logger.error("NumberFormatException by getting index: "
                         + object.get(JSONApiResponseKeysEnum.DEVICE_GET_CONFIG_INDEX.getKey()).toString());
             }
         }
@@ -51,8 +58,7 @@ public class JSONDeviceConfigImpl implements DeviceConfig {
                 value = Integer
                         .parseInt(object.get(JSONApiResponseKeysEnum.DEVICE_GET_CONFIG_VALUE.getKey()).toString());
             } catch (java.lang.NumberFormatException e) {
-                // logger.error
-                System.err.println("NumberFormatException by getting value: "
+                logger.error("NumberFormatException by getting value: "
                         + object.get(JSONApiResponseKeysEnum.DEVICE_GET_CONFIG_VALUE.getKey()).toString());
             }
         }

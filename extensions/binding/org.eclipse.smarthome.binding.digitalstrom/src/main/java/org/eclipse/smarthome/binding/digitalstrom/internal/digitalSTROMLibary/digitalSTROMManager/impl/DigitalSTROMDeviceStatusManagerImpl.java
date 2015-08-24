@@ -1,3 +1,10 @@
+/**
+ * Copyright (c) 2014-2015 openHAB UG (haftungsbeschraenkt) and others.
+ * All rights reserved. This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License v1.0
+ * which accompanies this distribution, and is available at
+ * http://www.eclipse.org/legal/epl-v10.html
+ */
 package org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.digitalSTROMManager.impl;
 
 import java.util.Calendar;
@@ -34,10 +41,12 @@ import org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.di
 import org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.digitalSTROMStructure.digitalSTROMScene.InternalScene;
 import org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.digitalSTROMStructure.digitalSTROMScene.constants.ApartmentSceneEnum;
 import org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.digitalSTROMStructure.digitalSTROMScene.constants.SceneEnum;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class DigitalSTROMDeviceStatusManagerImpl implements DigitalSTROMDeviceStatusManager {
 
-    // private Logger logger = LoggerFactory.getLogger(DigitalSTROMDeviceStatusManagerImpl2.class);
+    private Logger logger = LoggerFactory.getLogger(DigitalSTROMDeviceStatusManagerImpl.class);
 
     private DigitalSTROMConnectionManager connMan;
     private DigitalSTROMStructureManager strucMan;
@@ -91,7 +100,7 @@ public class DigitalSTROMDeviceStatusManagerImpl implements DigitalSTROMDeviceSt
         public void run() {
             while (!shutdown) {
                 if (connMan.checkConnection()) {
-                    System.out.println("start");
+                    logger.debug("start");
                     HashMap<DSID, Device> tempDeviceMap;
                     if (strucMan.getDeviceMap() != null) {
                         tempDeviceMap = new HashMap<DSID, Device>(strucMan.getDeviceMap());
@@ -127,7 +136,7 @@ public class DigitalSTROMDeviceStatusManagerImpl implements DigitalSTROMDeviceSt
 
                             if (eshDevice.isPresent()) {
                                 if (eshDevice.isListenerRegisterd()) {
-                                    System.out.println("Check device updates");
+                                    logger.debug("Check device updates");
                                     // check device state updates from esh
                                     while (!eshDevice.isDeviceUpToDate()) {
                                         DeviceStateUpdate deviceStateUpdate = eshDevice.getNextDeviceUpdateState();
@@ -159,7 +168,7 @@ public class DigitalSTROMDeviceStatusManagerImpl implements DigitalSTROMDeviceSt
 
                                     // check if device need sensor data update
                                     if (!eshDevice.isSensorDataUpToDate()) {
-                                        System.out.println("Device need SensorData update");
+                                        logger.debug("Device need SensorData update");
 
                                         if (!eshDevice.isPowerConsumptionUpToDate()) {
 
@@ -185,7 +194,6 @@ public class DigitalSTROMDeviceStatusManagerImpl implements DigitalSTROMDeviceSt
                                     }
                                 } else {
                                     while (!eshDevice.isDeviceUpToDate()) {
-                                        System.out.println("Check device updates3");
                                         DeviceStateUpdate deviceStateUpdate = eshDevice.getNextDeviceUpdateState();
                                         if (deviceStateUpdate != null) {
                                             if (deviceStateUpdate.getType() == DeviceStateUpdate.UPDATE_SCENE_CONFIG
@@ -200,15 +208,14 @@ public class DigitalSTROMDeviceStatusManagerImpl implements DigitalSTROMDeviceSt
 
                         } else if (deviceDiscovery != null) {
 
-                            System.out.println("Found new Device!");
+                            logger.debug("Found new Device!");
 
                             if (trashDevices.isEmpty()) {
-                                // System.out.println(currentDevice);
                                 strucMan.addDeviceToStructure(currentDevice);
-                                System.out.println("trashDevices are empty, add Device with dSID "
+                                logger.debug("trashDevices are empty, add Device with dSID "
                                         + currentDevice.getDSID().toString() + "to the deviceMap!");
                             } else {
-                                System.out.println("Search device in trashDevices.");
+                                logger.debug("Search device in trashDevices.");
 
                                 boolean found = false;
                                 for (TrashDevice trashDevice : trashDevices) {
@@ -217,54 +224,52 @@ public class DigitalSTROMDeviceStatusManagerImpl implements DigitalSTROMDeviceSt
                                         trashDevices.remove(trashDevice);
                                         strucMan.addDeviceToStructure(device);
                                         found = true;
-                                        System.out.println(
-                                                "Found device in trashDevices, add TrashDevice to the deviceMap!");
+                                        logger.debug("Found device in trashDevices, add TrashDevice to the deviceMap!");
                                     }
                                 }
 
                                 if (!found) {
                                     strucMan.addDeviceToStructure(currentDevice);
-                                    System.out.println(
-                                            "Can't find device in trashDevices, add Device with dSUID: {} to the deviceMap!"
-                                                    + currentDeviceDSID);
+                                    logger.debug(
+                                            "Can't find device in trashDevices, add Device with dSUID: {} to the deviceMap!",
+                                            currentDeviceDSID);
                                 }
                             }
-                            System.out.println("start");
                             if (deviceDiscovery != null) {
                                 if (currentDevice.isDeviceWithOutput()) {
                                     deviceDiscovery.onDeviceAdded(currentDevice);
-                                    System.out.println("inform DeviceStatusListener: \""
+                                    logger.debug("inform DeviceStatusListener: \""
                                             + DeviceStatusListener.DEVICE_DESCOVERY + "\" about Device with DSID: \""
                                             + currentDevice.getDSUID() + "\" added.");
                                 }
 
                             } else {
-                                System.out.println(
+                                logger.debug(
                                         "The digitalSTROM-Device-Discovery is disabled, can't inform device descovery about found device.");
                             }
                         }
                     }
 
                     if (!sceneMan.scenesGenerated() && sceneMan.isDiscoveryRegistrated()) {
-                        System.out.println("generateScenes");
+                        logger.debug("generateScenes");
                         sceneMan.generateScenes();
                     }
 
                     for (Device device : tempDeviceMap.values())
 
                     {
-                        System.out.println("Found removed Devices.");
+                        logger.debug("Found removed Devices.");
 
                         trashDevices.add(new TrashDevice(device));
                         strucMan.deleteDevice(device);
-                        System.out.println("Add Device: " + device.getDSID().getValue() + " to trashDevices");
+                        logger.debug("Add Device: " + device.getDSID().getValue() + " to trashDevices");
 
                         if (deviceDiscovery != null) {
                             deviceDiscovery.onDeviceRemoved(device);
-                            System.out.println("inform DeviceStatusListener: " + DeviceStatusListener.DEVICE_DESCOVERY
+                            logger.debug("inform DeviceStatusListener: " + DeviceStatusListener.DEVICE_DESCOVERY
                                     + " about Device: " + device.getDSUID() + " removed.");
                         } else {
-                            System.out.println(
+                            logger.debug(
                                     "The digitalSTROM-Device-Discovery is disabled, can't inform device descovery about removed device.");
                         }
                     }
@@ -274,10 +279,9 @@ public class DigitalSTROMDeviceStatusManagerImpl implements DigitalSTROMDeviceSt
                     {
                         for (TrashDevice trashDevice : trashDevices) {
                             if (trashDevice.isTimeToDelete(Calendar.getInstance().get(Calendar.DAY_OF_YEAR))) {
-                                System.out.println("Found trashDevice that have to deleate!");
+                                logger.debug("Found trashDevice that have to deleate!");
                                 trashDevices.remove(trashDevice);
-                                System.out
-                                        .println("Delete trashDevice: " + trashDevice.getDevice().getDSID().getValue());
+                                logger.debug("Delete trashDevice: " + trashDevice.getDevice().getDSID().getValue());
                             }
                         }
                         lastBinCheck = System.currentTimeMillis();
@@ -298,12 +302,10 @@ public class DigitalSTROMDeviceStatusManagerImpl implements DigitalSTROMDeviceSt
         }
     };
 
-    // Thread schedduler2 = new Thread(pollingRunnable);
-
     @Override
     public void start() {
         // pollingJob = scheduler.scheduleAtFixedRate(pollingRunnable, 1, POLLING_FREQUENCY, TimeUnit.SECONDS);
-        System.out.println("start Thread");
+        logger.debug("start Thread");
         shutdown = false;
         schedduler2 = new Thread(pollingRunnable);
         schedduler2.start();
@@ -407,14 +409,13 @@ public class DigitalSTROMDeviceStatusManagerImpl implements DigitalSTROMDeviceSt
                     requestSucsessfull = this.digitalSTROMClient.callZoneScene(connMan.getSessionToken(),
                             scene.getZoneID(), null, scene.getGroupID(), null, SceneEnum.getScene(scene.getSceneID()),
                             true);
-                    System.out.println("scenecall sucsess?: " + requestSucsessfull);
                 } else {
                     requestSucsessfull = this.digitalSTROMClient.undoZoneScene(connMan.getSessionToken(),
                             scene.getZoneID(), null, scene.getGroupID(), null, SceneEnum.getScene(scene.getSceneID()));
                 }
             }
 
-            System.out.println("scenecall sucsess?: " + requestSucsessfull);
+            logger.debug("scenecall sucsess?: " + requestSucsessfull);
             if (requestSucsessfull) {
                 if (call_undo) {
                     scene.activateScene();
@@ -575,11 +576,10 @@ public class DigitalSTROMDeviceStatusManagerImpl implements DigitalSTROMDeviceSt
                 }
 
                 if (requestSucsessfull) {
-                    System.out.println(
-                            "Send {} command to DSS and updateInternalDeviceState" + deviceStateUpdate.getType());
+                    logger.debug("Send {} command to DSS and updateInternalDeviceState", deviceStateUpdate.getType());
                     device.updateInternalDeviceState(deviceStateUpdate);
                 } else {
-                    System.out.println("Can't send {} command to DSS!" + deviceStateUpdate.getType());
+                    logger.debug("Can't send {} command to DSS!", deviceStateUpdate.getType());
                 }
             }
         }
@@ -602,7 +602,7 @@ public class DigitalSTROMDeviceStatusManagerImpl implements DigitalSTROMDeviceSt
                 System.err.println("Sensor data update priority do not exist! Please check the input!");
                 return;
             }
-            System.out.println("Add new sensorJob with priority: {} to sensorJobExecuter" + priority);
+            logger.debug("Add new sensorJob with priority: {} to sensorJobExecuter", priority);
 
         }
     }
@@ -644,8 +644,8 @@ public class DigitalSTROMDeviceStatusManagerImpl implements DigitalSTROMDeviceSt
                 System.err.println("Sensor data update priority do not exist! Please check the input!");
                 return;
             }
-            System.out.println("Add new sensorJob with priority: {} to sensorJobExecuter"
-                    + new Integer(deviceStateUpdate.getValue()).toString().charAt(0));
+            logger.debug("Add new sensorJob with priority: {} to sensorJobExecuter",
+                    new Integer(deviceStateUpdate.getValue()).toString().charAt(0));
 
         }
     }
@@ -654,10 +654,10 @@ public class DigitalSTROMDeviceStatusManagerImpl implements DigitalSTROMDeviceSt
     public void registerDeviceListener(DeviceStatusListener deviceListener) {
         if (deviceListener != null) {
             String id = deviceListener.getID();
-            System.out.println("register DevListener with id: " + id);
+            logger.debug("register DevListener with id: " + id);
             if (id.equals(DeviceStatusListener.DEVICE_DESCOVERY)) {
                 this.deviceDiscovery = deviceListener;
-                System.out.println("register device descovery");
+                logger.debug("register device descovery");
             } else {
                 Device intDevice = strucMan.getDeviceByDSID(deviceListener.getID());
                 if (intDevice != null) {
@@ -711,7 +711,7 @@ public class DigitalSTROMDeviceStatusManagerImpl implements DigitalSTROMDeviceSt
         this.sceneMan.unregisterSceneListener(sceneListener);
         /*
          * if (!sceneMan.scenesGenerated()) {
-         * System.out.println("generateScenes");
+         * logger.debug("generateScenes");
          * sceneMan.generateScenes();
          * }
          */

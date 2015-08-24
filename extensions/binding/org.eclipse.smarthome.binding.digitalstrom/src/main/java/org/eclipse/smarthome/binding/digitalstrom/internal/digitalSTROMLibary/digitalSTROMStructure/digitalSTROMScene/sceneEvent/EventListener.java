@@ -1,64 +1,84 @@
+/**
+ * Copyright (c) 2014-2015 openHAB UG (haftungsbeschraenkt) and others.
+ * All rights reserved. This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License v1.0
+ * which accompanies this distribution, and is available at
+ * http://www.eclipse.org/legal/epl-v10.html
+ */
 package org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.digitalSTROMStructure.digitalSTROMScene.sceneEvent;
 
 import org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.digitalSTROMConfiguration.DigitalSTROMConfig;
-import org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.digitalSTROMManager.DigitalSTROMSceneManager;
 import org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.digitalSTROMManager.DigitalSTROMConnectionManager;
+import org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.digitalSTROMManager.DigitalSTROMSceneManager;
 import org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.digitalSTROMServerConnection.DigitalSTROMAPI;
 import org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.digitalSTROMServerConnection.HttpTransport;
 import org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.digitalSTROMServerConnection.constants.JSONApiResponseKeysEnum;
 import org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.digitalSTROMServerConnection.constants.JSONRequestConstants;
 import org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.digitalSTROMServerConnection.impl.JSONResponseHandler;
+import org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.digitalSTROMStructure.digitalSTROMDevices.Device;
+import org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.digitalSTROMStructure.digitalSTROMScene.InternalScene;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
- * If someone turns a device or a zone etc. on, we will get a notification
- * to update the state of the item
+ * If someone call or undo a scene the {@link DigitalSTROMSceneManager} will get a notification
+ * to update the state of the internal saved {@link InternalScene} or directly the {@link Device} if it was a
+ * device-scene.
  *
- * @author Alexander Betker
+ * @author Michael Ochel
+ * @author Matthias Siegele
  * @since 1.3.0
  *
  */
-public class EventListener extends Thread {
-    //
-    // private Logger logger = LoggerFactory.getLogger(DigitalSTROMEventListener.class);
+public class EventListener {
 
+    private Logger logger = LoggerFactory.getLogger(EventListener.class);
+
+    private Thread listener = null;
     private boolean shutdown = false;
     private final String EVENT_NAME = DigitalSTROMConfig.EVENT_NAME;
     private final int ID = 11;
     private final DigitalSTROMConnectionManager connManager;
 
-    // private int timeout = 1000;
-
-    private final String INVALID_SESSION = "Invalid session!";// Invalid
-                                                              // session!
-
-    /** Mapping digitalSTROM-Scene to digitalSTROM-State */
-    // private SceneToStateMapper stateMapper = new SceneToStateMapper();
+    private final String INVALID_SESSION = "Invalid session!";
 
     private HttpTransport transport = null;
-    // private JSONResponseHandler handler = null;
     private DigitalSTROMAPI digitalSTROM;
     DigitalSTROMSceneManager sceneManager;
 
-    public synchronized void shutdown() {
-        this.shutdown = true;
-        // this.sensorJobExecutor.shutdown();
-        unsubscribe();
-    }
-
-    public synchronized void wakeUp() {
-        this.shutdown = false;
-        this.subscribe();
-        this.run();
-    }
-
+    /**
+     *
+     * @param connectionManager
+     * @param sceneManager
+     */
     public EventListener(DigitalSTROMConnectionManager connectionManager, DigitalSTROMSceneManager sceneManager) {
         this.transport = connectionManager.getHttpTransport();
         this.digitalSTROM = connectionManager.getDigitalSTROMAPI();
         this.connManager = connectionManager;
         this.sceneManager = sceneManager;
 
+        this.subscribe();
+
+        listener = new Thread(runableListener);
+        listener.start();
+    }
+
+    /**
+     *
+     */
+    public synchronized void shutdown() {
+        this.shutdown = true;
+        unsubscribe();
+        this.listener = null;
+    }
+
+    /**
+     *
+     */
+    public synchronized void start() {
+        this.shutdown = false;
         this.subscribe();
     }
 
@@ -70,58 +90,60 @@ public class EventListener extends Thread {
 
             if (!transmitted) {
                 this.shutdown = true;
-                System.err.println("Couldn't subscribe eventListener ... maybe timeout because system is to busy ...");
+                logger.error("Couldn't subscribe eventListener ... maybe timeout because system is to busy ...");
             } else {
-                System.out.println("subscribe successfull");
+                logger.debug("subscribe successfull");
             }
         } else {
-            System.err.println("Couldn't subscribe eventListener because there is no token (no connection)");
+            logger.error("Couldn't subscribe eventListener because there is no token (no connection)");
         }
     }
 
-    @Override
-    public void run() {
-        // this.sensorJobExecutor = new SensorJobExecutor(digitalSTROM, connManager);
-        // sensorJobExecutor.start();
-        System.out.println("DigitalSTROMEventListener startet");
-        while (!this.shutdown) {
+    public Runnable runableListener = new Runnable() {
 
-            String request = this.getEventAsRequest(this.ID, 500);
+        @Override
+        public void run() {
 
-            if (request != null) {
-                // System.out.println("läuuuuft");
-                String response = this.transport.execute(request);
+            logger.debug("DigitalSTROMEventListener startet");
+            while (!shutdown) {
 
-                JSONObject responseObj = JSONResponseHandler.toJSONObject(response);
+                String request = getEventAsRequest(ID, 500);
 
-                if (JSONResponseHandler.checkResponse(responseObj)) {
-                    JSONObject obj = JSONResponseHandler.getResultJSONObject(responseObj);
+                if (request != null) {
+                    String response = transport.execute(request);
 
-                    if (obj != null && obj.get(JSONApiResponseKeysEnum.EVENT_GET_EVENT.getKey()) instanceof JSONArray) {
-                        JSONArray array = (JSONArray) obj.get(JSONApiResponseKeysEnum.EVENT_GET_EVENT.getKey());
-                        try {
-                            handleEvent(array);
-                        } catch (Exception e) {
-                            System.out.println("EXCEPTION in eventListener thread : " + e.getLocalizedMessage());
+                    JSONObject responseObj = JSONResponseHandler.toJSONObject(response);
+
+                    if (JSONResponseHandler.checkResponse(responseObj)) {
+                        JSONObject obj = JSONResponseHandler.getResultJSONObject(responseObj);
+
+                        if (obj != null
+                                && obj.get(JSONApiResponseKeysEnum.EVENT_GET_EVENT.getKey()) instanceof JSONArray) {
+                            JSONArray array = (JSONArray) obj.get(JSONApiResponseKeysEnum.EVENT_GET_EVENT.getKey());
+                            try {
+                                handleEvent(array);
+                            } catch (Exception e) {
+                                logger.debug("EXCEPTION in eventListener thread : " + e.getLocalizedMessage());
+                            }
                         }
-                    }
-                } else {
-                    String errorStr = null;
-                    if (responseObj != null
-                            && responseObj.get(JSONApiResponseKeysEnum.EVENT_GET_EVENT_ERROR.getKey()) != null) {
-                        errorStr = responseObj.get(JSONApiResponseKeysEnum.EVENT_GET_EVENT_ERROR.getKey()).toString();
-                    }
+                    } else {
+                        String errorStr = null;
+                        if (responseObj != null
+                                && responseObj.get(JSONApiResponseKeysEnum.EVENT_GET_EVENT_ERROR.getKey()) != null) {
+                            errorStr = responseObj.get(JSONApiResponseKeysEnum.EVENT_GET_EVENT_ERROR.getKey())
+                                    .toString();
+                        }
 
-                    if (errorStr != null && errorStr.equals(this.INVALID_SESSION)) {
-                        this.subscribe();
-                    } else if (errorStr != null) {
-                        System.err.println("Unknown error message in event response: " + errorStr);
+                        if (errorStr != null && errorStr.equals(INVALID_SESSION)) {
+                            subscribe();
+                        } else if (errorStr != null) {
+                            logger.error("Unknown error message in event response: " + errorStr);
+                        }
                     }
                 }
             }
         }
-        // sensorJobExecutor.shutdown();
-    }
+    };
 
     private String getEventAsRequest(int subscriptionID, int timeout) {
         if (connManager.checkConnection()) {
@@ -150,7 +172,7 @@ public class EventListener extends Thread {
 
             for (EventItem item : event.getEventItems()) {
                 if (item.getName() != null && item.getName().contains(this.EVENT_NAME)) {
-                    System.out.println(item.getName());
+                    logger.debug(item.getName());
                     this.sceneManager.handleEvent(item);
                 }
             }

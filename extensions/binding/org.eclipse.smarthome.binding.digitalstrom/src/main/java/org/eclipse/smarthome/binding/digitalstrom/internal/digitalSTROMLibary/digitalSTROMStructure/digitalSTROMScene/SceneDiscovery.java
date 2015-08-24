@@ -1,3 +1,10 @@
+/**
+ * Copyright (c) 2014-2015 openHAB UG (haftungsbeschraenkt) and others.
+ * All rights reserved. This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License v1.0
+ * which accompanies this distribution, and is available at
+ * http://www.eclipse.org/legal/epl-v10.html
+ */
 package org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.digitalSTROMStructure.digitalSTROMScene;
 
 import java.util.HashMap;
@@ -20,36 +27,20 @@ import org.slf4j.LoggerFactory;
 
 public class SceneDiscovery {
 
-    // private HttpTransport transport = null;
-
     private static final Logger logger = LoggerFactory.getLogger(SceneDiscovery.class);
 
     private List<InternalScene> namedScenes = new LinkedList<InternalScene>();
     private boolean genList = false;
 
-    // private DigitalSTROMStructureManager structureManager;
-    // private DigitalstromConnectionManager connectionManager;
-
     private DigitalSTROMSceneManager sceneManager;
     private SceneStatusListener discovery = null;
 
     private final String query = "/json/property/query?query=/apartment/zones/*(ZoneID)/groups/*(group)/scenes/*(scene,name)";
-    private final String reachableScenesQuery = "/json/zone/getReachableScenes?id=";// 1237&groupID=1";
+    private final String reachableScenesQuery = "/json/zone/getReachableScenes?id=";
     private final String reachableGroupsQuery = "/json/apartment/getReachableGroups?token=";
-    // public final String loginQuery = "/json/system/login?user=dssadmin&password=dssadmin";
 
-    public SceneDiscovery(DigitalSTROMSceneManager sceneManager) { // DigitalstromConnectionManager connectionManager,
-                                                                   // DigitalSTROMStructureManager structureManager
-        /*
-         * this.transport = new HttpTransportImpl(hostName,
-         * GeneralConstants.DigitalSTROMBindingConstants.DEFAULT_CONNECTION_TIMEOUT,
-         * GeneralConstants.DigitalSTROMBindingConstants.DEFAULT_READ_TIMEOUT);
-         */
+    public SceneDiscovery(DigitalSTROMSceneManager sceneManager) {
         this.sceneManager = sceneManager;
-        // this.connectionManager = connectionManager;
-        // this.structureManager = structureManager;
-        // this.transport = connectionManager.getHttpTransport();
-        // this.namedScenes = new LinkedList<InternalScene>();
 
     }
 
@@ -84,7 +75,6 @@ public class SceneDiscovery {
 
     public void generateAppartmentScence() {
         for (ApartmentSceneEnum apartmentScene : ApartmentSceneEnum.values()) {
-            // System.out.println(apartmentScene.toString().toLowerCase().replace("_", " "));
 
             InternalScene scene = new InternalScene(null, null, (short) apartmentScene.getSceneNumber(),
                     "Apartment-Scene: " + apartmentScene.toString().toLowerCase().replace("_", " "));
@@ -96,19 +86,6 @@ public class SceneDiscovery {
             } else {
                 sceneDiscoverd(scene);
             }
-
-            /*
-             * List<Device> deviceList = this.structureManager.getReferenceDeviceListFromZoneXGroupX(scene.getSceneID(),
-             * scene.getGroupID());
-             *
-             * if(deviceList != null){
-             * scene.addReferenceDevices(deviceList);
-             * }
-             * System.out.print("Appartmend Scene: " + scene.toString());
-             * if(this.namedScenes.add(scene)){
-             * System.out.print(" added to list\n");
-             * }
-             */
         }
     }
 
@@ -132,12 +109,6 @@ public class SceneDiscovery {
                             for (int k = 0; k < scenes.size(); k++) {
                                 if (scenes.get(k) instanceof org.json.simple.JSONObject) {
 
-                                    /*
-                                     * if(this.namedScenes == null){
-                                     * this.namedScenes = new LinkedList<InternalScene>();
-                                     * }
-                                     */
-
                                     JSONObject sceneJsonObject = ((JSONObject) scenes.get(k));
                                     int zoneID = Integer.parseInt(((JSONObject) zones.get(i)).get("ZoneID").toString());
                                     short groupID = Short
@@ -154,20 +125,6 @@ public class SceneDiscovery {
                                     } else {
                                         sceneDiscoverd(scene);
                                     }
-                                    /*
-                                     * List<Device> deviceList =
-                                     * this.structureManager.getReferenceDeviceListFromZoneXGroupX(scene.getSceneID(),
-                                     * scene.getGroupID());
-                                     *
-                                     * if(deviceList != null){
-                                     * scene.addReferenceDevices(deviceList);
-                                     * }
-                                     *
-                                     * System.out.print("Namend Scene: " + scene.toString());
-                                     * if(this.namedScenes.add(scene)){
-                                     * System.out.print(" added to list\n");
-                                     * }
-                                     */
                                 }
                             }
                         }
@@ -256,20 +213,6 @@ public class SceneDiscovery {
                                                 } else {
                                                     sceneDiscoverd(scene);
                                                 }
-                                                /*
-                                                 * List<Device> deviceList =
-                                                 * this.structureManager.getReferenceDeviceListFromZoneXGroupX(scene.
-                                                 * getSceneID(), scene.getGroupID());
-                                                 *
-                                                 * if(deviceList != null){
-                                                 * scene.addReferenceDevices(deviceList);
-                                                 * }
-                                                 *
-                                                 * System.out.print("Reachable Scene: " + scene.toString());
-                                                 * if(this.namedScenes.add(scene)){
-                                                 * System.out.print(" added to list\n");
-                                                 * }
-                                                 */
                                             }
                                         }
                                     }
@@ -299,102 +242,6 @@ public class SceneDiscovery {
         return false;
     }
 
-    /*
-     * public boolean generateReachableScenes(DigitalstromConnectionManager connectionManager,
-     * DigitalSTROMStructureManager structureManager){
-     * Set<Integer> zoneIDs = structureManager.getZoneIDs();
-     * if(zoneIDs != null){
-     * for(Integer zoneID: zoneIDs){
-     * if(zoneID != 0) {
-     * Set<Short> groupIDs = structureManager.getGroupsFromZoneX(zoneID).keySet();
-     * if(groupIDs != null){
-     * if(connectionManager.checkConnection()){
-     * for(Short groupID: groupIDs){
-     * if(groupID != 0) {
-     * String response = connectionManager.getHttpTransport().execute(this.reachableScenesQuery + zoneID +
-     * "&groupID=" + groupID +
-     * "&token="+connectionManager.getSessionToken());
-     * if(response == null) {
-     * return false;
-     * } else {
-     * JSONObject responsJsonObj = JSONResponseHandler.toJSONObject(response);
-     * if(JSONResponseHandler.checkResponse(responsJsonObj)){
-     * JSONObject resultJsonObj =JSONResponseHandler.getResultJSONObject(responsJsonObj);
-     * if (resultJsonObj.get(JSONApiResponseKeysEnum.ZONE_GET_REACHABLE_SCENES.getKey()) instanceof JSONArray) {
-     * JSONArray scenes = (JSONArray) resultJsonObj.get(JSONApiResponseKeysEnum.ZONE_GET_REACHABLE_SCENES.getKey());
-     * if(scenes != null){
-     * for (int i=0; i< scenes.size(); i++) {
-     * short sceneNumber = Short.parseShort(scenes.get(i).toString());
-     * String sceneName = null;
-     * if(ZoneSceneEnum.getZoneScene(sceneNumber) != null){
-     * if(structureManager.getZoneName(zoneID) != null){
-     * sceneName = "Zone: " + structureManager.getZoneName(zoneID);
-     * if(structureManager.getGroupZoneName(zoneID, groupID) != null){
-     * sceneName = sceneName + " Group: " + structureManager.getGroupZoneName(zoneID, groupID);
-     * } else{
-     * sceneName = sceneName + " Group: " + groupID;
-     * }
-     * } else{
-     * sceneName = "Zone: " + zoneID + " Group: " + groupID;
-     * }
-     * sceneName = sceneName + ZoneSceneEnum.getZoneScene(sceneNumber).toString().toLowerCase().replace("_", " ");
-     * }
-     * InternalScene scene = new InternalScene(
-     * zoneID,
-     * groupID,
-     * sceneNumber,
-     * sceneName);
-     *
-     * if(genList){
-     * System.out.print("Reachable Scene: " + scene.toString());
-     * if(this.namedScenes.add(scene)){
-     * System.out.print(" added to list\n");
-     * }
-     * } else{
-     * sceneDiscoverd(scene);
-     * }
-     *
-     * List<Device> deviceList = this.structureManager.getReferenceDeviceListFromZoneXGroupX(scene.getSceneID(),
-     * scene.getGroupID());
-     *
-     * if(deviceList != null){
-     * scene.addReferenceDevices(deviceList);
-     * }
-     *
-     * System.out.print("Reachable Scene: " + scene.toString());
-     * if(this.namedScenes.add(scene)){
-     * System.out.print(" added to list\n");
-     * }
-     *
-     * }
-     * }
-     * }
-     * }
-     * }
-     * }
-     * }
-     * }
-     * //do not flooding the DSS, sleep 1 second rule XY
-     * try {
-     * Thread.sleep(1000);
-     * } catch (InterruptedException e) {
-     * // TODO Auto-generated catch block
-     * e.printStackTrace();
-     * }
-     * }
-     * }
-     * }
-     * try {
-     * Thread.sleep(1000);
-     * } catch (InterruptedException e) {
-     * // TODO Auto-generated catch block
-     * e.printStackTrace();
-     * }
-     * }
-     *
-     * return false;
-     * }
-     */
     private HashMap<Integer, List<Short>> getReachableGroups(DigitalSTROMConnectionManager connectionManager) {
         HashMap<Integer, List<Short>> reachableGroupsMap = null;
         if (connectionManager.checkConnection()) {
@@ -437,7 +284,7 @@ public class SceneDiscovery {
     public void sceneDiscoverd(InternalScene scene) {
         if (this.discovery != null) {
             this.discovery.onSceneAdded(scene);
-            // logger.debug("Inform scene discovery aboud added scene with id: " + scene.getID());
+            logger.debug("Inform scene discovery aboud added scene with id: " + scene.getID());
         } else {
             logger.debug("Can't inform scene discovery aboud added scene with id: " + scene.getID()
                     + " because scene discovery is disabled");
@@ -453,88 +300,12 @@ public class SceneDiscovery {
         this.discovery = null;
     }
 
-    /*
-     * //server to low, 1 second delay
-     * public List<Device> generateDeviceList(int zoneID, short groupID){
-     * //System.out.println(zoneID + " " + groupID + " = " + buildSceneDeviceQuery(zoneID, groupID));
-     * String response = transport.execute(buildSceneDeviceQuery(zoneID, groupID) + "&token="+getSessionToken());
-     * List<Device> deviceList = null;
-     * if(response != null) {
-     * JSONObject responsJsonObj = JSONResponseHandler.toJSONObject(response);
-     * if(JSONResponseHandler.checkResponse(responsJsonObj)){
-     * JSONObject resultJsonObj = JSONResponseHandler.getResultJSONObject(responsJsonObj);
-     * if (resultJsonObj.get("devices") instanceof org.json.simple.JSONArray) {
-     * //System.out.println("1");
-     * JSONArray devices = (JSONArray) resultJsonObj.get("devices");
-     * if(!devices.isEmpty()){
-     * boolean otherAlgo = false;
-     * if(zoneID == 0 && groupID != 0){
-     * otherAlgo = true;
-     * }
-     *
-     * deviceList = new LinkedList<Device>();
-     * for (int i=0; i < devices.size(); i++) {
-     * JSONDeviceImpl device = null;
-     * if(otherAlgo){
-     * if(((JSONObject) devices.get(i)).get("group"+groupID) instanceof JSONArray){
-     * if(!((JSONArray) ((JSONObject) devices.get(i)).get("group"+groupID)).isEmpty()){
-     * //device = new AbstractDevice(((JSONObject) devices.get(i)).get("dSUID").toString());
-     * device = new JSONDeviceImpl((JSONObject) devices.get(i));
-     * }
-     * }
-     * } else{
-     * //device = new AbstractDevice(((JSONObject) devices.get(i)).get("dSUID").toString());
-     * device = new JSONDeviceImpl((JSONObject) devices.get(i));
-     * }
-     *
-     * if(device != null){
-     * deviceList.add(device);
-     * }
-     *
-     * }
-     * }
-     * }
-     * //
-     *
-     * }
-     * }
-     * return deviceList;
-     * }
-     *
-     * public String buildSceneDeviceQuery(int zoneID, short groupID){
-     * if(zoneID == 0){
-     * if(groupID == 0){
-     * //System.out.println(zoneID + " " + groupID +
-     * " =  /json/property/query?query=/apartment/zones/zone0/devices/*(dSUID)");
-     * return "/json/property/query?query=/apartment/zones/zone0/devices/*(dSUID)";
-     * } else {
-     * return "/json/property/query?query=/apartment/zones/zone0/devices/*(dSUID)/groups/group"+groupID+"1(*)";
-     * }
-     * } else{
-     * return "/json/property/query?query=/apartment/zones/zone"+zoneID+"/groups/group"+groupID + "/devices/*(dSUID)";
-     * }
-     * }
-     *
-     * public String getSessionToken(){
-     * String response = transport.execute(loginQuery);
-     *
-     * JSONObject jObject = JSONResponseHandler.toJSONObject(response);
-     * if(JSONResponseHandler.checkResponse(jObject)){
-     * jObject = JSONResponseHandler.getResultJSONObject(jObject);
-     * return jObject.get("token").toString();
-     * }
-     * return null;
-     * }
-     */
-
     public List<InternalScene> getNamedSceneList() {
         return this.namedScenes;
     }
 
     @Override
     public String toString() {
-        // System.out.println(this.namedScenes.toString());
-        // return null;
         return this.namedScenes.toString();
     }
 }

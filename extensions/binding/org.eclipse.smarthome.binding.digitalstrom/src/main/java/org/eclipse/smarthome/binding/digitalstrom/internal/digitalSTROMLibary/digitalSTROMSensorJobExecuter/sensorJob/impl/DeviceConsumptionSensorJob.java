@@ -1,6 +1,5 @@
 /**
- * Copyright (c) 2010-2014, openHAB.org and others.
- *
+ * Copyright (c) 2014-2015 openHAB UG (haftungsbeschraenkt) and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -15,6 +14,8 @@ import org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.di
 import org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.digitalSTROMStructure.digitalSTROMDevices.deviceParameters.DeviceStateUpdate;
 import org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.digitalSTROMStructure.digitalSTROMDevices.deviceParameters.DeviceStateUpdateImpl;
 import org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.digitalSTROMStructure.digitalSTROMDevices.deviceParameters.SensorIndexEnum;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * The {@link DeviceConsumptionSensorJob} is the implementation of a {@link SensorJob}
@@ -28,8 +29,7 @@ import org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.di
  */
 public class DeviceConsumptionSensorJob implements SensorJob {
 
-    // private static final Logger logger = LoggerFactory
-    // .getLogger(DeviceConsumptionSensorJob.class);
+    private static final Logger logger = LoggerFactory.getLogger(DeviceConsumptionSensorJob.class);
     private Device device = null;
     private SensorIndexEnum sensorIndex = null;
     private DSID meterDSID = null;
@@ -37,7 +37,7 @@ public class DeviceConsumptionSensorJob implements SensorJob {
 
     /**
      * Creates a new {@link DeviceConsumptionSensorJob} with the given {@link SensorIndexEnum}.
-     * 
+     *
      * @param device
      * @param index sensor index
      */
@@ -51,8 +51,7 @@ public class DeviceConsumptionSensorJob implements SensorJob {
     @Override
     public void execute(DigitalSTROMAPI digitalSTROM, String token) {
         int consumption = digitalSTROM.getDeviceSensorValue(token, this.device.getDSID(), null, this.sensorIndex);
-        // logger.info
-        System.out.println("SensorIndex: " + this.sensorIndex + ", DeviceConsumption : " + consumption + ", DSID: "
+        logger.debug("SensorIndex: " + this.sensorIndex + ", DeviceConsumption : " + consumption + ", DSID: "
                 + this.device.getDSID().getValue());
 
         switch (this.sensorIndex) {

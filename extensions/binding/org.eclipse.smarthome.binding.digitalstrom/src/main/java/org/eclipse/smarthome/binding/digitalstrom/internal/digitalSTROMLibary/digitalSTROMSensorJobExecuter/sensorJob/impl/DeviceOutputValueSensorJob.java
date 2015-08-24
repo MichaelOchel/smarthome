@@ -1,6 +1,5 @@
 /**
- * Copyright (c) 2010-2014, openHAB.org and others.
- *
+ * Copyright (c) 2014-2015 openHAB UG (haftungsbeschraenkt) and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -16,6 +15,8 @@ import org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.di
 import org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.digitalSTROMStructure.digitalSTROMDevices.deviceParameters.DeviceStateUpdate;
 import org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.digitalSTROMStructure.digitalSTROMDevices.deviceParameters.DeviceStateUpdateImpl;
 import org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.digitalSTROMStructure.digitalSTROMDevices.deviceParameters.OutputModeEnum;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * The {@link DeviceOutputValueSensorJob} is the implementation of a {@link SensorJob}
@@ -28,8 +29,7 @@ import org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.di
  */
 public class DeviceOutputValueSensorJob implements SensorJob {
 
-    // private static final Logger logger = LoggerFactory
-    // .getLogger(DeviceOutputValueSensorJob.class);
+    private static final Logger logger = LoggerFactory.getLogger(DeviceOutputValueSensorJob.class);
     private Device device = null;
     private short index = 0;
     private DSID meterDSID = null;
@@ -37,7 +37,7 @@ public class DeviceOutputValueSensorJob implements SensorJob {
 
     /**
      * Creates a new {@link DeviceOutputValueSensorJob} with the given sensor index.
-     * 
+     *
      * @param device
      * @param index sensor index
      */
@@ -55,8 +55,7 @@ public class DeviceOutputValueSensorJob implements SensorJob {
     @Override
     public void execute(DigitalSTROMAPI digitalSTROM, String token) {
         int value = digitalSTROM.getDeviceOutputValue(token, this.device.getDSID(), null, this.index);
-        // logger.info
-        System.out.println("DeviceOutputValue on Demand : " + value + ", DSID: " + this.device.getDSID().getValue());
+        logger.debug("DeviceOutputValue on Demand : " + value + ", DSID: " + this.device.getDSID().getValue());
 
         if (value != 1) {
             switch (this.index) {

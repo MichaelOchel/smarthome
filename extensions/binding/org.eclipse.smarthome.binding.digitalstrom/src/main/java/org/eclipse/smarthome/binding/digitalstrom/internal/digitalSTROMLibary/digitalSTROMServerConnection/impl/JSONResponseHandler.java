@@ -1,3 +1,10 @@
+/**
+ * Copyright (c) 2014-2015 openHAB UG (haftungsbeschraenkt) and others.
+ * All rights reserved. This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License v1.0
+ * which accompanies this distribution, and is available at
+ * http://www.eclipse.org/legal/epl-v10.html
+ */
 package org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.digitalSTROMServerConnection.impl;
 /**
  * Copyright (c) 2010-2014, openHAB.org and others.
@@ -12,6 +19,8 @@ import org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.di
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * The {@link JSONResponseHandler} checks an DigitalSTROM-JSON response and can parse it to an {@link JSONObject}.
@@ -23,7 +32,7 @@ import org.json.simple.parser.ParseException;
  */
 public class JSONResponseHandler {
 
-    // private static final Logger logger = LoggerFactory.getLogger(JSONResponseHandler.class);
+    private static final Logger logger = LoggerFactory.getLogger(JSONResponseHandler.class);
 
     /**
      * Checks the DigitalSTROM-JSON response and return true if it wars successful, otherwise false
@@ -38,7 +47,7 @@ public class JSONResponseHandler {
             return jsonResponse.get(JSONApiResponseKeysEnum.RESPONSE_OK.getKey()).toString()
                     .equals(JSONApiResponseKeysEnum.RESPONSE_SUCCESSFUL.getKey());
         } else {
-            System.err.println("JSONResponseHandler: error in json request. Error message : "
+            logger.error("JSONResponseHandler: error in json request. Error message : "
                     + jsonResponse.get(JSONApiResponseKeysEnum.RESPONSE_MESSAGE).toString());
         }
         return false;
@@ -56,7 +65,7 @@ public class JSONResponseHandler {
             try {
                 return (JSONObject) new JSONParser().parse(jsonResponse);
             } catch (ParseException e) {
-                System.err.println("JSONResponseHandler: " + e.getLocalizedMessage());
+                logger.error("JSONResponseHandler: " + e.getLocalizedMessage());
             }
         }
         return null;

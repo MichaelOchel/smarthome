@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2014 openHAB UG (haftungsbeschraenkt) and others.
+ * Copyright (c) 2014-2015 openHAB UG (haftungsbeschraenkt) and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -83,9 +83,14 @@ public class DssBridgeHandler extends BaseBridgeHandler
         if (configuration.get(HOST) != null && !configuration.get(HOST).toString().isEmpty()) {
             logger.debug("Initializing DigitalSTROM Manager.");
             if (connMan == null) {
-                this.connMan = new DigitalSTROMConnectionManagerImpl(configuration.get(HOST).toString(),
-                        configuration.get(USER_NAME).toString(), configuration.get(PASSWORD).toString(), null, false,
-                        this);// configuration.get(APPLICATION_TOKEN).toString()
+                String[] loginConfig = getLoginConfig(configuration);
+                this.connMan = new DigitalSTROMConnectionManagerImpl(loginConfig[0], loginConfig[1], loginConfig[2],
+                        loginConfig[3], this);
+                /*
+                 * this.connMan = new DigitalSTROMConnectionManagerImpl(configuration.get(HOST).toString(),
+                 * configuration.get(USER_NAME).toString(), configuration.get(PASSWORD).toString(), null, false,
+                 * this);// configuration.get(APPLICATION_TOKEN).toString()
+                 */
             } else {
                 connMan.registerConnectionListener(this);
             }
@@ -168,9 +173,9 @@ public class DssBridgeHandler extends BaseBridgeHandler
     public void handleRemoval() {
         if (connMan == null) {
             Configuration configuration = this.getConfig();
-            this.connMan = new DigitalSTROMConnectionManagerImpl(configuration.get(HOST).toString(),
-                    configuration.get(USER_NAME).toString(), configuration.get(PASSWORD).toString(),
-                    configuration.get(APPLICATION_TOKEN).toString(), false, this);
+            String[] loginConfig = getLoginConfig(configuration);
+            this.connMan = new DigitalSTROMConnectionManagerImpl(loginConfig[0], loginConfig[1], loginConfig[2],
+                    loginConfig[3], this);
         }
 
         if (connMan.removeApplicationToken()) {
@@ -178,6 +183,25 @@ public class DssBridgeHandler extends BaseBridgeHandler
         }
         this.connMan = null;
     }
+
+    private String[] getLoginConfig(Configuration configuration) {
+        String[] loginConfig = new String[4];
+        if (configuration.get(HOST) != null) {
+            loginConfig[0] = configuration.get(HOST).toString();
+        }
+        if (configuration.get(USER_NAME) != null) {
+            loginConfig[1] = configuration.get(USER_NAME).toString();
+        }
+        if (configuration.get(PASSWORD) != null) {
+            loginConfig[2] = configuration.get(PASSWORD).toString();
+        }
+        if (configuration.get(APPLICATION_TOKEN) != null) {
+            loginConfig[3] = configuration.get(APPLICATION_TOKEN).toString();
+        }
+
+        return loginConfig;
+    }
+
     /**** methods to store DeviceStatusListener ****/
 
     /**
