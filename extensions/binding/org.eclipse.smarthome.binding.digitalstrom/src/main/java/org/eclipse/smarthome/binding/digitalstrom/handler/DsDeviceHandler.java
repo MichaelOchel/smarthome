@@ -95,32 +95,39 @@ public class DsDeviceHandler extends BaseThingHandler implements DeviceStatusLis
     }
 
     @Override
+    public void dispose() {
+        logger.debug("Handler disposes. Unregistering listener.");
+        if (dSID != null) {
+            if (dssBridgeHandler != null) {
+                dssBridgeHandler.unregisterDeviceStatusListener(this);
+            }
+            device = null;
+        }
+    }
+
+    @Override
+    public void handleRemoval() {
+        getDssBridgeHandler().childThingRemoved(dSID);
+        updateStatus(ThingStatus.REMOVED);
+    }
+
+    @Override
     protected void bridgeHandlerInitialized(ThingHandler thingHandler, Bridge bridge) {
         if (dSID != null) {
             if (thingHandler instanceof DssBridgeHandler) {
                 this.dssBridgeHandler = (DssBridgeHandler) thingHandler;
 
-                updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.CONFIGURATION_PENDING,
-                        "waiting for listener registartion");
-                logger.debug("Set status on {}", getThing().getStatus());
+                if (device == null) {
+                    updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.CONFIGURATION_PENDING,
+                            "waiting for listener registartion");
+                    logger.debug("Set status on {}", getThing().getStatus());
+                }
                 // note: this call implicitly registers our handler as a device-listener on the bridge
 
                 this.dssBridgeHandler = (DssBridgeHandler) thingHandler;
                 this.dssBridgeHandler.registerDeviceStatusListener(this);
 
             }
-        }
-    }
-
-    @Override
-    public void dispose() {
-        logger.debug("Handler disposes. Unregistering listener.");
-        if (dSID != null) {
-            DssBridgeHandler dssBridgeHandler = getDssBridgeHandler();
-            if (dssBridgeHandler != null) {
-                getDssBridgeHandler().unregisterDeviceStatusListener(this);
-            }
-            dSID = null;
         }
     }
 
@@ -370,12 +377,13 @@ public class DsDeviceHandler extends BaseThingHandler implements DeviceStatusLis
         List<Channel> channelList = new LinkedList<Channel>(this.getThing().getChannels());
 
         // if sensor channels are loaded delete these channels
-        if (channelList.size() > 1) {
+        if (!channelList.isEmpty()) {
             Iterator<Channel> channelInter = channelList.iterator();
             while (channelInter.hasNext()) {
-                if (channelInter.next().getUID().getId().equals(CHANNEL_POWER_CONSUMPTION)
-                        || channelInter.next().getUID().getId().equals(CHANNEL_ENERGY_METER)
-                        || channelInter.next().getUID().getId().equals(CHANNEL_ENERGY_METER)) {
+                Channel channel = channelInter.next();
+                if (channel.getUID().getId().equals(CHANNEL_POWER_CONSUMPTION)
+                        || channel.getUID().getId().equals(CHANNEL_ENERGY_METER)
+                        || channel.getUID().getId().equals(CHANNEL_ENERGY_METER)) {
                     channelInter.remove();
                 }
             }
@@ -407,9 +415,9 @@ public class DsDeviceHandler extends BaseThingHandler implements DeviceStatusLis
             logger.debug("Can not load a channel without an device!");
             return;
         }
-        logger.debug(currentChannel);
-        logger.debug("Channel brightness?: "
-                + (device.isDimmable() && (currentChannel == null || currentChannel != CHANNEL_BRIGHTNESS)));
+        // logger.debug(currentChannel);
+        // logger.debug("Channel brightness?: "
+        // + (device.isDimmable() && (currentChannel == null || currentChannel != CHANNEL_BRIGHTNESS)));
         if (device.isDimmable() && (currentChannel == null || currentChannel != CHANNEL_BRIGHTNESS)) {
             loadOutputChannel(CHANNEL_BRIGHTNESS, "Dimmer");
         } else if (device.isRollershutter() && (currentChannel != null || currentChannel != CHANNEL_SHADE)) {
@@ -426,7 +434,7 @@ public class DsDeviceHandler extends BaseThingHandler implements DeviceStatusLis
     private void loadOutputChannel(String channelId, String item) {
         Channel channel = ChannelBuilder.create(new ChannelUID(this.getThing().getUID(), channelId), item).build();
         currentChannel = channelId;
-        logger.debug("channel = " + channel.getUID());
+        // logger.debug("channel = " + channel.getUID());
 
         // if no output channel is loaded, add only the output channel
         // if (currentChannel == null) {
@@ -444,15 +452,22 @@ public class DsDeviceHandler extends BaseThingHandler implements DeviceStatusLis
         List<Channel> channelList = new LinkedList<Channel>(this.getThing().getChannels());
         if (!channelList.isEmpty()) {
 
-            for (int i = 0; i < channelList.size(); i++) {
-                // delete current load output channel
-                // if (channelList.get(i).getUID().getId().contains(currentChannel)) {
-                // why sometimes are more than one channel from the same type are loaded?
-                if (channelList.get(i).getUID().getId().contains(CHANNEL_BRIGHTNESS)
-                        || channelList.get(i).getUID().getId().contains(CHANNEL_SHADE)
-                        || channelList.get(i).getUID().getId().contains(CHANNEL_LIGHT_SWITCH)) {
-                    logger.debug(channelList.get(i).getUID().getId());
-                    channelList.remove(i);
+            logger.debug("channelList size = " + channelList.size());
+            if (!channelList.isEmpty()) {
+                Iterator<Channel> channelInter = channelList.iterator();
+                while (channelInter.hasNext()) {
+                    Channel ESHchannel = channelInter.next();
+                    // delete current load output channel
+                    // if (channelList.get(i).getUID().getId().contains(currentChannel)) {
+                    // why sometimes are more than one channel from the same type are loaded?
+                    logger.debug("channelid = " + ESHchannel.getUID().getId() + " contains " + CHANNEL_LIGHT_SWITCH
+                            + " = " + ESHchannel.getUID().getId().contains(CHANNEL_LIGHT_SWITCH));
+                    if (ESHchannel.getUID().getId().contains(CHANNEL_BRIGHTNESS)
+                            || ESHchannel.getUID().getId().contains(CHANNEL_SHADE)
+                            || ESHchannel.getUID().getId().contains(CHANNEL_LIGHT_SWITCH)) {
+                        logger.debug(ESHchannel.getUID().getId());
+                        channelInter.remove();
+                    }
                 }
             }
         }

@@ -11,10 +11,10 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
 
+import org.eclipse.smarthome.binding.digitalstrom.DigitalSTROMBindingConstants;
 import org.eclipse.smarthome.binding.digitalstrom.DigitalSTROMBindingConstants;
 import org.eclipse.smarthome.binding.digitalstrom.handler.DsDeviceHandler;
 import org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.digitalSTROMManager.DigitalSTROMConnectionManager;
@@ -25,17 +25,158 @@ import org.eclipse.smarthome.core.thing.type.ChannelDefinition;
 import org.eclipse.smarthome.core.thing.type.ChannelType;
 import org.eclipse.smarthome.core.thing.type.ChannelTypeUID;
 import org.eclipse.smarthome.core.thing.type.ThingType;
+import org.eclipse.smarthome.core.types.StateDescription;
+
+import com.google.common.collect.Lists;
 
 public class DigitalSTROMThingTypeProvider implements ThingTypeProvider {
 
-    List<String> supportedBridgeTypeUIDs = new LinkedList<String>();
+    List<String> supportedBridgeTypeUIDs = Lists
+            .newArrayList(DigitalSTROMBindingConstants.THING_TYPE_DSS_BRIDGE.toString());
 
+    /* ThingTypeMaps */
     HashMap<String, ThingType> thingTypeMapEN = new HashMap<String, ThingType>();
     HashMap<String, ThingType> thingTypeMapDE = new HashMap<String, ThingType>();
 
-    DigitalSTROMThingTypeProvider() {
-        supportedBridgeTypeUIDs.add(DigitalSTROMBindingConstants.THING_TYPE_DSS_BRIDGE.toString());
-    }
+    /* Label and description build constats */
+    /* English */
+    private final String PREFIX_LABEL_EN = "DigitalSTROM device ";
+    private final String PREFIX_DESC_EN = "This is a DigitalStrom ";
+    private final String POSTFIX_DESC_EN = " device.";
+
+    private final String GE_EN = "(yellow)";
+    private final String GE_FUNC_EN = "light";
+    private final String GR_EN = "(gray)";
+    private final String GR_FUNC_EN = "shade";
+    private final String SW_EN = "(black)";
+    private final String SW_FUNC_EN = "joker";
+
+    /* German */
+    private final String PREFIX_LABEL_DE = "DigitalSTROM Klemme ";
+    private final String PREFIX_DESC_DE = "Dies ist eine DigitalSTROM ";
+    private final String POSTFIX_DESC_DE = " Klemme.";
+
+    private final String GE_DE = "(gelb)";
+    private final String GE_FUNC_DE = "Licht";
+    private final String GR_DE = "(grau)";
+    private final String GR_FUNC_DE = "Schatten";
+    private final String SW_DE = "(schwarz)";
+    private final String SW_FUNC_DE = "Joker";
+
+    /* ChannelDefinitions */
+    /* English */
+    private final ChannelDefinition CHANNEL_DEFINITION_BRIGHTNESS_EN = new ChannelDefinition("brightness",
+            new ChannelType(new ChannelTypeUID("digitalstrom:brightness"), false, "Dimmer", "Dimm channel",
+                    "this is a channel to dimm an light Device", "light", null, null, null),
+            null, "Dimm channel", "this is a channel to to dimm an light Device");
+
+    private final ChannelDefinition CHANNEL_DEFINITION_LIGHT_SWITCH_EN = new ChannelDefinition("lightSwitch",
+            new ChannelType(new ChannelTypeUID("digitalstrom:lightSwitch"), false, "Switch", "light switch channel",
+                    "this is a channel to turn an Device on or off", "light", null, null, null),
+            null, "light switch channel", "this is a channel to turn an Device on or off");
+    /*
+     * public ChannelDefinition(String id, ChannelType type, Map<String, String> properties, String label,
+     * String description)
+     */
+    /*
+     * public StateDescription(BigDecimal minimum, BigDecimal maximum, BigDecimal step, String pattern, boolean
+     * readOnly,
+     * List<StateOption> options)
+     */
+    /*
+     * <channel-type id="brightness">
+     * <item-type>Dimmer</item-type>
+     * <label>Light brightness</label>
+     * <description>The brightness channel allows to control the brightness of a light.
+     * It is also possible to switch the light on and off.
+     * </description>
+     * <category>DimmableLight</category>
+     * </channel-type>
+     * <channel-type id="lightSwitch">
+     * <item-type>Switch</item-type>
+     * <label>Light switch</label>
+     * <description>The light switch channel allows to switch the light on and off.
+     * </description>
+     * <category>Light</category>
+     * </channel-type>
+     * <!--Channel for shades-->
+     * <channel-type id="shade">
+     * <item-type>Rollershutter</item-type>
+     * <label>Shade control</label>
+     * <description>The Shade controll channel allows to control shade device e.g. a rollershutter.
+     * </description>
+     * <category>Blinds</category>
+     * </channel-type>
+     * <!--Plug adapter--><channel-type id="plugAdapter">
+     * <item-type>Switch</item-type>
+     * <label>Plug adapter</label>
+     * <description>The plug adapter channel allows to switch the plug adapter on or off.
+     * </description>
+     * <category>Light</category>
+     * </channel-type>
+     * <!--Scene channel-->
+     * <channel-type id="scene">
+     * <item-type>Switch</item-type>
+     * <label>Scene</label>
+     * <description>The scene channel allows to call or undo a scene from DigitalSTROM.
+     * </description>
+     * <tags>
+     * <tag>Scene</tag>
+     * </tags>
+     * </channel-type><!--Sensor channels-->
+     * <channel-type id="powerConsumption">
+     * <item-type>Number</item-type>
+     * <label>Power consumption</label>
+     * <description>The power consumption channel shows the current power consumption from this device.</description>
+     * <category>Energy</category>
+     * <tags>
+     * <tag>power consumption</tag>
+     * </tags>
+     * <state readOnly="true" pattern="%d W"></state>
+     * </channel-type>
+     * <channel-type id="electricMeterValue">
+     * <item-type>Number</item-type>
+     * <label>Electric meter value</label>
+     * <description>The electric meter value channel shows the current electric meter value from this
+     * device.</description>
+     * <category>Energy</category>
+     * <tags>
+     * <tag>electric meter value</tag>
+     * </tags>
+     * <state readOnly="true" pattern="%d mA"></state>
+     * </channel-type>
+     * <channel-type id="energyMeterValue">
+     * <item-type>Number</item-type>
+     * <label>Energy meter value</label>
+     * <description>The energy meter value channel shows the current energy meter value from this device.</description>
+     * <category>Energy</category>
+     * <tags>
+     * <tag>energy meter value</tag>
+     * </tags>
+     * <state readOnly="true" pattern="%d Wh"></state>
+     * </channel-type>
+     */
+
+    private final StateDescription STATE_DESC_POWER_CONSUMPTION = new StateDescription(null, null, null, "%d W", true,
+            null);
+    private final ChannelType CHANNEL_TYPE_POWER_CONSUMPTION = new ChannelType(
+            new ChannelTypeUID(
+                    DigitalSTROMBindingConstants.BINDING_ID + ":" + DigitalSTROMBindingConstants.CHANNEL_LIGHT_SWITCH),
+            false, "Switch", "light switch channel", "this is a channel to turn an light device on or off", "light",
+            null, STATE_DESC_POWER_CONSUMPTION, null);
+
+    private final ChannelDefinition CHANNEL_DEFINITION_POWER_CONSUMPTION_EN = new ChannelDefinition("lightSwitch",
+            CHANNEL_TYPE_POWER_CONSUMPTION, null, "light switch channel",
+            "this is a channel to turn an Device on or off");
+
+    /* ChannelList */
+    private final List<ChannelDefinition> CHANNELS_EN = Lists.newArrayList(CHANNEL_DEFINITION_BRIGHTNESS_EN,
+            CHANNEL_DEFINITION_LIGHT_SWITCH_EN);
+    private final List<ChannelDefinition> GR_CHANNELS_EN = Lists.newArrayList(CHANNEL_DEFINITION_BRIGHTNESS_EN,
+            CHANNEL_DEFINITION_LIGHT_SWITCH_EN);
+
+    private final List<ChannelDefinition> CHANNELS_DE = Lists.newArrayList();
+    private final List<ChannelDefinition> GR_CHANNELS_DE = Lists.newArrayList();
 
     public void registerConnectionManagerHandler(DigitalSTROMConnectionManager connMan) {
         if (connMan != null) {
@@ -68,34 +209,6 @@ public class DigitalSTROMThingTypeProvider implements ThingTypeProvider {
         return thingType;
     }
 
-    /* Label and description build constats */
-    private final String PREFIX_LABEL_EN = "DigitalSTROM device ";
-    private final String PREFIX_DESC_EN = "This is a DigitalStrom ";
-    private final String POSTFIX_DESC_EN = " device.";
-
-    private final String GE_EN = "(yellow)";
-    private final String GE_FUNC_EN = "light";
-    private final String GR_EN = "(gray)";
-    private final String GR_FUNC_EN = "shade";
-    private final String SW_EN = "(black)";
-    private final String SW_FUNC_EN = "joker";
-
-    private final String PREFIX_LABEL_DE = "DigitalSTROM Klemme ";
-    private final String PREFIX_DESC_DE = "Dies ist eine DigitalSTROM ";
-    private final String POSTFIX_DESC_DE = " Klemme.";
-
-    private final String GE_DE = "(gelb)";
-    private final String GE_FUNC_DE = "Licht";
-    private final String GR_DE = "(grau)";
-    private final String GR_FUNC_DE = "Schatten";
-    private final String SW_DE = "(schwarz)";
-    private final String SW_FUNC_DE = "Joker";
-
-    private ChannelDefinition chanDefBrigh = new ChannelDefinition("brightness",
-            new ChannelType(new ChannelTypeUID("digitalstrom:brightness"), false, "Dimmer", "Dimm channel",
-                    "this is a channel to to dimm an light Device", "light", null, null, null),
-            null, "Dimm channel", "this is a channel to to dimm an light Device");
-
     private ThingType generateThingType(ThingTypeUID thingTypeUID, Locale locale) {
         return generateThingType(thingTypeUID.getId(), locale, thingTypeUID);
 
@@ -108,6 +221,16 @@ public class DigitalSTROMThingTypeProvider implements ThingTypeProvider {
         String descEN;
         String labelDE;
         String descDE;
+        URI configDesc = null;
+        List<ChannelDefinition> channelDefsEN = CHANNELS_EN;
+        List<ChannelDefinition> channelDefsDE = CHANNELS_DE;
+
+        try {
+            configDesc = new URI(DigitalSTROMBindingConstants.DEVICE_CONFIG);
+        } catch (URISyntaxException e1) {
+            // TODO Auto-generated catch block
+            e1.printStackTrace();
+        }
 
         switch (hwType) {
             case "GE":
@@ -121,6 +244,14 @@ public class DigitalSTROMThingTypeProvider implements ThingTypeProvider {
                 descEN = PREFIX_DESC_EN + " " + GR_FUNC_EN + " " + POSTFIX_DESC_EN;
                 labelDE = PREFIX_LABEL_DE + hwInfo + " " + GR_DE;
                 descDE = PREFIX_DESC_DE + " " + GR_FUNC_DE + " " + POSTFIX_DESC_DE;
+                channelDefsEN = GR_CHANNELS_EN;
+                channelDefsDE = GR_CHANNELS_DE;
+                try {
+                    configDesc = new URI(DigitalSTROMBindingConstants.GRAY_DEVICE_CONFIG);
+                } catch (URISyntaxException e1) {
+                    // TODO Auto-generated catch block
+                    e1.printStackTrace();
+                }
                 break;
             case "SW":
                 labelEN = PREFIX_LABEL_EN + hwInfo + " " + SW_EN;
@@ -131,30 +262,22 @@ public class DigitalSTROMThingTypeProvider implements ThingTypeProvider {
             default:
                 return null;
         }
-        try {
-            if (thingTypeUID == null) {
-                thingTypeUID = new ThingTypeUID(DigitalSTROMBindingConstants.BINDING_ID, hwInfo);
-            }
-            List<ChannelDefinition> channelList = new LinkedList<ChannelDefinition>();
-            channelList.add(chanDefBrigh);
-            ThingType thingTypeEN = new ThingType(thingTypeUID, supportedBridgeTypeUIDs, labelEN, descEN, null, null,
-                    null, new URI(DigitalSTROMBindingConstants.DEVICE_CONFIG));
-            this.thingTypeMapEN.put(hwInfo, thingTypeEN);
-            ThingType thingTypeDE = new ThingType(thingTypeUID, supportedBridgeTypeUIDs, labelDE, descDE, null, null,
-                    null, new URI(DigitalSTROMBindingConstants.DEVICE_CONFIG));
-            this.thingTypeMapDE.put(hwInfo, thingTypeDE);
 
-            DsDeviceHandler.SUPPORTED_THING_TYPES.add(thingTypeUID);
+        if (thingTypeUID == null) {
+            thingTypeUID = new ThingTypeUID(DigitalSTROMBindingConstants.BINDING_ID, hwInfo);
+        }
 
-            if (locale != null) {
-                return locale.getLanguage().equals(Locale.GERMAN) ? thingTypeDE : thingTypeEN;
-            }
-        } catch (IllegalArgumentException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        } catch (URISyntaxException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
+        ThingType thingTypeEN = new ThingType(thingTypeUID, supportedBridgeTypeUIDs, labelEN, descEN, channelDefsEN,
+                null, null, configDesc);
+        this.thingTypeMapEN.put(hwInfo, thingTypeEN);
+        ThingType thingTypeDE = new ThingType(thingTypeUID, supportedBridgeTypeUIDs, labelDE, descDE, channelDefsDE,
+                null, null, configDesc);
+        this.thingTypeMapDE.put(hwInfo, thingTypeDE);
+
+        DsDeviceHandler.SUPPORTED_THING_TYPES.add(thingTypeUID);
+
+        if (locale != null) {
+            return locale.getLanguage().equals(Locale.GERMAN) ? thingTypeDE : thingTypeEN;
         }
 
         return null;

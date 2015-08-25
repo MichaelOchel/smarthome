@@ -108,4 +108,6 @@ public interface DigitalSTROMDeviceStatusManager {
      * @param sceneListener
      */
     public void unregisterSceneListener(SceneStatusListener sceneListener);
+
+    void removeDevice(String dSID);
 }

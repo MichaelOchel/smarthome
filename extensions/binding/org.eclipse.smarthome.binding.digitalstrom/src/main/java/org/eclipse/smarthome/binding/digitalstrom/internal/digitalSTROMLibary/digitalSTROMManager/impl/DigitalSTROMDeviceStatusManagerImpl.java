@@ -206,7 +206,7 @@ public class DigitalSTROMDeviceStatusManagerImpl implements DigitalSTROMDeviceSt
                                 }
                             }
 
-                        } else if (deviceDiscovery != null) {
+                        } else {
 
                             logger.debug("Found new Device!");
 
@@ -235,6 +235,7 @@ public class DigitalSTROMDeviceStatusManagerImpl implements DigitalSTROMDeviceSt
                                             currentDeviceDSID);
                                 }
                             }
+
                             if (deviceDiscovery != null) {
                                 if (currentDevice.isDeviceWithOutput()) {
                                     deviceDiscovery.onDeviceAdded(currentDevice);
@@ -688,6 +689,16 @@ public class DigitalSTROMDeviceStatusManagerImpl implements DigitalSTROMDeviceSt
             }
         } else {
             // Fehlermeldung
+        }
+    }
+
+    @Override
+    public void removeDevice(String dSID) {
+        Device intDevice = strucMan.getDeviceByDSID(dSID);
+        // TODO: maybe another method removeDevice(String dSID): Device intDevice in strucMan
+        if (intDevice != null) {
+            strucMan.deleteDevice(intDevice);
+            trashDevices.add(new TrashDevice(intDevice));
         }
     }
 

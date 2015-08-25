@@ -7,11 +7,7 @@
  */
 package org.eclipse.smarthome.binding.digitalstrom;
 
-import java.util.Set;
-
 import org.eclipse.smarthome.core.thing.ThingTypeUID;
-
-import com.google.common.collect.ImmutableSet;
 
 /**
  * The {@link DigitalSTROMBinding} class defines common constants, which are
@@ -32,12 +28,10 @@ public class DigitalSTROMBindingConstants {
 
     // List of all Thing Type UIDs
     public final static ThingTypeUID THING_TYPE_DSS_BRIDGE = new ThingTypeUID(BINDING_ID, THING_TYPE_ID_DSS_BRIDGE);
-    public final static ThingTypeUID THING_TYPE_GE_KM200 = new ThingTypeUID(BINDING_ID, THING_TYPE_ID_GE_KM200);
-    public final static ThingTypeUID THING_TYPE_GE_KL200 = new ThingTypeUID(BINDING_ID, THING_TYPE_ID_GE_KL200);
 
     public final static ThingTypeUID THING_TYPE_SCENE = new ThingTypeUID(BINDING_ID, THING_TYPE_ID_SCENE);
 
-    public final static Set<ThingTypeUID> SUPPORTED_THING_TYPES_UIDS = ImmutableSet.of(THING_TYPE_DSS_BRIDGE);
+    // public final static Set<ThingTypeUID> SUPPORTED_THING_TYPES_UIDS = ImmutableSet.of(THING_TYPE_DSS_BRIDGE);
 
     /**** List of all Channels ****/
 
@@ -57,6 +51,7 @@ public class DigitalSTROMBindingConstants {
 
     /* config URIs */
     public static final String DEVICE_CONFIG = "binding:digitalstrom:device";
+    public static final String GRAY_DEVICE_CONFIG = "binding:digitalstrom:grayDevice";
 
     /**** Bridge config properties ****/
 

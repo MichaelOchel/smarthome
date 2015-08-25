@@ -85,7 +85,7 @@ public class DssBridgeHandler extends BaseBridgeHandler
             if (connMan == null) {
                 String[] loginConfig = getLoginConfig(configuration);
                 this.connMan = new DigitalSTROMConnectionManagerImpl(loginConfig[0], loginConfig[1], loginConfig[2],
-                        loginConfig[3], this);
+                        loginConfig[3], false, this);
                 /*
                  * this.connMan = new DigitalSTROMConnectionManagerImpl(configuration.get(HOST).toString(),
                  * configuration.get(USER_NAME).toString(), configuration.get(PASSWORD).toString(), null, false,
@@ -282,6 +282,10 @@ public class DssBridgeHandler extends BaseBridgeHandler
                 throw new NullPointerException("It's not allowed to pass a null ID.");
             }
         }
+    }
+
+    public void childThingRemoved(String dSID) {
+        devStatMan.removeDevice(dSID);
     }
 
     public void stopOutputValue(Device device) {
