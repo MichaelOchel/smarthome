@@ -7,7 +7,11 @@
  */
 package org.eclipse.smarthome.binding.digitalstrom;
 
+import java.util.Set;
+
 import org.eclipse.smarthome.core.thing.ThingTypeUID;
+
+import com.google.common.collect.ImmutableSet;
 
 /**
  * The {@link DigitalSTROMBinding} class defines common constants, which are
@@ -31,13 +35,17 @@ public class DigitalSTROMBindingConstants {
 
     public final static ThingTypeUID THING_TYPE_SCENE = new ThingTypeUID(BINDING_ID, THING_TYPE_ID_SCENE);
 
-    // public final static Set<ThingTypeUID> SUPPORTED_THING_TYPES_UIDS = ImmutableSet.of(THING_TYPE_DSS_BRIDGE);
+    public final static Set<ThingTypeUID> SUPPORTED_THING_TYPES_UIDS = ImmutableSet.of(THING_TYPE_DSS_BRIDGE);
 
     /**** List of all Channels ****/
 
     // Light
     public static final String CHANNEL_BRIGHTNESS = "brightness";
     public static final String CHANNEL_LIGHT_SWITCH = "lightSwitch";
+    // black
+    public static final String CHANNEL_GENERAL_DIMM = "generalDimm";
+    public static final String CHANNEL_GENERAL_SWITCH = "generalSwitch";
+    public static final String CHANNEL_GENERAL_SHADE = "generalShade";
     // shade
     public static final String CHANNEL_SHADE = "shade";
     // scene

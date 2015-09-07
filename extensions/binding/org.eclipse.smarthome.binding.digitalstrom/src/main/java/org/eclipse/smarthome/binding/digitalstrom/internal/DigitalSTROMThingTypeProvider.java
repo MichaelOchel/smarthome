@@ -25,7 +25,6 @@ import org.eclipse.smarthome.core.thing.type.ChannelDefinition;
 import org.eclipse.smarthome.core.thing.type.ChannelType;
 import org.eclipse.smarthome.core.thing.type.ChannelTypeUID;
 import org.eclipse.smarthome.core.thing.type.ThingType;
-import org.eclipse.smarthome.core.types.StateDescription;
 
 import com.google.common.collect.Lists;
 
@@ -38,11 +37,13 @@ public class DigitalSTROMThingTypeProvider implements ThingTypeProvider {
     HashMap<String, ThingType> thingTypeMapEN = new HashMap<String, ThingType>();
     HashMap<String, ThingType> thingTypeMapDE = new HashMap<String, ThingType>();
 
-    /* Label and description build constats */
+    /* Label and description build constants */
     /* English */
-    private final String PREFIX_LABEL_EN = "DigitalSTROM device ";
-    private final String PREFIX_DESC_EN = "This is a DigitalStrom ";
+    private final String PREFIX_LABEL_EN = "digitalSTROM device ";
+    private final String PREFIX_LABEL_PLUGIN_ADAPTER_EN = "digitalSTROM plugin-adapter.";
+    private final String PREFIX_DESC_EN = "This is a digitalSTROM ";
     private final String POSTFIX_DESC_EN = " device.";
+    private final String POSTFIX_DESC_PLUGIN_ADAPTER_EN = " plugin-adapter.";
 
     private final String GE_EN = "(yellow)";
     private final String GE_FUNC_EN = "light";
@@ -52,9 +53,11 @@ public class DigitalSTROMThingTypeProvider implements ThingTypeProvider {
     private final String SW_FUNC_EN = "joker";
 
     /* German */
-    private final String PREFIX_LABEL_DE = "DigitalSTROM Klemme ";
-    private final String PREFIX_DESC_DE = "Dies ist eine DigitalSTROM ";
+    private final String PREFIX_LABEL_DE = "digitalSTROM Klemme ";
+    private final String PREFIX_LABEL_PLUGIN_ADAPTER_DE = "digitalSTROM Zwischenstecker.";
+    private final String PREFIX_DESC_DE = "Dies ist eine digitalSTROM ";
     private final String POSTFIX_DESC_DE = " Klemme.";
+    private final String POSTFIX_DESC_PLUGIN_ADAPTER_DE = " Zwischenstecker.";
 
     private final String GE_DE = "(gelb)";
     private final String GE_FUNC_DE = "Licht";
@@ -66,117 +69,138 @@ public class DigitalSTROMThingTypeProvider implements ThingTypeProvider {
     /* ChannelDefinitions */
     /* English */
     private final ChannelDefinition CHANNEL_DEFINITION_BRIGHTNESS_EN = new ChannelDefinition("brightness",
-            new ChannelType(new ChannelTypeUID("digitalstrom:brightness"), false, "Dimmer", "Dimm channel",
-                    "this is a channel to dimm an light Device", "light", null, null, null),
-            null, "Dimm channel", "this is a channel to to dimm an light Device");
+            new ChannelType(new ChannelTypeUID("digitalstrom:brightness"), false, "Dimmer", "brightness",
+                    "The brightness channel allows to dimm a light Device.", "dimmableLight", null, null, null),
+            null, "brightness", "The brightness channel allows to dimm a light Device.");
 
     private final ChannelDefinition CHANNEL_DEFINITION_LIGHT_SWITCH_EN = new ChannelDefinition("lightSwitch",
             new ChannelType(new ChannelTypeUID("digitalstrom:lightSwitch"), false, "Switch", "light switch channel",
-                    "this is a channel to turn an Device on or off", "light", null, null, null),
-            null, "light switch channel", "this is a channel to turn an Device on or off");
-    /*
-     * public ChannelDefinition(String id, ChannelType type, Map<String, String> properties, String label,
-     * String description)
-     */
-    /*
-     * public StateDescription(BigDecimal minimum, BigDecimal maximum, BigDecimal step, String pattern, boolean
-     * readOnly,
-     * List<StateOption> options)
-     */
-    /*
-     * <channel-type id="brightness">
-     * <item-type>Dimmer</item-type>
-     * <label>Light brightness</label>
-     * <description>The brightness channel allows to control the brightness of a light.
-     * It is also possible to switch the light on and off.
-     * </description>
-     * <category>DimmableLight</category>
-     * </channel-type>
-     * <channel-type id="lightSwitch">
-     * <item-type>Switch</item-type>
-     * <label>Light switch</label>
-     * <description>The light switch channel allows to switch the light on and off.
-     * </description>
-     * <category>Light</category>
-     * </channel-type>
-     * <!--Channel for shades-->
-     * <channel-type id="shade">
-     * <item-type>Rollershutter</item-type>
-     * <label>Shade control</label>
-     * <description>The Shade controll channel allows to control shade device e.g. a rollershutter.
-     * </description>
-     * <category>Blinds</category>
-     * </channel-type>
-     * <!--Plug adapter--><channel-type id="plugAdapter">
-     * <item-type>Switch</item-type>
-     * <label>Plug adapter</label>
-     * <description>The plug adapter channel allows to switch the plug adapter on or off.
-     * </description>
-     * <category>Light</category>
-     * </channel-type>
-     * <!--Scene channel-->
-     * <channel-type id="scene">
-     * <item-type>Switch</item-type>
-     * <label>Scene</label>
-     * <description>The scene channel allows to call or undo a scene from DigitalSTROM.
-     * </description>
-     * <tags>
-     * <tag>Scene</tag>
-     * </tags>
-     * </channel-type><!--Sensor channels-->
-     * <channel-type id="powerConsumption">
-     * <item-type>Number</item-type>
-     * <label>Power consumption</label>
-     * <description>The power consumption channel shows the current power consumption from this device.</description>
-     * <category>Energy</category>
-     * <tags>
-     * <tag>power consumption</tag>
-     * </tags>
-     * <state readOnly="true" pattern="%d W"></state>
-     * </channel-type>
-     * <channel-type id="electricMeterValue">
-     * <item-type>Number</item-type>
-     * <label>Electric meter value</label>
-     * <description>The electric meter value channel shows the current electric meter value from this
-     * device.</description>
-     * <category>Energy</category>
-     * <tags>
-     * <tag>electric meter value</tag>
-     * </tags>
-     * <state readOnly="true" pattern="%d mA"></state>
-     * </channel-type>
-     * <channel-type id="energyMeterValue">
-     * <item-type>Number</item-type>
-     * <label>Energy meter value</label>
-     * <description>The energy meter value channel shows the current energy meter value from this device.</description>
-     * <category>Energy</category>
-     * <tags>
-     * <tag>energy meter value</tag>
-     * </tags>
-     * <state readOnly="true" pattern="%d Wh"></state>
-     * </channel-type>
-     */
+                    "The light switch channel allows to turn a light Device on or off.", "light", null, null, null),
+            null, "light switch channel", "The light switch channel allows to turn a light Device on or off.");
+    /**
+     * private final ChannelDefinition CHANNEL_DEFINITION_SCENE_EN = new ChannelDefinition("scene",
+     * new ChannelType(new ChannelTypeUID("digitalstrom:scene"), false, "Switch", "scene channel",
+     * "this is a channel to turn a scene on or off", "scene", null, null, null),
+     * null, "scene channel", "this is a channel to turn a scene on or off");
+     **/
 
-    private final StateDescription STATE_DESC_POWER_CONSUMPTION = new StateDescription(null, null, null, "%d W", true,
-            null);
-    private final ChannelType CHANNEL_TYPE_POWER_CONSUMPTION = new ChannelType(
-            new ChannelTypeUID(
-                    DigitalSTROMBindingConstants.BINDING_ID + ":" + DigitalSTROMBindingConstants.CHANNEL_LIGHT_SWITCH),
-            false, "Switch", "light switch channel", "this is a channel to turn an light device on or off", "light",
-            null, STATE_DESC_POWER_CONSUMPTION, null);
+    // TODO: digitalSTROM Sensoren auf Richtigkeit überprüfen. States Description hinzufügen
+    private final ChannelDefinition CHANNEL_DEFINITION_POWER_CONSUMPTION_EN = new ChannelDefinition("powerConsumption",
+            new ChannelType(new ChannelTypeUID("digitalstrom:powerConsumption"), false, "Number",
+                    "power consumption channel",
+                    "The power consumption channel sums up the power consuption of this device.", "Energy", null, null,
+                    null),
+            null, "power consumption channel",
+            "The power consumption channel sums up the power consuption of this device.");
 
-    private final ChannelDefinition CHANNEL_DEFINITION_POWER_CONSUMPTION_EN = new ChannelDefinition("lightSwitch",
-            CHANNEL_TYPE_POWER_CONSUMPTION, null, "light switch channel",
-            "this is a channel to turn an Device on or off");
+    private final ChannelDefinition CHANNEL_DEFINITION_ELECTRIC_METER_VALUE_EN = new ChannelDefinition("electricMeter",
+            new ChannelType(new ChannelTypeUID("digitalstrom:electricMeter"), false, "Number", "electric meter channel",
+                    "The electric meter channel allows to get a electric meter value.", "Energy", null, null, null),
+            null, "electric meter channel", "The electric meter channel allows to get a electric meter value.");
+
+    private final ChannelDefinition CHANNEL_DEFINITION_ENERGY_METER_VALUE_EN = new ChannelDefinition("energyMeter",
+            new ChannelType(new ChannelTypeUID("digitalstrom:energyMeter"), false, "Number", "energy meter channel",
+                    "The energy meter channel allows to get a energy meter value.", "Energy", null, null, null),
+            null, "energy meter channel", "The energy meter channel allows to get a energy meter value.");
+
+    private final ChannelDefinition CHANNEL_DEFINITION_SHADE_EN = new ChannelDefinition("shade",
+            new ChannelType(new ChannelTypeUID("digitalstrom:shade"), false, "Rollershutter", "Shade control",
+                    "The Shade control channel allows to control shade device e.g. a rollershutter or awnings.",
+                    "Blinds", null, null, null),
+            null, "Shade control", "The Shade control channel allows to control shade device e.g. a rollershutter.");
+    /*
+     * private final ChannelDefinition CHANNEL_DEFINITION_PLUG_ADAPTER_EN = new ChannelDefinition("plugAdapter",
+     * new ChannelType(new ChannelTypeUID("digitalstrom:plugAdapter"), false, "Switch", "Plug adapter",
+     * "The plug adapter channel allows to switch the plug adapter on or off.", "Light", null, null, null),
+     * null, "Plug adapter", "The plug adapter channel allows to switch the plug adapter on or off.");
+     */
+    // TODO: Category Joker? Plug Adapter löschen!
+
+    private final ChannelDefinition CHANNEL_DEFINITION_GENERAL_DIMM_EN = new ChannelDefinition("generalDimm",
+            new ChannelType(new ChannelTypeUID("digitalstrom:generalDimm"), false, "Dimmer",
+                    "devide power control channel",
+                    "The devide power control channel allows to control the power of a Device e.g. a ceiling fan.",
+                    null, null, null, null),
+            null, "general Dimmer",
+            "The devide power control channel allows to control the power of a Device e.g. a ceiling fan..");
+
+    private final ChannelDefinition CHANNEL_DEFINITION_GENERAL_SWITCH_EN = new ChannelDefinition("generalSwitch",
+            new ChannelType(new ChannelTypeUID("digitalstrom:generalSwitch"), false, "Switch", "device switch",
+                    "The device switch channel allows to turn a Device e.g. a HIFI-System.", "Switch", null, null,
+                    null),
+            null, "general Switch", "The device switch channel allows to turn a Device e.g. a HIFI-System.");
+
+    /* German */
+    private final ChannelDefinition CHANNEL_DEFINITION_BRIGHTNESS_DE = new ChannelDefinition("brightness",
+            new ChannelType(new ChannelTypeUID("digitalstrom:brightness"), false, "Dimmer", "Helligkeit",
+                    "Regelt die Helligkeit des Lichtes.", "dimmableLight", null, null, null),
+            null, "brightness", "Regelt die Helligkeit des Lichtes.");
+
+    private final ChannelDefinition CHANNEL_DEFINITION_LIGHT_SWITCH_DE = new ChannelDefinition("lightSwitch",
+            new ChannelType(new ChannelTypeUID("digitalstrom:lightSwitch"), false, "Switch", "Lichtschalter",
+                    "Schaltet ein Licht ein oder aus.", "light", null, null, null),
+            null, "Lichtschalter", "Schaltet ein Licht ein oder aus.");
+
+    // TODO: digitalSTROM Sensoren auf Richtigkeit überprüfen. States Description hinzufügen.
+
+    private final ChannelDefinition CHANNEL_DEFINITION_POWER_CONSUMPTION_DE = new ChannelDefinition("powerConsumption",
+            new ChannelType(new ChannelTypeUID("digitalstrom:powerConsumption"), false, "Number", "Stromverbrauch",
+                    "Gibt den aktuellen Stromverbrauch des Geräts in Watt an.", "Energy", null, null, null),
+            null, "Stromverbrauch", "Gibt den aktuellen Stromverbrauch des Geräts in Watt an.");
+
+    private final ChannelDefinition CHANNEL_DEFINITION_ELECTRIC_METER_VALUE_DE = new ChannelDefinition("electricMeter",
+            new ChannelType(new ChannelTypeUID("digitalstrom:electricMeter"), false, "Number", "Stromverbrauch",
+                    "Übergibt den gesamten Stromverbrauch in Milliampere.", "Energy", null, null, null),
+            null, "Stromverbrauch", "Übergibt den gesamten Stromverbrauch in Milliampere.");
+
+    private final ChannelDefinition CHANNEL_DEFINITION_ENERGY_METER_VALUE_DE = new ChannelDefinition("energyMeter",
+            new ChannelType(new ChannelTypeUID("digitalstrom:energyMeter"), false, "Number", "energy meter channel",
+                    "The energy meter channel allows to get a energy meter value.", "Energy", null, null, null),
+            null, "energy meter channel", "The energy meter channel allows to get a energy meter value.");
+
+    private final ChannelDefinition CHANNEL_DEFINITION_SHADE_DE = new ChannelDefinition("shade",
+            new ChannelType(new ChannelTypeUID("digitalstrom:shade"), false, "Rollershutter", "Schattensteuerung",
+                    "Erlaubt die Schattensteuerung z.B. von Rollladen oder Markisen.", "Blinds", null, null, null),
+            null, "Schattensteuerung", "Erlaubt die Schattensteuerung z.B. von Rollladen oder Markisen.");
+    /*
+     * private final ChannelDefinition CHANNEL_DEFINITION_PLUG_ADAPTER_DE = new ChannelDefinition("plugAdapter",
+     * new ChannelType(new ChannelTypeUID("digitalstrom:plugAdapter"), false, "Switch", "Plug adapter",
+     * "The plug adapter channel allows to switch the plug adapter on or off.", "Light", null, null, null),
+     * null, "Plug adapter", "The plug adapter channel allows to switch the plug adapter on or off.");
+     */
+    // TODO: Category Joker? Plug adapter löschen!
+
+    private final ChannelDefinition CHANNEL_DEFINITION_GENERAL_DIMM_DE = new ChannelDefinition("generalDimm",
+            new ChannelType(new ChannelTypeUID("digitalstrom:generalDimm"), false, "Dimmer",
+                    "Einstellung Geräteleistung", "Stellt die Leistung eines Gerätes ein z.B. eines Deckenventilators.",
+                    null, null, null, null),
+            null, "Einstellung Geräteleistung", "Stellt die Leistung eines Gerätes ein z.B. eines Deckenventilators.");
+
+    private final ChannelDefinition CHANNEL_DEFINITION_GENERAL_SWITCH_DE = new ChannelDefinition("generalSwitch",
+            new ChannelType(new ChannelTypeUID("digitalstrom:generalSwitch"), false, "Switch", "Geräteschalter",
+                    "Schaltet ein Gerät ein und aus z.B. ein HIFI-Anlage.", "Switch", null, null, null),
+            null, "Geräteschalter", "Schaltet ein Gerät ein und aus z.B. ein HIFI-Anlage.");
 
     /* ChannelList */
-    private final List<ChannelDefinition> CHANNELS_EN = Lists.newArrayList(CHANNEL_DEFINITION_BRIGHTNESS_EN,
-            CHANNEL_DEFINITION_LIGHT_SWITCH_EN);
-    private final List<ChannelDefinition> GR_CHANNELS_EN = Lists.newArrayList(CHANNEL_DEFINITION_BRIGHTNESS_EN,
-            CHANNEL_DEFINITION_LIGHT_SWITCH_EN);
+    /* English */
+    private final List<ChannelDefinition> GE_CHANNELS_EN = Lists.newArrayList(CHANNEL_DEFINITION_BRIGHTNESS_EN,
+            CHANNEL_DEFINITION_LIGHT_SWITCH_EN, CHANNEL_DEFINITION_POWER_CONSUMPTION_EN,
+            CHANNEL_DEFINITION_ELECTRIC_METER_VALUE_EN, CHANNEL_DEFINITION_ENERGY_METER_VALUE_EN);
+    private final List<ChannelDefinition> GR_CHANNELS_EN = Lists.newArrayList(CHANNEL_DEFINITION_SHADE_EN);
+    private final List<ChannelDefinition> SW_CHANNELS_EN = Lists.newArrayList(CHANNEL_DEFINITION_BRIGHTNESS_EN,
+            CHANNEL_DEFINITION_LIGHT_SWITCH_EN, CHANNEL_DEFINITION_POWER_CONSUMPTION_EN,
+            CHANNEL_DEFINITION_ELECTRIC_METER_VALUE_EN, CHANNEL_DEFINITION_ENERGY_METER_VALUE_EN,
+            CHANNEL_DEFINITION_GENERAL_DIMM_EN, CHANNEL_DEFINITION_GENERAL_SWITCH_EN);
 
-    private final List<ChannelDefinition> CHANNELS_DE = Lists.newArrayList();
-    private final List<ChannelDefinition> GR_CHANNELS_DE = Lists.newArrayList();
+    /* German */
+    private final List<ChannelDefinition> GE_CHANNELS_DE = Lists.newArrayList(CHANNEL_DEFINITION_BRIGHTNESS_DE,
+            CHANNEL_DEFINITION_LIGHT_SWITCH_DE, CHANNEL_DEFINITION_POWER_CONSUMPTION_DE,
+            CHANNEL_DEFINITION_ELECTRIC_METER_VALUE_DE, CHANNEL_DEFINITION_ENERGY_METER_VALUE_DE);
+    private final List<ChannelDefinition> GR_CHANNELS_DE = Lists.newArrayList(CHANNEL_DEFINITION_SHADE_DE);
+    private final List<ChannelDefinition> SW_CHANNELS_DE = Lists.newArrayList(CHANNEL_DEFINITION_BRIGHTNESS_DE,
+            CHANNEL_DEFINITION_LIGHT_SWITCH_DE, CHANNEL_DEFINITION_POWER_CONSUMPTION_DE,
+            CHANNEL_DEFINITION_ELECTRIC_METER_VALUE_DE, CHANNEL_DEFINITION_ENERGY_METER_VALUE_DE,
+            CHANNEL_DEFINITION_GENERAL_DIMM_DE, CHANNEL_DEFINITION_GENERAL_SWITCH_DE);
 
     public void registerConnectionManagerHandler(DigitalSTROMConnectionManager connMan) {
         if (connMan != null) {
@@ -222,8 +246,8 @@ public class DigitalSTROMThingTypeProvider implements ThingTypeProvider {
         String labelDE;
         String descDE;
         URI configDesc = null;
-        List<ChannelDefinition> channelDefsEN = CHANNELS_EN;
-        List<ChannelDefinition> channelDefsDE = CHANNELS_DE;
+        List<ChannelDefinition> channelDefsEN = GE_CHANNELS_EN;
+        List<ChannelDefinition> channelDefsDE = GE_CHANNELS_DE;
 
         try {
             configDesc = new URI(DigitalSTROMBindingConstants.DEVICE_CONFIG);
@@ -252,12 +276,22 @@ public class DigitalSTROMThingTypeProvider implements ThingTypeProvider {
                     // TODO Auto-generated catch block
                     e1.printStackTrace();
                 }
+
                 break;
             case "SW":
-                labelEN = PREFIX_LABEL_EN + hwInfo + " " + SW_EN;
-                descEN = PREFIX_DESC_EN + " " + SW_FUNC_EN + " " + POSTFIX_DESC_EN;
-                labelDE = PREFIX_LABEL_DE + hwInfo + " " + SW_DE;
-                descDE = PREFIX_DESC_DE + " " + SW_FUNC_DE + " " + POSTFIX_DESC_DE;
+                if (hwInfo.contains("ZS")) {
+                    labelEN = PREFIX_LABEL_PLUGIN_ADAPTER_EN + hwInfo + " " + SW_EN;
+                    descEN = PREFIX_DESC_EN + " " + SW_FUNC_EN + " " + POSTFIX_DESC_PLUGIN_ADAPTER_EN;
+                    labelDE = PREFIX_LABEL_PLUGIN_ADAPTER_DE + hwInfo + " " + SW_DE;
+                    descDE = PREFIX_DESC_DE + " " + SW_FUNC_DE + " " + POSTFIX_DESC_PLUGIN_ADAPTER_DE;
+                } else {
+                    labelEN = PREFIX_LABEL_EN + hwInfo + " " + SW_EN;
+                    descEN = PREFIX_DESC_EN + " " + SW_FUNC_EN + " " + POSTFIX_DESC_EN;
+                    labelDE = PREFIX_LABEL_DE + hwInfo + " " + SW_DE;
+                    descDE = PREFIX_DESC_DE + " " + SW_FUNC_DE + " " + POSTFIX_DESC_DE;
+                }
+                channelDefsEN = SW_CHANNELS_EN;
+                channelDefsDE = SW_CHANNELS_DE;
                 break;
             default:
                 return null;

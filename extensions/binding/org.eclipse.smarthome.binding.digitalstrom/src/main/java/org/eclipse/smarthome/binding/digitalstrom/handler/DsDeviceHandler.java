@@ -226,7 +226,7 @@ public class DsDeviceHandler extends BaseThingHandler implements DeviceStatusLis
     public synchronized void onDeviceStateChanged(DeviceStateUpdate deviceStateUpdate) {
         if (device != null) {
             logger.debug("Update ESH State");
-            if (device.isDimmable()) {
+            if (device.isRollershutter()) {
                 if (deviceStateUpdate != null) {
                     switch (deviceStateUpdate.getType()) {
                         case DeviceStateUpdate.UPDATE_BRIGHTNESS:
@@ -258,7 +258,7 @@ public class DsDeviceHandler extends BaseThingHandler implements DeviceStatusLis
                             return;
                     }
                 }
-            } else if (device.isRollershutter()) {
+            } else {
                 logger.debug("Update ESH State");
                 if (deviceStateUpdate != null) {
                     switch (deviceStateUpdate.getType()) {
