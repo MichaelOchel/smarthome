@@ -292,11 +292,11 @@ public class SceneDiscovery {
         this.sceneManager.addInternalScene(scene);
     }
 
-    public void registerSceneStatusListener(SceneStatusListener listener) {
+    public void registerSceneDiscovery(SceneStatusListener listener) {
         this.discovery = listener;
     }
 
-    public void unRegisterSceneStatusListener() {
+    public void unRegisterDiscovery() {
         this.discovery = null;
     }
 

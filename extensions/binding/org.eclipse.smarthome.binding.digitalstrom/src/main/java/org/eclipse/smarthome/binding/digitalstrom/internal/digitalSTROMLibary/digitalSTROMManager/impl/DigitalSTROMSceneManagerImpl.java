@@ -284,7 +284,7 @@ public class DigitalSTROMSceneManagerImpl implements DigitalSTROMSceneManager {
             // logger.debug("register SceneListener with id: " + id);
             if (id.equals(SceneStatusListener.SCENE_DESCOVERY)) {
                 this.discovery = new SceneDiscovery(this);
-                discovery.registerSceneStatusListener(sceneListener);
+                discovery.registerSceneDiscovery(sceneListener);
                 // discovery.generateAllScenes(connectionManager, structureManager);
             } else {
                 InternalScene intScene = this.internalSceneMap.get(sceneListener.getID());
@@ -307,11 +307,12 @@ public class DigitalSTROMSceneManagerImpl implements DigitalSTROMSceneManager {
         if (sceneListener != null) {
             String id = sceneListener.getID();
             if (id.equals(SceneStatusListener.SCENE_DESCOVERY)) {
-                this.discovery.unRegisterSceneStatusListener();
+                this.discovery.unRegisterDiscovery();
             } else {
                 InternalScene intScene = this.internalSceneMap.get(sceneListener.getID());
                 if (intScene != null) {
                     intScene.unregisterSceneListener();
+                    discovery.sceneDiscoverd(intScene);
                 } else {
                     // TODO:Fehlermeldung
                 }

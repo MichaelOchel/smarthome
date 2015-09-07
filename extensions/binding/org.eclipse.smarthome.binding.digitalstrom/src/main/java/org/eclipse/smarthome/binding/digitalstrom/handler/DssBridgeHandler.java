@@ -80,28 +80,8 @@ public class DssBridgeHandler extends BaseBridgeHandler
     public void initialize() {
         logger.debug("Initializing DigitalSTROM Bridge handler.");
         Configuration configuration = this.getConfig();
+
         if (configuration.get(HOST) != null && !configuration.get(HOST).toString().isEmpty()) {
-            logger.debug("Initializing DigitalSTROM Manager.");
-            if (connMan == null) {
-                String[] loginConfig = getLoginConfig(configuration);
-                this.connMan = new DigitalSTROMConnectionManagerImpl(loginConfig[0], loginConfig[1], loginConfig[2],
-                        loginConfig[3], false, this);
-                /*
-                 * this.connMan = new DigitalSTROMConnectionManagerImpl(configuration.get(HOST).toString(),
-                 * configuration.get(USER_NAME).toString(), configuration.get(PASSWORD).toString(), null, false,
-                 * this);// configuration.get(APPLICATION_TOKEN).toString()
-                 */
-            } else {
-                connMan.registerConnectionListener(this);
-            }
-
-            this.structMan = new DigitalSTROMStructureManagerImpl();
-            this.sceneMan = new DigitalSTROMSceneManagerImpl(this.connMan, this.structMan);
-            this.devStatMan = new DigitalSTROMDeviceStatusManagerImpl(this.connMan, this.structMan, this.sceneMan);
-            structMan.generateZoneGroupNames(connMan);
-            // this.devStatMan.registerTotalPowerConsumptionListener(this);
-            this.devStatMan.start();
-
             // get Configurations
             if (configuration.get(DigitalSTROMBindingConstants.SENSOR_DATA_UPDATE_INTERVALL) != null
                     && !configuration.get(DigitalSTROMBindingConstants.SENSOR_DATA_UPDATE_INTERVALL).toString().trim()
@@ -126,6 +106,27 @@ public class DssBridgeHandler extends BaseBridgeHandler
                         .toString();
             }
 
+            logger.debug("Initializing DigitalSTROM Manager.");
+            if (connMan == null) {
+                String[] loginConfig = getLoginConfig(configuration);
+                this.connMan = new DigitalSTROMConnectionManagerImpl(loginConfig[0], loginConfig[1], loginConfig[2],
+                        loginConfig[3], false, this);
+                /*
+                 * this.connMan = new DigitalSTROMConnectionManagerImpl(configuration.get(HOST).toString(),
+                 * configuration.get(USER_NAME).toString(), configuration.get(PASSWORD).toString(), null, false,
+                 * this);// configuration.get(APPLICATION_TOKEN).toString()
+                 */
+            } else {
+                connMan.registerConnectionListener(this);
+            }
+
+            this.structMan = new DigitalSTROMStructureManagerImpl();
+            this.sceneMan = new DigitalSTROMSceneManagerImpl(this.connMan, this.structMan);
+            this.devStatMan = new DigitalSTROMDeviceStatusManagerImpl(this.connMan, this.structMan, this.sceneMan);
+            structMan.generateZoneGroupNames(connMan);
+            // this.devStatMan.registerTotalPowerConsumptionListener(this);
+            this.devStatMan.start();
+
             if (this.thingTypeProvider != null) {
                 this.thingTypeProvider.registerConnectionManagerHandler(connMan);
             }
@@ -146,6 +147,8 @@ public class DssBridgeHandler extends BaseBridgeHandler
 
         } else {
             logger.warn("Cannot connect to DigitalSTROMSever. Host address is not set.");
+            updateStatus(ThingStatus.ONLINE, ThingStatusDetail.CONFIGURATION_ERROR,
+                    "The connection to the digitalSTROM-Server can't established, because the host is missing. Please set the host.");
         }
 
     }

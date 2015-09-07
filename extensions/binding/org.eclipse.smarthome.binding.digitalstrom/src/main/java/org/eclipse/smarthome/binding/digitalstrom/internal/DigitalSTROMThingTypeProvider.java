@@ -15,7 +15,6 @@ import java.util.List;
 import java.util.Locale;
 
 import org.eclipse.smarthome.binding.digitalstrom.DigitalSTROMBindingConstants;
-import org.eclipse.smarthome.binding.digitalstrom.DigitalSTROMBindingConstants;
 import org.eclipse.smarthome.binding.digitalstrom.handler.DsDeviceHandler;
 import org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.digitalSTROMManager.DigitalSTROMConnectionManager;
 import org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.digitalSTROMStructure.digitalSTROMDevices.Device;
@@ -38,11 +37,13 @@ public class DigitalSTROMThingTypeProvider implements ThingTypeProvider {
     HashMap<String, ThingType> thingTypeMapEN = new HashMap<String, ThingType>();
     HashMap<String, ThingType> thingTypeMapDE = new HashMap<String, ThingType>();
 
-    /* Label and description build constats */
+    /* Label and description build constants */
     /* English */
-    private final String PREFIX_LABEL_EN = "DigitalSTROM device ";
-    private final String PREFIX_DESC_EN = "This is a DigitalStrom ";
+    private final String PREFIX_LABEL_EN = "digitalSTROM device ";
+    private final String PREFIX_LABEL_PLUGIN_ADAPTER_EN = "digitalSTROM plugin-adapter.";
+    private final String PREFIX_DESC_EN = "This is a digitalSTROM ";
     private final String POSTFIX_DESC_EN = " device.";
+    private final String POSTFIX_DESC_PLUGIN_ADAPTER_EN = " plugin-adapter.";
 
     private final String GE_EN = "(yellow)";
     private final String GE_FUNC_EN = "light";
@@ -52,9 +53,11 @@ public class DigitalSTROMThingTypeProvider implements ThingTypeProvider {
     private final String SW_FUNC_EN = "joker";
 
     /* German */
-    private final String PREFIX_LABEL_DE = "DigitalSTROM Klemme ";
-    private final String PREFIX_DESC_DE = "Dies ist eine DigitalSTROM ";
+    private final String PREFIX_LABEL_DE = "digitalSTROM Klemme ";
+    private final String PREFIX_LABEL_PLUGIN_ADAPTER_DE = "digitalSTROM Zwischenstecker.";
+    private final String PREFIX_DESC_DE = "Dies ist eine digitalSTROM ";
     private final String POSTFIX_DESC_DE = " Klemme.";
+    private final String POSTFIX_DESC_PLUGIN_ADAPTER_DE = " Zwischenstecker.";
 
     private final String GE_DE = "(gelb)";
     private final String GE_FUNC_DE = "Licht";
@@ -157,25 +160,32 @@ public class DigitalSTROMThingTypeProvider implements ThingTypeProvider {
      * </channel-type>
      */
 
+    private StateDescription getStateDescription(String plattern) {
+        return new StateDescription(null, null, null, plattern, true, null);
+    }
+
     private final StateDescription STATE_DESC_POWER_CONSUMPTION = new StateDescription(null, null, null, "%d W", true,
             null);
     private final ChannelType CHANNEL_TYPE_POWER_CONSUMPTION = new ChannelType(
             new ChannelTypeUID(
                     DigitalSTROMBindingConstants.BINDING_ID + ":" + DigitalSTROMBindingConstants.CHANNEL_LIGHT_SWITCH),
             false, "Switch", "light switch channel", "this is a channel to turn an light device on or off", "light",
-            null, STATE_DESC_POWER_CONSUMPTION, null);
+            null, getStateDescription("%d W"), null);
 
     private final ChannelDefinition CHANNEL_DEFINITION_POWER_CONSUMPTION_EN = new ChannelDefinition("lightSwitch",
             CHANNEL_TYPE_POWER_CONSUMPTION, null, "light switch channel",
             "this is a channel to turn an Device on or off");
 
     /* ChannelList */
-    private final List<ChannelDefinition> CHANNELS_EN = Lists.newArrayList(CHANNEL_DEFINITION_BRIGHTNESS_EN,
+    /* English */
+    private final List<ChannelDefinition> GE_CHANNELS_EN = Lists.newArrayList(CHANNEL_DEFINITION_BRIGHTNESS_EN,
             CHANNEL_DEFINITION_LIGHT_SWITCH_EN);
-    private final List<ChannelDefinition> GR_CHANNELS_EN = Lists.newArrayList(CHANNEL_DEFINITION_BRIGHTNESS_EN,
-            CHANNEL_DEFINITION_LIGHT_SWITCH_EN);
+    private final List<ChannelDefinition> GR_CHANNELS_EN = Lists.newArrayList();
+    private final List<ChannelDefinition> SW_CHANNELS_EN = Lists.newArrayList(GE_CHANNELS_EN);
 
-    private final List<ChannelDefinition> CHANNELS_DE = Lists.newArrayList();
+    /* German */
+    private final List<ChannelDefinition> GE_CHANNELS_DE = Lists.newArrayList();
+    private final List<ChannelDefinition> SW_CHANNELS_DE = Lists.newArrayList();
     private final List<ChannelDefinition> GR_CHANNELS_DE = Lists.newArrayList();
 
     public void registerConnectionManagerHandler(DigitalSTROMConnectionManager connMan) {
@@ -222,8 +232,8 @@ public class DigitalSTROMThingTypeProvider implements ThingTypeProvider {
         String labelDE;
         String descDE;
         URI configDesc = null;
-        List<ChannelDefinition> channelDefsEN = CHANNELS_EN;
-        List<ChannelDefinition> channelDefsDE = CHANNELS_DE;
+        List<ChannelDefinition> channelDefsEN = GE_CHANNELS_EN;
+        List<ChannelDefinition> channelDefsDE = GE_CHANNELS_DE;
 
         try {
             configDesc = new URI(DigitalSTROMBindingConstants.DEVICE_CONFIG);
@@ -254,10 +264,19 @@ public class DigitalSTROMThingTypeProvider implements ThingTypeProvider {
                 }
                 break;
             case "SW":
-                labelEN = PREFIX_LABEL_EN + hwInfo + " " + SW_EN;
-                descEN = PREFIX_DESC_EN + " " + SW_FUNC_EN + " " + POSTFIX_DESC_EN;
-                labelDE = PREFIX_LABEL_DE + hwInfo + " " + SW_DE;
-                descDE = PREFIX_DESC_DE + " " + SW_FUNC_DE + " " + POSTFIX_DESC_DE;
+                if (hwInfo.contains("ZS")) {
+                    labelEN = PREFIX_LABEL_PLUGIN_ADAPTER_EN + hwInfo + " " + SW_EN;
+                    descEN = PREFIX_DESC_EN + " " + SW_FUNC_EN + " " + POSTFIX_DESC_PLUGIN_ADAPTER_EN;
+                    labelDE = PREFIX_LABEL_PLUGIN_ADAPTER_DE + hwInfo + " " + SW_DE;
+                    descDE = PREFIX_DESC_DE + " " + SW_FUNC_DE + " " + POSTFIX_DESC_PLUGIN_ADAPTER_DE;
+                } else {
+                    labelEN = PREFIX_LABEL_EN + hwInfo + " " + SW_EN;
+                    descEN = PREFIX_DESC_EN + " " + SW_FUNC_EN + " " + POSTFIX_DESC_EN;
+                    labelDE = PREFIX_LABEL_DE + hwInfo + " " + SW_DE;
+                    descDE = PREFIX_DESC_DE + " " + SW_FUNC_DE + " " + POSTFIX_DESC_DE;
+                }
+                channelDefsEN = SW_CHANNELS_EN;
+                channelDefsDE = SW_CHANNELS_DE;
                 break;
             default:
                 return null;

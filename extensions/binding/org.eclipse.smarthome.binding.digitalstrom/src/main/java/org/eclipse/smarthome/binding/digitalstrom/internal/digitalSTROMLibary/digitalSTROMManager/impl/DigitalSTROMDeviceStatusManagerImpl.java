@@ -219,12 +219,15 @@ public class DigitalSTROMDeviceStatusManagerImpl implements DigitalSTROMDeviceSt
 
                                 boolean found = false;
                                 for (TrashDevice trashDevice : trashDevices) {
-                                    if (trashDevice.getDevice().equals(currentDevice)) {
-                                        Device device = trashDevice.getDevice();
-                                        trashDevices.remove(trashDevice);
-                                        strucMan.addDeviceToStructure(device);
-                                        found = true;
-                                        logger.debug("Found device in trashDevices, add TrashDevice to the deviceMap!");
+                                    if (trashDevice != null) {
+                                        if (trashDevice.getDevice().equals(currentDevice)) {
+                                            Device device = trashDevice.getDevice();
+                                            trashDevices.remove(trashDevice);
+                                            strucMan.addDeviceToStructure(device);
+                                            found = true;
+                                            logger.debug(
+                                                    "Found device in trashDevices, add TrashDevice to the deviceMap!");
+                                        }
                                     }
                                 }
 
@@ -252,8 +255,8 @@ public class DigitalSTROMDeviceStatusManagerImpl implements DigitalSTROMDeviceSt
                     }
 
                     if (!sceneMan.scenesGenerated() && sceneMan.isDiscoveryRegistrated()) {
-                        logger.debug("generateScenes");
-                        sceneMan.generateScenes();
+                        // logger.debug("generateScenes");
+                        // sceneMan.generateScenes();
                     }
 
                     for (Device device : tempDeviceMap.values())
@@ -397,6 +400,7 @@ public class DigitalSTROMDeviceStatusManagerImpl implements DigitalSTROMDeviceSt
     public synchronized void sendSceneComandsToDSS(InternalScene scene, boolean call_undo) {
         if (this.connMan.checkConnection()) {
             boolean requestSucsessfull = false;
+            // TODO: 1 second rule to send auto generated scene commands
             if (scene.getZoneID() == 0) {
                 if (call_undo) {
                     requestSucsessfull = this.digitalSTROMClient.callApartmentScene(connMan.getSessionToken(),
@@ -416,7 +420,7 @@ public class DigitalSTROMDeviceStatusManagerImpl implements DigitalSTROMDeviceSt
                 }
             }
 
-            logger.debug("scenecall sucsess?: " + requestSucsessfull);
+            // logger.debug("scenecall sucsess?: " + requestSucsessfull);
             if (requestSucsessfull) {
                 if (call_undo) {
                     scene.activateScene();

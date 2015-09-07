@@ -270,18 +270,20 @@ public class DigitalSTROMStructureManagerImpl implements DigitalSTROMStructureMa
             int oldZoneID = -1;
             List<Short> oldGroups = null;
             Device internalDevice = this.getDeviceByDSID(device.getDSID());
-            if (device.getZoneId() != internalDevice.getZoneId()) {
-                oldZoneID = internalDevice.getZoneId();
-                internalDevice.setZoneId(device.getZoneId());
-            }
+            if (internalDevice != null) {
+                if (device.getZoneId() != internalDevice.getZoneId()) {
+                    oldZoneID = internalDevice.getZoneId();
+                    internalDevice.setZoneId(device.getZoneId());
+                }
 
-            if (!internalDevice.getGroups().equals(device.getGroups())) {
-                oldGroups = internalDevice.getGroups();
-                internalDevice.setGroups(device.getGroups());
-            }
+                if (!internalDevice.getGroups().equals(device.getGroups())) {
+                    oldGroups = internalDevice.getGroups();
+                    internalDevice.setGroups(device.getGroups());
+                }
 
-            if (deleteDevice(oldZoneID, oldGroups, internalDevice)) {
-                addDeviceToStructure(internalDevice);
+                if (deleteDevice(oldZoneID, oldGroups, internalDevice)) {
+                    addDeviceToStructure(internalDevice);
+                }
             }
         }
     }
