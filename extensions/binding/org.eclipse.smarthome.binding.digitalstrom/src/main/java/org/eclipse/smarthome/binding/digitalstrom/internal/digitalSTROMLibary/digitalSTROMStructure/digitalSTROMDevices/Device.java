@@ -236,21 +236,21 @@ public interface Device {
      *
      * @return current output value
      */
-    public int getOutputValue();
+    public short getOutputValue();
 
     /**
      * Set the output value of this device to a given value.
      *
      * @param outputValue
      */
-    public void setOutputValue(int outputValue);
+    public void setOutputValue(short outputValue);
 
     /**
      * Returns the maximal output value of this device.
      *
      * @return maximal output value
      */
-    public int getMaxOutputValue();
+    public short getMaxOutputValue();
 
     /**
      * Returns the last recorded power consumption in watt of this device.

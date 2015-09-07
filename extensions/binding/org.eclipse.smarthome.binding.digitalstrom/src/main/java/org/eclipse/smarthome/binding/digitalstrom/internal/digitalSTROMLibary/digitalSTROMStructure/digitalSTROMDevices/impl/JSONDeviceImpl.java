@@ -64,11 +64,11 @@ public class JSONDeviceImpl implements Device {
 
     private OutputModeEnum outputMode = null;
 
-    private int outputValue = 0;
+    private short outputValue = 0;
 
-    private int maxOutputValue = DeviceConstants.DEFAULT_MAX_OUTPUTVALUE;
+    private short maxOutputValue = DeviceConstants.DEFAULT_MAX_OUTPUTVALUE;
 
-    private int minOutputValue = 0;
+    private short minOutputValue = 0;
 
     FunctionalColorGroupEnum functionalGroup = null;
 
@@ -93,8 +93,7 @@ public class JSONDeviceImpl implements Device {
      * the key is the output value and the value is an Integer array for the meter data (0 = powerConsumption, 1 =
      * electricMeter, 2 =EnergyMeter)
      */
-    private Map<Integer, Integer[]> cachedSensorMeterData = Collections
-            .synchronizedMap(new HashMap<Integer, Integer[]>());
+    private Map<Short, Integer[]> cachedSensorMeterData = Collections.synchronizedMap(new HashMap<Short, Integer[]>());
 
     private Map<Short, DeviceSceneSpec> sceneConfigMap = Collections
             .synchronizedMap(new HashMap<Short, DeviceSceneSpec>());
@@ -341,7 +340,7 @@ public class JSONDeviceImpl implements Device {
     }
 
     @Override
-    public synchronized void setOutputValue(int value) {
+    public synchronized void setOutputValue(short value) {
         if (!isRollershutter()) {
             if (value <= 0) {
                 this.deviceStateUpdates.add(new DeviceStateUpdateImpl(DeviceStateUpdate.UPDATE_ON_OFF, -1));
@@ -488,12 +487,12 @@ public class JSONDeviceImpl implements Device {
     }
 
     @Override
-    public synchronized int getOutputValue() {
+    public synchronized short getOutputValue() {
         return outputValue;
     }
 
     @Override
-    public int getMaxOutputValue() {
+    public short getMaxOutputValue() {
         return maxOutputValue;
     }
 
@@ -603,7 +602,7 @@ public class JSONDeviceImpl implements Device {
         }
     }
 
-    private void addPowerConsumptionToMeterCache(int outputValue, int powerConsumption) {
+    private void addPowerConsumptionToMeterCache(short outputValue, int powerConsumption) {
         Integer[] cachedMeterData = cachedSensorMeterData.get(outputValue);
         if (cachedMeterData == null) {
             cachedMeterData = new Integer[3];
@@ -614,7 +613,7 @@ public class JSONDeviceImpl implements Device {
         this.cachedSensorMeterData.put(outputValue, cachedMeterData);
     }
 
-    private void addElectricMeterValueToMeterCache(int outputValue, int electricMeterValue) {
+    private void addElectricMeterValueToMeterCache(short outputValue, int electricMeterValue) {
         Integer[] cachedMeterData = cachedSensorMeterData.get(outputValue);
         if (cachedMeterData == null) {
             cachedMeterData = new Integer[3];
@@ -625,7 +624,7 @@ public class JSONDeviceImpl implements Device {
         this.cachedSensorMeterData.put(outputValue, cachedMeterData);
     }
 
-    private void addEnergyMeterValueToMeterCache(int outputValue, int energyMeterValue) {
+    private void addEnergyMeterValueToMeterCache(short outputValue, int energyMeterValue) {
         Integer[] cachedMeterData = cachedSensorMeterData.get(outputValue);
         if (cachedMeterData == null) {
             cachedMeterData = new Integer[3];
@@ -713,7 +712,7 @@ public class JSONDeviceImpl implements Device {
         if (sceneOutputMap.get(sceneNumber) != null) {
             if (!isRollershutter()) {
                 this.outputValueBeforeSceneCall = this.outputValue;
-                this.outputValue = sceneOutputMap.get(sceneNumber);
+                this.outputValue = sceneOutputMap.get(sceneNumber).shortValue();
                 addEshThingStateUpdate(
                         new DeviceStateUpdateImpl(DeviceStateUpdate.UPDATE_BRIGHTNESS, this.outputValue));
             } else {
@@ -865,7 +864,7 @@ public class JSONDeviceImpl implements Device {
 
     private synchronized void internalUndoScene() {
         if (!isRollershutter()) {
-            this.outputValue = this.outputValueBeforeSceneCall;
+            this.outputValue = (short) this.outputValueBeforeSceneCall;
             addEshThingStateUpdate(new DeviceStateUpdateImpl(DeviceStateUpdate.UPDATE_BRIGHTNESS, this.outputValue));
         } else {
             this.slatPosition = this.outputValueBeforeSceneCall;
@@ -1109,7 +1108,7 @@ public class JSONDeviceImpl implements Device {
                 case DeviceStateUpdate.UPDATE_BRIGHTNESS_DECREASE:
                 case DeviceStateUpdate.UPDATE_BRIGHTNESS_INCREASE:
                 case DeviceStateUpdate.UPDATE_BRIGHTNESS:
-                    this.outputValue = deviceStateUpdate.getValue();
+                    this.outputValue = (short) deviceStateUpdate.getValue();
                     if (this.outputValue <= 0) {
                         this.isOn = false;
                         setPowerConsumption(0);

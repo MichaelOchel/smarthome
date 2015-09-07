@@ -25,8 +25,6 @@ public class DigitalSTROMBindingConstants {
 
     // List of all Thing Type Ids
     public static final String THING_TYPE_ID_DSS_BRIDGE = "dssBridge";
-    public static final String THING_TYPE_ID_GE_KM200 = "GE-KM200";
-    public static final String THING_TYPE_ID_GE_KL200 = "GE-KL200";
 
     public static final String THING_TYPE_ID_SCENE = "scene";
 
@@ -46,6 +44,7 @@ public class DigitalSTROMBindingConstants {
     public static final String CHANNEL_GENERAL_DIMM = "generalDimm";
     public static final String CHANNEL_GENERAL_SWITCH = "generalSwitch";
     public static final String CHANNEL_GENERAL_SHADE = "generalShade";
+
     // shade
     public static final String CHANNEL_SHADE = "shade";
     // scene
