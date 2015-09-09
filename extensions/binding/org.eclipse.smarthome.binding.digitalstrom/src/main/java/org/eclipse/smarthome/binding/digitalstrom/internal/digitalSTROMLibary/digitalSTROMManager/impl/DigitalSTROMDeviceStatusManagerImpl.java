@@ -255,8 +255,8 @@ public class DigitalSTROMDeviceStatusManagerImpl implements DigitalSTROMDeviceSt
                     }
 
                     if (!sceneMan.scenesGenerated() && sceneMan.isDiscoveryRegistrated()) {
-                        // logger.debug("generateScenes");
-                        // sceneMan.generateScenes();
+                        logger.debug("generateScenes");
+                        sceneMan.generateScenes();
                     }
 
                     for (Device device : tempDeviceMap.values())
@@ -313,13 +313,22 @@ public class DigitalSTROMDeviceStatusManagerImpl implements DigitalSTROMDeviceSt
         shutdown = false;
         schedduler2 = new Thread(pollingRunnable);
         schedduler2.start();
+        sceneMan.start();
 
+        if (sceneJobExecuter != null) {
+            this.sceneJobExecuter.startExecuter();
+            ;
+        }
+
+        if (sensorJobExecuter != null) {
+            this.sensorJobExecuter.startExecuter();
+        }
     }
 
     @Override
     public void stop() {
         shutdown = true;
-
+        sceneMan.stop();
         if (sceneJobExecuter != null) {
             this.sceneJobExecuter.shutdown();
         }
@@ -422,6 +431,7 @@ public class DigitalSTROMDeviceStatusManagerImpl implements DigitalSTROMDeviceSt
 
             // logger.debug("scenecall sucsess?: " + requestSucsessfull);
             if (requestSucsessfull) {
+                this.sceneMan.addEcho(scene.getID());
                 if (call_undo) {
                     scene.activateScene();
                 } else {
@@ -624,7 +634,8 @@ public class DigitalSTROMDeviceStatusManagerImpl implements DigitalSTROMDeviceSt
                 if (deviceStateUpdate.getType().equals(DeviceStateUpdate.UPDATE_SCENE_OUTPUT)) {
                     sceneJobExecuter.addHighPriorityJob(
                             new SceneOutputValueSensorJob(device, (short) deviceStateUpdate.getValue()));
-                    sensorJobExecuter.addHighPriorityJob(new DeviceOutputValueSensorJob(device));
+                    updateSensorData(new DeviceOutputValueSensorJob(device), DigitalSTROMConfig.REFRESH_PRIORITY_HIGH);
+                    // sensorJobExecuter.addHighPriorityJob(new DeviceOutputValueSensorJob(device));
                 } else {
                     sceneJobExecuter
                             .addHighPriorityJob(new SceneConfigSensorJob(device, (short) deviceStateUpdate.getValue()));
@@ -649,7 +660,7 @@ public class DigitalSTROMDeviceStatusManagerImpl implements DigitalSTROMDeviceSt
                 System.err.println("Sensor data update priority do not exist! Please check the input!");
                 return;
             }
-            logger.debug("Add new sensorJob with priority: {} to sensorJobExecuter",
+            logger.debug("Add new sceneSenesorJob with priority: {} to SceneSensorJobExecuter",
                     new Integer(deviceStateUpdate.getValue()).toString().charAt(0));
 
         }

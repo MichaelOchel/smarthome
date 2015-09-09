@@ -663,6 +663,7 @@ public class JSONDeviceImpl implements Device {
     @Override
     public synchronized void callNamedScene(InternalScene scene) {
         // boolean haveStoredOutput =
+        logger.debug("!!!!!!!!!!!!!!!!!!!!CALL NAMED SCENE CALL!!!!!!!!!!!!!!!!!!!!!");
         internalCallScene(scene.getSceneID());
         this.activeScene = scene;
         // return haveStoredOutput;
@@ -696,6 +697,7 @@ public class JSONDeviceImpl implements Device {
     short activeSceneNumber = -1;
 
     private synchronized void internalCallScene(Short sceneNumber) {
+        logger.debug("!!!!!!!!!!!!!!!!!!!!CALL INTERNAL SCENE CALL1!!!!!!!!!!!!!!!!!!!!!");
         if (containsSceneConfig(sceneNumber)) {
             if (doIgnoreScene(sceneNumber)) {
                 return;
@@ -704,6 +706,7 @@ public class JSONDeviceImpl implements Device {
             this.deviceStateUpdates.add(new DeviceStateUpdateImpl(DeviceStateUpdate.UPDATE_SCENE_CONFIG, sceneNumber));
         }
 
+        logger.debug("!!!!!!!!!!!!!!!!!!!!CALL INTERNAL SCENE CALL2!!!!!!!!!!!!!!!!!!!!!");
         if (checkSceneNumber(sceneNumber)) {
             return;
         }
@@ -1231,6 +1234,8 @@ public class JSONDeviceImpl implements Device {
      */
     private void addEshThingStateUpdate(DeviceStateUpdate deviceStateUpdate) {
         if (listener != null) {
+            logger.debug("Inform listener about device state changed: type: " + deviceStateUpdate.getType()
+                    + ", value: " + deviceStateUpdate.getValue());
             listener.onDeviceStateChanged(deviceStateUpdate);
         }
         /*

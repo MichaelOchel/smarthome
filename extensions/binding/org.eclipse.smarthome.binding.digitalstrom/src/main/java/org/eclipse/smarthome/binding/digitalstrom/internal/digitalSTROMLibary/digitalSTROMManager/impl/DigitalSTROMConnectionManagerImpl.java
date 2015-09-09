@@ -257,6 +257,9 @@ public class DigitalSTROMConnectionManagerImpl implements DigitalSTROMConnection
             if (isAutentificated) {
                 configuration.remove(PASSWORD);
                 configuration.remove(USER_NAME);
+                if (connListener != null) {
+                    connListener.onConnectionStateChange(DigitalSTROMConnectionListener.APPLICATION_TOKEN_GENERATED);
+                }
             }
         } else if (!isAutentificated) {
             //// System.out.println("Can't find Username or password to genarate Appicationtoken.");
@@ -323,5 +326,11 @@ public class DigitalSTROMConnectionManagerImpl implements DigitalSTROMConnection
             return false;
         }
         return true;
+    }
+
+    @Override
+    public void updateConfig(String host, String username, String password, String applicationToken) {
+        init(host, -1, -1, username, password, applicationToken);
+
     }
 }

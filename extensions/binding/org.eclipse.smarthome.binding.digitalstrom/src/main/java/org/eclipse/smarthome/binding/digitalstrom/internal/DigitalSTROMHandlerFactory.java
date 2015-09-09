@@ -91,7 +91,7 @@ public class DigitalSTROMHandlerFactory extends BaseThingHandlerFactory {
             return null;
 
         if (DssBridgeHandler.SUPPORTED_THING_TYPES.contains(thing.getThingTypeUID())) {
-            DssBridgeHandler handler = new DssBridgeHandler((Bridge) thing, connMan);
+            DssBridgeHandler handler = new DssBridgeHandler((Bridge) thing);
 
             registerServices(handler);
             return handler;
@@ -183,7 +183,7 @@ public class DigitalSTROMHandlerFactory extends BaseThingHandlerFactory {
                 }
             }
 
-            this.connMan = new DigitalSTROMConnectionManagerImpl(host, user, pw, applicationToken, false);
+            this.connMan = new DigitalSTROMConnectionManagerImpl(host, user, pw, applicationToken);
 
             if (connMan.checkConnection()) {
                 dsID = connMan.getDigitalSTROMAPI().getDSID(connMan.getSessionToken());

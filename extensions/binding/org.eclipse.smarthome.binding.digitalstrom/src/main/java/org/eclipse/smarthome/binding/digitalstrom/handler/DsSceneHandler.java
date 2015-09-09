@@ -216,7 +216,7 @@ public class DsSceneHandler extends BaseThingHandler implements SceneStatusListe
     @Override
     public void onSceneRemoved(InternalScene scene) {
         this.scene = null;
-        updateStatus(ThingStatus.REMOVED); // TODO: stimmt das?
+        updateStatus(ThingStatus.OFFLINE); // TODO: stimmt das?
 
     }
 
@@ -229,7 +229,7 @@ public class DsSceneHandler extends BaseThingHandler implements SceneStatusListe
             logger.debug("Set status on {}", getThing().getStatus());
         }
         this.scene = scene;
-        onSceneStateChanged(scene.isActive());
+        // onSceneStateChanged(scene.isActive());
     }
 
     @Override

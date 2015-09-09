@@ -124,4 +124,8 @@ public interface DigitalSTROMSceneManager {
     void generateScenes();
 
     boolean isDiscoveryRegistrated();
+
+    void start();
+
+    void stop();
 }

@@ -187,17 +187,20 @@ public class SceneDiscovery {
                                                 short sceneNumber = Short.parseShort(scenes.get(i).toString());
                                                 String sceneName = null;
                                                 if (SceneEnum.getScene(sceneNumber) != null) {
-                                                    if (structureManager.getZoneName(zoneID) != null) {
+                                                    if (structureManager.getZoneName(zoneID) != null
+                                                            && !structureManager.getZoneName(zoneID).isEmpty()) {
                                                         sceneName = "Zone: " + structureManager.getZoneName(zoneID);
-                                                        if (structureManager.getZoneGroupName(zoneID,
-                                                                groupID) != null) {
-                                                            sceneName = sceneName + " Group: " + structureManager
-                                                                    .getZoneGroupName(zoneID, groupID);
-                                                        } else {
-                                                            sceneName = sceneName + " Group: " + groupID;
-                                                        }
+
                                                     } else {
-                                                        sceneName = "Zone: " + zoneID + " Group: " + groupID;
+                                                        sceneName = "Zone: " + zoneID;
+                                                    }
+                                                    if (structureManager.getZoneGroupName(zoneID, groupID) != null
+                                                            && !structureManager.getZoneGroupName(zoneID, groupID)
+                                                                    .isEmpty()) {
+                                                        sceneName = sceneName + " Group: "
+                                                                + structureManager.getZoneGroupName(zoneID, groupID);
+                                                    } else {
+                                                        sceneName = sceneName + " Group: " + groupID;
                                                     }
                                                     sceneName = sceneName + " Scene: " + SceneEnum.getScene(sceneNumber)
                                                             .toString().toLowerCase().replace("_", " ");

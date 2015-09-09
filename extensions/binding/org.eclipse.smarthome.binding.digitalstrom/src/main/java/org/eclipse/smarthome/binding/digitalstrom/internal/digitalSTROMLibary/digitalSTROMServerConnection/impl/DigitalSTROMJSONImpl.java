@@ -697,7 +697,7 @@ public class DigitalSTROMJSONImpl implements DigitalSTROMAPI {
                 } else {
                     response = transport.execute(JSONRequestConstants.JSON_DEVICE_GET_OUTPUT_VALUE
                             + JSONRequestConstants.PARAMETER_TOKEN + token + JSONRequestConstants.INFIX_PARAMETER_DSID
-                            + dsid.getValue() + JSONRequestConstants.INFIX_PARAMETER_OFFSET + offset);
+                            + dsid.getValue() + JSONRequestConstants.INFIX_PARAMETER_OFFSET + offset, 4000, 20000);
                 }
             } else if (name != null) {
                 response = transport.execute(JSONRequestConstants.JSON_DEVICE_GET_OUTPUT_VALUE
@@ -814,10 +814,12 @@ public class DigitalSTROMJSONImpl implements DigitalSTROMAPI {
 
             if (dsid != null && dsid.getValue() != null) {
                 if (name != null) {
-                    response = transport.execute(JSONRequestConstants.JSON_DEVICE_GET_SENSOR_VALUE
-                            + JSONRequestConstants.PARAMETER_TOKEN + token + JSONRequestConstants.INFIX_PARAMETER_DSID
-                            + dsid.getValue() + JSONRequestConstants.INFIX_PARAMETER_NAME + name
-                            + JSONRequestConstants.INFIX_PARAMETER_SENSOR_INDEX + sensorIndex.getIndex());
+                    response = transport.execute(
+                            JSONRequestConstants.JSON_DEVICE_GET_SENSOR_VALUE + JSONRequestConstants.PARAMETER_TOKEN
+                                    + token + JSONRequestConstants.INFIX_PARAMETER_DSID + dsid.getValue()
+                                    + JSONRequestConstants.INFIX_PARAMETER_NAME + name
+                                    + JSONRequestConstants.INFIX_PARAMETER_SENSOR_INDEX + sensorIndex.getIndex(),
+                            4000, 20000);
                 } else {
                     response = transport.execute(
                             JSONRequestConstants.JSON_DEVICE_GET_SENSOR_VALUE + JSONRequestConstants.PARAMETER_TOKEN
@@ -1271,8 +1273,9 @@ public class DigitalSTROMJSONImpl implements DigitalSTROMAPI {
     public boolean enableApplicationToken(String applicationToken, String sessionToken) {
         String response = null;
 
-        response = transport
-                .execute("/json/system/enableToken?applicationToken=" + applicationToken + "&token=" + sessionToken);
+        response = transport.execute(
+                "/json/system/enableToken?applicationToken=" + applicationToken + "&token=" + sessionToken, 10000,
+                20000);
 
         JSONObject responseObj = JSONResponseHandler.toJSONObject(response);
 

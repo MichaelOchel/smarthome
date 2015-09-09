@@ -92,12 +92,13 @@ public class DigitalSTROMThingTypeProvider implements ThingTypeProvider {
             null, "power consumption channel",
             "The power consumption channel sums up the power consuption of this device.");
 
-    private final ChannelDefinition CHANNEL_DEFINITION_ELECTRIC_METER_VALUE_EN = new ChannelDefinition("electricMeter",
+    private final ChannelDefinition CHANNEL_DEFINITION_ELECTRIC_METER_VALUE_EN = new ChannelDefinition(
+            "electricMeterValue",
             new ChannelType(new ChannelTypeUID("digitalstrom:electricMeter"), false, "Number", "electric meter channel",
                     "The electric meter channel allows to get a electric meter value.", "Energy", null, null, null),
             null, "electric meter channel", "The electric meter channel allows to get a electric meter value.");
 
-    private final ChannelDefinition CHANNEL_DEFINITION_ENERGY_METER_VALUE_EN = new ChannelDefinition("energyMeter",
+    private final ChannelDefinition CHANNEL_DEFINITION_ENERGY_METER_VALUE_EN = new ChannelDefinition("energyMeterValue",
             new ChannelType(new ChannelTypeUID("digitalstrom:energyMeter"), false, "Number", "energy meter channel",
                     "The energy meter channel allows to get a energy meter value.", "Energy", null, null, null),
             null, "energy meter channel", "The energy meter channel allows to get a energy meter value.");

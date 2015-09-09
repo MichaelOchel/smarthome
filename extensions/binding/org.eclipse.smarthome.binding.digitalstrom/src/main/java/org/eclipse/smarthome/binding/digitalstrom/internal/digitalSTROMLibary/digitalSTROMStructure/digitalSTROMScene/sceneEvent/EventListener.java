@@ -34,15 +34,18 @@ import org.slf4j.LoggerFactory;
  */
 public class EventListener {
 
+    protected static final long SLEEPTIME = 10000;
+
     private Logger logger = LoggerFactory.getLogger(EventListener.class);
 
     private Thread listener = null;
-    private boolean shutdown = false;
+    private Boolean shutdown = false;
     private final String EVENT_NAME = DigitalSTROMConfig.EVENT_NAME;
     private final int ID = 11;
     private final DigitalSTROMConnectionManager connManager;
 
     private final String INVALID_SESSION = "Invalid session!";
+    private final String UNKNOWN_TOKEN = "Token " + ID + "not found!";
 
     private HttpTransport transport = null;
     private DigitalSTROMAPI digitalSTROM;
@@ -59,10 +62,8 @@ public class EventListener {
         this.connManager = connectionManager;
         this.sceneManager = sceneManager;
 
-        this.subscribe();
+        // this.subscribe();
 
-        listener = new Thread(runableListener);
-        listener.start();
     }
 
     /**
@@ -70,8 +71,9 @@ public class EventListener {
      */
     public synchronized void shutdown() {
         this.shutdown = true;
-        unsubscribe();
-        this.listener = null;
+        logger.debug("???????????????????????????SET SHUTDOWN TO TRUE .... SHUTDOWN = " + shutdown
+                + "?????????????????????????????");
+        // this.listener = null;
     }
 
     /**
@@ -79,10 +81,17 @@ public class EventListener {
      */
     public synchronized void start() {
         this.shutdown = false;
-        this.subscribe();
+
+        logger.debug("???????????????????????????SET SHUTDOWN TO TRUE .... SHUTDOWN = " + shutdown
+                + "?????????????????????????????");
+
+        listener = new Thread(runableListener);
+        if (this.subscribe()) {
+            listener.start();
+        }
     }
 
-    private void subscribe() {
+    private boolean subscribe() {
         if (connManager.checkConnection()) {
 
             boolean transmitted = digitalSTROM.subscribeEvent(this.connManager.getSessionToken(), EVENT_NAME, this.ID,
@@ -90,23 +99,27 @@ public class EventListener {
 
             if (!transmitted) {
                 this.shutdown = true;
+
                 logger.error("Couldn't subscribe eventListener ... maybe timeout because system is to busy ...");
             } else {
                 logger.debug("subscribe successfull");
+                return true;
             }
         } else {
             logger.error("Couldn't subscribe eventListener because there is no token (no connection)");
         }
+
+        return false;
     }
 
     public Runnable runableListener = new Runnable() {
 
         @Override
         public void run() {
-
+            logger.debug("???????????????????????????SHUTDOWN = " + shutdown + "?????????????????????????????");
             logger.debug("DigitalSTROMEventListener startet");
             while (!shutdown) {
-
+                logger.debug("???????????????????????????SHUTDOWN = " + shutdown + "?????????????????????????????");
                 String request = getEventAsRequest(ID, 500);
 
                 if (request != null) {
@@ -134,15 +147,32 @@ public class EventListener {
                                     .toString();
                         }
 
-                        if (errorStr != null && errorStr.equals(INVALID_SESSION)) {
+                        if (errorStr != null && (errorStr.equals(INVALID_SESSION) || errorStr.equals(UNKNOWN_TOKEN))) {
                             subscribe();
                         } else if (errorStr != null) {
+                            /*
+                             * if (errorStr != null && errorStr.equals(UNKNOWN_TOKEN)) {
+                             * subscribe();
+                             * } else {
+                             */
                             logger.error("Unknown error message in event response: " + errorStr);
+                            // }
                         }
                     }
                 }
+                try {
+                    synchronized (this) {
+                        wait(SLEEPTIME);
+                    }
+                } catch (InterruptedException e) {
+                    // TODO Auto-generated catch block
+                    e.printStackTrace();
+                }
             }
+
+            unsubscribe();
         }
+
     };
 
     private String getEventAsRequest(int subscriptionID, int timeout) {

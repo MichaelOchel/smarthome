@@ -82,4 +82,6 @@ public interface DigitalSTROMConnectionManager {
 
     boolean removeApplicationToken();
 
+    public void updateConfig(String host, String username, String password, String applicationToken);
+
 }

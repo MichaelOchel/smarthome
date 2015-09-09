@@ -44,7 +44,7 @@ public class InternalScene {
         }
 
         this.NAMED_SCENE_ID = this.ZONE_ID + "-" + this.GROUP_ID + "-" + this.SCENE_ID;
-        if (sceneName == null) {
+        if (sceneName == null || sceneName.isEmpty()) {
             this.SceneName = this.NAMED_SCENE_ID;
         } else {
             this.SceneName = sceneName;
@@ -55,11 +55,16 @@ public class InternalScene {
      * Activate this Scene.
      */
     public void activateScene() {
+        System.out.println("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!SCENE ACTIVATED!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
         this.active = true;
         informListener();
+        System.out.println(
+                "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!DEVICES = " + this.devices + "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
         if (this.devices != null) {
             for (Device device : this.devices) {
                 device.callNamedScene(this);
+                System.out.println("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!INFORM DEVICE = " + device.getName()
+                        + "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
             }
         }
     }
@@ -72,7 +77,8 @@ public class InternalScene {
         informListener();
         if (this.devices != null) {
             for (Device device : this.devices) {
-                device.undoScene();
+                device.undoNamedScene();
+                ;
             }
         }
     }
@@ -220,8 +226,10 @@ public class InternalScene {
     }
 
     public synchronized void unregisterSceneListener() {
-        this.listener.onSceneRemoved(this);
-        this.listener = null;
+        if (listener != null) {
+            this.listener.onSceneRemoved(this);
+            this.listener = null;
+        }
     }
 
     @Override

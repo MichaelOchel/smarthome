@@ -47,15 +47,19 @@ public class DigitalSTROMSceneManagerImpl implements DigitalSTROMSceneManager {
         this.connectionManager = connectionManager;
     }
 
+    @Override
     public void start() {
-        eventListener = new EventListener(connectionManager, this);
+        if (eventListener == null) {
+            eventListener = new EventListener(connectionManager, this);
+        }
         this.eventListener.start();
     }
 
+    @Override
     public void stop() {
         if (this.eventListener != null) {
             this.eventListener.shutdown();
-            this.eventListener = null;
+            // this.eventListener = null;
         }
     }
 

@@ -71,9 +71,9 @@ public class DssBridgeHandler extends BaseBridgeHandler
     private List<DeviceStatusListener> devListener;
     private DigitalSTROMThingTypeProvider thingTypeProvider = null;
 
-    public DssBridgeHandler(Bridge bridge, DigitalSTROMConnectionManager connectionManager) {
+    public DssBridgeHandler(Bridge bridge) {
         super(bridge);
-        this.connMan = connectionManager;
+        // this.connMan = connectionManager;
     }
 
     @Override
@@ -107,26 +107,32 @@ public class DssBridgeHandler extends BaseBridgeHandler
             }
 
             logger.debug("Initializing DigitalSTROM Manager.");
+            String[] loginConfig = getLoginConfig(configuration);
             if (connMan == null) {
-                String[] loginConfig = getLoginConfig(configuration);
+
                 this.connMan = new DigitalSTROMConnectionManagerImpl(loginConfig[0], loginConfig[1], loginConfig[2],
-                        loginConfig[3], false, this);
+                        loginConfig[3], true, this);
                 /*
                  * this.connMan = new DigitalSTROMConnectionManagerImpl(configuration.get(HOST).toString(),
                  * configuration.get(USER_NAME).toString(), configuration.get(PASSWORD).toString(), null, false,
                  * this);// configuration.get(APPLICATION_TOKEN).toString()
                  */
             } else {
+                connMan.updateConfig(loginConfig[0], loginConfig[1], loginConfig[2], loginConfig[3]);
                 connMan.registerConnectionListener(this);
             }
 
-            this.structMan = new DigitalSTROMStructureManagerImpl();
-            this.sceneMan = new DigitalSTROMSceneManagerImpl(this.connMan, this.structMan);
-            this.devStatMan = new DigitalSTROMDeviceStatusManagerImpl(this.connMan, this.structMan, this.sceneMan);
+            if (this.structMan == null) {
+                this.structMan = new DigitalSTROMStructureManagerImpl();
+            }
+            if (this.sceneMan == null) {
+                this.sceneMan = new DigitalSTROMSceneManagerImpl(this.connMan, this.structMan);
+            }
+            if (this.devStatMan == null) {
+                this.devStatMan = new DigitalSTROMDeviceStatusManagerImpl(this.connMan, this.structMan, this.sceneMan);
+            }
             structMan.generateZoneGroupNames(connMan);
-            // this.devStatMan.registerTotalPowerConsumptionListener(this);
-            this.devStatMan.start();
-
+            this.devStatMan.registerTotalPowerConsumptionListener(this);
             if (this.thingTypeProvider != null) {
                 this.thingTypeProvider.registerConnectionManagerHandler(connMan);
             }
@@ -145,6 +151,18 @@ public class DssBridgeHandler extends BaseBridgeHandler
                 this.sceneListener = null;
             }
 
+            if (connMan.checkConnection()) {
+                updateStatus(ThingStatus.ONLINE);
+                this.devStatMan.start();
+            }
+            if (connMan.getApplicationToken() != null) {
+                configuration.remove(USER_NAME);
+                configuration.remove(PASSWORD);
+                logger.debug(connMan.getApplicationToken());
+                configuration.put(APPLICATION_TOKEN, connMan.getApplicationToken());
+                this.updateConfiguration(configuration);
+            }
+
         } else {
             logger.warn("Cannot connect to DigitalSTROMSever. Host address is not set.");
             updateStatus(ThingStatus.ONLINE, ThingStatusDetail.CONFIGURATION_ERROR,
@@ -157,14 +175,19 @@ public class DssBridgeHandler extends BaseBridgeHandler
     public void dispose() {
         logger.debug("Handler disposed.");
 
+        this.devStatMan.stop();
+
         if (this.getThing().getStatus().equals(ThingStatus.ONLINE)) {
             updateStatus(ThingStatus.OFFLINE);
         }
 
-        this.devStatMan.stop();
-        this.connMan = null;
-        this.structMan = null;
-        this.devStatMan = null;
+        devStatMan.unregisterTotalPowerConsumptionListener();
+        connMan.unregisterConnectionListener();
+        /*
+         * this.connMan = null;
+         * this.structMan = null;
+         * this.devStatMan = null;
+         */
     }
 
     @Override
@@ -180,11 +203,15 @@ public class DssBridgeHandler extends BaseBridgeHandler
             this.connMan = new DigitalSTROMConnectionManagerImpl(loginConfig[0], loginConfig[1], loginConfig[2],
                     loginConfig[3], this);
         }
+        // logger.debug(connMan.getApplicationToken());
 
+        // this.devStatMan.stop();
         if (connMan.removeApplicationToken()) {
+            logger.debug("Application-Token deleated");
             updateStatus(ThingStatus.REMOVED);
+
         }
-        this.connMan = null;
+        // this.connMan = null;
     }
 
     private String[] getLoginConfig(Configuration configuration) {
@@ -312,11 +339,20 @@ public class DssBridgeHandler extends BaseBridgeHandler
                 break;
             case CONNECTION_RESUMED:
                 updateStatus(ThingStatus.ONLINE);
-                devStatMan.restart();
+                devStatMan.start();
+                sceneMan.start();
                 break;
             case APPLICATION_TOKEN_GENERATED:
-                this.getConfig().remove(USER_NAME);
-                this.getConfig().remove(PASSWORD);
+                /*
+                 * Configuration config = this.getConfig();
+                 * if (config != null) {
+                 * config.remove(USER_NAME);
+                 * config.remove(PASSWORD);
+                 * logger.debug(connMan.getApplicationToken());
+                 * config.put(APPLICATION_TOKEN, connMan.getApplicationToken());
+                 * this.updateConfiguration(config);
+                 * }
+                 */
             default:
                 // TODO: Fehlermeldung
         }

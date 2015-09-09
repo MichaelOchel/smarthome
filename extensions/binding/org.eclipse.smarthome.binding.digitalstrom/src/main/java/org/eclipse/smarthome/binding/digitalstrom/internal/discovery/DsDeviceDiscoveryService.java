@@ -74,9 +74,11 @@ public class DsDeviceDiscoveryService extends AbstractDiscoveryService implement
 
     @Override
     protected void startScan() {
-        if (digitalSTROMBridgeHandler.getDevices() != null) {
-            for (Device device : digitalSTROMBridgeHandler.getDevices()) {
-                onDeviceAddedInternal(device);
+        if (digitalSTROMBridgeHandler != null) {
+            if (digitalSTROMBridgeHandler.getDevices() != null) {
+                for (Device device : digitalSTROMBridgeHandler.getDevices()) {
+                    onDeviceAddedInternal(device);
+                }
             }
         }
     }
