@@ -98,7 +98,9 @@ public abstract class AbstractSensorJobExecutor {
      *
      */
     public synchronized void shutdown() {
-        this.shutdown = true;
+        if (!shutdown) {
+            this.shutdown = true;
+        }
     }
 
     /**
@@ -114,9 +116,13 @@ public abstract class AbstractSensorJobExecutor {
      * Starts the SensorJobExecuter Thread.
      */
     public void startExecuter() {
-        this.shutdown = false;
-        this.executer = new Thread(executerRunnable);
-        executer.start();
+        if (shutdown) {
+            this.shutdown = false;
+        }
+        if (executer == null || !executer.isAlive()) {
+            this.executer = new Thread(executerRunnable);
+            executer.start();
+        }
     }
 
     /**

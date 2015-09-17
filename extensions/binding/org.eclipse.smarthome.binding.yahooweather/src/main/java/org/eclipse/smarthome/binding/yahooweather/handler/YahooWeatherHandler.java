@@ -21,14 +21,11 @@ import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
 import org.eclipse.smarthome.config.core.Configuration;
 import org.eclipse.smarthome.core.library.types.DecimalType;
-import org.eclipse.smarthome.core.thing.Channel;
 import org.eclipse.smarthome.core.thing.ChannelUID;
 import org.eclipse.smarthome.core.thing.Thing;
 import org.eclipse.smarthome.core.thing.ThingStatus;
 import org.eclipse.smarthome.core.thing.ThingStatusDetail;
 import org.eclipse.smarthome.core.thing.binding.BaseThingHandler;
-import org.eclipse.smarthome.core.thing.binding.builder.ChannelBuilder;
-import org.eclipse.smarthome.core.thing.binding.builder.ThingBuilder;
 import org.eclipse.smarthome.core.types.Command;
 import org.eclipse.smarthome.core.types.RefreshType;
 import org.eclipse.smarthome.core.types.State;
@@ -94,14 +91,6 @@ public class YahooWeatherHandler extends BaseThingHandler {
                         updateState(new ChannelUID(getThing().getUID(), CHANNEL_TEMPERATURE), getTemperature());
                         updateState(new ChannelUID(getThing().getUID(), CHANNEL_HUMIDITY), getHumidity());
                         updateState(new ChannelUID(getThing().getUID(), CHANNEL_PRESSURE), getPressure());
-                    }
-                    if (first) {
-                        Channel channel = ChannelBuilder.create(new ChannelUID(getThing().getUID(), "1"), "Dimmer")
-                                .build();
-                        ThingBuilder thingBuilder = editThing();
-                        thingBuilder.withChannel(channel);
-                        updateThing(thingBuilder.build());
-                        first = false;
                     }
                 } catch (Exception e) {
                     logger.debug("Exception occurred during execution: {}", e.getMessage(), e);

@@ -12,9 +12,17 @@ public class DigitalSTROMConfig {
     /* Client configuration */
 
     // connection Configuration
-    public static final String APPLICATION_NAME = "ESH";
+    public static String APPLICATION_NAME = "ESH";
+    // Timeouts
     public static final int DEFAULT_CONNECTION_TIMEOUT = 4000;
+    public static int CONNECTION_TIMEOUT = DEFAULT_CONNECTION_TIMEOUT;
     public static final int DEFAULT_READ_TIMEOUT = 10000;
+    public static int READ_TIMEOUT = DEFAULT_READ_TIMEOUT;
+    public static final int DEFAULT_SENSORDATA_CONNECTION_TIMEOUT = 4000;
+    public static int CONNECTION_SENSORDATA_TIMEOUT = DEFAULT_SENSORDATA_CONNECTION_TIMEOUT;
+    public static final int DEFAULT_SENSORDATA_READ_TIMEOUT = 20000;
+    public static int READ_SENSORDATA_TIMEOUT = DEFAULT_SENSORDATA_READ_TIMEOUT;
+
     public static String TRUST_CERT_PATH = null;
 
     public static final String EVENT_NAME = "ESH";

@@ -19,6 +19,7 @@ import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
 
+import org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.digitalSTROMConfiguration.DigitalSTROMConfig;
 import org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.digitalSTROMServerConnection.DigitalSTROMAPI;
 import org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.digitalSTROMServerConnection.HttpTransport;
 import org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.digitalSTROMServerConnection.constants.JSONApiResponseKeysEnum;
@@ -35,7 +36,7 @@ import org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.di
 import org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.digitalSTROMStructure.digitalSTROMDevices.deviceParameters.JSONDeviceSceneSpecImpl;
 import org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.digitalSTROMStructure.digitalSTROMDevices.deviceParameters.MeteringTypeEnum;
 import org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.digitalSTROMStructure.digitalSTROMDevices.deviceParameters.MeteringUnitsEnum;
-import org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.digitalSTROMStructure.digitalSTROMDevices.deviceParameters.SensorIndexEnum;
+import org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.digitalSTROMStructure.digitalSTROMDevices.deviceParameters.SensorEnum;
 import org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.digitalSTROMStructure.digitalSTROMDevices.impl.JSONDeviceImpl;
 import org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.digitalSTROMStructure.digitalSTROMScene.constants.Scene;
 import org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.digitalSTROMStructure.digitalSTROMScene.constants.SceneEnum;
@@ -647,22 +648,30 @@ public class DigitalSTROMJSONImpl implements DigitalSTROMAPI {
 
             if (dsid != null && dsid.getValue() != null) {
                 if (name != null) {
-                    response = transport.execute(JSONRequestConstants.JSON_DEVICE_GET_CONFIG
-                            + JSONRequestConstants.PARAMETER_TOKEN + token + JSONRequestConstants.INFIX_PARAMETER_DSID
-                            + dsid.getValue() + JSONRequestConstants.INFIX_PARAMETER_NAME + name
-                            + JSONRequestConstants.INFIX_PARAMETER_CLASS + class_.getClassIndex()
-                            + JSONRequestConstants.INFIX_PARAMETER_INDEX + index, 4000, 20000);
+                    response = transport.execute(
+                            JSONRequestConstants.JSON_DEVICE_GET_CONFIG + JSONRequestConstants.PARAMETER_TOKEN + token
+                                    + JSONRequestConstants.INFIX_PARAMETER_DSID + dsid.getValue()
+                                    + JSONRequestConstants.INFIX_PARAMETER_NAME + name
+                                    + JSONRequestConstants.INFIX_PARAMETER_CLASS + class_.getClassIndex()
+                                    + JSONRequestConstants.INFIX_PARAMETER_INDEX + index,
+                            DigitalSTROMConfig.CONNECTION_SENSORDATA_TIMEOUT,
+                            DigitalSTROMConfig.READ_SENSORDATA_TIMEOUT);
                 } else {
-                    response = transport.execute(JSONRequestConstants.JSON_DEVICE_GET_CONFIG
-                            + JSONRequestConstants.PARAMETER_TOKEN + token + JSONRequestConstants.INFIX_PARAMETER_DSID
-                            + dsid.getValue() + JSONRequestConstants.INFIX_PARAMETER_CLASS + class_.getClassIndex()
-                            + JSONRequestConstants.INFIX_PARAMETER_INDEX + index, 4000, 20000);
+                    response = transport.execute(
+                            JSONRequestConstants.JSON_DEVICE_GET_CONFIG + JSONRequestConstants.PARAMETER_TOKEN + token
+                                    + JSONRequestConstants.INFIX_PARAMETER_DSID + dsid.getValue()
+                                    + JSONRequestConstants.INFIX_PARAMETER_CLASS + class_.getClassIndex()
+                                    + JSONRequestConstants.INFIX_PARAMETER_INDEX + index,
+                            DigitalSTROMConfig.CONNECTION_SENSORDATA_TIMEOUT,
+                            DigitalSTROMConfig.READ_SENSORDATA_TIMEOUT);
                 }
             } else if (name != null) {
-                response = transport.execute(JSONRequestConstants.JSON_DEVICE_GET_CONFIG
-                        + JSONRequestConstants.PARAMETER_TOKEN + token + JSONRequestConstants.INFIX_PARAMETER_NAME
-                        + name + JSONRequestConstants.INFIX_PARAMETER_CLASS + class_.getClassIndex()
-                        + JSONRequestConstants.INFIX_PARAMETER_INDEX + index, 4000, 20000);
+                response = transport.execute(
+                        JSONRequestConstants.JSON_DEVICE_GET_CONFIG + JSONRequestConstants.PARAMETER_TOKEN + token
+                                + JSONRequestConstants.INFIX_PARAMETER_NAME + name
+                                + JSONRequestConstants.INFIX_PARAMETER_CLASS + class_.getClassIndex()
+                                + JSONRequestConstants.INFIX_PARAMETER_INDEX + index,
+                        DigitalSTROMConfig.CONNECTION_SENSORDATA_TIMEOUT, DigitalSTROMConfig.READ_SENSORDATA_TIMEOUT);
             }
 
             JSONObject responseObj = JSONResponseHandler.toJSONObject(response);
@@ -690,19 +699,27 @@ public class DigitalSTROMJSONImpl implements DigitalSTROMAPI {
 
             if (dsid != null && dsid.getValue() != null) {
                 if (name != null) {
-                    response = transport.execute(JSONRequestConstants.JSON_DEVICE_GET_OUTPUT_VALUE
-                            + JSONRequestConstants.PARAMETER_TOKEN + token + JSONRequestConstants.INFIX_PARAMETER_DSID
-                            + dsid.getValue() + JSONRequestConstants.INFIX_PARAMETER_NAME + name
-                            + JSONRequestConstants.INFIX_PARAMETER_OFFSET + offset);
+                    response = transport.execute(
+                            JSONRequestConstants.JSON_DEVICE_GET_OUTPUT_VALUE + JSONRequestConstants.PARAMETER_TOKEN
+                                    + token + JSONRequestConstants.INFIX_PARAMETER_DSID + dsid.getValue()
+                                    + JSONRequestConstants.INFIX_PARAMETER_NAME + name
+                                    + JSONRequestConstants.INFIX_PARAMETER_OFFSET + offset,
+                            DigitalSTROMConfig.CONNECTION_SENSORDATA_TIMEOUT,
+                            DigitalSTROMConfig.READ_SENSORDATA_TIMEOUT);
                 } else {
-                    response = transport.execute(JSONRequestConstants.JSON_DEVICE_GET_OUTPUT_VALUE
-                            + JSONRequestConstants.PARAMETER_TOKEN + token + JSONRequestConstants.INFIX_PARAMETER_DSID
-                            + dsid.getValue() + JSONRequestConstants.INFIX_PARAMETER_OFFSET + offset, 4000, 20000);
+                    response = transport.execute(
+                            JSONRequestConstants.JSON_DEVICE_GET_OUTPUT_VALUE + JSONRequestConstants.PARAMETER_TOKEN
+                                    + token + JSONRequestConstants.INFIX_PARAMETER_DSID + dsid.getValue()
+                                    + JSONRequestConstants.INFIX_PARAMETER_OFFSET + offset,
+                            DigitalSTROMConfig.CONNECTION_SENSORDATA_TIMEOUT,
+                            DigitalSTROMConfig.READ_SENSORDATA_TIMEOUT);
                 }
             } else if (name != null) {
-                response = transport.execute(JSONRequestConstants.JSON_DEVICE_GET_OUTPUT_VALUE
-                        + JSONRequestConstants.PARAMETER_TOKEN + token + JSONRequestConstants.INFIX_PARAMETER_NAME
-                        + name + JSONRequestConstants.INFIX_PARAMETER_OFFSET + offset);
+                response = transport.execute(
+                        JSONRequestConstants.JSON_DEVICE_GET_OUTPUT_VALUE + JSONRequestConstants.PARAMETER_TOKEN + token
+                                + JSONRequestConstants.INFIX_PARAMETER_NAME + name
+                                + JSONRequestConstants.INFIX_PARAMETER_OFFSET + offset,
+                        DigitalSTROMConfig.CONNECTION_SENSORDATA_TIMEOUT, DigitalSTROMConfig.READ_SENSORDATA_TIMEOUT);
             }
 
             JSONObject responseObj = JSONResponseHandler.toJSONObject(response);
@@ -777,19 +794,27 @@ public class DigitalSTROMJSONImpl implements DigitalSTROMAPI {
 
             if (dsid != null && dsid.getValue() != null) {
                 if (name != null) {
-                    response = transport.execute(JSONRequestConstants.JSON_DEVICE_GET_SCENE_MODE
-                            + JSONRequestConstants.PARAMETER_TOKEN + token + JSONRequestConstants.INFIX_PARAMETER_DSID
-                            + dsid.getValue() + JSONRequestConstants.INFIX_PARAMETER_NAME + name
-                            + JSONRequestConstants.INFIX_PARAMETER_SCENE_ID + sceneID);
+                    response = transport.execute(
+                            JSONRequestConstants.JSON_DEVICE_GET_SCENE_MODE + JSONRequestConstants.PARAMETER_TOKEN
+                                    + token + JSONRequestConstants.INFIX_PARAMETER_DSID + dsid.getValue()
+                                    + JSONRequestConstants.INFIX_PARAMETER_NAME + name
+                                    + JSONRequestConstants.INFIX_PARAMETER_SCENE_ID + sceneID,
+                            DigitalSTROMConfig.CONNECTION_SENSORDATA_TIMEOUT,
+                            DigitalSTROMConfig.READ_SENSORDATA_TIMEOUT);
                 } else {
-                    response = transport.execute(JSONRequestConstants.JSON_DEVICE_GET_SCENE_MODE
-                            + JSONRequestConstants.PARAMETER_TOKEN + token + JSONRequestConstants.INFIX_PARAMETER_DSID
-                            + dsid.getValue() + JSONRequestConstants.INFIX_PARAMETER_SCENE_ID + sceneID);
+                    response = transport.execute(
+                            JSONRequestConstants.JSON_DEVICE_GET_SCENE_MODE + JSONRequestConstants.PARAMETER_TOKEN
+                                    + token + JSONRequestConstants.INFIX_PARAMETER_DSID + dsid.getValue()
+                                    + JSONRequestConstants.INFIX_PARAMETER_SCENE_ID + sceneID,
+                            DigitalSTROMConfig.CONNECTION_SENSORDATA_TIMEOUT,
+                            DigitalSTROMConfig.READ_SENSORDATA_TIMEOUT);
                 }
             } else if (name != null) {
-                response = transport.execute(JSONRequestConstants.JSON_DEVICE_GET_SCENE_MODE
-                        + JSONRequestConstants.PARAMETER_TOKEN + token + JSONRequestConstants.INFIX_PARAMETER_NAME
-                        + name + JSONRequestConstants.INFIX_PARAMETER_SCENE_ID + sceneID);
+                response = transport.execute(
+                        JSONRequestConstants.JSON_DEVICE_GET_SCENE_MODE + JSONRequestConstants.PARAMETER_TOKEN + token
+                                + JSONRequestConstants.INFIX_PARAMETER_NAME + name
+                                + JSONRequestConstants.INFIX_PARAMETER_SCENE_ID + sceneID,
+                        DigitalSTROMConfig.CONNECTION_SENSORDATA_TIMEOUT, DigitalSTROMConfig.READ_SENSORDATA_TIMEOUT);
             }
 
             JSONObject responseObj = JSONResponseHandler.toJSONObject(response);
@@ -808,7 +833,7 @@ public class DigitalSTROMJSONImpl implements DigitalSTROMAPI {
     }
 
     @Override
-    public short getDeviceSensorValue(String token, DSID dsid, String name, SensorIndexEnum sensorIndex) {
+    public short getDeviceSensorValue(String token, DSID dsid, String name, SensorEnum sensorIndex) {
         if (((dsid != null && dsid.getValue() != null) || name != null) && sensorIndex != null) {
             String response = null;
 
@@ -818,18 +843,23 @@ public class DigitalSTROMJSONImpl implements DigitalSTROMAPI {
                             JSONRequestConstants.JSON_DEVICE_GET_SENSOR_VALUE + JSONRequestConstants.PARAMETER_TOKEN
                                     + token + JSONRequestConstants.INFIX_PARAMETER_DSID + dsid.getValue()
                                     + JSONRequestConstants.INFIX_PARAMETER_NAME + name
-                                    + JSONRequestConstants.INFIX_PARAMETER_SENSOR_INDEX + sensorIndex.getIndex(),
-                            4000, 20000);
+                                    + JSONRequestConstants.INFIX_PARAMETER_SENSOR_INDEX + sensorIndex.getSensorType(),
+                            DigitalSTROMConfig.CONNECTION_SENSORDATA_TIMEOUT,
+                            DigitalSTROMConfig.READ_SENSORDATA_TIMEOUT);
                 } else {
                     response = transport.execute(
                             JSONRequestConstants.JSON_DEVICE_GET_SENSOR_VALUE + JSONRequestConstants.PARAMETER_TOKEN
                                     + token + JSONRequestConstants.INFIX_PARAMETER_DSID + dsid.getValue()
-                                    + JSONRequestConstants.INFIX_PARAMETER_SENSOR_INDEX + sensorIndex.getIndex());
+                                    + JSONRequestConstants.INFIX_PARAMETER_SENSOR_INDEX + sensorIndex.getSensorType(),
+                            DigitalSTROMConfig.CONNECTION_SENSORDATA_TIMEOUT,
+                            DigitalSTROMConfig.READ_SENSORDATA_TIMEOUT);
                 }
             } else if (name != null) {
-                response = transport.execute(JSONRequestConstants.JSON_DEVICE_GET_SENSOR_VALUE
-                        + JSONRequestConstants.PARAMETER_TOKEN + token + JSONRequestConstants.INFIX_PARAMETER_NAME
-                        + name + JSONRequestConstants.INFIX_PARAMETER_SENSOR_INDEX + sensorIndex.getIndex());
+                response = transport.execute(
+                        JSONRequestConstants.JSON_DEVICE_GET_SENSOR_VALUE + JSONRequestConstants.PARAMETER_TOKEN + token
+                                + JSONRequestConstants.INFIX_PARAMETER_NAME + name
+                                + JSONRequestConstants.INFIX_PARAMETER_SENSOR_INDEX + sensorIndex.getSensorType(),
+                        DigitalSTROMConfig.CONNECTION_SENSORDATA_TIMEOUT, DigitalSTROMConfig.READ_SENSORDATA_TIMEOUT);
             }
 
             JSONObject responseObj = JSONResponseHandler.toJSONObject(response);

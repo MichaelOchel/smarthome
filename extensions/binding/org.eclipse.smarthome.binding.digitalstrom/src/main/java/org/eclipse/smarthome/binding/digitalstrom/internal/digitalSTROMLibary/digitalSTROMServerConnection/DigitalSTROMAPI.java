@@ -26,7 +26,7 @@ import org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.di
 import org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.digitalSTROMStructure.digitalSTROMDevices.deviceParameters.DeviceSceneSpec;
 import org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.digitalSTROMStructure.digitalSTROMDevices.deviceParameters.MeteringTypeEnum;
 import org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.digitalSTROMStructure.digitalSTROMDevices.deviceParameters.MeteringUnitsEnum;
-import org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.digitalSTROMStructure.digitalSTROMDevices.deviceParameters.SensorIndexEnum;
+import org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.digitalSTROMStructure.digitalSTROMDevices.deviceParameters.SensorEnum;
 import org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.digitalSTROMStructure.digitalSTROMScene.constants.Scene;
 import org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.digitalSTROMStructure.digitalSTROMScene.constants.SceneEnum;
 
@@ -172,7 +172,7 @@ public interface DigitalSTROMAPI {
      * @param sensorIndex required
      * @return
      */
-    public short getDeviceSensorValue(String token, DSID dsid, String name, SensorIndexEnum sensorIndex);
+    public short getDeviceSensorValue(String token, DSID dsid, String name, SensorEnum sensorIndex);
 
     /**
      * Calls scene sceneNumber on the device

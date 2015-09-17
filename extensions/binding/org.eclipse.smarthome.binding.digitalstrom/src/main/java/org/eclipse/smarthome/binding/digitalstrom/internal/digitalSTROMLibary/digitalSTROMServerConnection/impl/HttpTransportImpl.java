@@ -6,14 +6,6 @@
  * http://www.eclipse.org/legal/epl-v10.html
  */
 package org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.digitalSTROMServerConnection.impl;
-/**
- * Copyright (c) 2010-2014, openHAB.org and others.
- *
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
- * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
- */
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -47,14 +39,15 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * The {@link HttpTransportImpl} executes an request to the DigitalSTROM-Server.
- * It also add the SLL-Certification if it is set to the DigialSTROM-Server-Thing.
+ * The {@link HttpTransportImpl} executes an request to the DigitalSTROM-Server.<br>
+ * It also add the SLL-Certification and set it if the parth to an SSL-Certification is set in
+ * {@link DigitalSTROMConfig#TRUST_CERT_PATH}, otherwise it will be ignore it.
  *
  * @author Alexander Betker - Initial contribution
  * @author Alex Maier - Initial contribution
- * @author Michael Ochel - add SSL-Certification check, add fixURI(String uri) and checkConnection(String testRequest)
+ * @author Michael Ochel - add SSL-Certification check, fixURI(String uri) and checkConnection(String testRequest)
  *         method
- * @author Matthias Siegele - add SSL-Certification check, add fixURI(String uri) and checkConnection(String
+ * @author Matthias Siegele - add SSL-Certification check, fixURI(String uri) and checkConnection(String
  *         testRequest) method
  */
 public class HttpTransportImpl implements HttpTransport {
@@ -81,11 +74,8 @@ public class HttpTransportImpl implements HttpTransport {
     private int connectTimeout;
     private int readTimeout;
 
-    private final int DEFAULT_CONNECTION_TIMEOUT = 1000;
-    private final int DEFAULT_READ_TIMEOUT = 1000;
-
     public HttpTransportImpl(String uri) {
-        init(uri, this.DEFAULT_CONNECTION_TIMEOUT, this.DEFAULT_READ_TIMEOUT);
+        init(uri, DigitalSTROMConfig.CONNECTION_TIMEOUT, DigitalSTROMConfig.READ_TIMEOUT);
     }
 
     /**

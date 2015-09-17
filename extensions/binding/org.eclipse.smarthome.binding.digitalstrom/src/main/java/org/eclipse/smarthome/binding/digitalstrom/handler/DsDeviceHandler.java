@@ -13,6 +13,7 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 
 import org.eclipse.smarthome.binding.digitalstrom.DigitalSTROMBindingConstants;
@@ -50,9 +51,16 @@ import org.slf4j.LoggerFactory;
 import com.google.common.collect.Sets;
 
 /**
- * The {@link DsDeviceHandler} is responsible for handling commands,
+ * The {@link DsDeviceHandler} is responsible to handling the configuration, load supported channels of an
+ * digitalSTROM device and handling commands which are send to one of the channels. <br>
+ * <br>
+ * For that it uses the {@link DssBridgeHandler} to execute the actual command and implements the
+ * {@link DeviceStatusListener}
+ * to get informed by changes from the accompanying {@link Device}.
+ * <br>
+ * <br>
  * which are send to one of the channels of an DigitalSTROM device, which can be switched on or off or/and is dimmable.
- * It uses the {@link DssBridgeHandler} to execute the actual command.
+ *
  *
  * @author Michael Ochel - Initial contribution
  * @author Mathias Siegele - Initial contribution
@@ -116,6 +124,29 @@ public class DsDeviceHandler extends BaseThingHandler implements DeviceStatusLis
             this.dssBridgeHandler.childThingRemoved(dSID);
         }
         updateStatus(ThingStatus.REMOVED);
+    }
+
+    @Override
+    public void thingUpdated(Thing thing) {
+        // TODO: perhaps our own sequence, because we not really need to dispose() and initialize() the thing after an
+        // update
+        dispose();
+        this.thing = thing;
+        initialize();
+    }
+
+    @Override
+    public void handleConfigurationUpdate(Map<String, Object> configurationParmeters) {
+        // can be overridden by subclasses
+        Configuration configuration = editConfiguration();
+        for (Entry<String, Object> configurationParmeter : configurationParmeters.entrySet()) {
+            configuration.put(configurationParmeter.getKey(), configurationParmeter.getValue());
+        }
+
+        // reinitialize with new configuration and persist changes
+        dispose();
+        updateConfiguration(configuration);
+        initialize();
     }
 
     @Override
@@ -240,7 +271,7 @@ public class DsDeviceHandler extends BaseThingHandler implements DeviceStatusLis
                             if (deviceStateUpdate.getValue() > 0) {
                                 updateState(new ChannelUID(getThing().getUID(), currentChannel), new PercentType(
                                         fromValueToPercent(deviceStateUpdate.getValue(), device.getMaxOutputValue())));
-                                updateState(new ChannelUID(getThing().getUID(), currentChannel), OnOffType.ON);
+                                // updateState(new ChannelUID(getThing().getUID(), currentChannel), OnOffType.ON);
                             } else {
                                 updateState(new ChannelUID(getThing().getUID(), currentChannel), OnOffType.OFF);
                             }
@@ -280,10 +311,11 @@ public class DsDeviceHandler extends BaseThingHandler implements DeviceStatusLis
                         case DeviceStateUpdate.UPDATE_OPEN_CLOSE:
                             if (deviceStateUpdate.getValue() > 0) {
                                 updateState(new ChannelUID(getThing().getUID(), CHANNEL_SHADE), UpDownType.UP);
-                                updateState(new ChannelUID(getThing().getUID(), CHANNEL_SHADE), new PercentType(100));
+                                // updateState(new ChannelUID(getThing().getUID(), CHANNEL_SHADE), new
+                                // PercentType(100));
                             } else {
                                 updateState(new ChannelUID(getThing().getUID(), CHANNEL_SHADE), UpDownType.DOWN);
-                                updateState(new ChannelUID(getThing().getUID(), CHANNEL_SHADE), new PercentType(0));
+                                // updateState(new ChannelUID(getThing().getUID(), CHANNEL_SHADE), new PercentType(0));
                             }
                             break;
                         default:
@@ -493,15 +525,6 @@ public class DsDeviceHandler extends BaseThingHandler implements DeviceStatusLis
         logger.debug("load channel: {} with item: {}", channelId, item);
     }
 
-    @Override
-    public void thingUpdated(Thing thing) {
-        // TODO: perhaps our own sequence, because we not really need to dispose() and initialize() the thing after an
-        // update
-        dispose();
-        this.thing = thing;
-        initialize();
-    }
-
     private void onDeviceStateInitial(Device device) {
         if (device != null) {
             // TODO: add rollershutter and check loaded channels e.g. brightness/switch sensor channels (may we need an
@@ -599,8 +622,7 @@ public class DsDeviceHandler extends BaseThingHandler implements DeviceStatusLis
         if (device != null) {
             /*
              * get persistently saved DeviceSceneSpec from Thing and save it in the Device, have to call after the
-             * device is
-             * added (onDeviceAdded()) to ThingHandler
+             * device is added (onDeviceAdded()) to ThingHandler
              */
             Map<String, String> propertries = this.getThing().getProperties();
             String sceneSave;

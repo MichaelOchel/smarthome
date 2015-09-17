@@ -13,6 +13,7 @@ import org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.di
 import org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.digitalSTROMStructure.digitalSTROMDevices.deviceParameters.DSID;
 import org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.digitalSTROMStructure.digitalSTROMDevices.deviceParameters.DeviceStateUpdate;
 import org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.digitalSTROMStructure.digitalSTROMDevices.deviceParameters.DeviceStateUpdateImpl;
+import org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.digitalSTROMStructure.digitalSTROMDevices.deviceParameters.SensorEnum;
 import org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.digitalSTROMStructure.digitalSTROMDevices.deviceParameters.SensorIndexEnum;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -31,7 +32,7 @@ public class DeviceConsumptionSensorJob implements SensorJob {
 
     private static final Logger logger = LoggerFactory.getLogger(DeviceConsumptionSensorJob.class);
     private Device device = null;
-    private SensorIndexEnum sensorIndex = null;
+    private SensorEnum sensorIndex = null;
     private DSID meterDSID = null;
     private long initalisationTime = 0;
 
@@ -41,7 +42,7 @@ public class DeviceConsumptionSensorJob implements SensorJob {
      * @param device
      * @param index sensor index
      */
-    public DeviceConsumptionSensorJob(Device device, SensorIndexEnum index) {
+    public DeviceConsumptionSensorJob(Device device, SensorEnum index) {
         this.device = device;
         this.sensorIndex = index;
         this.meterDSID = device.getMeterDSID();
@@ -78,15 +79,15 @@ public class DeviceConsumptionSensorJob implements SensorJob {
     public boolean equals(Object obj) {
         if (obj instanceof DeviceConsumptionSensorJob) {
             DeviceConsumptionSensorJob other = (DeviceConsumptionSensorJob) obj;
-            String device = this.device.getDSID().getValue() + this.sensorIndex.getIndex();
-            return device.equals(other.device.getDSID().getValue() + other.sensorIndex.getIndex());
+            String device = this.device.getDSID().getValue() + this.sensorIndex.getSensorType();
+            return device.equals(other.device.getDSID().getValue() + other.sensorIndex.getSensorType());
         }
         return false;
     }
 
     @Override
     public int hashCode() {
-        return new String(this.device.getDSID().getValue() + this.sensorIndex.getIndex()).hashCode();
+        return new String(this.device.getDSID().getValue() + this.sensorIndex.getSensorType()).hashCode();
     }
 
     @Override

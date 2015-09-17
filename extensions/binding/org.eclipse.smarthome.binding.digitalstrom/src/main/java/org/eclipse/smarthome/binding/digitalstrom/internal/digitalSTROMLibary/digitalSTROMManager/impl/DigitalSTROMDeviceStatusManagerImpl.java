@@ -37,7 +37,7 @@ import org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.di
 import org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.digitalSTROMStructure.digitalSTROMDevices.deviceParameters.MeteringTypeEnum;
 import org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.digitalSTROMStructure.digitalSTROMDevices.deviceParameters.MeteringUnitsEnum;
 import org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.digitalSTROMStructure.digitalSTROMDevices.deviceParameters.OutputModeEnum;
-import org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.digitalSTROMStructure.digitalSTROMDevices.deviceParameters.SensorIndexEnum;
+import org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.digitalSTROMStructure.digitalSTROMDevices.deviceParameters.SensorEnum;
 import org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.digitalSTROMStructure.digitalSTROMScene.InternalScene;
 import org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.digitalSTROMStructure.digitalSTROMScene.constants.ApartmentSceneEnum;
 import org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.digitalSTROMStructure.digitalSTROMScene.constants.SceneEnum;
@@ -173,22 +173,21 @@ public class DigitalSTROMDeviceStatusManagerImpl implements DigitalSTROMDeviceSt
                                         if (!eshDevice.isPowerConsumptionUpToDate()) {
 
                                             updateSensorData(
-                                                    new DeviceConsumptionSensorJob(eshDevice,
-                                                            SensorIndexEnum.ACTIVE_POWER),
+                                                    new DeviceConsumptionSensorJob(eshDevice, SensorEnum.ACTIVE_POWER),
                                                     eshDevice.getPowerConsumptionRefreshPriority());
                                         }
 
                                         if (!eshDevice.isEnergyMeterUpToDate()) {
                                             updateSensorData(
                                                     new DeviceConsumptionSensorJob(eshDevice,
-                                                            SensorIndexEnum.OUTPUT_CURRENT),
+                                                            SensorEnum.OUTPUT_CURRENT),
                                                     eshDevice.getEnergyMeterRefreshPriority());
                                         }
 
                                         if (!eshDevice.isElectricMeterUpToDate()) {
                                             updateSensorData(
                                                     new DeviceConsumptionSensorJob(eshDevice,
-                                                            SensorIndexEnum.ELECTRIC_METER),
+                                                            SensorEnum.ELECTRIC_METER),
                                                     eshDevice.getEnergyMeterRefreshPriority());
                                         }
                                     }
@@ -317,7 +316,6 @@ public class DigitalSTROMDeviceStatusManagerImpl implements DigitalSTROMDeviceSt
 
         if (sceneJobExecuter != null) {
             this.sceneJobExecuter.startExecuter();
-            ;
         }
 
         if (sensorJobExecuter != null) {
@@ -446,16 +444,18 @@ public class DigitalSTROMDeviceStatusManagerImpl implements DigitalSTROMDeviceSt
         if (connMan.checkConnection()) {
             if (this.digitalSTROMClient.callDeviceScene(connMan.getSessionToken(), device.getDSID(), null,
                     SceneEnum.STOP, true)) {
-                short outputIndex = DeviceConstants.DEVICE_SENSOR_SLAT_OUTPUT;
+                short outputIndex = DeviceConstants.DEVICE_SENSOR_OUTPUT;
+                // TODO: right?
                 if (device.getOutputMode().equals(OutputModeEnum.POSITION_CON_US)) {
-                    outputIndex = DeviceConstants.DEVICE_SENSOR_OUTPUT;
+                    outputIndex = DeviceConstants.DEVICE_SENSOR_SLAT_OUTPUT;
                 }
 
                 int outputValue = this.digitalSTROMClient.getDeviceOutputValue(connMan.getSessionToken(),
                         device.getDSID(), null, outputIndex);
 
+                logger.debug("!!!!!!!!!!!!OutputValue = " + outputValue + "!!!!!!!");
                 if (outputValue != -1) {
-                    if (device.isDimmable()) {
+                    if (!device.isRollershutter()) {
                         device.updateInternalDeviceState(
                                 new DeviceStateUpdateImpl(DeviceStateUpdate.UPDATE_BRIGHTNESS, outputValue));
                     } else {
@@ -526,6 +526,7 @@ public class DigitalSTROMDeviceStatusManagerImpl implements DigitalSTROMDeviceSt
                          * }
                          */
                         break;
+                    case DeviceStateUpdate.UPDATE_OPEN_CLOSE:
                     case DeviceStateUpdate.UPDATE_ON_OFF:
                         if (deviceStateUpdate.getValue() > 0) {
                             requestSucsessfull = digitalSTROMClient.turnDeviceOn(connMan.getSessionToken(),
