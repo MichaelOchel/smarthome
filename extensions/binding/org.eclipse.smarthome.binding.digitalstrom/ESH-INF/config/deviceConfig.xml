@@ -14,11 +14,11 @@
                 </description>
                 <default></default>
             </parameter>
-            <parameter name="PowerConsumptionRefreshPriority"
+            <parameter name="ActivePowerRefreshPriority"
                 type="text">
-                <label>Power consumption refresh priority</label>
+                <label>Active power refresh priority</label>
                 <description>
-                    Set the refresh priority for the power consumption
+                    Set the refresh priority for the active power
                     sensor value. Can be never, low priority, medium
                     priority or high priority.
                 </description>
@@ -48,10 +48,10 @@
                 <default>never</default>
                 <required>false</required>
             </parameter>
-            <parameter name="EnergyMeterRefreshPriority" type="text">
-                <label>Energy meter refresh priority</label>
+            <parameter name="OutputCurrentRefreshPriority" type="text">
+                <label>Output current refresh priority</label>
                 <description>
-                    Set the refresh priority for the Energy meter sensor
+                    Set the refresh priority for the output current sensor
                     value. Can be never, low priority, medium priority
                     or high priority.
                 </description>
@@ -65,22 +65,22 @@
                 <required>false</required>
             </parameter>
             <!--deviceUID-->
-            <parameter name="dSUID" type="text">
-                <label>Device UID</label>
-                <description>
-                    The device identifier identifies one DigitalSTROM
-                    device.
-                </description>
-                <required>true</required>
+            <parameter name="dSUID" type="text" readOnly="true">
+            	<label>Device UID</label>
+            	<description>
+            		The device identifier identifies one DigitalSTROM
+            		device.
+            	</description>
+            	<required>true</required>
             </parameter>
             <!--deviceID-->
-            <parameter name="dSID" type="text">
-                <label>Device ID</label>
-                <description>
-                    The device identifier identifies one DigitalSTROM
-                    device.
-                </description>
-                <required>false</required>
+            <parameter name="dSID" type="text" readOnly="true">
+            	<label>Device ID</label>
+            	<description>
+            		The device identifier identifies one DigitalSTROM
+            		device.
+            	</description>
+            	<required>false</required>
             </parameter>
             <!--meterID-->
             <parameter name="meterDSID" type="text">
@@ -92,49 +92,50 @@
                 <required>false</required>
             </parameter>
             <!--device hwInfo-->
-            <parameter name="hwInfo" type="text">
-                <label>Device hardware type</label>
-                <description>
-                    The hardware type from this DigitalSTROM device.
-                </description>
-                <required>false</required>
+            <parameter name="hwInfo" type="text" readOnly="true">
+            	<label>Device hardware type</label>
+            	<description>
+            		The hardware type from this DigitalSTROM device.
+            	</description>
+            	<required>false</required>
             </parameter>
             <!--zone id-->
-            <parameter name="zoneID" type="text">
-                <label>Zone ID</label>
-                <description>
-                    The DigitalSTROM device is part of this zone.
-                </description>
-                <required>false</required>
+            <parameter name="zoneID" type="text" readOnly="true">
+            	<label>Zone ID</label>
+            	<description>
+            		The DigitalSTROM device is part of this zone.
+            	</description>
+            	<required>false</required>
             </parameter>
             <!--groups id-->
-            <parameter name="groups" type="text">
-                <label>Group ID's</label>
-                <description>
-                    The DigitalSTROM device is part of this user-defined
-                    or functional groups.
-                </description>
-                <required>false</required>
+            <parameter name="groups" type="text" readOnly="true">
+            	<label>Group ID's</label>
+            	<description>
+            		The DigitalSTROM device is part of this user-defined
+            		or functional groups.
+            	</description>
+            	<required>false</required>
             </parameter>
             <!--outputmode-->
-            <parameter name="outputmode" type="text">
-                <label>Device Output mode</label>
-                <description>
-                    The current DigitalSTROM device output mode e.g. 22
-                    = dimmable.
-                </description>
-                <required>false</required>
+            <parameter name="outputmode" type="text" readOnly="true">
+            	<label>Device Output mode</label>
+            	<description>
+            		The current DigitalSTROM device output mode e.g. 22
+            		= dimmable.
+            	</description>
+            	<required>false</required>
             </parameter>
             <!--funcColorGroup-->
-            <parameter name="funcColorGroup" type="text">
-                <label>Device functional color group</label>
-                <description>
-                    The current DigitalSTROM device functional color
-                    group e.g. yellow = light.
-                </description>
-                <required>false</required>
+            <parameter name="funcColorGroup" type="text"
+            	readOnly="true">
+            	<label>Device functional color group</label>
+            	<description>
+            		The current DigitalSTROM device functional color
+            		group e.g. yellow = light.
+            	</description>
+            	<required>false</required>
             </parameter>
-        </config-description>
+ </config-description>
  <config-description uri="binding:digitalstrom:grayDevice">
             <!--deviceName-->
             <parameter name="deviceName" type="text">
@@ -145,74 +146,75 @@
                 <default></default>
             </parameter>
             <!--deviceUID-->
-            <parameter name="dSUID" type="text">
-                <label>Device UID</label>
-                <description>
-                    The device identifier identifies one DigitalSTROM
-                    device.
-                </description>
-                <required>true</required>
+            <parameter name="dSUID" type="text" readOnly="true">
+            	<label>Device UID</label>
+            	<description>
+            		The device identifier identifies one DigitalSTROM
+            		device.
+            	</description>
+            	<required>true</required>
             </parameter>
             <!--deviceID-->
-            <parameter name="dSID" type="text">
-                <label>Device ID</label>
-                <description>
-                    The device identifier identifies one DigitalSTROM
-                    device.
-                </description>
-                <required>false</required>
+            <parameter name="dSID" type="text" readOnly="true">
+            	<label>Device ID</label>
+            	<description>
+            		The device identifier identifies one DigitalSTROM
+            		device.
+            	</description>
+            	<required>false</required>
             </parameter>
             <!--meterID-->
-            <parameter name="meterDSID" type="text">
-                <label>Meter dSID</label>
-                <description>
-                    Identifier of the meter in which the device is
-                    connected.
-                </description>
-                <required>false</required>
+            <parameter name="meterDSID" type="text" readOnly="true">
+            	<label>Meter dSID</label>
+            	<description>
+            		Identifier of the meter in which the device is
+            		connected.
+            	</description>
+            	<required>false</required>
             </parameter>
             <!--device hwInfo-->
-            <parameter name="hwInfo" type="text">
-                <label>Device hardware type</label>
-                <description>
-                    The hardware type from this DigitalSTROM device.
-                </description>
-                <required>false</required>
+            <parameter name="hwInfo" type="text" readOnly="true">
+            	<label>Device hardware type</label>
+            	<description>
+            		The hardware type from this DigitalSTROM device.
+            	</description>
+            	<required>false</required>
             </parameter>
             <!--zone id-->
-            <parameter name="zoneID" type="text">
-                <label>Zone ID</label>
-                <description>
-                    The DigitalSTROM device is part of this zone.
-                </description>
-                <required>false</required>
+            <parameter name="zoneID" type="text" readOnly="true">
+            	<label>Zone ID</label>
+            	<description>
+            		The DigitalSTROM device is part of this zone.
+            	</description>
+            	<required>false</required>
             </parameter>
             <!--groups id-->
-            <parameter name="groups" type="text">
-                <label>Group ID's</label>
-                <description>
-                    The DigitalSTROM device is part of this user-defined
-                    or functional groups.
-                </description>
-                <required>false</required>
+            <parameter name="groups" type="text" readOnly="true">
+            	<label>Group ID's</label>
+            	<description>
+            		The DigitalSTROM device is part of this user-defined
+            		or functional groups.
+            	</description>
+            	<required>false</required>
             </parameter>
             <!--outputmode-->
-            <parameter name="outputmode" type="text">
-                <label>Device Output mode</label>
-                <description>
-                    The current DigitalSTROM device output mode e.g. 22
-                    = dimmable.
-                </description>
-                <required>false</required>
+            <parameter name="outputmode" type="text" readOnly="true">
+            	<label>Device Output mode</label>
+            	<description>
+            		The current DigitalSTROM device output mode e.g. 22
+            		= dimmable.
+            	</description>
+            	<required>false</required>
             </parameter>
             <!--funcColorGroup-->
-            <parameter name="funcColorGroup" type="text">
-                <label>Device functional color group</label>
-                <description>
-                    The current DigitalSTROM device functional color
-                    group e.g. yellow = light.
-                </description>
-                <required>false</required>
+            <parameter name="funcColorGroup" type="text"
+            	readOnly="true">
+            	<label>Device functional color group</label>
+            	<description>
+            		The current DigitalSTROM device functional color
+            		group e.g. yellow = light.
+            	</description>
+            	<required>false</required>
             </parameter>
-        </config-description>
+ </config-description>
 </config-description:config-descriptions>

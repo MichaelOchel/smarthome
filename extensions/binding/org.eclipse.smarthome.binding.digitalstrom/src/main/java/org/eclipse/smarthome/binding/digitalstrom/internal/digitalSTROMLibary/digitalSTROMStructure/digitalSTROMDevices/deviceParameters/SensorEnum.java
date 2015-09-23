@@ -43,24 +43,24 @@ public enum SensorEnum {
      * | 64 | Output current (H) | Ampere (mA) | 0 | 16380 | 4 |
      * | 65 | Power consumption | Volt-Ampere (VA) | 0 | 4095 | 1 |
      */
-    ACTIVE_POWER(4, "Watts", "W"),
-    OUTPUT_CURRENT(5, "Ampere", "mA"),
-    ELECTRIC_METER(6, "Kilowatt hours)", "kWh"),
-    TEMPERATURE_INDOORS(9, "Kelvin", "K"),
-    TEMPERATURE_OUTDOORS(10, "Kelvin", "K"),
-    BRIGHTNESS_INDOORS(11, "Lux", "Lx"),
-    BRIGHTNESS_OUTDOORS(12, "Lux", "Lx"),
-    RELATIVE_HUMIDITY_INDOORS(13, "Percent", "%"),
-    RELATIVE_HUMIDITY_OUTDOORS(14, "Percent", "%"),
-    AIR_PRESSURE(15, "Pascal", "hPa"),
-    WIND_SPEED(18, "Meters per second", "m/s"),
-    PRECIPITATION(20, "Millimeter per square meter", "mm/m2"),
-    CARBONE_DIOXIDE(21, "Parts per million", "ppm"),
-    SOUND_PRESSURE_LEVEL(25, "Decibel", "dB"),
-    ROOM_TEMPERATION_SET_POINT(50, "Kelvin", "K"),
-    ROOM_TEMPERATION_CONTROL_VARIABLE(51, "Kelvin", "K"),
-    OUTPUT_CURRENT_H(64, "Ampere", "mA"),
-    POWER_CONSUMPTION(65, "Volt-Ampere", "VA");
+    ACTIVE_POWER(4, "watts", "W"),
+    OUTPUT_CURRENT(5, "ampere", "mA"),
+    ELECTRIC_METER(6, "kilowatt hours)", "kWh"),
+    TEMPERATURE_INDOORS(9, "kelvin", "K"),
+    TEMPERATURE_OUTDOORS(10, "kelvin", "K"),
+    BRIGHTNESS_INDOORS(11, "lux", "Lx"),
+    BRIGHTNESS_OUTDOORS(12, "lux", "Lx"),
+    RELATIVE_HUMIDITY_INDOORS(13, "percent", "%"),
+    RELATIVE_HUMIDITY_OUTDOORS(14, "percent", "%"),
+    AIR_PRESSURE(15, "pascal", "hPa"),
+    WIND_SPEED(18, "meters per second", "m/s"),
+    PRECIPITATION(20, "millimeter per square meter", "mm/m2"),
+    CARBONE_DIOXIDE(21, "parts per million", "ppm"),
+    SOUND_PRESSURE_LEVEL(25, "decibel", "dB"),
+    ROOM_TEMPERATION_SET_POINT(50, "kelvin", "K"),
+    ROOM_TEMPERATION_CONTROL_VARIABLE(51, "kelvin", "K"),
+    OUTPUT_CURRENT_H(64, "ampere", "mA"),
+    POWER_CONSUMPTION(65, "volt-ampere", "VA");
 
     private final int sensorType;
     private final String unit;

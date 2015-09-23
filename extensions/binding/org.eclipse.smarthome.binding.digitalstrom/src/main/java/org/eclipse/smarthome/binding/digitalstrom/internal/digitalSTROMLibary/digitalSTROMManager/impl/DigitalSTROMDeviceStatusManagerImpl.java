@@ -170,25 +170,25 @@ public class DigitalSTROMDeviceStatusManagerImpl implements DigitalSTROMDeviceSt
                                     if (!eshDevice.isSensorDataUpToDate()) {
                                         logger.debug("Device need SensorData update");
 
-                                        if (!eshDevice.isPowerConsumptionUpToDate()) {
+                                        if (!eshDevice.isActivePowerUpToDate()) {
 
                                             updateSensorData(
                                                     new DeviceConsumptionSensorJob(eshDevice, SensorEnum.ACTIVE_POWER),
-                                                    eshDevice.getPowerConsumptionRefreshPriority());
+                                                    eshDevice.getActivePowerRefreshPriority());
                                         }
 
-                                        if (!eshDevice.isEnergyMeterUpToDate()) {
+                                        if (!eshDevice.isOutputCurrentUpToDate()) {
                                             updateSensorData(
                                                     new DeviceConsumptionSensorJob(eshDevice,
                                                             SensorEnum.OUTPUT_CURRENT),
-                                                    eshDevice.getEnergyMeterRefreshPriority());
+                                                    eshDevice.getOutputCurrentRefreshPriority());
                                         }
 
                                         if (!eshDevice.isElectricMeterUpToDate()) {
                                             updateSensorData(
                                                     new DeviceConsumptionSensorJob(eshDevice,
                                                             SensorEnum.ELECTRIC_METER),
-                                                    eshDevice.getEnergyMeterRefreshPriority());
+                                                    eshDevice.getOutputCurrentRefreshPriority());
                                         }
                                     }
                                 } else {

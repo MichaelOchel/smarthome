@@ -35,9 +35,9 @@ public interface DeviceStateUpdate {
     public final static String UPDATE_SLAT_STOP = "slatStop";
 
     // sensor data
-    public final static String UPDATE_POWER_CONSUMPTION = "powerConsumption";
-    public final static String UPDATE_ENERGY_METER_VALUE = "energyMeterValue";
-    public final static String UPDATE_ELECTRIC_METER_VALUE = "electricMeterValue";
+    public final static String UPDATE_ACTIVE_POWER = "activePower";
+    public final static String UPDATE_OUTPUT_CURRENT = "outputCurrent";
+    public final static String UPDATE_ELECTRIC_METER = "electricMeter";
     public final static String UPDATE_OUTPUT_VALUE = "outputValue";
 
     // scene
@@ -51,19 +51,19 @@ public interface DeviceStateUpdate {
 
     /**
      * Returns the state update value.
-     * 
+     *
      * NOTE: - For the OnOff-type is the value for off < 0 and for on > 0.
      * - For all Increase- and Decrease-types is the value the new output value.
      * - For SceneCall-type is the value between 0 and 127 a scene call.
      * - For all SceneUndo-types is the value the new output value.
-     * 
+     *
      * @return new state value
      */
     public int getValue();
 
     /**
      * Returns the state update type.
-     * 
+     *
      * @return state update type
      */
     public String getType();

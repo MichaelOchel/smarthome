@@ -52,9 +52,9 @@ public class DigitalSTROMBindingConstants {
     // plug adapter
     public static final String CHANNEL_PLUG_ADAPTER = "plugAdapter";
     // sensor
-    public static final String CHANNEL_ELECTRIC_METER = "electricMeterValue";
-    public static final String CHANNEL_ENERGY_METER = "energyMeterValue";
-    public static final String CHANNEL_POWER_CONSUMPTION = "powerConsumption";
+    public static final String CHANNEL_ELECTRIC_METER = "electricMeter";
+    public static final String CHANNEL_OUTPUT_CURRENT = "outputCurrent";
+    public static final String CHANNEL_ACTIVE_POWER = "activePower";
 
     /* config URIs */
     public static final String DEVICE_CONFIG = "binding:digitalstrom:device";
@@ -88,9 +88,9 @@ public class DigitalSTROMBindingConstants {
     public static final String DEVICE_SCENE = "scene"; // + number of scene
 
     // Sensor data channel properties
-    public static final String POWER_CONSUMTION_REFRESH_PRIORITY = "PowerConsumptionRefreshPriority";
+    public static final String ACTIVE_POWER_REFRESH_PRIORITY = "ActivePowerRefreshPriority";
     public static final String ELECTRIC_METER_REFRESH_PRIORITY = "ElectricMeterRefreshPriority";
-    public static final String ENERGY_METER_REFRESH_PRIORITY = "EnergyMeterRefreshPriority";
+    public static final String OUTPUT_CURRENT_REFRESH_PRIORITY = "OutputCurrentRefreshPriority";
     // options
     public static final String REFRESH_PRIORITY_NEVER = "never";
     public static final String REFRESH_PRIORITY_LOW = "low";

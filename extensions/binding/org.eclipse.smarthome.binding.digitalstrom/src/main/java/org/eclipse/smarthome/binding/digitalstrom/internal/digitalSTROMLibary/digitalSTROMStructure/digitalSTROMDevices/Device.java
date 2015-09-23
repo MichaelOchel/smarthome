@@ -257,42 +257,42 @@ public interface Device {
      *
      * @return current power consumption in watt
      */
-    public int getPowerConsumption();
+    public int getActivePower();
 
     /**
      * Set the current power consumption in watt to the given power consumption.
      *
      * @param powerConsumption in watt
      */
-    public void setPowerConsumption(int powerConsumption);
+    public void setActivePower(int powerConsumption);
 
     /**
      * Returns the energy meter value in watt per hour of this device.
      *
      * @return energy meter value in watt per hour
      */
-    public int getEnergyMeterValue();
+    public int getOutputCurrent();
 
     /**
      * Set the last recorded energy meter value in watt per hour of this device.
      *
      * @param energy meter value in watt per hour
      */
-    public void setEnergyMeterValue(int value);
+    public void setOutputCurrent(int value);
 
     /**
      * Returns the last recorded electric meter value in ampere of this device.
      *
      * @return electric meter value in amoere
      */
-    public int getElectricMeterValue();
+    public int getElectricMeter();
 
     /**
      * Sets the last recorded electric meter value in ampere of this device.
      *
      * @param electric meter value in mA
      */
-    public void setElectricMeterValue(int electricMeterValue);
+    public void setElectricMeter(int electricMeterValue);
 
     /**
      * Returns a list with group id's in which the device is part of.
@@ -367,7 +367,7 @@ public interface Device {
      *
      * @return is up to date (true = yes | false = no)
      */
-    public boolean isPowerConsumptionUpToDate();
+    public boolean isActivePowerUpToDate();
 
     /**
      * Returns true if the electric meter is up to date or false if it has to be updated.
@@ -381,7 +381,7 @@ public interface Device {
      *
      * @return is up to date (true = yes | false = no)
      */
-    public boolean isEnergyMeterUpToDate();
+    public boolean isOutputCurrentUpToDate();
 
     /**
      * Returns true if all sensor data are up to date or false if some have to be updated.
@@ -407,7 +407,7 @@ public interface Device {
      * @return power consumption refresh priority
      */
 
-    public String getPowerConsumptionRefreshPriority();
+    public String getActivePowerRefreshPriority();
 
     /**
      * Returns the priority of the electric meter refresh.
@@ -421,7 +421,7 @@ public interface Device {
      *
      * @return energy meter refresh priority
      */
-    public String getEnergyMeterRefreshPriority();
+    public String getOutputCurrentRefreshPriority();
 
     /**
      * Returns true if the device is already added to the ESH and false if not.

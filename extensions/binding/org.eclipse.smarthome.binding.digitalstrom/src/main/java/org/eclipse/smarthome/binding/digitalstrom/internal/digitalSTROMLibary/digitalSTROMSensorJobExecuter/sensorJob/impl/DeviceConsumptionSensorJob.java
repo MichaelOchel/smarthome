@@ -60,15 +60,15 @@ public class DeviceConsumptionSensorJob implements SensorJob {
             case ACTIVE_POWER:
                 // logger.info("DeviceConsumption : "+consumption+", DSID: "+this.device.getDSID().getValue());
                 this.device.updateInternalDeviceState(
-                        new DeviceStateUpdateImpl(DeviceStateUpdate.UPDATE_POWER_CONSUMPTION, consumption));
+                        new DeviceStateUpdateImpl(DeviceStateUpdate.UPDATE_ACTIVE_POWER, consumption));
                 break;
             case OUTPUT_CURRENT:
                 this.device.updateInternalDeviceState(
-                        new DeviceStateUpdateImpl(DeviceStateUpdate.UPDATE_ELECTRIC_METER_VALUE, consumption));
+                        new DeviceStateUpdateImpl(DeviceStateUpdate.UPDATE_ELECTRIC_METER, consumption));
                 break;
             case ELECTRIC_METER:
                 this.device.updateInternalDeviceState(
-                        new DeviceStateUpdateImpl(DeviceStateUpdate.UPDATE_ELECTRIC_METER_VALUE, consumption));
+                        new DeviceStateUpdateImpl(DeviceStateUpdate.UPDATE_ELECTRIC_METER, consumption));
                 break;
             default:
                 break;
