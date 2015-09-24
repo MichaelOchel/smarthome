@@ -133,6 +133,7 @@ public class DssBridgeHandler extends BaseBridgeHandler
             }
             structMan.generateZoneGroupNames(connMan);
             this.devStatMan.registerTotalPowerConsumptionListener(this);
+
             if (this.thingTypeProvider != null) {
                 this.thingTypeProvider.registerConnectionManagerHandler(connMan);
             }
@@ -324,7 +325,7 @@ public class DssBridgeHandler extends BaseBridgeHandler
 
     @Override
     public void onTotalPowerConsumptionChanged(int newPowerConsumption) {
-        updateState(new ChannelUID(getThing().getUID(), CHANNEL_ACTIVE_POWER),
+        updateState(new ChannelUID(getThing().getUID(), CHANNEL_POWER_CONSUMPTION),
                 new DecimalType(newPowerConsumption));
 
     }

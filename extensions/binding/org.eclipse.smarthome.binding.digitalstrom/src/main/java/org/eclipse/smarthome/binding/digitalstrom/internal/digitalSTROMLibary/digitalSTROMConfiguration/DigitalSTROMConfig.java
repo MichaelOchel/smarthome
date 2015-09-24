@@ -43,8 +43,8 @@ public class DigitalSTROMConfig {
     public static int BIN_CHECK_TIME = DEFAULT_BIN_CHECK_TIME; // in milliseconds
 
     // Device update config
-    public static final int DEFAULT_POLLING_FREQUENCY = 30000; // in seconds
-    public static int POLLING_FREQUENCY = DEFAULT_POLLING_FREQUENCY; // in seconds
+    public static final int DEFAULT_POLLING_FREQUENCY = 1000; // in milliseconds
+    public static int POLLING_FREQUENCY = DEFAULT_POLLING_FREQUENCY; // in milliseconds
 
     /* Sensordata */
 
@@ -65,4 +65,6 @@ public class DigitalSTROMConfig {
     public static final long MEDIUM_PRIORITY_FACTOR = 5;
     public static final long LOW_PRIORITY_FACTOR = 10;
 
+    public static final int DEFAULT_EVENT_LISTENER_REFRESHINTERVAL = 1000;
+    public static int EVENT_LISTENER_REFRESHINTERVAL = DEFAULT_EVENT_LISTENER_REFRESHINTERVAL;
 }

@@ -230,7 +230,7 @@ public class DigitalSTROMSceneManagerImpl implements DigitalSTROMSceneManager {
     public void callDeviceScene(DSID dSID, Short sceneID) {
         Device device = this.structureManager.getDeviceByDSID(dSID);
         if (device != null) {
-            device.callScene(sceneID);
+            device.internalCallScene(sceneID);
         } else {
             // Fehlermeldung
         }
@@ -269,7 +269,7 @@ public class DigitalSTROMSceneManagerImpl implements DigitalSTROMSceneManager {
     public void undoDeviceScene(DSID dSID) {
         Device device = this.structureManager.getDeviceByDSID(dSID);
         if (device != null) {
-            device.undoScene();
+            device.internalUndoScene();
         }
 
     }

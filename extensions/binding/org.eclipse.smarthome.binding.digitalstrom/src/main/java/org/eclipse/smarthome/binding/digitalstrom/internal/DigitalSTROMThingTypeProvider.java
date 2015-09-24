@@ -252,7 +252,7 @@ public class DigitalSTROMThingTypeProvider implements ThingTypeProvider {
     }
 
     private StateDescription getSensorStateDescription(String shortcutUnit) {
-        return new StateDescription(null, null, null, "%d shortcutUnit", true, null);
+        return new StateDescription(null, null, null, "%d " + shortcutUnit, true, null);
     }
 
     private String getUnitString(SensorEnum sensorType) {

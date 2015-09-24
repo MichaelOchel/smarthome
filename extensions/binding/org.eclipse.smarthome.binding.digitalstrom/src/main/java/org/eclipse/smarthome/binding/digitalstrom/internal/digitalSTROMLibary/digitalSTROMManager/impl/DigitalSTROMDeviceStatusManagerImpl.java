@@ -112,8 +112,9 @@ public class DigitalSTROMDeviceStatusManagerImpl implements DigitalSTROMDeviceSt
                             false);
 
                     // update the current total power consumption
-                    tempConsumtion = 0;
+
                     if (totalPowerConsumptionListener != null) {
+                        tempConsumtion = 0;
                         for (CachedMeteringValue value : digitalSTROMClient.getLatest(connMan.getSessionToken(),
                                 MeteringTypeEnum.consumption,
                                 digitalSTROMClient.getMeterList(connMan.getSessionToken()), MeteringUnitsEnum.W)) {

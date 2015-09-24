@@ -695,7 +695,8 @@ public class JSONDeviceImpl implements Device {
 
     short activeSceneNumber = -1;
 
-    private synchronized void internalCallScene(Short sceneNumber) {
+    @Override
+    public synchronized void internalCallScene(Short sceneNumber) {
         // logger.debug("!!!!!!!!!!!!!!!!!!!!CALL INTERNAL SCENE CALL1!!!!!!!!!!!!!!!!!!!!!");
         if (isDeviceWithOutput()) {
             if (containsSceneConfig(sceneNumber)) {
@@ -742,21 +743,18 @@ public class JSONDeviceImpl implements Device {
             // on scenes
             case 51:
             case 14:
-                if (isDimmable()) {
+                if (!isRollershutter()) {
                     this.updateInternalDeviceState(new DeviceStateUpdateImpl(DeviceStateUpdate.UPDATE_ON_OFF, 1));
-                }
-
-                if (isRollershutter()) {
+                } else {
                     this.updateInternalDeviceState(new DeviceStateUpdateImpl(DeviceStateUpdate.UPDATE_OPEN_CLOSE, 1));
                 }
                 return true;
             // off scenes
             case 13:
             case 50:
-                if (isDimmable()) {
+                if (!isRollershutter()) {
                     this.updateInternalDeviceState(new DeviceStateUpdateImpl(DeviceStateUpdate.UPDATE_ON_OFF, -1));
-                }
-                if (isRollershutter()) {
+                } else {
                     this.updateInternalDeviceState(new DeviceStateUpdateImpl(DeviceStateUpdate.UPDATE_OPEN_CLOSE, -1));
                 }
                 return true;
@@ -868,7 +866,8 @@ public class JSONDeviceImpl implements Device {
                 .add(new DeviceStateUpdateImpl(DeviceStateUpdate.UPDATE_UNDO_SCENE, this.activeSceneNumber));
     }
 
-    private synchronized void internalUndoScene() {
+    @Override
+    public synchronized void internalUndoScene() {
         if (!isRollershutter()) {
             this.outputValue = (short) this.outputValueBeforeSceneCall;
             addEshThingStateUpdate(new DeviceStateUpdateImpl(DeviceStateUpdate.UPDATE_BRIGHTNESS, this.outputValue));
@@ -1096,7 +1095,7 @@ public class JSONDeviceImpl implements Device {
                         this.isOn = false;
                         setActivePower(0);
                         setOutputCurrent(0);
-                        setElectricMeter(0);
+                        // setElectricMeter(0);
                     } else {
                         this.isOn = true;
                         setCachedMeterData();
@@ -1108,7 +1107,7 @@ public class JSONDeviceImpl implements Device {
                         this.isOn = false;
                         setActivePower(0);
                         setOutputCurrent(0);
-                        setElectricMeter(0);
+                        // setElectricMeter(0);
                     } else {
                         this.outputValue = this.maxOutputValue;
                         this.isOn = true;
@@ -1148,6 +1147,9 @@ public class JSONDeviceImpl implements Device {
                     return;
             }
 
+            if (this.activeScene != null) {
+                this.activeScene.deviceSceneChanged((short) -1);
+            }
             addEshThingStateUpdate(deviceStateUpdate);
 
         }

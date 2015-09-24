@@ -43,9 +43,9 @@ public enum SensorEnum {
      * | 64 | Output current (H) | Ampere (mA) | 0 | 16380 | 4 |
      * | 65 | Power consumption | Volt-Ampere (VA) | 0 | 4095 | 1 |
      */
-    ACTIVE_POWER(4, "watts", "W"),
-    OUTPUT_CURRENT(5, "ampere", "mA"),
-    ELECTRIC_METER(6, "kilowatt hours)", "kWh"),
+    ACTIVE_POWER(2, "watts", "W"), // 4
+    OUTPUT_CURRENT(3, "ampere", "mA"), // 5
+    ELECTRIC_METER(4, "kilowatt hours)", "kWh"), // 6
     TEMPERATURE_INDOORS(9, "kelvin", "K"),
     TEMPERATURE_OUTDOORS(10, "kelvin", "K"),
     BRIGHTNESS_INDOORS(11, "lux", "Lx"),

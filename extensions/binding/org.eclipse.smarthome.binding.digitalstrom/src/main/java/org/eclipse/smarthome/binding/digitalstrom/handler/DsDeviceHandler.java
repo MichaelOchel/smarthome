@@ -273,9 +273,14 @@ public class DsDeviceHandler extends BaseThingHandler implements DeviceStatusLis
                     switch (deviceStateUpdate.getType()) {
                         case DeviceStateUpdate.UPDATE_BRIGHTNESS:
                             if (deviceStateUpdate.getValue() > 0) {
-                                updateState(new ChannelUID(getThing().getUID(), currentChannel), new PercentType(
-                                        fromValueToPercent(deviceStateUpdate.getValue(), device.getMaxOutputValue())));
-                                // updateState(new ChannelUID(getThing().getUID(), currentChannel), OnOffType.ON);
+                                if (currentChannel == CHANNEL_BRIGHTNESS || currentChannel == CHANNEL_GENERAL_DIMM) {
+                                    updateState(new ChannelUID(getThing().getUID(), currentChannel),
+                                            new PercentType(fromValueToPercent(deviceStateUpdate.getValue(),
+                                                    device.getMaxOutputValue())));
+                                    // updateState(new ChannelUID(getThing().getUID(), currentChannel), OnOffType.ON);
+                                } else {
+                                    updateState(new ChannelUID(getThing().getUID(), currentChannel), OnOffType.ON);
+                                }
                             } else {
                                 updateState(new ChannelUID(getThing().getUID(), currentChannel), OnOffType.OFF);
                             }

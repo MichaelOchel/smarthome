@@ -55,6 +55,7 @@ public class DigitalSTROMBindingConstants {
     public static final String CHANNEL_ELECTRIC_METER = "electricMeter";
     public static final String CHANNEL_OUTPUT_CURRENT = "outputCurrent";
     public static final String CHANNEL_ACTIVE_POWER = "activePower";
+    public static final String CHANNEL_POWER_CONSUMPTION = "powerConsumption";
 
     /* config URIs */
     public static final String DEVICE_CONFIG = "binding:digitalstrom:device";

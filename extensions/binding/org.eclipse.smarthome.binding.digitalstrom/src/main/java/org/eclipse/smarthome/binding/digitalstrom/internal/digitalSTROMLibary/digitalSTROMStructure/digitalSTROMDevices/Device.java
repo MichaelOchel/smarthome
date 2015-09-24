@@ -495,4 +495,8 @@ public interface Device {
 
     List<Short> getSavedScenes();
 
+    void internalCallScene(Short sceneNumber);
+
+    void internalUndoScene();
+
 }

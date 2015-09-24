@@ -55,7 +55,8 @@ public class InternalScene {
      * Activate this Scene.
      */
     public void activateScene() {
-        System.out.println("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!SCENE ACTIVATED!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+        System.out.println("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!SCENE " + this.SceneName
+                + " ACTIVATED!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
         this.active = true;
         informListener();
         System.out.println(
@@ -78,7 +79,6 @@ public class InternalScene {
         if (this.devices != null) {
             for (Device device : this.devices) {
                 device.undoNamedScene();
-                ;
             }
         }
     }
