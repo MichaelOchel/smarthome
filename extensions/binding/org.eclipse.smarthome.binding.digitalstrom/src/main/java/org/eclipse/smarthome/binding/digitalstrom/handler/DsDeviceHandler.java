@@ -25,12 +25,14 @@ import org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.di
 import org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.digitalSTROMStructure.digitalSTROMDevices.deviceParameters.DeviceStateUpdate;
 import org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.digitalSTROMStructure.digitalSTROMDevices.deviceParameters.FunctionalColorGroupEnum;
 import org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.digitalSTROMStructure.digitalSTROMDevices.deviceParameters.JSONDeviceSceneSpecImpl;
+import org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.digitalSTROMStructure.digitalSTROMDevices.deviceParameters.OutputModeEnum;
 import org.eclipse.smarthome.config.core.Configuration;
 import org.eclipse.smarthome.core.library.types.DecimalType;
 import org.eclipse.smarthome.core.library.types.IncreaseDecreaseType;
 import org.eclipse.smarthome.core.library.types.OnOffType;
 import org.eclipse.smarthome.core.library.types.PercentType;
 import org.eclipse.smarthome.core.library.types.StopMoveType;
+import org.eclipse.smarthome.core.library.types.StringType;
 import org.eclipse.smarthome.core.library.types.UpDownType;
 import org.eclipse.smarthome.core.thing.Bridge;
 import org.eclipse.smarthome.core.thing.Channel;
@@ -204,7 +206,22 @@ public class DsDeviceHandler extends BaseThingHandler implements DeviceStatusLis
                     } else {
                         device.decrease();
                     }
-                }
+                } else if (command instanceof StringType)
+                    switch (((StringType) command).toString()) {
+                        case DigitalSTROMBindingConstants.OPTION_BOTH_OFF:
+                            // 0, 200, 90, 130
+                            device.setOutputValue((short) 0);
+                            break;
+                        case DigitalSTROMBindingConstants.OPTION_BOTH_ON:
+                            device.setOutputValue((short) 200);
+                            break;
+                        case DigitalSTROMBindingConstants.OPTION_FIRST_ON:
+                            device.setOutputValue((short) 90);
+                            break;
+                        case DigitalSTROMBindingConstants.OPTION_SECOND_ON:
+                            device.setOutputValue((short) 130);
+                            break;
+                    }
             } else {
                 logger.warn("Command send to an unknown channel id: " + channelUID);
             }
@@ -267,12 +284,49 @@ public class DsDeviceHandler extends BaseThingHandler implements DeviceStatusLis
     @Override
     public synchronized void onDeviceStateChanged(DeviceStateUpdate deviceStateUpdate) {
         if (device != null) {
-            logger.debug("!!!!!!!!!!!!!!!!!!!Update ESH State....FOR CHANNEL" + currentChannel + "!!!!!!!");
             if (!device.isRollershutter()) {
                 if (deviceStateUpdate != null) {
                     switch (deviceStateUpdate.getType()) {
                         case DeviceStateUpdate.UPDATE_BRIGHTNESS:
-                            if (deviceStateUpdate.getValue() > 0) {
+                            if (currentChannel == CHANNEL_COMBINED_2_STAGE_SWITCH
+                                    || currentChannel == CHANNEL_COMBINED_3_STAGE_SWITCH) {
+                                switch (deviceStateUpdate.getValue()) {
+                                    case 0:
+                                        updateState(new ChannelUID(getThing().getUID(), currentChannel),
+                                                new StringType(DigitalSTROMBindingConstants.OPTION_BOTH_OFF));
+                                        break;
+                                    case 200:
+                                        updateState(new ChannelUID(getThing().getUID(), currentChannel),
+                                                new StringType(DigitalSTROMBindingConstants.OPTION_BOTH_ON));
+                                        break;
+                                    case 90:
+                                        updateState(new ChannelUID(getThing().getUID(), currentChannel),
+                                                new StringType(DigitalSTROMBindingConstants.OPTION_FIRST_ON));
+                                        break;
+                                    case 130:
+                                        updateState(new ChannelUID(getThing().getUID(), currentChannel),
+                                                new StringType(DigitalSTROMBindingConstants.OPTION_SECOND_ON));
+                                }
+                            } else if (currentChannel == CHANNEL_GENERAL_COMBINED_2_STAGE_SWITCH
+                                    || currentChannel == CHANNEL_GENERAL_COMBINED_3_STAGE_SWITCH) {
+                                switch (deviceStateUpdate.getValue()) {
+                                    case 0:
+                                        updateState(new ChannelUID(getThing().getUID(), currentChannel),
+                                                new StringType(DigitalSTROMBindingConstants.OPTION_BOTH_RELAIS_OFF));
+                                        break;
+                                    case 200:
+                                        updateState(new ChannelUID(getThing().getUID(), currentChannel),
+                                                new StringType(DigitalSTROMBindingConstants.OPTION_BOTH_RELAIS_ON));
+                                        break;
+                                    case 90:
+                                        updateState(new ChannelUID(getThing().getUID(), currentChannel),
+                                                new StringType(DigitalSTROMBindingConstants.OPTION_FIRST_RELAIS_ON));
+                                        break;
+                                    case 130:
+                                        updateState(new ChannelUID(getThing().getUID(), currentChannel),
+                                                new StringType(DigitalSTROMBindingConstants.OPTION_SECOND_RELAIS_ON));
+                                }
+                            } else if (deviceStateUpdate.getValue() > 0) {
                                 if (currentChannel == CHANNEL_BRIGHTNESS || currentChannel == CHANNEL_GENERAL_DIMM) {
                                     updateState(new ChannelUID(getThing().getUID(), currentChannel),
                                             new PercentType(fromValueToPercent(deviceStateUpdate.getValue(),
@@ -437,9 +491,6 @@ public class DsDeviceHandler extends BaseThingHandler implements DeviceStatusLis
         List<Channel> channelList = new LinkedList<Channel>(this.getThing().getChannels());
         boolean channelListChanged = false;
 
-        logger.debug("!!!!!!!CHECK SENSOR CHANNELS!!!!!!! " + (!activePowerPrio.equals(REFRESH_PRIORITY_NEVER)) + " "
-                + " " + isActivePowerChannelLoaded + " "
-                + (!activePowerPrio.equals(REFRESH_PRIORITY_NEVER) && !isActivePowerChannelLoaded));
         if (!activePowerPrio.equals(REFRESH_PRIORITY_NEVER) && !isActivePowerChannelLoaded) {
             Channel channel = ChannelBuilder
                     .create(new ChannelUID(this.getThing().getUID(), CHANNEL_ACTIVE_POWER), "Number").build();
@@ -532,16 +583,28 @@ public class DsDeviceHandler extends BaseThingHandler implements DeviceStatusLis
             } else
                 if (device.isRollershutter() && (currentChannel != null || currentChannel != CHANNEL_GENERAL_SHADE)) {
                 loadOutputChannel(CHANNEL_GENERAL_SHADE, "Rollershutter");
-            } else if (!device.isDimmable() && (currentChannel != null || currentChannel != CHANNEL_GENERAL_SWITCH)) {
+            } else if (device.isSwitch() && (currentChannel != null || currentChannel != CHANNEL_GENERAL_SWITCH)) {
                 loadOutputChannel(CHANNEL_GENERAL_SWITCH, "Switch");
+            } else if (device.getOutputMode().equals(OutputModeEnum.COMBINED_2_STAGE_SWITCH)
+                    && (currentChannel != null || currentChannel != CHANNEL_COMBINED_2_STAGE_SWITCH)) {
+                loadOutputChannel(CHANNEL_GENERAL_COMBINED_2_STAGE_SWITCH, "String");
+            } else if (device.getOutputMode().equals(OutputModeEnum.COMBINED_3_STAGE_SWITCH)
+                    && (currentChannel != null || currentChannel != CHANNEL_COMBINED_3_STAGE_SWITCH)) {
+                loadOutputChannel(CHANNEL_GENERAL_COMBINED_3_STAGE_SWITCH, "String");
             }
         } else {
             if (device.isDimmable() && (currentChannel == null || currentChannel != CHANNEL_BRIGHTNESS)) {
                 loadOutputChannel(CHANNEL_BRIGHTNESS, "Dimmer");
             } else if (device.isRollershutter() && (currentChannel != null || currentChannel != CHANNEL_SHADE)) {
                 loadOutputChannel(CHANNEL_SHADE, "Rollershutter");
-            } else if (!device.isDimmable() && (currentChannel != null || currentChannel != CHANNEL_LIGHT_SWITCH)) {
+            } else if (device.isSwitch() && (currentChannel != null || currentChannel != CHANNEL_LIGHT_SWITCH)) {
                 loadOutputChannel(CHANNEL_LIGHT_SWITCH, "Switch");
+            } else if (device.getOutputMode().equals(OutputModeEnum.COMBINED_2_STAGE_SWITCH)
+                    && (currentChannel != null || currentChannel != CHANNEL_COMBINED_2_STAGE_SWITCH)) {
+                loadOutputChannel(CHANNEL_COMBINED_2_STAGE_SWITCH, "StringType");
+            } else if (device.getOutputMode().equals(OutputModeEnum.COMBINED_3_STAGE_SWITCH)
+                    && (currentChannel != null || currentChannel != CHANNEL_COMBINED_3_STAGE_SWITCH)) {
+                loadOutputChannel(CHANNEL_COMBINED_3_STAGE_SWITCH, "StringType");
             }
         }
     }
@@ -606,6 +669,10 @@ public class DsDeviceHandler extends BaseThingHandler implements DeviceStatusLis
             case CHANNEL_BRIGHTNESS:
             case CHANNEL_LIGHT_SWITCH:
             case CHANNEL_SHADE:
+            case CHANNEL_GENERAL_COMBINED_2_STAGE_SWITCH:
+            case CHANNEL_GENERAL_COMBINED_3_STAGE_SWITCH:
+            case CHANNEL_COMBINED_2_STAGE_SWITCH:
+            case CHANNEL_COMBINED_3_STAGE_SWITCH:
                 return true;
             default:
                 return false;

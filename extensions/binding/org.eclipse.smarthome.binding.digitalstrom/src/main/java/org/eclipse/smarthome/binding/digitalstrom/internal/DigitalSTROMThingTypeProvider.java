@@ -27,6 +27,7 @@ import org.eclipse.smarthome.core.thing.type.ChannelType;
 import org.eclipse.smarthome.core.thing.type.ChannelTypeUID;
 import org.eclipse.smarthome.core.thing.type.ThingType;
 import org.eclipse.smarthome.core.types.StateDescription;
+import org.eclipse.smarthome.core.types.StateOption;
 
 import com.google.common.collect.Lists;
 
@@ -73,6 +74,7 @@ public class DigitalSTROMThingTypeProvider implements ThingTypeProvider {
     private final String DIMMER = "Dimmer";
     private final String SWITCH = "Switch";
     private final String SHADE = "Rollershutter";
+    private final String STRING = "String";
     private final String NUMBER = "Number";
 
     /* English */
@@ -83,6 +85,12 @@ public class DigitalSTROMThingTypeProvider implements ThingTypeProvider {
     private final String CHANNEL_LIGHT_SWITCH_LABEL_EN = "light switch";
     private final String CHANNEL_LIGHT_SWITCH_DESCRIPTION_EN = "The light switch channel allows to turn a light device on or off.";
 
+    private final String CHANNEL_COMBINED_2_STAGE_SWITCH_LABEL_EN = "2 stage light switch";
+    private final String CHANNEL_COMBINED_2_STAGE_SWITCH_DESCRIPTION_EN = "The 2 stage light switch channel allows to turn both light devices on or off or switch only 1 of the both light device on or off.";
+
+    private final String CHANNEL_COMBINED_3_STAGE_SWITCH_LABEL_EN = "3 stage light switch";
+    private final String CHANNEL_COMBINED_3_STAGE_SWITCH_DESCRIPTION_EN = "The 3 stage light switch channel allows to turn both light devices on or off or switch both light devices separated from each other on or off.";
+
     private final String CHANNEL_SHADE_LABEL_EN = "shade control";
     private final String CHANNEL_SHADE_DESCRIPTION_EN = "The shade control channel allows to control shade device e.g. a rollershutter or awnings.";
 
@@ -91,6 +99,12 @@ public class DigitalSTROMThingTypeProvider implements ThingTypeProvider {
 
     private final String CHANNEL_GENERAL_SWITCH_LABEL_EN = "device switch";
     private final String CHANNEL_GENERAL_SWITCH_DESCRIPTION_EN = "The device switch channel allows to turn a device on or off e.g. a HIFI-System.";
+
+    private final String CHANNEL_GENERAL_COMBINED_2_STAGE_SWITCH_LABEL_EN = "2 stage device switch";
+    private final String CHANNEL_GENERAL_COMBINED_2_STAGE_SWITCH_DESCRIPTION_EN = "The 2 stage device switch channel allows to turn both relais of the ds-device on or off or switch only 1 of the both relais on or off.";
+
+    private final String CHANNEL_GENERAL_COMBINED_3_STAGE_SWITCH_LABEL_EN = "3 stage device switch";
+    private final String CHANNEL_GENERAL_COMBINED_3_STAGE_SWITCH_DESCRIPTION_EN = "The 3 stage device device channel allows to turn both relais of the ds-device on or off or switch both relais of the ds-device separated from each other on or off.";
 
     private final String CHANNEL_ACTIVE_POWER_LABEL_EN = "active power";
     private final String CHANNEL_ACTIVE_POWER_DESCRIPTION_EN = "The active power channel indicates the current active power in "
@@ -128,6 +142,26 @@ public class DigitalSTROMThingTypeProvider implements ThingTypeProvider {
     private final ChannelDefinition CHANNEL_DEFINITION_GENERAL_SWITCH_EN = getChannelDefinition(
             DigitalSTROMBindingConstants.CHANNEL_GENERAL_SWITCH, SWITCH, CHANNEL_GENERAL_SWITCH_LABEL_EN,
             CHANNEL_GENERAL_SWITCH_DESCRIPTION_EN, null, null, null);
+
+    private final ChannelDefinition CHANNEL_DEFINITION_COMBINED_2_STAGE_SWITCH_EN = getChannelDefinition(
+            DigitalSTROMBindingConstants.CHANNEL_COMBINED_2_STAGE_SWITCH, STRING,
+            CHANNEL_COMBINED_2_STAGE_SWITCH_LABEL_EN, CHANNEL_COMBINED_2_STAGE_SWITCH_DESCRIPTION_EN, "Lights", null,
+            getCombinedStageDescription((short) 2, true));
+
+    private final ChannelDefinition CHANNEL_DEFINITION_COMBINED_3_STAGE_SWITCH_EN = getChannelDefinition(
+            DigitalSTROMBindingConstants.CHANNEL_COMBINED_3_STAGE_SWITCH, STRING,
+            CHANNEL_COMBINED_3_STAGE_SWITCH_LABEL_EN, CHANNEL_COMBINED_3_STAGE_SWITCH_DESCRIPTION_EN, "Lights", null,
+            getCombinedStageDescription((short) 3, true));
+
+    private final ChannelDefinition CHANNEL_DEFINITION_GENERAL_COMBINED_2_STAGE_SWITCH_EN = getChannelDefinition(
+            DigitalSTROMBindingConstants.CHANNEL_GENERAL_COMBINED_2_STAGE_SWITCH, STRING,
+            CHANNEL_GENERAL_COMBINED_2_STAGE_SWITCH_LABEL_EN, CHANNEL_GENERAL_COMBINED_2_STAGE_SWITCH_DESCRIPTION_EN,
+            "Lights", null, getCombinedStageDescription((short) 2, false));
+
+    private final ChannelDefinition CHANNEL_DEFINITION_GENERAL_COMBINED_3_STAGE_SWITCH_EN = getChannelDefinition(
+            DigitalSTROMBindingConstants.CHANNEL_GENERAL_COMBINED_3_STAGE_SWITCH, STRING,
+            CHANNEL_GENERAL_COMBINED_3_STAGE_SWITCH_LABEL_EN, CHANNEL_GENERAL_COMBINED_3_STAGE_SWITCH_DESCRIPTION_EN,
+            "Lights", null, getCombinedStageDescription((short) 3, false));
 
     private final ChannelDefinition CHANNEL_DEFINITION_SHADE_EN = getChannelDefinition(
             DigitalSTROMBindingConstants.CHANNEL_SHADE, SHADE, CHANNEL_SHADE_LABEL_EN, CHANNEL_SHADE_DESCRIPTION_EN,
@@ -230,6 +264,12 @@ public class DigitalSTROMThingTypeProvider implements ThingTypeProvider {
             CHANNEL_DEFINITION_LIGHT_SWITCH_EN, CHANNEL_DEFINITION_ACTIVE_POWER_EN,
             CHANNEL_DEFINITION_ELECTRIC_METER_VALUE_EN, CHANNEL_DEFINITION_OUTPUT_CURRENT_VALUE_EN,
             CHANNEL_DEFINITION_GENERAL_DIMM_EN, CHANNEL_DEFINITION_GENERAL_SWITCH_EN);
+    private final List<ChannelDefinition> SW_UMR_CHANNELS_EN = Lists.newArrayList(
+            CHANNEL_DEFINITION_COMBINED_2_STAGE_SWITCH_EN, CHANNEL_DEFINITION_COMBINED_3_STAGE_SWITCH_EN,
+            CHANNEL_DEFINITION_GENERAL_COMBINED_2_STAGE_SWITCH_EN,
+            CHANNEL_DEFINITION_GENERAL_COMBINED_3_STAGE_SWITCH_EN, CHANNEL_DEFINITION_LIGHT_SWITCH_EN,
+            CHANNEL_DEFINITION_ACTIVE_POWER_EN, CHANNEL_DEFINITION_ELECTRIC_METER_VALUE_EN,
+            CHANNEL_DEFINITION_OUTPUT_CURRENT_VALUE_EN);
 
     /* German */
     private final List<ChannelDefinition> GE_CHANNELS_DE = Lists.newArrayList(CHANNEL_DEFINITION_BRIGHTNESS_DE,
@@ -240,6 +280,13 @@ public class DigitalSTROMThingTypeProvider implements ThingTypeProvider {
             CHANNEL_DEFINITION_LIGHT_SWITCH_DE, CHANNEL_DEFINITION_ACTIVE_POWER_DE,
             CHANNEL_DEFINITION_ELECTRIC_METER_VALUE_DE, CHANNEL_DEFINITION_OUTPUT_CURRENT_VALUE_DE,
             CHANNEL_DEFINITION_GENERAL_DIMM_DE, CHANNEL_DEFINITION_GENERAL_SWITCH_DE);
+    // TODO: create and add german translated channels
+    private final List<ChannelDefinition> SW_UMR_CHANNELS_DE = Lists.newArrayList(
+            CHANNEL_DEFINITION_COMBINED_2_STAGE_SWITCH_EN, CHANNEL_DEFINITION_COMBINED_3_STAGE_SWITCH_EN,
+            CHANNEL_DEFINITION_GENERAL_COMBINED_2_STAGE_SWITCH_EN,
+            CHANNEL_DEFINITION_GENERAL_COMBINED_3_STAGE_SWITCH_EN, CHANNEL_DEFINITION_LIGHT_SWITCH_EN,
+            CHANNEL_DEFINITION_ACTIVE_POWER_EN, CHANNEL_DEFINITION_ELECTRIC_METER_VALUE_EN,
+            CHANNEL_DEFINITION_OUTPUT_CURRENT_VALUE_EN);
 
     private ChannelDefinition getChannelDefinition(String id, String item, String label, String description,
             String category, Set<String> tags, StateDescription state) {
@@ -253,6 +300,34 @@ public class DigitalSTROMThingTypeProvider implements ThingTypeProvider {
 
     private StateDescription getSensorStateDescription(String shortcutUnit) {
         return new StateDescription(null, null, null, "%d " + shortcutUnit, true, null);
+    }
+
+    private StateDescription getCombinedStageDescription(short stages, boolean isLight) {
+        if (isLight) {
+            return stages == 2
+                    ? new StateDescription(null, null, null, null, false,
+                            Lists.newArrayList(new StateOption("0", DigitalSTROMBindingConstants.OPTION_BOTH_OFF),
+                                    new StateOption("200", DigitalSTROMBindingConstants.OPTION_BOTH_ON),
+                                    new StateOption("90", DigitalSTROMBindingConstants.OPTION_FIRST_ON)))
+                    : new StateDescription(null, null, null, null, false,
+                            Lists.newArrayList(new StateOption("0", DigitalSTROMBindingConstants.OPTION_BOTH_OFF),
+                                    new StateOption("200", DigitalSTROMBindingConstants.OPTION_BOTH_ON),
+                                    new StateOption("90", DigitalSTROMBindingConstants.OPTION_FIRST_ON),
+                                    new StateOption("130", DigitalSTROMBindingConstants.OPTION_SECOND_ON)));
+        } else {
+            return stages == 2
+                    ? new StateDescription(null, null, null, null, false,
+                            Lists.newArrayList(
+                                    new StateOption("0", DigitalSTROMBindingConstants.OPTION_BOTH_RELAIS_OFF),
+                                    new StateOption("200", DigitalSTROMBindingConstants.OPTION_BOTH_RELAIS_ON),
+                                    new StateOption("90", DigitalSTROMBindingConstants.OPTION_FIRST_RELAIS_ON)))
+                    : new StateDescription(null, null, null, null, false,
+                            Lists.newArrayList(
+                                    new StateOption("0", DigitalSTROMBindingConstants.OPTION_BOTH_RELAIS_OFF),
+                                    new StateOption("200", DigitalSTROMBindingConstants.OPTION_BOTH_RELAIS_ON),
+                                    new StateOption("90", DigitalSTROMBindingConstants.OPTION_FIRST_RELAIS_ON),
+                                    new StateOption("130", DigitalSTROMBindingConstants.OPTION_SECOND_RELAIS_ON)));
+        }
     }
 
     private String getUnitString(SensorEnum sensorType) {
@@ -347,8 +422,13 @@ public class DigitalSTROMThingTypeProvider implements ThingTypeProvider {
                     labelDE = PREFIX_LABEL_DE + hwInfo + " " + SW_DE;
                     descDE = PREFIX_DESC_DE + " " + SW_FUNC_DE + " " + POSTFIX_DESC_DE;
                 }
-                channelDefsEN = SW_CHANNELS_EN;
-                channelDefsDE = SW_CHANNELS_DE;
+                if (hwInfo.contains("UMR")) {
+                    channelDefsEN = SW_UMR_CHANNELS_EN;
+                    channelDefsDE = SW_UMR_CHANNELS_DE;
+                } else {
+                    channelDefsEN = SW_CHANNELS_EN;
+                    channelDefsDE = SW_CHANNELS_DE;
+                }
                 break;
             default:
                 return null;

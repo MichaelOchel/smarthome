@@ -384,6 +384,21 @@ public class JSONDeviceImpl implements Device {
     }
 
     @Override
+    public synchronized boolean isSwitch() {
+        if (outputMode == null) {
+            return false;
+        }
+        switch (this.outputMode) {
+            case SWITCHED:
+            case COMBINED_SWITCH:
+            case SINGLE_SWITCH:
+                return true;
+            default:
+                return false;
+        }
+    }
+
+    @Override
     public synchronized boolean isDeviceWithOutput() {
         return this.outputMode != null && !this.outputMode.equals(OutputModeEnum.DISABLED);
     }

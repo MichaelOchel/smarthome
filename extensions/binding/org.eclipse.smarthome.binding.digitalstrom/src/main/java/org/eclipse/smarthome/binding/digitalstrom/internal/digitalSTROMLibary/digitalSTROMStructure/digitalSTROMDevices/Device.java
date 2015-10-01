@@ -499,4 +499,6 @@ public interface Device {
 
     void internalUndoScene();
 
+    boolean isSwitch();
+
 }

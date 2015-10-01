@@ -38,10 +38,19 @@ public enum OutputModeEnum {
      * | 23 | PWM (pulse width modulation) |
      * | 24 | PWM with characteristic curve |
      * | 33 | Positioning control |
+     * | 34 | combined 2 stage switch [Both relais switch combined in tow steps depending on the output value. Output >
+     * 33% - relais 1 is on. Output > 66% - relais 1 and 2 are on.] | (from ds web configurator, it dosn't stand in the
+     * ds-basic.pdf from 19.08.2015)
+     * | 35 | single switch | (from ds web configurator, it dosn't stand in the ds-basic.pdf from 19.08.2015)
+     * | 38 | combined 3 stage switch [Both relais switch combined in tow steps depending on the output value. Output >
+     * 25% - relais 1 is on. Output > 50% - relais 1 is off and relais 2 is on. Output > 75% - relais 1 and 2 are on.] |
+     * (from ds web configurator, it dosn't stand in the
+     * ds-basic.pdf from 19.08.2015)
      * | 39 | Relay with switched mode scene table configuration |
      * | 40 | Relay with wiped mode scene table configuration |
      * | 41 | Relay with saving mode scene table configuration |
      * | 42 | Positioning control for uncalibrated shutter |
+     * | 43 | combined switch | (from ds web configurator, it dosn't stand in the ds-basic.pdf from 19.08.2015)
      */
     DISABLED(0),
     SWITCHED(16),
@@ -54,10 +63,14 @@ public enum OutputModeEnum {
     PWM(23),
     PWM_CC(24),
     POSITION_CON(33),
+    COMBINED_2_STAGE_SWITCH(34),
+    SINGLE_SWITCH(35),
+    COMBINED_3_STAGE_SWITCH(38),
     SWITCH(39),
     WIPE(40),
     POWERSAVE(41),
-    POSITION_CON_US(42);
+    POSITION_CON_US(42),
+    COMBINED_SWITCH(43);
 
     private final int mode;
 

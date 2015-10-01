@@ -19,6 +19,9 @@ import java.util.HashMap;
  */
 public enum SensorEnum {
     /*
+     * Table 40: Sensor Types from ds-basic.pdf (http://developer.digitalstrom.org/Architecture/ds-basics.pdf) from
+     * 19.08.2015
+     *
      * | Sensor Type | Description | Unit | Min | 12 Bit Max | 12 Bit Resolution |
      * -----------------------------------------------------------------------------------------------------------------
      * -------------------------------------------------------------
@@ -43,9 +46,10 @@ public enum SensorEnum {
      * | 64 | Output current (H) | Ampere (mA) | 0 | 16380 | 4 |
      * | 65 | Power consumption | Volt-Ampere (VA) | 0 | 4095 | 1 |
      */
-    ACTIVE_POWER(2, "watts", "W"), // 4
-    OUTPUT_CURRENT(3, "ampere", "mA"), // 5
-    ELECTRIC_METER(4, "kilowatt hours)", "kWh"), // 6
+    ACTIVE_POWER(2, "watts", "W"), // it's only working with the old index 2 and not with the index 4 from
+                                   // ds-basic-documentation from 19.08.2015
+    OUTPUT_CURRENT(3, "ampere", "mA"), // see above old 3 new 5
+    ELECTRIC_METER(4, "kilowatt hours)", "kWh"), // see above old 4 new 6
     TEMPERATURE_INDOORS(9, "kelvin", "K"),
     TEMPERATURE_OUTDOORS(10, "kelvin", "K"),
     BRIGHTNESS_INDOORS(11, "lux", "Lx"),

@@ -40,10 +40,25 @@ public class DigitalSTROMBindingConstants {
     // Light
     public static final String CHANNEL_BRIGHTNESS = "brightness";
     public static final String CHANNEL_LIGHT_SWITCH = "lightSwitch";
+    public static final String CHANNEL_COMBINED_2_STAGE_SWITCH = "Combined2StageSwitch";
+    public static final String CHANNEL_COMBINED_3_STAGE_SWITCH = "Combined3StageSwitch";
+    // Options
+    public static final String OPTION_BOTH_OFF = "both ligts off";
+    public static final String OPTION_BOTH_ON = "both ligts on";
+    public static final String OPTION_FIRST_ON = "first ligt on";
+    public static final String OPTION_SECOND_ON = "second ligt on";
+
     // black
     public static final String CHANNEL_GENERAL_DIMM = "generalDimm";
     public static final String CHANNEL_GENERAL_SWITCH = "generalSwitch";
     public static final String CHANNEL_GENERAL_SHADE = "generalShade";
+    public static final String CHANNEL_GENERAL_COMBINED_2_STAGE_SWITCH = "generalCombined2StageSwitch";
+    public static final String CHANNEL_GENERAL_COMBINED_3_STAGE_SWITCH = "generalCombined3StageSwitch";
+    // Options
+    public static final String OPTION_BOTH_RELAIS_OFF = "both relais off";
+    public static final String OPTION_BOTH_RELAIS_ON = "both relais on";
+    public static final String OPTION_FIRST_RELAIS_ON = "first relais on";
+    public static final String OPTION_SECOND_RELAIS_ON = "second relais on";
 
     // shade
     public static final String CHANNEL_SHADE = "shade";
