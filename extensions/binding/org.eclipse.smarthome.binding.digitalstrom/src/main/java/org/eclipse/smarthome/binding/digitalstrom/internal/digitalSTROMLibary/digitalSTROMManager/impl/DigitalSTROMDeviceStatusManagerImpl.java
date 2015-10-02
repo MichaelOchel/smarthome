@@ -454,7 +454,6 @@ public class DigitalSTROMDeviceStatusManagerImpl implements DigitalSTROMDeviceSt
                 int outputValue = this.digitalSTROMClient.getDeviceOutputValue(connMan.getSessionToken(),
                         device.getDSID(), null, outputIndex);
 
-                logger.debug("!!!!!!!!!!!!OutputValue = " + outputValue + "!!!!!!!");
                 if (outputValue != -1) {
                     if (!device.isRollershutter()) {
                         device.updateInternalDeviceState(

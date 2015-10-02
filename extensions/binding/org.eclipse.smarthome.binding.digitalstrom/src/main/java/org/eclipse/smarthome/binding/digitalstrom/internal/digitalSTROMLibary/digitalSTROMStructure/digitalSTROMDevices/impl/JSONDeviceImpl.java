@@ -171,7 +171,10 @@ public class JSONDeviceImpl implements Device {
                     if (tmp != -1) {
                         this.groupList.add(tmp);
                         if (FunctionalColorGroupEnum.containsColorGroup((int) tmp)) {
-                            this.functionalGroup = FunctionalColorGroupEnum.getMode((int) tmp);
+                            if (this.functionalGroup == null || !FunctionalColorGroupEnum.getMode((int) tmp)
+                                    .equals(FunctionalColorGroupEnum.BLACK)) {
+                                this.functionalGroup = FunctionalColorGroupEnum.getMode((int) tmp);
+                            }
                         }
                     }
                 }

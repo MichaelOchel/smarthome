@@ -209,7 +209,6 @@ public class DsDeviceHandler extends BaseThingHandler implements DeviceStatusLis
                 } else if (command instanceof StringType)
                     switch (((StringType) command).toString()) {
                         case DigitalSTROMBindingConstants.OPTION_BOTH_OFF:
-                            // 0, 200, 90, 130
                             device.setOutputValue((short) 0);
                             break;
                         case DigitalSTROMBindingConstants.OPTION_BOTH_ON:
@@ -586,10 +585,10 @@ public class DsDeviceHandler extends BaseThingHandler implements DeviceStatusLis
             } else if (device.isSwitch() && (currentChannel != null || currentChannel != CHANNEL_GENERAL_SWITCH)) {
                 loadOutputChannel(CHANNEL_GENERAL_SWITCH, "Switch");
             } else if (device.getOutputMode().equals(OutputModeEnum.COMBINED_2_STAGE_SWITCH)
-                    && (currentChannel != null || currentChannel != CHANNEL_COMBINED_2_STAGE_SWITCH)) {
+                    && (currentChannel != null || currentChannel != CHANNEL_GENERAL_COMBINED_2_STAGE_SWITCH)) {
                 loadOutputChannel(CHANNEL_GENERAL_COMBINED_2_STAGE_SWITCH, "String");
             } else if (device.getOutputMode().equals(OutputModeEnum.COMBINED_3_STAGE_SWITCH)
-                    && (currentChannel != null || currentChannel != CHANNEL_COMBINED_3_STAGE_SWITCH)) {
+                    && (currentChannel != null || currentChannel != CHANNEL_GENERAL_COMBINED_3_STAGE_SWITCH)) {
                 loadOutputChannel(CHANNEL_GENERAL_COMBINED_3_STAGE_SWITCH, "String");
             }
         } else {
@@ -601,10 +600,10 @@ public class DsDeviceHandler extends BaseThingHandler implements DeviceStatusLis
                 loadOutputChannel(CHANNEL_LIGHT_SWITCH, "Switch");
             } else if (device.getOutputMode().equals(OutputModeEnum.COMBINED_2_STAGE_SWITCH)
                     && (currentChannel != null || currentChannel != CHANNEL_COMBINED_2_STAGE_SWITCH)) {
-                loadOutputChannel(CHANNEL_COMBINED_2_STAGE_SWITCH, "StringType");
+                loadOutputChannel(CHANNEL_COMBINED_2_STAGE_SWITCH, "String");
             } else if (device.getOutputMode().equals(OutputModeEnum.COMBINED_3_STAGE_SWITCH)
                     && (currentChannel != null || currentChannel != CHANNEL_COMBINED_3_STAGE_SWITCH)) {
-                loadOutputChannel(CHANNEL_COMBINED_3_STAGE_SWITCH, "StringType");
+                loadOutputChannel(CHANNEL_COMBINED_3_STAGE_SWITCH, "String");
             }
         }
     }
@@ -620,18 +619,7 @@ public class DsDeviceHandler extends BaseThingHandler implements DeviceStatusLis
             Iterator<Channel> channelInter = channelList.iterator();
             while (channelInter.hasNext()) {
                 Channel eshChannel = channelInter.next();
-                // delete current load output channel
-                // if (channelList.get(i).getUID().getId().contains(currentChannel)) {
-                // why sometimes are more than one channel from the same type are loaded?
-                logger.debug("channelid = " + eshChannel.getUID().getId() + " contains " + CHANNEL_LIGHT_SWITCH + " = "
-                        + eshChannel.getUID().getId().contains(CHANNEL_LIGHT_SWITCH));
                 if (channelIsOutputChannel(eshChannel.getUID().getId())) {
-                    /*
-                     * eshChannel.getUID().getId().contains(CHANNEL_BRIGHTNESS)
-                     * || eshChannel.getUID().getId().contains(CHANNEL_SHADE)
-                     * || eshChannel.getUID().getId().contains(CHANNEL_LIGHT_SWITCH)) {
-                     */
-                    logger.debug(eshChannel.getUID().getId());
                     if (!eshChannel.getUID().getId().contains(currentChannel)) {
                         channelInter.remove();
                         channelListChanged = true;
@@ -642,9 +630,7 @@ public class DsDeviceHandler extends BaseThingHandler implements DeviceStatusLis
             }
         }
 
-        if (!channelIsAlreadyLoaded && currentChannel != null)
-
-        {
+        if (!channelIsAlreadyLoaded && currentChannel != null) {
             Channel channel = ChannelBuilder.create(new ChannelUID(this.getThing().getUID(), channelId), item).build();
             channelList.add(channel);
             channelListChanged = true;
