@@ -23,7 +23,6 @@ import org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.di
 import org.eclipse.smarthome.core.thing.ThingTypeUID;
 import org.eclipse.smarthome.core.thing.binding.ThingTypeProvider;
 import org.eclipse.smarthome.core.thing.type.ChannelDefinition;
-import org.eclipse.smarthome.core.thing.type.ChannelType;
 import org.eclipse.smarthome.core.thing.type.ChannelTypeUID;
 import org.eclipse.smarthome.core.thing.type.ThingType;
 import org.eclipse.smarthome.core.types.StateDescription;
@@ -290,10 +289,13 @@ public class DigitalSTROMThingTypeProvider implements ThingTypeProvider {
 
     private ChannelDefinition getChannelDefinition(String id, String item, String label, String description,
             String category, Set<String> tags, StateDescription state) {
-        return new ChannelDefinition(id, new ChannelType(new ChannelTypeUID(getUID(id)), false, item, label,
-                description, category, tags, state, null), null, label, description);
+        return new ChannelDefinition(id, new ChannelTypeUID(getUID(id)));
     }
 
+    /*
+     * new ChannelType(new ChannelTypeUID(getUID(id)), false, item, label,
+     * description, category, tags, state, null), null, label, description)
+     */
     private String getUID(String id) {
         return DigitalSTROMBindingConstants.BINDING_ID + ":" + id;
     }
