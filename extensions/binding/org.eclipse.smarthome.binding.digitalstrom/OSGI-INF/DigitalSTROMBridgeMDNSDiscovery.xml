@@ -8,7 +8,7 @@
     http://www.eclipse.org/legal/epl-v10.html
 
 -->
-<scr:component xmlns:scr="http://www.osgi.org/xmlns/scr/v1.1.0" immediate="true" name="org.eclipse.smarthome.binding.digitalstrom.discovery.bridge">
+<scr:component xmlns:scr="http://www.osgi.org/xmlns/scr/v1.1.0" immediate="true" name="org.eclipse.smarthome.binding.digitalstrom.discovery.DigitalSTROMMDNSDiscoveryParticipant">
    <implementation class="org.eclipse.smarthome.binding.digitalstrom.internal.discovery.DssBridgeMDNSDiscoveryParticipant"/>
    <service>
       <provide interface="org.eclipse.smarthome.io.transport.mdns.discovery.MDNSDiscoveryParticipant"/>

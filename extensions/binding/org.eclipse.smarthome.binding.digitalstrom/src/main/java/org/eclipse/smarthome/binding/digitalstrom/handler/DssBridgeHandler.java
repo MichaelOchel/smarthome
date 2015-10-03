@@ -15,7 +15,6 @@ import java.util.List;
 import java.util.Set;
 
 import org.eclipse.smarthome.binding.digitalstrom.DigitalSTROMBindingConstants;
-import org.eclipse.smarthome.binding.digitalstrom.internal.DigitalSTROMThingTypeProvider;
 import org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.digitalSTROMConfiguration.DigitalSTROMConfig;
 import org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.digitalSTROMListener.DeviceStatusListener;
 import org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.digitalSTROMListener.DigitalSTROMConnectionListener;
@@ -31,6 +30,7 @@ import org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.di
 import org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.digitalSTROMManager.impl.DigitalSTROMStructureManagerImpl;
 import org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.digitalSTROMStructure.digitalSTROMDevices.Device;
 import org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.digitalSTROMStructure.digitalSTROMScene.InternalScene;
+import org.eclipse.smarthome.binding.digitalstrom.internal.providers.DigitalSTROMThingTypeProvider;
 import org.eclipse.smarthome.config.core.Configuration;
 import org.eclipse.smarthome.core.library.types.DecimalType;
 import org.eclipse.smarthome.core.thing.Bridge;
@@ -325,8 +325,7 @@ public class DssBridgeHandler extends BaseBridgeHandler
 
     @Override
     public void onTotalPowerConsumptionChanged(int newPowerConsumption) {
-        updateState(new ChannelUID(getThing().getUID(), CHANNEL_POWER_CONSUMPTION),
-                new DecimalType(newPowerConsumption));
+        updateState(new ChannelUID(getThing().getUID(), CHANNEL_ACTIVE_POWER), new DecimalType(newPowerConsumption));
 
     }
 

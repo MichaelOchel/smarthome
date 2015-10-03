@@ -9,7 +9,7 @@
         <label>DigitalSTROM Server</label>
         <description>The DigitalSTROM server represents an interface to the DigitalSTROM system.</description>
         <channels>
-        	<channel typeId="powerConsumption" id="powerConsumption" />
+        	<channel typeId="activePower" id="activePower" />
         </channels>
         <config-description-ref uri="binding:digitalstrom:dssBridge" />
 

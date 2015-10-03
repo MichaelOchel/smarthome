@@ -22,6 +22,7 @@ import org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.di
 import org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.digitalSTROMManager.impl.DigitalSTROMConnectionManagerImpl;
 import org.eclipse.smarthome.binding.digitalstrom.internal.discovery.DsDeviceDiscoveryService;
 import org.eclipse.smarthome.binding.digitalstrom.internal.discovery.DsSceneDiscoveryService;
+import org.eclipse.smarthome.binding.digitalstrom.internal.providers.DigitalSTROMThingTypeProvider;
 import org.eclipse.smarthome.config.core.Configuration;
 import org.eclipse.smarthome.config.discovery.DiscoveryService;
 import org.eclipse.smarthome.core.thing.Bridge;
