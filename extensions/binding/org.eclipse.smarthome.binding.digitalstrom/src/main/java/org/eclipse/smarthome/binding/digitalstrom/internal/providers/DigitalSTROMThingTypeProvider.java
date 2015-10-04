@@ -238,7 +238,7 @@ public class DigitalSTROMThingTypeProvider implements ThingTypeProvider {
         DsDeviceHandler.SUPPORTED_THING_TYPES.add(thingTypeUID);
 
         if (locale != null) {
-            return locale.getLanguage().equals(Locale.GERMAN) ? thingTypeDE : thingTypeEN;
+            return locale.equals(Locale.GERMAN) ? thingTypeDE : thingTypeEN;
         }
 
         return null;

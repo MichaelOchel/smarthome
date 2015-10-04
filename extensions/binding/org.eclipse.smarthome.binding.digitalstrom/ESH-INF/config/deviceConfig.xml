@@ -6,215 +6,166 @@
         http://eclipse.org/smarthome/schemas/config-description-1.0.0.xsd">
 
  <config-description uri="binding:digitalstrom:device">
-            <!--deviceName-->
-            <parameter name="deviceName" type="text">
-                <label>Device Name</label>
-                <description>
-                    The Name of a DigitalStrom device.
-                </description>
-                <default></default>
-            </parameter>
-            <parameter name="ActivePowerRefreshPriority"
-                type="text">
-                <label>Active power refresh priority</label>
-                <description>
-                    Set the refresh priority for the active power
-                    sensor value. Can be never, low priority, medium
-                    priority or high priority.
-                </description>
+            <parameter-group name="devInfo">
+	<label>@text/DS_DEVICE_PARM_GROUP_INFO_LABEL</label>
+	<description>@text/DS_DEVICE_PARM_GROUP_INFO_DESC</description></parameter-group>
+ 	<parameter-group name="sensorSetup">
+ 		<label>@text/DS_DEVICE_PARM_GROUP_SENSOR_LABEL</label>
+ 		<description>@text/DS_DEVICE_PARM_GROUP_SENSOR_DESC</description></parameter-group>
+ 	<parameter name="deviceName" type="text" readOnly="true"
+ 		groupName="devInfo">
+ 		<label>@text/DS_DEVICE_PARM_DEV_NAME_LABEL</label>
+ 		<description>@text/DS_DEVICE_PARM_DEV_NAME_LABEL</description>
+ 		<default></default>
+ 	</parameter>
+ 	<!--deviceName--><parameter name="ActivePowerRefreshPriority" type="text"
+ 		groupName='sensorSetup'>
+ 		<label>@text/DS_DEVICE_PARM_ACTIVE_POWER_LABEL</label>
+ 		<description>@text/DS_DEVICE_PARM_ACTIVE_POWER_DESC</description>
+ 		<options>
+ 			<option value="never">@text/DS_SENSOR_OPTION1</option>
+ 			<option value="high">@text/DS_SENSOR_OPTION4</option>
+ 			<option value="medium">@text/DS_SENSOR_OPTION3</option>
+ 			<option value="low">@text/DS_SENSOR_OPTION2</option>
+ 		</options>
+ 		<default>never</default>
+ 		<required>false</required>
+ 	</parameter>
+ 	<parameter name="ElectricMeterRefreshPriority"
+                type="text" groupName='sensorSetup'>
+                <label>@text/DS_DEVICE_PARM_ELECTRIC_METER_LABEL</label>
+                <description>@text/DS_DEVICE_PARM_ELECTRIC_METER_DEC</description>
                 <options>
-                    <option value="never">never</option>
-                    <option value="high">high priority</option>
-                    <option value="medium">medium priority</option>
-                    <option value="low">low priority</option>
+                    <option value="never">@text/DS_SENSOR_OPTION1</option>
+            <option value="high">@text/DS_SENSOR_OPTION4</option>
+            <option value="medium">@text/DS_SENSOR_OPTION3</option>
+            <option value="low">@text/DS_SENSOR_OPTION2</option>
                 </options>
                 <default>never</default>
                 <required>false</required>
             </parameter>
-            <parameter name="ElectricMeterRefreshPriority"
-                type="text">
-                <label>Electric meter refresh priority</label>
-                <description>
-                    Set the refresh priority for the Electric meter
-                    sensor value. Can be never, low priority, medium
-                    priority or high priority.
-                </description>
+            <parameter name="OutputCurrentRefreshPriority" type="text" groupName='sensorSetup'>
+                <label>@text/DS_DEVICE_PARM_OUTPUT_CURRENT_LABEL</label>
+                <description>@text/DS_DEVICE_PARM_OUTPUT_CURRENT_DESC</description>
                 <options>
-                    <option value="never">never</option>
-                    <option value="high">high priority</option>
-                    <option value="medium">medium priority</option>
-                    <option value="low">low priority</option>
-                </options>
-                <default>never</default>
-                <required>false</required>
-            </parameter>
-            <parameter name="OutputCurrentRefreshPriority" type="text">
-                <label>Output current refresh priority</label>
-                <description>
-                    Set the refresh priority for the output current sensor
-                    value. Can be never, low priority, medium priority
-                    or high priority.
-                </description>
-                <options>
-                    <option value="never">never</option>
-                    <option value="high">high priority</option>
-                    <option value="medium">medium priority</option>
-                    <option value="low">low priority</option>
+                    <option value="never">@text/DS_SENSOR_OPTION1</option>
+            <option value="high">@text/DS_SENSOR_OPTION4</option>
+            <option value="medium">@text/DS_SENSOR_OPTION3</option>
+            <option value="low">@text/DS_SENSOR_OPTION2</option>
                 </options>
                 <default>never</default>
                 <required>false</required>
             </parameter>
             <!--deviceUID-->
-            <parameter name="dSUID" type="text" readOnly="true">
-            	<label>Device UID</label>
-            	<description>
-            		The device identifier identifies one DigitalSTROM
-            		device.
-            	</description>
+            <parameter name="dSUID" type="text" readOnly="true"
+            	groupName="devInfo">
+            	<label>@text/DS_DEVICE_PARM_DSUID_LABEL</label>
+            	<description>@text/DS_DEVICE_PARM_DSUID_DESC</description>
             	<required>true</required>
             </parameter>
             <!--deviceID-->
-            <parameter name="dSID" type="text" readOnly="true">
-            	<label>Device ID</label>
-            	<description>
-            		The device identifier identifies one DigitalSTROM
-            		device.
-            	</description>
+            <parameter name="dSID" type="text" readOnly="true" groupName="devInfo">
+            	<label>@text/DS_DEVICE_PARM_DSID_LABEL</label>
+            	<description>@text/DS_DEVICE_PARM_DSID_DESC</description>
             	<required>false</required>
             </parameter>
             <!--meterID-->
-            <parameter name="meterDSID" type="text">
-                <label>Meter dSID</label>
-                <description>
-                    Identifier of the meter in which the device is
-                    connected.
-                </description>
+            <parameter name="meterDSID" type="text" groupName="devInfo">
+                <label>@text/DS_DEVICE_PARM_METER_DSID_LABEL</label>
+                <description>@text/DS_DEVICE_PARM_METER_DSID_DESC</description>
                 <required>false</required>
             </parameter>
             <!--device hwInfo-->
-            <parameter name="hwInfo" type="text" readOnly="true">
-            	<label>Device hardware type</label>
-            	<description>
-            		The hardware type from this DigitalSTROM device.
-            	</description>
+            <parameter name="hwInfo" type="text" readOnly="true" groupName="devInfo">
+            	<label>@text/DS_DEVICE_PARM_DEV_HW_INFO_LABEL</label>
+            	<description>@text/DS_DEVICE_PARM_DEV_HW_INFO_DESC</description>
             	<required>false</required>
             </parameter>
             <!--zone id-->
-            <parameter name="zoneID" type="text" readOnly="true">
-            	<label>Zone ID</label>
-            	<description>
-            		The DigitalSTROM device is part of this zone.
-            	</description>
+            <parameter name="zoneID" type="text" readOnly="true" groupName="devInfo">
+            	<label>@text/DS_DEVICE_PARM_ZONE_ID_LABEL</label>
+            	<description>@text/DS_DEVICE_PARM_ZONE_ID_DESC</description>
             	<required>false</required>
             </parameter>
             <!--groups id-->
-            <parameter name="groups" type="text" readOnly="true">
-            	<label>Group ID's</label>
-            	<description>
-            		The DigitalSTROM device is part of this user-defined
-            		or functional groups.
-            	</description>
+            <parameter name="groups" type="text" readOnly="true" groupName="devInfo">
+            	<label>@text/DS_DEVICE_PARM_GROUP_ID_LABEL</label>
+            	<description>@text/DS_DEVICE_PARM_GROUP_ID_DESC</description>
             	<required>false</required>
             </parameter>
             <!--outputmode-->
-            <parameter name="outputmode" type="text" readOnly="true">
-            	<label>Device Output mode</label>
-            	<description>
-            		The current DigitalSTROM device output mode e.g. 22
-            		= dimmable.
-            	</description>
+            <parameter name="outputmode" type="text" readOnly="true" groupName="devInfo">
+            	<label>@text/DS_DEVICE_PARM_OUTPUTMODE_LABEL</label>
+            	<description>@text/DS_DEVICE_PARM_OUTPUTMODE_DESC</description>
             	<required>false</required>
             </parameter>
             <!--funcColorGroup-->
             <parameter name="funcColorGroup" type="text"
-            	readOnly="true">
-            	<label>Device functional color group</label>
-            	<description>
-            		The current DigitalSTROM device functional color
-            		group e.g. yellow = light.
-            	</description>
+            	readOnly="true" groupName="devInfo">
+            	<label>@text/DS_DEVICE_PARM_FUNC_COLOR_GROUP_LABEL</label>
+            	<description>@text/DS_DEVICE_PARM_FUNC_COLOR_GROUP_DESC</description>
             	<required>false</required>
             </parameter>
  </config-description>
  <config-description uri="binding:digitalstrom:grayDevice">
-            <!--deviceName-->
-            <parameter name="deviceName" type="text">
-                <label>Device Name</label>
-                <description>
-                    The Name of a DigitalStrom device.
-                </description>
-                <default></default>
-            </parameter>
+            <parameter-group name="devInfo">
+    <label>@text/DS_DEVICE_PARM_GROUP_INFO_LABEL</label>
+    <description>@text/DS_DEVICE_PARM_GROUP_INFO_DESC</description></parameter-group>
+    <parameter name="deviceName" type="text" readOnly="true"
+        groupName="devInfo">
+        <label>@text/DS_DEVICE_PARM_DEV_NAME_LABEL</label>
+        <description>@text/DS_DEVICE_PARM_DEV_NAME_LABEL</description>
+        <default></default>
+    </parameter>
             <!--deviceUID-->
-            <parameter name="dSUID" type="text" readOnly="true">
-            	<label>Device UID</label>
-            	<description>
-            		The device identifier identifies one DigitalSTROM
-            		device.
-            	</description>
-            	<required>true</required>
+            <parameter name="dSUID" type="text" readOnly="true"
+                groupName="devInfo">
+                <label>@text/DS_DEVICE_PARM_DSUID_LABEL</label>
+                <description>@text/DS_DEVICE_PARM_DSUID_DESC</description>
+                <required>true</required>
             </parameter>
             <!--deviceID-->
-            <parameter name="dSID" type="text" readOnly="true">
-            	<label>Device ID</label>
-            	<description>
-            		The device identifier identifies one DigitalSTROM
-            		device.
-            	</description>
-            	<required>false</required>
+            <parameter name="dSID" type="text" readOnly="true" groupName="devInfo">
+                <label>@text/DS_DEVICE_PARM_DSID_LABEL</label>
+                <description>@text/DS_DEVICE_PARM_DSID_DESC</description>
+                <required>false</required>
             </parameter>
             <!--meterID-->
-            <parameter name="meterDSID" type="text" readOnly="true">
-            	<label>Meter dSID</label>
-            	<description>
-            		Identifier of the meter in which the device is
-            		connected.
-            	</description>
-            	<required>false</required>
+            <parameter name="meterDSID" type="text" groupName="devInfo">
+                <label>@text/DS_DEVICE_PARM_METER_DSID_LABEL</label>
+                <description>@text/DS_DEVICE_PARM_METER_DSID_DESC</description>
+                <required>false</required>
             </parameter>
             <!--device hwInfo-->
-            <parameter name="hwInfo" type="text" readOnly="true">
-            	<label>Device hardware type</label>
-            	<description>
-            		The hardware type from this DigitalSTROM device.
-            	</description>
-            	<required>false</required>
+            <parameter name="hwInfo" type="text" readOnly="true" groupName="devInfo">
+                <label>@text/DS_DEVICE_PARM_DEV_HW_INFO_LABEL</label>
+                <description>@text/DS_DEVICE_PARM_DEV_HW_INFO_DESC</description>
+                <required>false</required>
             </parameter>
             <!--zone id-->
-            <parameter name="zoneID" type="text" readOnly="true">
-            	<label>Zone ID</label>
-            	<description>
-            		The DigitalSTROM device is part of this zone.
-            	</description>
-            	<required>false</required>
+            <parameter name="zoneID" type="text" readOnly="true" groupName="devInfo">
+                <label>@text/DS_DEVICE_PARM_ZONE_ID_LABEL</label>
+                <description>@text/DS_DEVICE_PARM_ZONE_ID_DESC</description>
+                <required>false</required>
             </parameter>
             <!--groups id-->
-            <parameter name="groups" type="text" readOnly="true">
-            	<label>Group ID's</label>
-            	<description>
-            		The DigitalSTROM device is part of this user-defined
-            		or functional groups.
-            	</description>
-            	<required>false</required>
+            <parameter name="groups" type="text" readOnly="true" groupName="devInfo">
+                <label>@text/DS_DEVICE_PARM_GROUP_ID_LABEL</label>
+                <description>@text/DS_DEVICE_PARM_GROUP_ID_DESC</description>
+                <required>false</required>
             </parameter>
             <!--outputmode-->
-            <parameter name="outputmode" type="text" readOnly="true">
-            	<label>Device Output mode</label>
-            	<description>
-            		The current DigitalSTROM device output mode e.g. 22
-            		= dimmable.
-            	</description>
-            	<required>false</required>
+            <parameter name="outputmode" type="text" readOnly="true" groupName="devInfo">
+                <label>@text/DS_DEVICE_PARM_OUTPUTMODE_LABEL</label>
+                <description>@text/DS_DEVICE_PARM_OUTPUTMODE_DESC</description>
+                <required>false</required>
             </parameter>
             <!--funcColorGroup-->
             <parameter name="funcColorGroup" type="text"
-            	readOnly="true">
-            	<label>Device functional color group</label>
-            	<description>
-            		The current DigitalSTROM device functional color
-            		group e.g. yellow = light.
-            	</description>
-            	<required>false</required>
+                readOnly="true" groupName="devInfo">
+                <label>@text/DS_DEVICE_PARM_FUNC_COLOR_GROUP_LABEL</label>
+                <description>@text/DS_DEVICE_PARM_FUNC_COLOR_GROUP_DESC</description>
+                <required>false</required>
             </parameter>
  </config-description>
 </config-description:config-descriptions>

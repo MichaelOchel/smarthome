@@ -8,8 +8,8 @@
             <bridge-type-ref id="dssBridge" />
         </supported-bridge-type-refs>
 
-        <label>DigitalSTROM Scene.</label>
-        <description>This is a DigitalSTROM scene.</description>
+        <label>@text/DS_SCENE_LABEL</label>
+        <description>@text/DS_SCENE_DESC</description>
 
         <channels>
             <channel id="scene" typeId="scene" />
@@ -18,25 +18,25 @@
         <config-description>
             <!--sceneName-->
             <parameter name="sceneName" type="text">
-            	<label>Scene name</label>
-            	<description>The Name of a DigitalSTROM scene.</description>
+            	<label>@text/DS_SCENE_PARM_SCENE_NAME_LABEL</label>
+            	<description>@text/DS_SCENE_PARM_SCENE_NAME_DESC</description>
             </parameter>
             <!--zone id-->
             <parameter name="zoneID" type="text">
-                <label>Zone ID</label>
-                <description>The DigitalSTROM zone id of the called scene. 0 is broadcast to all.</description>
+                <label>@text/DS_SCENE_PARM_GROUP_ID_LABEL</label>
+                <description>@text/DS_SCENE_PARM_GROUP_ID_DESC</description>
                 <required>false</required>
             </parameter>
             <!--groups id-->
             <parameter name="groupID" type="text">
-                <label>Group id</label>
-                <description>The DigitalSTROM group id of the called scene. 0 is broadcast to all.</description>
+                <label>@text/DS_SCENE_PARM_ZONE_ID_LABEL</label>
+                <description>@text/DS_SCENE_PARM_ZONE_ID_DESC</description>
                 <required>false</required>
             </parameter>
             <!--scene id-->
             <parameter name="sceneID" type="integer" min="0" max="127">
-            	<label>Scene id</label>
-            	<description>The DigitalSTROM call scene id. Callable scenes are from 0 to 127.</description>
+            	<label>@text/DS_SCENE_PARM_SCENE_ID_LABEL</label>
+            	<description>@text/DS_SCENE_PARM_SCENE_ID_DESC</description>
             	<required>false</required>
             </parameter>
         </config-description>
