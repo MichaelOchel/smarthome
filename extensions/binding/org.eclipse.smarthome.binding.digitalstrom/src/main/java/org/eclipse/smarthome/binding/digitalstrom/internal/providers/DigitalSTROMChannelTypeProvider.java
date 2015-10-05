@@ -28,6 +28,9 @@ public class DigitalSTROMChannelTypeProvider implements ChannelTypeProvider {
     private final String STRING = "String";
     private final String NUMBER = "Number";
 
+    private final String EN = "EN";
+    private final String DE = "DE";
+
     /* English */
     // Constants label + description
     private final String CHANNEL_BRIGHTNESS_LABEL_EN = "brightness";
@@ -69,8 +72,23 @@ public class DigitalSTROMChannelTypeProvider implements ChannelTypeProvider {
     private final String CHANNEL_ELECTRIC_METER_DESCRIPTION_EN = "The electric meter channel indicates the current electric meter value in "
             + getUnitString(SensorEnum.ELECTRIC_METER) + " of the device.";
 
+    private final String CHANNEL_POWER_CONSUMPTION_LABEL_EN = "total power consumption";
+    private final String CHANNEL_POWER_CONSUMPTION_DESCRIPTION_EN = "The total power consumption channel indicates the current consuption power in "
+            + getUnitString(SensorEnum.ACTIVE_POWER) + " of all connected circuits to the digitalSTROM-System.";
+
     private final String CHANNEL_SCENE_LABEL_EN = "Scene";
-    private final String CHANNEL_SCENE_DESCRIPTION_EN = "The scene channel allows to call or undo a scene from DigitalSTROM.";
+    private final String CHANNEL_SCENE_DESCRIPTION_EN = "The scene channel allows to call or undo a scene from digitalSTROM.";
+
+    // options
+    public final String OPTION_BOTH_RELAIS_OFF_EN = "both relais off";
+    public final String OPTION_BOTH_RELAIS_ON_EN = "both relais on";
+    public final String OPTION_FIRST_RELAIS_ON_EN = "first relais on";
+    public final String OPTION_SECOND_RELAIS_ON_EN = "second relais on";
+
+    public final String OPTION_BOTH_LIGHTS_OFF_EN = "both lights off";
+    public final String OPTION_BOTH_LIGHTS_ON_EN = "both lights on";
+    public final String OPTION_FIRST_LIGHT_ON_EN = "first light on";
+    public final String OPTION_SECOND_LIGHT_ON_EN = "second light on";
 
     // Tags
     private final String DS = "digitalSTROM";
@@ -83,6 +101,7 @@ public class DigitalSTROMChannelTypeProvider implements ChannelTypeProvider {
     private final String ACTIVE_POWER = "active power";
     private final String ELECTRIC_METER = "electric meter";
     private final String OUTPUT_CURRENT = "output current";
+    private final String POWER_CONSUMPTION = "power consumption";
     private final String UMR = "umr";
     private final String SCENE = "scene";
 
@@ -97,14 +116,6 @@ public class DigitalSTROMChannelTypeProvider implements ChannelTypeProvider {
             CHANNEL_LIGHT_SWITCH_LABEL_EN, CHANNEL_LIGHT_SWITCH_DESCRIPTION_EN, "light",
             Sets.newHashSet(YELLOW, DS, LIGHT), null, null);
 
-    /*
-     * private final ChannelType CHANNEL_TYPE_PLUG_ADAPTER_EN = new ChannelType("plugAdapter",
-     * new ChannelType(new ChannelTypeUID("digitalstrom:plugAdapter"), false, "Switch", "Plug adapter",
-     * "The plug adapter channel allows to switch the plug adapter on or off.", "Light", null, null, null),
-     * null, "Plug adapter", "The plug adapter channel allows to switch the plug adapter on or off.");
-     */
-    // TODO: Category Joker? Plug Adapter löschen!
-
     private final ChannelType CHANNEL_TYPE_GENERAL_DIMM_EN = new ChannelType(
             new ChannelTypeUID(getUID(DigitalSTROMBindingConstants.CHANNEL_GENERAL_DIMM)), false, DIMMER,
             CHANNEL_GENERAL_DIMM_LABEL_EN, CHANNEL_GENERAL_DIMM_DESCRIPTION_EN, null, Sets.newHashSet(BLACK, DS, JOKER),
@@ -118,24 +129,24 @@ public class DigitalSTROMChannelTypeProvider implements ChannelTypeProvider {
     private final ChannelType CHANNEL_TYPE_COMBINED_2_STAGE_SWITCH_EN = new ChannelType(
             new ChannelTypeUID(getUID(DigitalSTROMBindingConstants.CHANNEL_COMBINED_2_STAGE_SWITCH)), false, STRING,
             CHANNEL_COMBINED_2_STAGE_SWITCH_LABEL_EN, CHANNEL_COMBINED_2_STAGE_SWITCH_DESCRIPTION_EN, "Lights",
-            Sets.newHashSet(YELLOW, DS, LIGHT, UMR), getCombinedStageDescription((short) 2, true), null);
+            Sets.newHashSet(YELLOW, DS, LIGHT, UMR), getCombinedStageDescription((short) 2, true, EN), null);
 
     private final ChannelType CHANNEL_TYPE_COMBINED_3_STAGE_SWITCH_EN = new ChannelType(
             new ChannelTypeUID(getUID(DigitalSTROMBindingConstants.CHANNEL_COMBINED_3_STAGE_SWITCH)), false, STRING,
             CHANNEL_COMBINED_3_STAGE_SWITCH_LABEL_EN, CHANNEL_COMBINED_3_STAGE_SWITCH_DESCRIPTION_EN, "Lights",
-            Sets.newHashSet(YELLOW, DS, LIGHT, UMR), getCombinedStageDescription((short) 3, true), null);
+            Sets.newHashSet(YELLOW, DS, LIGHT, UMR), getCombinedStageDescription((short) 3, true, EN), null);
 
     private final ChannelType CHANNEL_TYPE_GENERAL_COMBINED_2_STAGE_SWITCH_EN = new ChannelType(
             new ChannelTypeUID(getUID(DigitalSTROMBindingConstants.CHANNEL_GENERAL_COMBINED_2_STAGE_SWITCH)), false,
             STRING, CHANNEL_GENERAL_COMBINED_2_STAGE_SWITCH_LABEL_EN,
             CHANNEL_GENERAL_COMBINED_2_STAGE_SWITCH_DESCRIPTION_EN, null, Sets.newHashSet(BLACK, DS, UMR),
-            getCombinedStageDescription((short) 2, true), null);
+            getCombinedStageDescription((short) 2, true, EN), null);
 
     private final ChannelType CHANNEL_TYPE_GENERAL_COMBINED_3_STAGE_SWITCH_EN = new ChannelType(
             new ChannelTypeUID(getUID(DigitalSTROMBindingConstants.CHANNEL_GENERAL_COMBINED_3_STAGE_SWITCH)), false,
             STRING, CHANNEL_GENERAL_COMBINED_3_STAGE_SWITCH_LABEL_EN,
             CHANNEL_GENERAL_COMBINED_3_STAGE_SWITCH_DESCRIPTION_EN, null, Sets.newHashSet(BLACK, DS, UMR),
-            getCombinedStageDescription((short) 3, true), null);
+            getCombinedStageDescription((short) 3, true, EN), null);
 
     private final ChannelType CHANNEL_TYPE_SHADE_EN = new ChannelType(
             new ChannelTypeUID(getUID(DigitalSTROMBindingConstants.CHANNEL_SHADE)), false, SHADE,
@@ -158,6 +169,12 @@ public class DigitalSTROMChannelTypeProvider implements ChannelTypeProvider {
             CHANNEL_OUTPUT_CURRENT_LABEL_EN, CHANNEL_OUTPUT_CURRENT_DESCRIPTION_EN, "Energy",
             Sets.newHashSet(OUTPUT_CURRENT, DS), getSensorStateDescription(SensorEnum.OUTPUT_CURRENT.getUnitShortcut()),
             null);
+
+    private final ChannelType CHANNEL_TYPE_POWER_CONSUMPTION_EN = new ChannelType(
+            new ChannelTypeUID(getUID(DigitalSTROMBindingConstants.CHANNEL_POWER_CONSUMPTION)), false, NUMBER,
+            CHANNEL_POWER_CONSUMPTION_LABEL_EN, CHANNEL_POWER_CONSUMPTION_DESCRIPTION_EN, "Energy",
+            Sets.newHashSet(POWER_CONSUMPTION, DS),
+            getSensorStateDescription(SensorEnum.ACTIVE_POWER.getUnitShortcut()), null);
 
     private final ChannelType CHANNEL_TYPE_SCENE_VALUE_EN = new ChannelType(
             new ChannelTypeUID(getUID(DigitalSTROMBindingConstants.CHANNEL_SCENE)), false, SWITCH,
@@ -198,11 +215,16 @@ public class DigitalSTROMChannelTypeProvider implements ChannelTypeProvider {
     private final String CHANNEL_GENERAL_COMBINED_2_STAGE_SWITCH_LABEL_DE = "2 Phasen Geräteschalter";
     private final String CHANNEL_GENERAL_COMBINED_2_STAGE_SWITCH_DESCRIPTION_DE = "Der 2 Phasen Lichtschalter Channel erlaubt es beide Relais ein oder aus zu schalten oder nur eines der beiden Relais zu schalten.";
 
-    private final String CHANNEL_GENERAL_COMBINED_3_STAGE_SWITCH_LABEL_DE = "3 stagePhasen Geräteschalter";
+    private final String CHANNEL_GENERAL_COMBINED_3_STAGE_SWITCH_LABEL_DE = "3 Phasen Geräteschalter";
     private final String CHANNEL_GENERAL_COMBINED_3_STAGE_SWITCH_DESCRIPTION_DE = "Der 3 Phasen Lichtschalter Channel erlaubt es die beiden Relais ein oder aus zu schalten oder eines der beiden Relais seperat von einander zu schalten.";
 
     private final String CHANNEL_SCENE_LABEL_DE = "Szene/Stimmung";
     private final String CHANNEL_SCENE_DESCRIPTION_DE = "Ruft eine Szene/Stimmung auf bzw. macht sie rückgänig.";
+
+    private final String CHANNEL_POWER_CONSUMPTION_LABEL_DE = "gesamt Stromverbrauch";
+    private final String CHANNEL_POWER_CONSUMPTION_DESCRIPTION_DE = "Der gesamt Stromverbrauch Channel zeigt den aktuellen Stromverbrauch in "
+            + getUnitString(SensorEnum.ACTIVE_POWER)
+            + " von allen am digitalSTROM-System angschlossenen Stromkreisläufen an.";
 
     // Tags
     private final String GELB = "gelb";
@@ -213,8 +235,20 @@ public class DigitalSTROMChannelTypeProvider implements ChannelTypeProvider {
     private final String WIRKL = "Wirkleistung";
     private final String STROMZ = "Strohmzähler";
     private final String AUSGANGSS = "Ausgagsstrom";
+    private final String STROMVER = "Stromverbrauch";
     private final String SZENE = "Szene";
     private final String STIMMUNG = "Stimmung";
+
+    // options
+    public final String OPTION_BOTH_RELAIS_OFF_DE = "beide Relais aus";
+    public final String OPTION_BOTH_RELAIS_ON_DE = "beide Relais an";
+    public final String OPTION_FIRST_RELAIS_ON_DE = "erstes Relais an";
+    public final String OPTION_SECOND_RELAIS_ON_DE = "zweites Relais an";
+
+    public final String OPTION_BOTH_LIGHTS_OFF_DE = "beide Lampen aus";
+    public final String OPTION_BOTH_LIGHTS_ON_DE = "beide Lampen an";
+    public final String OPTION_FIRST_LIGHT_ON_DE = "erste Lampe an";
+    public final String OPTION_SECOND_LIGHT_ON_DE = "zweitse Lampe an";
 
     // Channel definitions
     private final ChannelType CHANNEL_TYPE_BRIGHTNESS_DE = new ChannelType(
@@ -261,24 +295,29 @@ public class DigitalSTROMChannelTypeProvider implements ChannelTypeProvider {
     private final ChannelType CHANNEL_TYPE_COMBINED_2_STAGE_SWITCH_DE = new ChannelType(
             new ChannelTypeUID(getUID(DigitalSTROMBindingConstants.CHANNEL_COMBINED_2_STAGE_SWITCH)), false, STRING,
             CHANNEL_COMBINED_2_STAGE_SWITCH_LABEL_DE, CHANNEL_COMBINED_2_STAGE_SWITCH_DESCRIPTION_DE, "Lights",
-            Sets.newHashSet(GELB, DS, LICHT, UMR), getCombinedStageDescription((short) 2, true), null);
+            Sets.newHashSet(GELB, DS, LICHT, UMR), getCombinedStageDescription((short) 2, true, DE), null);
 
     private final ChannelType CHANNEL_TYPE_COMBINED_3_STAGE_SWITCH_DE = new ChannelType(
             new ChannelTypeUID(getUID(DigitalSTROMBindingConstants.CHANNEL_COMBINED_3_STAGE_SWITCH)), false, STRING,
             CHANNEL_COMBINED_3_STAGE_SWITCH_LABEL_DE, CHANNEL_COMBINED_3_STAGE_SWITCH_DESCRIPTION_DE, "Lights",
-            Sets.newHashSet(GELB, DS, LICHT, UMR), getCombinedStageDescription((short) 3, true), null);
+            Sets.newHashSet(GELB, DS, LICHT, UMR), getCombinedStageDescription((short) 3, true, DE), null);
 
     private final ChannelType CHANNEL_TYPE_GENERAL_COMBINED_2_STAGE_SWITCH_DE = new ChannelType(
             new ChannelTypeUID(getUID(DigitalSTROMBindingConstants.CHANNEL_GENERAL_COMBINED_2_STAGE_SWITCH)), false,
             STRING, CHANNEL_GENERAL_COMBINED_2_STAGE_SWITCH_LABEL_DE,
             CHANNEL_GENERAL_COMBINED_2_STAGE_SWITCH_DESCRIPTION_DE, null, Sets.newHashSet(SCHWARZ, DS, UMR),
-            getCombinedStageDescription((short) 2, true), null);
+            getCombinedStageDescription((short) 2, false, DE), null);
 
     private final ChannelType CHANNEL_TYPE_GENERAL_COMBINED_3_STAGE_SWITCH_DE = new ChannelType(
             new ChannelTypeUID(getUID(DigitalSTROMBindingConstants.CHANNEL_GENERAL_COMBINED_3_STAGE_SWITCH)), false,
             STRING, CHANNEL_GENERAL_COMBINED_3_STAGE_SWITCH_LABEL_DE,
             CHANNEL_GENERAL_COMBINED_3_STAGE_SWITCH_DESCRIPTION_DE, null, Sets.newHashSet(SCHWARZ, DS, UMR),
-            getCombinedStageDescription((short) 3, true), null);
+            getCombinedStageDescription((short) 3, false, DE), null);
+
+    private final ChannelType CHANNEL_TYPE_POWER_CONSUMPTION_DE = new ChannelType(
+            new ChannelTypeUID(getUID(DigitalSTROMBindingConstants.CHANNEL_POWER_CONSUMPTION)), false, NUMBER,
+            CHANNEL_POWER_CONSUMPTION_LABEL_DE, CHANNEL_POWER_CONSUMPTION_DESCRIPTION_DE, "Energy",
+            Sets.newHashSet(STROMVER, DS), getSensorStateDescription(SensorEnum.ACTIVE_POWER.getUnitShortcut()), null);
 
     private final ChannelType CHANNEL_TYPE_SCENE_VALUE_DE = new ChannelType(
             new ChannelTypeUID(getUID(DigitalSTROMBindingConstants.CHANNEL_SCENE)), false, SWITCH,
@@ -293,7 +332,7 @@ public class DigitalSTROMChannelTypeProvider implements ChannelTypeProvider {
                     CHANNEL_TYPE_GENERAL_DIMM_EN, CHANNEL_TYPE_GENERAL_SWITCH_EN,
                     CHANNEL_TYPE_COMBINED_2_STAGE_SWITCH_EN, CHANNEL_TYPE_COMBINED_3_STAGE_SWITCH_EN,
                     CHANNEL_TYPE_GENERAL_COMBINED_2_STAGE_SWITCH_EN, CHANNEL_TYPE_GENERAL_COMBINED_3_STAGE_SWITCH_EN,
-                    CHANNEL_TYPE_LIGHT_SWITCH_EN, CHANNEL_TYPE_SCENE_VALUE_EN));
+                    CHANNEL_TYPE_LIGHT_SWITCH_EN, CHANNEL_TYPE_SCENE_VALUE_EN, CHANNEL_TYPE_POWER_CONSUMPTION_EN));
     /* German */
     private HashMap<ChannelTypeUID, ChannelType> channel_types_de = listToHashMap(
             Lists.newArrayList(CHANNEL_TYPE_BRIGHTNESS_DE, CHANNEL_TYPE_LIGHT_SWITCH_DE, CHANNEL_TYPE_ACTIVE_POWER_DE,
@@ -301,7 +340,7 @@ public class DigitalSTROMChannelTypeProvider implements ChannelTypeProvider {
                     CHANNEL_TYPE_GENERAL_DIMM_DE, CHANNEL_TYPE_GENERAL_SWITCH_DE,
                     CHANNEL_TYPE_COMBINED_2_STAGE_SWITCH_DE, CHANNEL_TYPE_COMBINED_3_STAGE_SWITCH_DE,
                     CHANNEL_TYPE_GENERAL_COMBINED_2_STAGE_SWITCH_DE, CHANNEL_TYPE_GENERAL_COMBINED_3_STAGE_SWITCH_DE,
-                    CHANNEL_TYPE_LIGHT_SWITCH_DE, CHANNEL_TYPE_SCENE_VALUE_DE));
+                    CHANNEL_TYPE_LIGHT_SWITCH_DE, CHANNEL_TYPE_SCENE_VALUE_DE, CHANNEL_TYPE_POWER_CONSUMPTION_DE));
 
     private HashMap<ChannelTypeUID, ChannelType> listToHashMap(List<ChannelType> channelTypeList) {
         if (channelTypeList != null) {
@@ -322,33 +361,44 @@ public class DigitalSTROMChannelTypeProvider implements ChannelTypeProvider {
         return new StateDescription(null, null, null, "%d " + shortcutUnit, true, null);
     }
 
-    // TODO: german option translation
-    private StateDescription getCombinedStageDescription(short stages, boolean isLight) {
-        if (isLight) {
-            return stages == 2
-                    ? new StateDescription(null, null, null, null, false,
-                            Lists.newArrayList(new StateOption("0", DigitalSTROMBindingConstants.OPTION_BOTH_OFF),
-                                    new StateOption("200", DigitalSTROMBindingConstants.OPTION_BOTH_ON),
-                                    new StateOption("90", DigitalSTROMBindingConstants.OPTION_FIRST_ON)))
-                    : new StateDescription(null, null, null, null, false,
-                            Lists.newArrayList(new StateOption("0", DigitalSTROMBindingConstants.OPTION_BOTH_OFF),
-                                    new StateOption("200", DigitalSTROMBindingConstants.OPTION_BOTH_ON),
-                                    new StateOption("90", DigitalSTROMBindingConstants.OPTION_FIRST_ON),
-                                    new StateOption("130", DigitalSTROMBindingConstants.OPTION_SECOND_ON)));
-        } else {
-            return stages == 2
-                    ? new StateDescription(null, null, null, null, false,
-                            Lists.newArrayList(
-                                    new StateOption("0", DigitalSTROMBindingConstants.OPTION_BOTH_RELAIS_OFF),
-                                    new StateOption("200", DigitalSTROMBindingConstants.OPTION_BOTH_RELAIS_ON),
-                                    new StateOption("90", DigitalSTROMBindingConstants.OPTION_FIRST_RELAIS_ON)))
-                    : new StateDescription(null, null, null, null, false,
-                            Lists.newArrayList(
-                                    new StateOption("0", DigitalSTROMBindingConstants.OPTION_BOTH_RELAIS_OFF),
-                                    new StateOption("200", DigitalSTROMBindingConstants.OPTION_BOTH_RELAIS_ON),
-                                    new StateOption("90", DigitalSTROMBindingConstants.OPTION_FIRST_RELAIS_ON),
-                                    new StateOption("130", DigitalSTROMBindingConstants.OPTION_SECOND_RELAIS_ON)));
+    private StateDescription getCombinedStageDescription(short stages, boolean isLight, String local) {
+        String O_0 = OPTION_BOTH_LIGHTS_OFF_EN;
+        String O_200 = OPTION_BOTH_LIGHTS_ON_EN;
+        String O_90 = OPTION_FIRST_LIGHT_ON_EN;
+        String O_130 = OPTION_SECOND_LIGHT_ON_EN;
+        switch (local) {
+            case "EN":
+                if (!isLight) {
+                    O_0 = OPTION_BOTH_RELAIS_OFF_EN;
+                    O_200 = OPTION_BOTH_RELAIS_ON_EN;
+                    O_90 = OPTION_FIRST_RELAIS_ON_EN;
+                    O_130 = OPTION_SECOND_RELAIS_ON_EN;
+                }
+                break;
+            case "DE":
+                if (isLight) {
+                    O_0 = OPTION_BOTH_LIGHTS_OFF_DE;
+                    O_200 = OPTION_BOTH_LIGHTS_ON_DE;
+                    O_90 = OPTION_FIRST_LIGHT_ON_DE;
+                    O_130 = OPTION_SECOND_LIGHT_ON_DE;
+                } else {
+                    O_0 = OPTION_BOTH_RELAIS_OFF_DE;
+                    O_200 = OPTION_BOTH_RELAIS_ON_DE;
+                    O_90 = OPTION_FIRST_RELAIS_ON_DE;
+                    O_130 = OPTION_SECOND_RELAIS_ON_DE;
+                }
+                break;
         }
+        return stages == 2
+                ? new StateDescription(null, null, null, null, false,
+                        Lists.newArrayList(new StateOption(DigitalSTROMBindingConstants.OPTION_COMBINED_BOTH_OFF, O_0),
+                                new StateOption(DigitalSTROMBindingConstants.OPTION_COMBINED_BOTH_ON, O_200),
+                                new StateOption(DigitalSTROMBindingConstants.OPTION_COMBINED_FIRST_ON, O_90)))
+                : new StateDescription(null, null, null, null, false,
+                        Lists.newArrayList(new StateOption(DigitalSTROMBindingConstants.OPTION_COMBINED_BOTH_OFF, O_0),
+                                new StateOption(DigitalSTROMBindingConstants.OPTION_COMBINED_BOTH_ON, O_200),
+                                new StateOption(DigitalSTROMBindingConstants.OPTION_COMBINED_FIRST_ON, O_90),
+                                new StateOption(DigitalSTROMBindingConstants.OPTION_COMBINED_SECOND_ON, O_130)));
     }
 
     private String getUnitString(SensorEnum sensorType) {

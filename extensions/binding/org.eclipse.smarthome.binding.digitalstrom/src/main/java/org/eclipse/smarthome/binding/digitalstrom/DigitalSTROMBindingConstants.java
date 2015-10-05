@@ -42,11 +42,6 @@ public class DigitalSTROMBindingConstants {
     public static final String CHANNEL_LIGHT_SWITCH = "lightSwitch";
     public static final String CHANNEL_COMBINED_2_STAGE_SWITCH = "Combined2StageSwitch";
     public static final String CHANNEL_COMBINED_3_STAGE_SWITCH = "Combined3StageSwitch";
-    // Options
-    public static final String OPTION_BOTH_OFF = "both ligts off";
-    public static final String OPTION_BOTH_ON = "both ligts on";
-    public static final String OPTION_FIRST_ON = "first ligt on";
-    public static final String OPTION_SECOND_ON = "second ligt on";
 
     // black
     public static final String CHANNEL_GENERAL_DIMM = "generalDimm";
@@ -54,22 +49,23 @@ public class DigitalSTROMBindingConstants {
     public static final String CHANNEL_GENERAL_SHADE = "generalShade";
     public static final String CHANNEL_GENERAL_COMBINED_2_STAGE_SWITCH = "generalCombined2StageSwitch";
     public static final String CHANNEL_GENERAL_COMBINED_3_STAGE_SWITCH = "generalCombined3StageSwitch";
-    // Options
-    public static final String OPTION_BOTH_RELAIS_OFF = "both relais off";
-    public static final String OPTION_BOTH_RELAIS_ON = "both relais on";
-    public static final String OPTION_FIRST_RELAIS_ON = "first relais on";
-    public static final String OPTION_SECOND_RELAIS_ON = "second relais on";
 
     // shade
     public static final String CHANNEL_SHADE = "shade";
     // scene
     public static final String CHANNEL_SCENE = "scene";
-    // plug adapter
-    public static final String CHANNEL_PLUG_ADAPTER = "plugAdapter";
+
     // sensor
     public static final String CHANNEL_ELECTRIC_METER = "electricMeter";
     public static final String CHANNEL_OUTPUT_CURRENT = "outputCurrent";
     public static final String CHANNEL_ACTIVE_POWER = "activePower";
+    public static final String CHANNEL_POWER_CONSUMPTION = "powerConsumption";
+
+    // options combined switches
+    public static final String OPTION_COMBINED_BOTH_OFF = "0";
+    public static final String OPTION_COMBINED_BOTH_ON = "200";
+    public static final String OPTION_COMBINED_FIRST_ON = "90";
+    public static final String OPTION_COMBINED_SECOND_ON = "130";
 
     /* config URIs */
     public static final String DEVICE_CONFIG = "binding:digitalstrom:device";

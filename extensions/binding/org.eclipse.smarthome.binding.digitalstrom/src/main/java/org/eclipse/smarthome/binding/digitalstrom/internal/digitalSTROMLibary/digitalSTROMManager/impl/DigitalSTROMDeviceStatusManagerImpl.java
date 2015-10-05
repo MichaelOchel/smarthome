@@ -118,7 +118,9 @@ public class DigitalSTROMDeviceStatusManagerImpl implements DigitalSTROMDeviceSt
                         for (CachedMeteringValue value : digitalSTROMClient.getLatest(connMan.getSessionToken(),
                                 MeteringTypeEnum.consumption,
                                 digitalSTROMClient.getMeterList(connMan.getSessionToken()), MeteringUnitsEnum.W)) {
-                            tempConsumtion += value.getValue();
+                            if (value != null) {
+                                tempConsumtion += value.getValue();
+                            }
                         }
                         if (tempConsumtion != totalPowerConsumption) {
                             totalPowerConsumption = tempConsumtion;

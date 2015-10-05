@@ -6,10 +6,10 @@
 
     <!--DigitalStrom Bridge-->
     <bridge-type id="dssBridge">
-        <label>DigitalSTROM Server</label>
-        <description>The DigitalSTROM server represents an interface to the DigitalSTROM system.</description>
+        <label>@text/DSS_BRIDGE_LABEL</label>
+        <description>@text/DSS_BRIDGE_DESC</description>
         <channels>
-        	<channel typeId="activePower" id="activePower" />
+        	<channel typeId="powerConsumption" id="powerConsumption" />
         </channels>
         <config-description-ref uri="binding:digitalstrom:dssBridge" />
 
