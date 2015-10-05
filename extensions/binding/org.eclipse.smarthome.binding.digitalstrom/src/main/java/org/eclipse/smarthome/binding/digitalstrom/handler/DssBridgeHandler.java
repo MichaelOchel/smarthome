@@ -44,12 +44,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * The {@link DigitalSTROMHandler} is the handler for a DigitalSTROM-Server and connects it to
- * the framework. All {@link DsGrayHandler}s, {@link DsDeviceHandler}s and {@link DsSceneHandler} use the
- * {@link DigitalSTROMHandler} to execute the actual commands.
- * The digitalSTROM handler also informs all other digitalSTROM handler about status changes from the outside.
+ * The {@link DssBridgeHandler} is the handler for a digitalSTROM-Server and connects it to
+ * the framework.<br>
+ * All {@link DsDeviceHandler}s and {@link DsSceneHandler} use the {@link DssBridgeHandler} to execute the actual
+ * commands.
+ * The {@link DssBridgeHandler} also informs all other digitalSTROM handler about status changes from the outside.
  *
- * @author Alex Maier - Initial contribution
  * @author Michael Ochel - Initial contribution
  * @author Mathias Siegele - Initial contribution
  */
@@ -60,8 +60,7 @@ public class DssBridgeHandler extends BaseBridgeHandler
 
     public final static Set<ThingTypeUID> SUPPORTED_THING_TYPES = Collections.singleton(THING_TYPE_DSS_BRIDGE);
 
-    /**** configuration ****/
-    // private DigitalSTROMAPI digitalSTROMClient = null;
+    /* DS-Manager */
     private DigitalSTROMConnectionManager connMan;
     private DigitalSTROMStructureManager structMan;
     private DigitalSTROMSceneManager sceneMan;
@@ -344,16 +343,16 @@ public class DssBridgeHandler extends BaseBridgeHandler
                 sceneMan.start();
                 break;
             case APPLICATION_TOKEN_GENERATED:
-                /*
-                 * Configuration config = this.getConfig();
-                 * if (config != null) {
-                 * config.remove(USER_NAME);
-                 * config.remove(PASSWORD);
-                 * logger.debug(connMan.getApplicationToken());
-                 * config.put(APPLICATION_TOKEN, connMan.getApplicationToken());
-                 * this.updateConfiguration(config);
-                 * }
-                 */
+
+                Configuration config = this.getConfig();
+                if (config != null) {
+                    config.remove(USER_NAME);
+                    config.remove(PASSWORD);
+                    logger.debug(connMan.getApplicationToken());
+                    config.put(APPLICATION_TOKEN, connMan.getApplicationToken());
+                    this.updateConfiguration(config);
+                }
+
             default:
                 // TODO: Fehlermeldung
         }
@@ -361,7 +360,6 @@ public class DssBridgeHandler extends BaseBridgeHandler
 
     @Override
     public void onConnectionStateChange(String newConnectionState, String reason) {
-        // logger.debug(newConnectionState + " " + reason);
         if (newConnectionState.equals(NOT_AUTHENTICATED) || newConnectionState.equals(CONNECTION_LOST)) {
             switch (reason) {
                 case WRONG_APP_TOKEN:

@@ -147,10 +147,8 @@ public class DsDeviceHandler extends BaseThingHandler implements DeviceStatusLis
         }
 
         // load sensor priorities into the device and load sensor channels of the thing
-
-        logger.debug("!!!!!!!HANDLE CONFIG UPDATE!!!!!!!");
+        // loadSensorChannels(configuration);
         updateConfiguration(configuration);
-
         // initialize();
     }
 
@@ -166,7 +164,6 @@ public class DsDeviceHandler extends BaseThingHandler implements DeviceStatusLis
                     logger.debug("Set status on {}", getThing().getStatus());
                 }
                 // note: this call implicitly registers our handler as a device-listener on the bridge
-
                 this.dssBridgeHandler = (DssBridgeHandler) thingHandler;
                 this.dssBridgeHandler.registerDeviceStatusListener(this);
 
@@ -188,8 +185,6 @@ public class DsDeviceHandler extends BaseThingHandler implements DeviceStatusLis
         }
 
         if (!device.isRollershutter()) {
-            // channelUID.getId().equals(DigitalSTROMBindingConstants.CHANNEL_BRIGHTNESS)
-            // || channelUID.getId().equals(DigitalSTROMBindingConstants.CHANNEL_LIGHT_SWITCH)
             if (this.channelIsOutputChannel(channelUID.getId())) {
                 if (command instanceof PercentType) {
                     device.setOutputValue(
@@ -270,8 +265,9 @@ public class DsDeviceHandler extends BaseThingHandler implements DeviceStatusLis
     @Override
     public synchronized void onDeviceStateChanged(DeviceStateUpdate deviceStateUpdate) {
         if (device != null) {
-            if (!device.isRollershutter()) {
-                if (deviceStateUpdate != null) {
+            if (deviceStateUpdate != null) {
+                logger.debug("Update ESH State");
+                if (!device.isRollershutter()) {
                     switch (deviceStateUpdate.getType()) {
                         case DeviceStateUpdate.UPDATE_BRIGHTNESS:
                             switch (currentChannel) {
@@ -294,25 +290,10 @@ public class DsDeviceHandler extends BaseThingHandler implements DeviceStatusLis
                                     break;
 
                             }
-                            /*
-                             * if (deviceStateUpdate.getValue() > 0) {
-                             * if (currentChannel == CHANNEL_BRIGHTNESS || currentChannel == CHANNEL_GENERAL_DIMM) {
-                             * updateState(new ChannelUID(getThing().getUID(), currentChannel),
-                             * new PercentType(fromValueToPercent(deviceStateUpdate.getValue(),
-                             * device.getMaxOutputValue())));
-                             * } else {
-                             * updateState(new ChannelUID(getThing().getUID(), currentChannel), OnOffType.ON);
-                             * }
-                             * } else {
-                             * updateState(new ChannelUID(getThing().getUID(), currentChannel), OnOffType.OFF);
-                             * }
-                             */
                             break;
                         case DeviceStateUpdate.UPDATE_ON_OFF:
                             if (deviceStateUpdate.getValue() > 0) {
                                 updateState(new ChannelUID(getThing().getUID(), currentChannel), OnOffType.ON);
-                                // updateState(new ChannelUID(getThing().getUID(), currentChannel), new
-                                // PercentType(100));
                             } else {
                                 updateState(new ChannelUID(getThing().getUID(), currentChannel), OnOffType.OFF);
                             }
@@ -331,11 +312,9 @@ public class DsDeviceHandler extends BaseThingHandler implements DeviceStatusLis
                             break;
                         default:
                             return;
+
                     }
-                }
-            } else {
-                logger.debug("Update ESH State");
-                if (deviceStateUpdate != null) {
+                } else {
                     switch (deviceStateUpdate.getType()) {
                         case DeviceStateUpdate.UPDATE_SLATPOSITION:
                             updateState(new ChannelUID(getThing().getUID(), CHANNEL_SHADE), new PercentType(
@@ -344,11 +323,8 @@ public class DsDeviceHandler extends BaseThingHandler implements DeviceStatusLis
                         case DeviceStateUpdate.UPDATE_OPEN_CLOSE:
                             if (deviceStateUpdate.getValue() > 0) {
                                 updateState(new ChannelUID(getThing().getUID(), CHANNEL_SHADE), UpDownType.UP);
-                                // updateState(new ChannelUID(getThing().getUID(), CHANNEL_SHADE), new
-                                // PercentType(100));
                             } else {
                                 updateState(new ChannelUID(getThing().getUID(), CHANNEL_SHADE), UpDownType.DOWN);
-                                // updateState(new ChannelUID(getThing().getUID(), CHANNEL_SHADE), new PercentType(0));
                             }
                             break;
                         default:
@@ -356,7 +332,6 @@ public class DsDeviceHandler extends BaseThingHandler implements DeviceStatusLis
                     }
                 }
             }
-
         }
     }
 
@@ -385,7 +360,9 @@ public class DsDeviceHandler extends BaseThingHandler implements DeviceStatusLis
             logger.debug("Set status on {}", getThing().getStatus());
 
             // load sensor priorities into the device and load sensor channels of the thing
-            loadSensorChannels(getThing().getConfiguration());
+            if (!device.isRollershutter()) {
+                loadSensorChannels(getThing().getConfiguration());
+            }
 
             // check and load output channel of the thing
             checkOutputChannel();
@@ -413,19 +390,18 @@ public class DsDeviceHandler extends BaseThingHandler implements DeviceStatusLis
             boolean configChanged = false;
 
             logger.debug("Add sensor priorities to device");
-            String powerConsumptionPrio = DigitalSTROMBindingConstants.REFRESH_PRIORITY_NEVER;
+            String activePowerPrio = DigitalSTROMBindingConstants.REFRESH_PRIORITY_NEVER;
             if (config.get(DigitalSTROMBindingConstants.ACTIVE_POWER_REFRESH_PRIORITY) != null) {
-                powerConsumptionPrio = config.get(DigitalSTROMBindingConstants.ACTIVE_POWER_REFRESH_PRIORITY)
-                        .toString();
+                activePowerPrio = config.get(DigitalSTROMBindingConstants.ACTIVE_POWER_REFRESH_PRIORITY).toString();
             } else {
                 config.put(DigitalSTROMBindingConstants.ACTIVE_POWER_REFRESH_PRIORITY,
                         DigitalSTROMBindingConstants.REFRESH_PRIORITY_NEVER);
                 configChanged = true;
             }
 
-            String energyMeterPrio = DigitalSTROMBindingConstants.REFRESH_PRIORITY_NEVER;
+            String outputCurrentPrio = DigitalSTROMBindingConstants.REFRESH_PRIORITY_NEVER;
             if (config.get(DigitalSTROMBindingConstants.OUTPUT_CURRENT_REFRESH_PRIORITY) != null) {
-                energyMeterPrio = config.get(DigitalSTROMBindingConstants.OUTPUT_CURRENT_REFRESH_PRIORITY).toString();
+                outputCurrentPrio = config.get(DigitalSTROMBindingConstants.OUTPUT_CURRENT_REFRESH_PRIORITY).toString();
             } else {
                 config.put(DigitalSTROMBindingConstants.OUTPUT_CURRENT_REFRESH_PRIORITY,
                         DigitalSTROMBindingConstants.REFRESH_PRIORITY_NEVER);
@@ -444,12 +420,12 @@ public class DsDeviceHandler extends BaseThingHandler implements DeviceStatusLis
                 super.updateConfiguration(config);
                 configChanged = false;
             }
-            logger.debug(powerConsumptionPrio + ", " + energyMeterPrio + ", " + electricMeterPrio);
+            logger.debug(activePowerPrio + ", " + outputCurrentPrio + ", " + electricMeterPrio);
 
-            device.setSensorDataRefreshPriority(powerConsumptionPrio, energyMeterPrio, electricMeterPrio);
+            device.setSensorDataRefreshPriority(activePowerPrio, outputCurrentPrio, electricMeterPrio);
 
             // check and load sensor channels of the thing
-            checkSensorChannel(powerConsumptionPrio, energyMeterPrio, electricMeterPrio);
+            checkSensorChannel(activePowerPrio, outputCurrentPrio, electricMeterPrio);
         }
     }
 
@@ -459,13 +435,15 @@ public class DsDeviceHandler extends BaseThingHandler implements DeviceStatusLis
 
     private void checkSensorChannel(String activePowerPrio, String outputCurrentPrio, String electricMeterPrio) {
         List<Channel> channelList = new LinkedList<Channel>(this.getThing().getChannels());
+
+        logger.debug("!!!!!!!!!!!!!!");
         boolean channelListChanged = false;
 
         if (!activePowerPrio.equals(REFRESH_PRIORITY_NEVER) && !isActivePowerChannelLoaded) {
+            logger.debug("!!!!!!!!!!!!!!");
             Channel channel = ChannelBuilder
                     .create(new ChannelUID(this.getThing().getUID(), CHANNEL_ACTIVE_POWER), "Number").build();
             channelList.add(channel);
-            logger.debug("!!!!!!!LOAD ACTIVE POWER SENSOR CHANNEL!!!!!!!");
             isActivePowerChannelLoaded = true;
             channelListChanged = true;
         }
@@ -492,7 +470,7 @@ public class DsDeviceHandler extends BaseThingHandler implements DeviceStatusLis
                 switch (channel.getUID().getId()) {
                     case CHANNEL_ACTIVE_POWER:
                         if (activePowerPrio.equals(REFRESH_PRIORITY_NEVER)) {
-                            logger.debug("!!!!!!!DELEATE ACTIVE POWER SENSOR CHANNEL!!!!!!!");
+                            logger.debug("!!!!!!!!!!!!!!");
                             channelInter.remove();
                             isActivePowerChannelLoaded = false;
                             channelListChanged = true;
@@ -513,22 +491,14 @@ public class DsDeviceHandler extends BaseThingHandler implements DeviceStatusLis
                         }
                         break;
                 }
-
-                /*
-                 * if (channel.getUID().getId().equals(CHANNEL_ACTIVE_POWER)
-                 * || channel.getUID().getId().equals(CHANNEL_OUTPUT_CURRENT)
-                 * || channel.getUID().getId().equals(CHANNEL_ELECTRIC_METER)) {
-                 * channelInter.remove();
-                 * }
-                 */
             }
         }
 
         if (channelListChanged) {
+            logger.debug("!!!!!!!!!!!!!!");
             ThingBuilder thingBuilder = editThing();
             thingBuilder.withChannels(channelList);
             updateThing(thingBuilder.build());
-            logger.debug("!!!!!!!UPDATE THING!!!!!!!");
         }
     }
 
@@ -544,10 +514,6 @@ public class DsDeviceHandler extends BaseThingHandler implements DeviceStatusLis
         }
 
         if (device.getFunctionalColorGroup().equals(FunctionalColorGroupEnum.BLACK)) {
-            // TODO: plugin-Adapter channel? or only a switch channel for all devices with switched output-mode?
-            // We don't know black(joker) devices controls e.g. they can be a plug-in-adapter;
-            // Another option can be loading a light_switch channel for the functional_color_group yellow
-            // and a general switch channel for the black color group
             if (device.isDimmable() && (currentChannel == null || currentChannel != CHANNEL_GENERAL_DIMM)) {
                 loadOutputChannel(CHANNEL_GENERAL_DIMM, "Dimmer");
             } else
@@ -636,7 +602,6 @@ public class DsDeviceHandler extends BaseThingHandler implements DeviceStatusLis
         }
     }
 
-    // TODO: item link methode!
     @Override
     public void channelLinked(ChannelUID channelUID) {
         if (device != null) {
@@ -696,7 +661,7 @@ public class DsDeviceHandler extends BaseThingHandler implements DeviceStatusLis
                     break;
                 case CHANNEL_GENERAL_COMBINED_2_STAGE_SWITCH:
                     updateState(new ChannelUID(getThing().getUID(), CHANNEL_GENERAL_COMBINED_2_STAGE_SWITCH),
-                            new DecimalType(device.getMaxOutputValue()));
+                            new DecimalType(device.getOutputValue()));
                     break;
                 case CHANNEL_GENERAL_COMBINED_3_STAGE_SWITCH:
                     updateState(new ChannelUID(getThing().getUID(), CHANNEL_GENERAL_COMBINED_3_STAGE_SWITCH),
@@ -704,11 +669,11 @@ public class DsDeviceHandler extends BaseThingHandler implements DeviceStatusLis
                     break;
                 case CHANNEL_COMBINED_2_STAGE_SWITCH:
                     updateState(new ChannelUID(getThing().getUID(), CHANNEL_COMBINED_2_STAGE_SWITCH),
-                            new DecimalType(device.getMaxOutputValue()));
+                            new DecimalType(device.getOutputValue()));
                     break;
                 case CHANNEL_COMBINED_3_STAGE_SWITCH:
                     updateState(new ChannelUID(getThing().getUID(), CHANNEL_COMBINED_3_STAGE_SWITCH),
-                            new DecimalType(device.getMaxOutputValue()));
+                            new DecimalType(device.getOutputValue()));
                     break;
                 default:
                     return;
@@ -718,73 +683,29 @@ public class DsDeviceHandler extends BaseThingHandler implements DeviceStatusLis
 
     private void onDeviceStateInitial(Device device) {
         if (device != null) {
-            // TODO: add rollershutter and check loaded channels e.g. brightness/switch sensor channels (may we need an
-            // array or something else to find out if sensor channels are loaded)
-            logger.debug("initial channel update");
-            if (!device.isRollershutter()) {
-                if (device.getFunctionalColorGroup().equals(FunctionalColorGroupEnum.YELLOW)) {
-                    if (device.isDimmable()) {
-                        if (device.isOn()) {
-                            updateState(new ChannelUID(getThing().getUID(), CHANNEL_BRIGHTNESS), new PercentType(
-                                    fromValueToPercent(device.getOutputValue(), device.getMaxOutputValue())));
-                            logger.debug("initial channel update brightness = "
-                                    + fromValueToPercent(device.getOutputValue(), device.getMaxOutputValue()));
-                            // updateState(new ChannelUID(getThing().getUID(), CHANNEL_BRIGHTNESS), OnOffType.ON);
-                        } else {
-                            // updateState(new ChannelUID(getThing().getUID(), CHANNEL_BRIGHTNESS), OnOffType.OFF);
-                            updateState(new ChannelUID(getThing().getUID(), CHANNEL_BRIGHTNESS), new PercentType(0));
-                        }
-                    } else {
-                        if (device.isOn()) {
-                            updateState(new ChannelUID(getThing().getUID(), CHANNEL_LIGHT_SWITCH), OnOffType.ON);
-                        } else {
-                            updateState(new ChannelUID(getThing().getUID(), CHANNEL_LIGHT_SWITCH), OnOffType.OFF);
-                        }
-                    }
-                } else {
-                    if (device.isDimmable()) {
-                        if (device.isOn()) {
-                            updateState(new ChannelUID(getThing().getUID(), CHANNEL_GENERAL_DIMM), new PercentType(
-                                    fromValueToPercent(device.getOutputValue(), device.getMaxOutputValue())));
-
-                            // updateState(new ChannelUID(getThing().getUID(), CHANNEL_GENERAL_DIMM), OnOffType.ON);
-                        } else {
-                            // updateState(new ChannelUID(getThing().getUID(), CHANNEL_GENERAL_DIMM), OnOffType.OFF);
-                            updateState(new ChannelUID(getThing().getUID(), CHANNEL_GENERAL_DIMM), new PercentType(0));
-                        }
-                    } else {
-                        if (device.isOn()) {
-                            updateState(new ChannelUID(getThing().getUID(), CHANNEL_GENERAL_SWITCH), OnOffType.ON);
-                        } else {
-                            updateState(new ChannelUID(getThing().getUID(), CHANNEL_GENERAL_SWITCH), OnOffType.OFF);
-                        }
-                    }
-
+            if (currentChannel != null) {
+                if (isLinked(currentChannel)) {
+                    channelLinked(new ChannelUID(getThing().getUID(), currentChannel));
                 }
-
-                if (isElectricMeterChannelLoaded) {
-                    updateState(new ChannelUID(getThing().getUID(), CHANNEL_ELECTRIC_METER),
-                            new DecimalType(device.getElectricMeter()));
+            }
+            if (!device.isRollershutter()) {
+                if (isActivePowerChannelLoaded) {
+                    if (getThing().getChannel(CHANNEL_ACTIVE_POWER) != null && isLinked(CHANNEL_ACTIVE_POWER)) {
+                        channelLinked(new ChannelUID(getThing().getUID(), CHANNEL_ACTIVE_POWER));
+                    }
                 }
                 if (isOutputCurrentChannelLoaded) {
-                    updateState(new ChannelUID(getThing().getUID(), CHANNEL_OUTPUT_CURRENT),
-                            new DecimalType(device.getOutputCurrent()));
+                    if (getThing().getChannel(CHANNEL_OUTPUT_CURRENT) != null && isLinked(CHANNEL_OUTPUT_CURRENT)) {
+                        channelLinked(new ChannelUID(getThing().getUID(), CHANNEL_OUTPUT_CURRENT));
+                    }
                 }
-                if (isActivePowerChannelLoaded) {
-                    updateState(new ChannelUID(getThing().getUID(), CHANNEL_ACTIVE_POWER),
-                            new DecimalType(device.getActivePower()));
-                }
-            } else {
-                if (device.getFunctionalColorGroup().equals(FunctionalColorGroupEnum.GREY)) {
-                    updateState(new ChannelUID(getThing().getUID(), CHANNEL_SHADE),
-                            new PercentType(fromValueToPercent(device.getSlatPosition(), device.getMaxSlatPosition())));
-                } else {
-                    updateState(new ChannelUID(getThing().getUID(), CHANNEL_GENERAL_SHADE),
-                            new PercentType(fromValueToPercent(device.getSlatPosition(), device.getMaxSlatPosition())));
+                if (isElectricMeterChannelLoaded) {
+                    if (getThing().getChannel(CHANNEL_ELECTRIC_METER) != null && isLinked(CHANNEL_ELECTRIC_METER)) {
+                        channelLinked(new ChannelUID(getThing().getUID(), CHANNEL_ELECTRIC_METER));
+                    }
                 }
             }
         }
-
     }
 
     @Override
