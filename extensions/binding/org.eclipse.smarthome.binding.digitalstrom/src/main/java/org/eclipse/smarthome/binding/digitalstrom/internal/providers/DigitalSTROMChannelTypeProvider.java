@@ -72,9 +72,12 @@ public class DigitalSTROMChannelTypeProvider implements ChannelTypeProvider {
     private final String CHANNEL_ELECTRIC_METER_DESCRIPTION_EN = "The electric meter channel indicates the current electric meter value in "
             + getUnitString(SensorEnum.ELECTRIC_METER) + " of the device.";
 
-    private final String CHANNEL_POWER_CONSUMPTION_LABEL_EN = "total power consumption";
-    private final String CHANNEL_POWER_CONSUMPTION_DESCRIPTION_EN = "The total power consumption channel indicates the current consuption power in "
+    private final String CHANNEL_TOTAL_ACTIVE_POWER_LABEL_EN = "total power consumption";
+    private final String CHANNEL_TOTAL_ACTIVE_POWER_DESCRIPTION_EN = "The total power consumption channel indicates the current consuption power in "
             + getUnitString(SensorEnum.ACTIVE_POWER) + " of all connected circuits to the digitalSTROM-System.";
+
+    private final String CHANNEL_TOTAL_ELECTRIC_METER_LABEL_EN = "total electric meter";
+    private final String CHANNEL_TOTAL_ELECTRIC_METER_DESCRIPTION_EN = "The total electric meter channel indicates the current electric meter value in Wh of all connected circuits to the digitalSTROM-System.";
 
     private final String CHANNEL_SCENE_LABEL_EN = "Scene";
     private final String CHANNEL_SCENE_DESCRIPTION_EN = "The scene channel allows to call or undo a scene from digitalSTROM.";
@@ -171,10 +174,15 @@ public class DigitalSTROMChannelTypeProvider implements ChannelTypeProvider {
             null);
 
     private final ChannelType CHANNEL_TYPE_POWER_CONSUMPTION_EN = new ChannelType(
-            new ChannelTypeUID(getUID(DigitalSTROMBindingConstants.CHANNEL_POWER_CONSUMPTION)), false, NUMBER,
-            CHANNEL_POWER_CONSUMPTION_LABEL_EN, CHANNEL_POWER_CONSUMPTION_DESCRIPTION_EN, "Energy",
-            Sets.newHashSet(POWER_CONSUMPTION, DS),
-            getSensorStateDescription(SensorEnum.ACTIVE_POWER.getUnitShortcut()), null);
+            new ChannelTypeUID(getUID(DigitalSTROMBindingConstants.CHANNEL_TOTAL_ACTIVE_POWER)), false, NUMBER,
+            CHANNEL_TOTAL_ACTIVE_POWER_LABEL_EN, CHANNEL_TOTAL_ACTIVE_POWER_DESCRIPTION_EN, "Energy",
+            Sets.newHashSet(ACTIVE_POWER, DS), getSensorStateDescription(SensorEnum.ACTIVE_POWER.getUnitShortcut()),
+            null);
+
+    private final ChannelType CHANNEL_TYPE_CHANNEL_TOTAL_ELECTRIC_METER_EN = new ChannelType( // changed
+            new ChannelTypeUID(getUID(DigitalSTROMBindingConstants.CHANNEL_TOTAL_ELECTRIC_METER)), false, NUMBER,
+            CHANNEL_TOTAL_ELECTRIC_METER_LABEL_EN, CHANNEL_TOTAL_ELECTRIC_METER_DESCRIPTION_EN, "Energy",
+            Sets.newHashSet(ELECTRIC_METER, DS), getSensorStateDescription("Wh"), null);
 
     private final ChannelType CHANNEL_TYPE_SCENE_VALUE_EN = new ChannelType(
             new ChannelTypeUID(getUID(DigitalSTROMBindingConstants.CHANNEL_SCENE)), false, SWITCH,
@@ -221,10 +229,13 @@ public class DigitalSTROMChannelTypeProvider implements ChannelTypeProvider {
     private final String CHANNEL_SCENE_LABEL_DE = "Szene/Stimmung";
     private final String CHANNEL_SCENE_DESCRIPTION_DE = "Ruft eine Szene/Stimmung auf bzw. macht sie rückgänig.";
 
-    private final String CHANNEL_POWER_CONSUMPTION_LABEL_DE = "gesamt Stromverbrauch";
-    private final String CHANNEL_POWER_CONSUMPTION_DESCRIPTION_DE = "Der gesamt Stromverbrauch Channel zeigt den aktuellen Stromverbrauch in "
+    private final String CHANNEL_TOTAL_ACTIVE_POWER_LABEL_DE = "gesamt Stromverbrauch";
+    private final String CHANNEL_TOTAL_ACTIVE_POWER_DESCRIPTION_DE = "Der gesamt Stromverbrauch Channel zeigt den aktuellen Stromverbrauch in "
             + getUnitString(SensorEnum.ACTIVE_POWER)
             + " von allen am digitalSTROM-System angschlossenen Stromkreisläufen an.";
+
+    private final String CHANNEL_TOTAL_ELECTRIC_METER_LABEL_DE = "gesamt Stromzähler";
+    private final String CHANNEL_TOTAL_ELECTRIC_METER_DESCRIPTION_DE = "Der gesamt StromZähler Channel zeigt den aktuellen StromzählerStand in Wh von allen am digitalSTROM-System angschlossenen Stromkreisläufen an.";
 
     // Tags
     private final String GELB = "gelb";
@@ -314,10 +325,15 @@ public class DigitalSTROMChannelTypeProvider implements ChannelTypeProvider {
             CHANNEL_GENERAL_COMBINED_3_STAGE_SWITCH_DESCRIPTION_DE, null, Sets.newHashSet(SCHWARZ, DS, UMR),
             getCombinedStageDescription((short) 3, false, DE), null);
 
-    private final ChannelType CHANNEL_TYPE_POWER_CONSUMPTION_DE = new ChannelType(
-            new ChannelTypeUID(getUID(DigitalSTROMBindingConstants.CHANNEL_POWER_CONSUMPTION)), false, NUMBER,
-            CHANNEL_POWER_CONSUMPTION_LABEL_DE, CHANNEL_POWER_CONSUMPTION_DESCRIPTION_DE, "Energy",
-            Sets.newHashSet(STROMVER, DS), getSensorStateDescription(SensorEnum.ACTIVE_POWER.getUnitShortcut()), null);
+    private final ChannelType CHANNEL_TYPE_TOTAL_ACTIVE_POWER_DE = new ChannelType( // changed
+            new ChannelTypeUID(getUID(DigitalSTROMBindingConstants.CHANNEL_TOTAL_ACTIVE_POWER)), false, NUMBER,
+            CHANNEL_TOTAL_ACTIVE_POWER_LABEL_DE, CHANNEL_TOTAL_ACTIVE_POWER_DESCRIPTION_DE, "Energy",
+            Sets.newHashSet(WIRKL, DS), getSensorStateDescription(SensorEnum.ACTIVE_POWER.getUnitShortcut()), null);
+
+    private final ChannelType CHANNEL_TYPE_CHANNEL_TOTAL_ELECTRIC_METER_DE = new ChannelType( // changed
+            new ChannelTypeUID(getUID(DigitalSTROMBindingConstants.CHANNEL_TOTAL_ELECTRIC_METER)), false, NUMBER,
+            CHANNEL_TOTAL_ELECTRIC_METER_LABEL_DE, CHANNEL_TOTAL_ELECTRIC_METER_DESCRIPTION_DE, "Energy",
+            Sets.newHashSet(STROMVER, DS), getSensorStateDescription("Wh"), null);
 
     private final ChannelType CHANNEL_TYPE_SCENE_VALUE_DE = new ChannelType(
             new ChannelTypeUID(getUID(DigitalSTROMBindingConstants.CHANNEL_SCENE)), false, SWITCH,
@@ -326,21 +342,21 @@ public class DigitalSTROMChannelTypeProvider implements ChannelTypeProvider {
 
     /* Maps */
     /* English */
-    private HashMap<ChannelTypeUID, ChannelType> channel_types_en = listToHashMap(
-            Lists.newArrayList(CHANNEL_TYPE_BRIGHTNESS_EN, CHANNEL_TYPE_LIGHT_SWITCH_EN, CHANNEL_TYPE_ACTIVE_POWER_EN,
-                    CHANNEL_TYPE_ELECTRIC_METER_VALUE_EN, CHANNEL_TYPE_OUTPUT_CURRENT_VALUE_EN, CHANNEL_TYPE_SHADE_EN,
-                    CHANNEL_TYPE_GENERAL_DIMM_EN, CHANNEL_TYPE_GENERAL_SWITCH_EN,
-                    CHANNEL_TYPE_COMBINED_2_STAGE_SWITCH_EN, CHANNEL_TYPE_COMBINED_3_STAGE_SWITCH_EN,
-                    CHANNEL_TYPE_GENERAL_COMBINED_2_STAGE_SWITCH_EN, CHANNEL_TYPE_GENERAL_COMBINED_3_STAGE_SWITCH_EN,
-                    CHANNEL_TYPE_LIGHT_SWITCH_EN, CHANNEL_TYPE_SCENE_VALUE_EN, CHANNEL_TYPE_POWER_CONSUMPTION_EN));
+    private HashMap<ChannelTypeUID, ChannelType> channel_types_en = listToHashMap(Lists.newArrayList(
+            CHANNEL_TYPE_BRIGHTNESS_EN, CHANNEL_TYPE_LIGHT_SWITCH_EN, CHANNEL_TYPE_ACTIVE_POWER_EN,
+            CHANNEL_TYPE_ELECTRIC_METER_VALUE_EN, CHANNEL_TYPE_OUTPUT_CURRENT_VALUE_EN, CHANNEL_TYPE_SHADE_EN,
+            CHANNEL_TYPE_GENERAL_DIMM_EN, CHANNEL_TYPE_GENERAL_SWITCH_EN, CHANNEL_TYPE_COMBINED_2_STAGE_SWITCH_EN,
+            CHANNEL_TYPE_COMBINED_3_STAGE_SWITCH_EN, CHANNEL_TYPE_GENERAL_COMBINED_2_STAGE_SWITCH_EN,
+            CHANNEL_TYPE_GENERAL_COMBINED_3_STAGE_SWITCH_EN, CHANNEL_TYPE_LIGHT_SWITCH_EN, CHANNEL_TYPE_SCENE_VALUE_EN,
+            CHANNEL_TYPE_POWER_CONSUMPTION_EN, CHANNEL_TYPE_CHANNEL_TOTAL_ELECTRIC_METER_EN));
     /* German */
-    private HashMap<ChannelTypeUID, ChannelType> channel_types_de = listToHashMap(
-            Lists.newArrayList(CHANNEL_TYPE_BRIGHTNESS_DE, CHANNEL_TYPE_LIGHT_SWITCH_DE, CHANNEL_TYPE_ACTIVE_POWER_DE,
-                    CHANNEL_TYPE_ELECTRIC_METER_VALUE_DE, CHANNEL_TYPE_OUTPUT_CURRENT_VALUE_DE, CHANNEL_TYPE_SHADE_DE,
-                    CHANNEL_TYPE_GENERAL_DIMM_DE, CHANNEL_TYPE_GENERAL_SWITCH_DE,
-                    CHANNEL_TYPE_COMBINED_2_STAGE_SWITCH_DE, CHANNEL_TYPE_COMBINED_3_STAGE_SWITCH_DE,
-                    CHANNEL_TYPE_GENERAL_COMBINED_2_STAGE_SWITCH_DE, CHANNEL_TYPE_GENERAL_COMBINED_3_STAGE_SWITCH_DE,
-                    CHANNEL_TYPE_LIGHT_SWITCH_DE, CHANNEL_TYPE_SCENE_VALUE_DE, CHANNEL_TYPE_POWER_CONSUMPTION_DE));
+    private HashMap<ChannelTypeUID, ChannelType> channel_types_de = listToHashMap(Lists.newArrayList(
+            CHANNEL_TYPE_BRIGHTNESS_DE, CHANNEL_TYPE_LIGHT_SWITCH_DE, CHANNEL_TYPE_ACTIVE_POWER_DE,
+            CHANNEL_TYPE_ELECTRIC_METER_VALUE_DE, CHANNEL_TYPE_OUTPUT_CURRENT_VALUE_DE, CHANNEL_TYPE_SHADE_DE,
+            CHANNEL_TYPE_GENERAL_DIMM_DE, CHANNEL_TYPE_GENERAL_SWITCH_DE, CHANNEL_TYPE_COMBINED_2_STAGE_SWITCH_DE,
+            CHANNEL_TYPE_COMBINED_3_STAGE_SWITCH_DE, CHANNEL_TYPE_GENERAL_COMBINED_2_STAGE_SWITCH_DE,
+            CHANNEL_TYPE_GENERAL_COMBINED_3_STAGE_SWITCH_DE, CHANNEL_TYPE_LIGHT_SWITCH_DE, CHANNEL_TYPE_SCENE_VALUE_DE,
+            CHANNEL_TYPE_TOTAL_ACTIVE_POWER_DE, CHANNEL_TYPE_CHANNEL_TOTAL_ELECTRIC_METER_DE));
 
     private HashMap<ChannelTypeUID, ChannelType> listToHashMap(List<ChannelType> channelTypeList) {
         if (channelTypeList != null) {

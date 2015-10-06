@@ -9,7 +9,8 @@
         <label>@text/DSS_BRIDGE_LABEL</label>
         <description>@text/DSS_BRIDGE_DESC</description>
         <channels>
-        	<channel typeId="powerConsumption" id="powerConsumption" />
+        	<channel typeId="totalActivePower" id="totalActivePower" /><channel
+        		typeId="totalElectricMeter" id="totalElectricMeter" />
         </channels>
         <config-description-ref uri="binding:digitalstrom:dssBridge" />
 

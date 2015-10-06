@@ -8,9 +8,9 @@
 package org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.digitalSTROMListener;
 
 /**
- * 
  *
- * 
+ *
+ *
  * @author Michael Ochel - Initial contribution
  * @author Mathias Siegele - Initial contribution
  *
@@ -19,9 +19,16 @@ public interface TotalPowerConsumptionListener {
 
     /**
      * This method is called when ever the total power consumption of the digitalSTROM-System has changed.
-     * 
+     *
      * @param newPowerConsumption
      */
     public void onTotalPowerConsumptionChanged(int newPowerConsumption);
+
+    /**
+     * This method is called when ever the total energy meter value of the digitalSTROM-System has changed.
+     *
+     * @param newPowerConsumption
+     */
+    public void onEnergyMeterValueChanged(int newEnergyMeterValue);
 
 }

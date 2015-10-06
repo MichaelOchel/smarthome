@@ -59,7 +59,8 @@ public class DigitalSTROMBindingConstants {
     public static final String CHANNEL_ELECTRIC_METER = "electricMeter";
     public static final String CHANNEL_OUTPUT_CURRENT = "outputCurrent";
     public static final String CHANNEL_ACTIVE_POWER = "activePower";
-    public static final String CHANNEL_POWER_CONSUMPTION = "powerConsumption";
+    public static final String CHANNEL_TOTAL_ACTIVE_POWER = "totalActivePower"; // changed
+    public static final String CHANNEL_TOTAL_ELECTRIC_METER = "totalElectricMeter";
 
     // options combined switches
     public static final String OPTION_COMBINED_BOTH_OFF = "0";

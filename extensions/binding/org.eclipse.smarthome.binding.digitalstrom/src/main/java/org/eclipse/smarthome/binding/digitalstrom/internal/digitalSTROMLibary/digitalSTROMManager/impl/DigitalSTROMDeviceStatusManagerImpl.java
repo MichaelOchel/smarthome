@@ -70,6 +70,8 @@ public class DigitalSTROMDeviceStatusManagerImpl implements DigitalSTROMDeviceSt
     private TotalPowerConsumptionListener totalPowerConsumptionListener = null;
     private int tempConsumtion = 0;
     private int totalPowerConsumption = 0;
+    private int tempEnergyMeter = 0;
+    private int totalEnergyMeter = 0;
 
     public DigitalSTROMDeviceStatusManagerImpl(String host, String user, String password, String appToken) {
         this.connMan = new DigitalSTROMConnectionManagerImpl(host, user, password, false);
@@ -114,12 +116,14 @@ public class DigitalSTROMDeviceStatusManagerImpl implements DigitalSTROMDeviceSt
                     // update the current total power consumption
 
                     if (totalPowerConsumptionListener != null) {
-                        List<CachedMeteringValue> cachedMeteringValues = digitalSTROMClient.getLatest(
-                                connMan.getSessionToken(), MeteringTypeEnum.consumption,
-                                digitalSTROMClient.getMeterList(connMan.getSessionToken()), MeteringUnitsEnum.W);
-                        if (cachedMeteringValues != null) {
+                        List<String> meters = digitalSTROMClient.getMeterList(connMan.getSessionToken());
+                        List<CachedMeteringValue> cachedConsumptionMeteringValues = digitalSTROMClient.getLatest(
+                                connMan.getSessionToken(), MeteringTypeEnum.consumption, meters, MeteringUnitsEnum.W);
+                        List<CachedMeteringValue> cachedEnergyMeteringValues = digitalSTROMClient.getLatest(
+                                connMan.getSessionToken(), MeteringTypeEnum.energy, meters, MeteringUnitsEnum.Wh);
+                        if (cachedConsumptionMeteringValues != null) {
                             tempConsumtion = 0;
-                            for (CachedMeteringValue value : cachedMeteringValues) {
+                            for (CachedMeteringValue value : cachedConsumptionMeteringValues) {
 
                                 tempConsumtion += value.getValue();
 
@@ -127,6 +131,19 @@ public class DigitalSTROMDeviceStatusManagerImpl implements DigitalSTROMDeviceSt
                             if (tempConsumtion != totalPowerConsumption) {
                                 totalPowerConsumption = tempConsumtion;
                                 totalPowerConsumptionListener.onTotalPowerConsumptionChanged(totalPowerConsumption);
+                            }
+                        }
+
+                        if (cachedEnergyMeteringValues != null) {
+                            tempEnergyMeter = 0;
+                            for (CachedMeteringValue value : cachedEnergyMeteringValues) {
+
+                                tempEnergyMeter += value.getValue();
+
+                            }
+                            if (tempEnergyMeter != totalEnergyMeter) {
+                                totalEnergyMeter = tempEnergyMeter;
+                                totalPowerConsumptionListener.onEnergyMeterValueChanged(totalEnergyMeter);
                             }
                         }
                     }

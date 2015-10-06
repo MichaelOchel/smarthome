@@ -326,9 +326,14 @@ public class DssBridgeHandler extends BaseBridgeHandler
 
     @Override
     public void onTotalPowerConsumptionChanged(int newPowerConsumption) {
-        updateState(new ChannelUID(getThing().getUID(), CHANNEL_POWER_CONSUMPTION),
+        updateState(new ChannelUID(getThing().getUID(), CHANNEL_TOTAL_ACTIVE_POWER),
                 new DecimalType(newPowerConsumption));
+    }
 
+    @Override
+    public void onEnergyMeterValueChanged(int newEnergyMeterValue) {
+        updateState(new ChannelUID(getThing().getUID(), CHANNEL_TOTAL_ELECTRIC_METER),
+                new DecimalType(newEnergyMeterValue));
     }
 
     @Override
