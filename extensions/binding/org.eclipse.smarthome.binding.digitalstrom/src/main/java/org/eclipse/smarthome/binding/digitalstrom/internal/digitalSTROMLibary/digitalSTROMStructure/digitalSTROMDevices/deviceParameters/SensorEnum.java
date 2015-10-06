@@ -46,10 +46,9 @@ public enum SensorEnum {
      * | 64 | Output current (H) | Ampere (mA) | 0 | 16380 | 4 |
      * | 65 | Power consumption | Volt-Ampere (VA) | 0 | 4095 | 1 |
      */
-    ACTIVE_POWER(2, "watts", "W"), // it's only working with the old index 2 and not with the index 4 from
-                                   // ds-basic-documentation from 19.08.2015
-    OUTPUT_CURRENT(3, "ampere", "mA"), // see above old 3 new 5
-    ELECTRIC_METER(4, "kilowatt hours)", "kWh"), // see above old 4 new 6
+    ACTIVE_POWER(4, "watts", "W"),
+    OUTPUT_CURRENT(5, "ampere", "mA"),
+    ELECTRIC_METER(6, "kilowatt hours)", "kWh"),
     TEMPERATURE_INDOORS(9, "kelvin", "K"),
     TEMPERATURE_OUTDOORS(10, "kelvin", "K"),
     BRIGHTNESS_INDOORS(11, "lux", "Lx"),

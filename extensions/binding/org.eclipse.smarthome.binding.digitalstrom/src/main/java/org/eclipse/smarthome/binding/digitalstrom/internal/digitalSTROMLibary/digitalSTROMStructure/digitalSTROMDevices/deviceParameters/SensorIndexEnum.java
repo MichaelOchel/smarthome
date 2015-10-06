@@ -22,18 +22,24 @@ package org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.d
  */
 public enum SensorIndexEnum {
 
-    ACTIVE_POWER(2),
-    OUTPUT_CURRENT(3),
-    ELECTRIC_METER(4);
+    ACTIVE_POWER(2, 4),
+    OUTPUT_CURRENT(3, 5),
+    ELECTRIC_METER(4, 6);
 
     private final int index;
+    private final int type;
 
-    private SensorIndexEnum(int index) {
+    private SensorIndexEnum(int index, int type) {
         this.index = index;
+        this.type = type;
     }
 
     public int getIndex() {
         return index;
+    }
+
+    public int getType() {
+        return type;
     }
 
 }

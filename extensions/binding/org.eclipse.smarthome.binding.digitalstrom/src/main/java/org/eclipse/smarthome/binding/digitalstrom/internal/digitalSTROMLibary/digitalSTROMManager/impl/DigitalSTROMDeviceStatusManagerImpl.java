@@ -114,17 +114,20 @@ public class DigitalSTROMDeviceStatusManagerImpl implements DigitalSTROMDeviceSt
                     // update the current total power consumption
 
                     if (totalPowerConsumptionListener != null) {
-                        tempConsumtion = 0;
-                        for (CachedMeteringValue value : digitalSTROMClient.getLatest(connMan.getSessionToken(),
-                                MeteringTypeEnum.consumption,
-                                digitalSTROMClient.getMeterList(connMan.getSessionToken()), MeteringUnitsEnum.W)) {
-                            if (value != null) {
+                        List<CachedMeteringValue> cachedMeteringValues = digitalSTROMClient.getLatest(
+                                connMan.getSessionToken(), MeteringTypeEnum.consumption,
+                                digitalSTROMClient.getMeterList(connMan.getSessionToken()), MeteringUnitsEnum.W);
+                        if (cachedMeteringValues != null) {
+                            tempConsumtion = 0;
+                            for (CachedMeteringValue value : cachedMeteringValues) {
+
                                 tempConsumtion += value.getValue();
+
                             }
-                        }
-                        if (tempConsumtion != totalPowerConsumption) {
-                            totalPowerConsumption = tempConsumtion;
-                            totalPowerConsumptionListener.onTotalPowerConsumptionChanged(totalPowerConsumption);
+                            if (tempConsumtion != totalPowerConsumption) {
+                                totalPowerConsumption = tempConsumtion;
+                                totalPowerConsumptionListener.onTotalPowerConsumptionChanged(totalPowerConsumption);
+                            }
                         }
                     }
 
@@ -174,13 +177,14 @@ public class DigitalSTROMDeviceStatusManagerImpl implements DigitalSTROMDeviceSt
                                         logger.debug("Device need SensorData update");
 
                                         if (!eshDevice.isActivePowerUpToDate()) {
-
+                                            logger.debug("Device need active power SensorData update");
                                             updateSensorData(
                                                     new DeviceConsumptionSensorJob(eshDevice, SensorEnum.ACTIVE_POWER),
                                                     eshDevice.getActivePowerRefreshPriority());
                                         }
 
                                         if (!eshDevice.isOutputCurrentUpToDate()) {
+                                            logger.debug("Device need ouput current SensorData update");
                                             updateSensorData(
                                                     new DeviceConsumptionSensorJob(eshDevice,
                                                             SensorEnum.OUTPUT_CURRENT),
@@ -188,10 +192,11 @@ public class DigitalSTROMDeviceStatusManagerImpl implements DigitalSTROMDeviceSt
                                         }
 
                                         if (!eshDevice.isElectricMeterUpToDate()) {
+                                            logger.debug("Device need electric meter SensorData update");
                                             updateSensorData(
                                                     new DeviceConsumptionSensorJob(eshDevice,
                                                             SensorEnum.ELECTRIC_METER),
-                                                    eshDevice.getOutputCurrentRefreshPriority());
+                                                    eshDevice.getElectricMeterRefreshPriority());
                                         }
                                     }
                                 } else {

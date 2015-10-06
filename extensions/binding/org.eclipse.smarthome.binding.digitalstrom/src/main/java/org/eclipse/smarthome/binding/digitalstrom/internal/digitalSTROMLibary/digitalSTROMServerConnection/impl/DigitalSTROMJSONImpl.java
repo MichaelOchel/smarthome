@@ -37,6 +37,7 @@ import org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.di
 import org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.digitalSTROMStructure.digitalSTROMDevices.deviceParameters.MeteringTypeEnum;
 import org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.digitalSTROMStructure.digitalSTROMDevices.deviceParameters.MeteringUnitsEnum;
 import org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.digitalSTROMStructure.digitalSTROMDevices.deviceParameters.SensorEnum;
+import org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.digitalSTROMStructure.digitalSTROMDevices.deviceParameters.SensorIndexEnum;
 import org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.digitalSTROMStructure.digitalSTROMDevices.impl.JSONDeviceImpl;
 import org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.digitalSTROMStructure.digitalSTROMScene.constants.Scene;
 import org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.digitalSTROMStructure.digitalSTROMScene.constants.SceneEnum;
@@ -833,7 +834,76 @@ public class DigitalSTROMJSONImpl implements DigitalSTROMAPI {
     }
 
     @Override
-    public short getDeviceSensorValue(String token, DSID dsid, String name, SensorEnum sensorIndex) {
+    public short getDeviceSensorValue(String token, DSID dsid, String name, SensorEnum sensorType) {
+        if (((dsid != null && dsid.getValue() != null) || name != null) && sensorType != null) {
+            switch (sensorType) {
+                case ACTIVE_POWER:
+                    return getDeviceSensorValue(token, dsid, name, SensorIndexEnum.ACTIVE_POWER);
+                case ELECTRIC_METER:
+                    return getDeviceSensorValue(token, dsid, name, SensorIndexEnum.ELECTRIC_METER);
+                case OUTPUT_CURRENT:
+                    return getDeviceSensorValue(token, dsid, name, SensorIndexEnum.OUTPUT_CURRENT);
+                default:
+                    return -1;
+            }
+        }
+        return -1;
+        /*
+         * String response = null;
+         *
+         * if (dsid != null && dsid.getValue() != null) {
+         * if (name != null) {
+         * response = transport.execute(
+         * JSONRequestConstants.JSON_DEVICE_GET_SENSOR_VALUE + JSONRequestConstants.PARAMETER_TOKEN
+         * + token + JSONRequestConstants.INFIX_PARAMETER_DSID + dsid.getValue()
+         * + JSONRequestConstants.INFIX_PARAMETER_NAME + name
+         * + JSONRequestConstants.INFIX_PARAMETER_SENSOR_INDEX + sensorType.getSensorType(),
+         * DigitalSTROMConfig.CONNECTION_SENSORDATA_TIMEOUT,
+         * DigitalSTROMConfig.READ_SENSORDATA_TIMEOUT);
+         * } else {
+         * response = transport.execute(
+         * JSONRequestConstants.JSON_DEVICE_GET_SENSOR_VALUE + JSONRequestConstants.PARAMETER_TOKEN
+         * + token + JSONRequestConstants.INFIX_PARAMETER_DSID + dsid.getValue()
+         * + JSONRequestConstants.INFIX_PARAMETER_SENSOR_INDEX + sensorType.getSensorType(),
+         * DigitalSTROMConfig.CONNECTION_SENSORDATA_TIMEOUT,
+         * DigitalSTROMConfig.READ_SENSORDATA_TIMEOUT);
+         * }
+         * } else if (name != null) {
+         * response = transport.execute(
+         * JSONRequestConstants.JSON_DEVICE_GET_SENSOR_VALUE + JSONRequestConstants.PARAMETER_TOKEN + token
+         * + JSONRequestConstants.INFIX_PARAMETER_NAME + name
+         * + JSONRequestConstants.INFIX_PARAMETER_SENSOR_INDEX + sensorType.getSensorType(),
+         * DigitalSTROMConfig.CONNECTION_SENSORDATA_TIMEOUT, DigitalSTROMConfig.READ_SENSORDATA_TIMEOUT);
+         * }
+         *
+         * JSONObject responseObj = JSONResponseHandler.toJSONObject(response);
+         *
+         * if (JSONResponseHandler.checkResponse(responseObj)) {
+         * JSONObject valueObject = JSONResponseHandler.getResultJSONObject(responseObj);
+         *
+         * if (valueObject != null && valueObject
+         * .get(JSONApiResponseKeysEnum.DEVICE_GET_SENSOR_VALUE_SENSOR_VALUE.getKey()) != null) {
+         * short value = -1;
+         * try {
+         * value = Short.parseShort(valueObject
+         * .get(JSONApiResponseKeysEnum.DEVICE_GET_SENSOR_VALUE_SENSOR_VALUE.getKey()).toString());
+         * } catch (java.lang.NumberFormatException e) {
+         * // logger.error
+         * System.err.println("NumberFormatException by getDeviceSensorValue: " + valueObject
+         * .get(JSONApiResponseKeysEnum.DEVICE_GET_SENSOR_VALUE_SENSOR_VALUE.getKey()).toString());
+         * }
+         *
+         * return value;
+         * }
+         * }
+         *
+         * }
+         * return -1;
+         */
+    }
+
+    @Override
+    public short getDeviceSensorValue(String token, DSID dsid, String name, SensorIndexEnum sensorIndex) {
         if (((dsid != null && dsid.getValue() != null) || name != null) && sensorIndex != null) {
             String response = null;
 
@@ -843,14 +913,14 @@ public class DigitalSTROMJSONImpl implements DigitalSTROMAPI {
                             JSONRequestConstants.JSON_DEVICE_GET_SENSOR_VALUE + JSONRequestConstants.PARAMETER_TOKEN
                                     + token + JSONRequestConstants.INFIX_PARAMETER_DSID + dsid.getValue()
                                     + JSONRequestConstants.INFIX_PARAMETER_NAME + name
-                                    + JSONRequestConstants.INFIX_PARAMETER_SENSOR_INDEX + sensorIndex.getSensorType(),
+                                    + JSONRequestConstants.INFIX_PARAMETER_SENSOR_INDEX + sensorIndex.getIndex(),
                             DigitalSTROMConfig.CONNECTION_SENSORDATA_TIMEOUT,
                             DigitalSTROMConfig.READ_SENSORDATA_TIMEOUT);
                 } else {
                     response = transport.execute(
                             JSONRequestConstants.JSON_DEVICE_GET_SENSOR_VALUE + JSONRequestConstants.PARAMETER_TOKEN
                                     + token + JSONRequestConstants.INFIX_PARAMETER_DSID + dsid.getValue()
-                                    + JSONRequestConstants.INFIX_PARAMETER_SENSOR_INDEX + sensorIndex.getSensorType(),
+                                    + JSONRequestConstants.INFIX_PARAMETER_SENSOR_INDEX + sensorIndex.getIndex(),
                             DigitalSTROMConfig.CONNECTION_SENSORDATA_TIMEOUT,
                             DigitalSTROMConfig.READ_SENSORDATA_TIMEOUT);
                 }
@@ -858,7 +928,7 @@ public class DigitalSTROMJSONImpl implements DigitalSTROMAPI {
                 response = transport.execute(
                         JSONRequestConstants.JSON_DEVICE_GET_SENSOR_VALUE + JSONRequestConstants.PARAMETER_TOKEN + token
                                 + JSONRequestConstants.INFIX_PARAMETER_NAME + name
-                                + JSONRequestConstants.INFIX_PARAMETER_SENSOR_INDEX + sensorIndex.getSensorType(),
+                                + JSONRequestConstants.INFIX_PARAMETER_SENSOR_INDEX + sensorIndex.getIndex(),
                         DigitalSTROMConfig.CONNECTION_SENSORDATA_TIMEOUT, DigitalSTROMConfig.READ_SENSORDATA_TIMEOUT);
             }
 

@@ -302,7 +302,7 @@ public class DsDeviceHandler extends BaseThingHandler implements DeviceStatusLis
                             break;
                         case DeviceStateUpdate.UPDATE_ELECTRIC_METER:
                             updateState(new ChannelUID(getThing().getUID(), CHANNEL_ELECTRIC_METER),
-                                    new DecimalType(deviceStateUpdate.getValue()));
+                                    new DecimalType(deviceStateUpdate.getValue() * 0.01));
                             break;
                         case DeviceStateUpdate.UPDATE_OUTPUT_CURRENT:
                             updateState(new ChannelUID(getThing().getUID(), CHANNEL_OUTPUT_CURRENT),
@@ -425,7 +425,7 @@ public class DsDeviceHandler extends BaseThingHandler implements DeviceStatusLis
             }
             logger.debug(activePowerPrio + ", " + outputCurrentPrio + ", " + electricMeterPrio);
 
-            device.setSensorDataRefreshPriority(activePowerPrio, outputCurrentPrio, electricMeterPrio);
+            device.setSensorDataRefreshPriority(activePowerPrio, electricMeterPrio, outputCurrentPrio);
 
             // check and load sensor channels of the thing
             checkSensorChannel(activePowerPrio, outputCurrentPrio, electricMeterPrio);
@@ -439,11 +439,9 @@ public class DsDeviceHandler extends BaseThingHandler implements DeviceStatusLis
     private void checkSensorChannel(String activePowerPrio, String outputCurrentPrio, String electricMeterPrio) {
         List<Channel> channelList = new LinkedList<Channel>(this.getThing().getChannels());
 
-        logger.debug("!!!!!!!!!!!!!!");
         boolean channelListChanged = false;
 
         if (!activePowerPrio.equals(REFRESH_PRIORITY_NEVER) && !isActivePowerChannelLoaded) {
-            logger.debug("!!!!!!!!!!!!!!");
             Channel channel = ChannelBuilder
                     .create(new ChannelUID(this.getThing().getUID(), CHANNEL_ACTIVE_POWER), "Number").build();
             channelList.add(channel);
@@ -498,7 +496,6 @@ public class DsDeviceHandler extends BaseThingHandler implements DeviceStatusLis
         }
 
         if (channelListChanged) {
-            logger.debug("!!!!!!!!!!!!!!");
             ThingBuilder thingBuilder = editThing();
             thingBuilder.withChannels(channelList);
             updateThing(thingBuilder.build());
@@ -652,7 +649,7 @@ public class DsDeviceHandler extends BaseThingHandler implements DeviceStatusLis
                     break;
                 case CHANNEL_ELECTRIC_METER:
                     updateState(new ChannelUID(getThing().getUID(), CHANNEL_ELECTRIC_METER),
-                            new DecimalType(device.getElectricMeter()));
+                            new DecimalType(device.getElectricMeter() * 0.01));
                     break;
                 case CHANNEL_OUTPUT_CURRENT:
                     updateState(new ChannelUID(getThing().getUID(), CHANNEL_OUTPUT_CURRENT),

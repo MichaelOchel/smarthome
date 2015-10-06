@@ -358,7 +358,9 @@ public class DigitalSTROMChannelTypeProvider implements ChannelTypeProvider {
     }
 
     private StateDescription getSensorStateDescription(String shortcutUnit) {
-        return new StateDescription(null, null, null, "%d " + shortcutUnit, true, null);
+        return shortcutUnit.equals(SensorEnum.ELECTRIC_METER.getUnitShortcut())
+                ? new StateDescription(null, null, null, "%.2f " + shortcutUnit, true, null)
+                : new StateDescription(null, null, null, "%d " + shortcutUnit, true, null);
     }
 
     private StateDescription getCombinedStageDescription(short stages, boolean isLight, String local) {

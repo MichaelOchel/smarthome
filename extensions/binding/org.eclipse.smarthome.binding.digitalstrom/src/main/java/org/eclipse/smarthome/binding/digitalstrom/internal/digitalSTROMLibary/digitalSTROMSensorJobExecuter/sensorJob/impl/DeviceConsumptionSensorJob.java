@@ -40,11 +40,11 @@ public class DeviceConsumptionSensorJob implements SensorJob {
      * Creates a new {@link DeviceConsumptionSensorJob} with the given {@link SensorIndexEnum}.
      *
      * @param device
-     * @param index sensor index
+     * @param type sensor index
      */
-    public DeviceConsumptionSensorJob(Device device, SensorEnum index) {
+    public DeviceConsumptionSensorJob(Device device, SensorEnum type) {
         this.device = device;
-        this.sensorIndex = index;
+        this.sensorIndex = type;
         this.meterDSID = device.getMeterDSID();
         this.initalisationTime = System.currentTimeMillis();
     }
@@ -64,7 +64,7 @@ public class DeviceConsumptionSensorJob implements SensorJob {
                 break;
             case OUTPUT_CURRENT:
                 this.device.updateInternalDeviceState(
-                        new DeviceStateUpdateImpl(DeviceStateUpdate.UPDATE_ELECTRIC_METER, consumption));
+                        new DeviceStateUpdateImpl(DeviceStateUpdate.UPDATE_OUTPUT_CURRENT, consumption));
                 break;
             case ELECTRIC_METER:
                 this.device.updateInternalDeviceState(
