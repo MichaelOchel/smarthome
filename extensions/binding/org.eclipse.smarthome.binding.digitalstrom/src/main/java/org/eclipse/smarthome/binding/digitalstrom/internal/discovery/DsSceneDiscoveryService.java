@@ -17,6 +17,7 @@ import org.eclipse.smarthome.binding.digitalstrom.handler.DsSceneHandler;
 import org.eclipse.smarthome.binding.digitalstrom.handler.DssBridgeHandler;
 import org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.digitalSTROMListener.SceneStatusListener;
 import org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.digitalSTROMStructure.digitalSTROMScene.InternalScene;
+import org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.digitalSTROMStructure.digitalSTROMScene.constants.SceneEnum;
 import org.eclipse.smarthome.config.discovery.AbstractDiscoveryService;
 import org.eclipse.smarthome.config.discovery.DiscoveryResult;
 import org.eclipse.smarthome.config.discovery.DiscoveryResultBuilder;
@@ -81,24 +82,45 @@ public class DsSceneDiscoveryService extends AbstractDiscoveryService implements
 
     private void onSceneAddedInternal(InternalScene scene) {
         if (scene != null) {
-            ThingUID thingUID = getThingUID(scene);
-            if (thingUID != null) {
-                ThingUID bridgeUID = digitalSTROMBridgeHandler.getThing().getUID();
-                Map<String, Object> properties = new HashMap<>(4);
-                properties.put(SCENE_NAME, scene.getSceneName());
-                properties.put(SCENE_ZONE_ID, scene.getZoneID());
-                properties.put(SCENE_GROUP_ID, scene.getGroupID());
-                properties.put(SCENE_ID, scene.getSceneID());
-                DiscoveryResult discoveryResult = DiscoveryResultBuilder.create(thingUID).withProperties(properties)
-                        .withBridge(bridgeUID).withLabel(scene.getSceneName()).build();
+            if (!isStandardScene(scene.getSceneID())) {
+                ThingUID thingUID = getThingUID(scene);
+                if (thingUID != null) {
+                    ThingUID bridgeUID = digitalSTROMBridgeHandler.getThing().getUID();
+                    Map<String, Object> properties = new HashMap<>(4);
+                    properties.put(SCENE_NAME, scene.getSceneName());
+                    properties.put(SCENE_ZONE_ID, scene.getZoneID());
+                    properties.put(SCENE_GROUP_ID, scene.getGroupID());
+                    properties.put(SCENE_ID, scene.getSceneID());
+                    DiscoveryResult discoveryResult = DiscoveryResultBuilder.create(thingUID).withProperties(properties)
+                            .withBridge(bridgeUID).withLabel(scene.getSceneName()).build();
 
-                thingDiscovered(discoveryResult);
+                    thingDiscovered(discoveryResult);
 
-            } else {
-                logger.debug("discovered unsupported scene: name '{}' with id {}", scene.getSceneName(), scene.getID());
+                } else {
+                    logger.debug("discovered unsupported scene: name '{}' with id {}", scene.getSceneName(),
+                            scene.getID());
+                }
             }
         }
 
+    }
+
+    private boolean isStandardScene(short sceneID) {
+        switch (SceneEnum.getScene(sceneID)) {
+            case INCREMENT:
+            case DECREMENT:
+            case STOP:
+            case MINIMUM:
+            case MAXIMUM:
+            case AUTO_OFF:
+            case DEVICE_ON:
+            case DEVICE_OFF:
+            case DEVICE_STOP:
+                return true;
+
+            default:
+                return false;
+        }
     }
 
     private ThingUID getThingUID(InternalScene scene) {

@@ -52,7 +52,7 @@ public class SceneDiscovery {
             DigitalSTROMStructureManager structureManager) {
         generateNamedScenes(connectionManager);
         generateAppartmentScence();
-        generateZoneScenes(connectionManager);
+        generateZoneScenes(connectionManager, structureManager);
         generateReachableScenes(connectionManager, structureManager);
     }
 
@@ -135,17 +135,27 @@ public class SceneDiscovery {
 
     }
 
-    public boolean generateZoneScenes(DigitalSTROMConnectionManager connectionManager) {
+    public boolean generateZoneScenes(DigitalSTROMConnectionManager connectionManager,
+            DigitalSTROMStructureManager structureManager) {
         HashMap<Integer, List<Short>> reachableGroups = getReachableGroups(connectionManager);
 
         if (reachableGroups != null) {
             for (Integer zoneID : reachableGroups.keySet()) {
                 if (!reachableGroups.get(zoneID).isEmpty()) {
                     for (ZoneSceneEnum zoneScene : ZoneSceneEnum.values()) {
+                        String sceneName = "Zone-Scene: Zone: ";
+                        if (structureManager.getZoneName(zoneID) != null
+                                && !structureManager.getZoneName(zoneID).isEmpty()) {
+                            sceneName = sceneName + structureManager.getZoneName(zoneID);
+
+                        } else {
+                            sceneName = sceneName + zoneID;
+                        }
+                        sceneName = sceneName + " Scene: " + zoneScene.toString().toLowerCase().replace("_", " ");
                         InternalScene scene = new InternalScene(zoneID, null, (short) zoneScene.getSceneNumber(),
-                                "Zone-Scene: " + zoneScene.toString().toLowerCase().replace("_", " "));
+                                sceneName);
                         if (genList) {
-                            System.out.print("Appartmend Scene: " + scene.toString());
+                            System.out.print("Zone Scene: " + scene.toString());
                             if (this.namedScenes.add(scene)) {
                                 System.out.print(" added to list\n");
                             }
@@ -285,14 +295,36 @@ public class SceneDiscovery {
     }
 
     public void sceneDiscoverd(InternalScene scene) {
-        if (this.discovery != null) {
-            this.discovery.onSceneAdded(scene);
-            logger.debug("Inform scene discovery aboud added scene with id: " + scene.getID());
-        } else {
-            logger.debug("Can't inform scene discovery aboud added scene with id: " + scene.getID()
-                    + " because scene discovery is disabled");
+        if (scene != null) {
+            if (!isStandardScene(scene.getSceneID())) {
+                if (this.discovery != null) {
+                    this.discovery.onSceneAdded(scene);
+                    logger.debug("Inform scene discovery aboud added scene with id: " + scene.getID());
+                } else {
+                    logger.debug("Can't inform scene discovery aboud added scene with id: " + scene.getID()
+                            + " because scene discovery is disabled");
+                }
+            }
+            this.sceneManager.addInternalScene(scene);
         }
-        this.sceneManager.addInternalScene(scene);
+    }
+
+    private boolean isStandardScene(short sceneID) {
+        switch (SceneEnum.getScene(sceneID)) {
+            case INCREMENT:
+            case DECREMENT:
+            case STOP:
+            case MINIMUM:
+            case MAXIMUM:
+            case AUTO_OFF:
+            case DEVICE_ON:
+            case DEVICE_OFF:
+            case DEVICE_STOP:
+                return true;
+
+            default:
+                return false;
+        }
     }
 
     public void registerSceneDiscovery(SceneStatusListener listener) {
