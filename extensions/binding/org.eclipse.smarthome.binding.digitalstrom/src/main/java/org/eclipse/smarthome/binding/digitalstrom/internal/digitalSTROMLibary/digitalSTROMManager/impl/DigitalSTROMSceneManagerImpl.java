@@ -66,7 +66,7 @@ public class DigitalSTROMSceneManagerImpl implements DigitalSTROMSceneManager {
     @Override
     public void handleEvent(EventItem eventItem) {
         if (eventItem != null) {
-            boolean isCallScene = false;
+            boolean isCallScene = true;
             String isCallStr = eventItem.getProperties().get(EventPropertyEnum.EVENT_NAME);
             if (isCallStr != null) {
                 isCallScene = isCallStr.equals("callScene");

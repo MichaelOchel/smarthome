@@ -35,10 +35,12 @@ import org.eclipse.smarthome.config.core.Configuration;
 import org.eclipse.smarthome.core.library.types.DecimalType;
 import org.eclipse.smarthome.core.thing.Bridge;
 import org.eclipse.smarthome.core.thing.ChannelUID;
+import org.eclipse.smarthome.core.thing.Thing;
 import org.eclipse.smarthome.core.thing.ThingStatus;
 import org.eclipse.smarthome.core.thing.ThingStatusDetail;
 import org.eclipse.smarthome.core.thing.ThingTypeUID;
 import org.eclipse.smarthome.core.thing.binding.BaseBridgeHandler;
+import org.eclipse.smarthome.core.thing.binding.ThingHandler;
 import org.eclipse.smarthome.core.types.Command;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -152,7 +154,7 @@ public class DssBridgeHandler extends BaseBridgeHandler
             }
 
             if (connMan.checkConnection()) {
-                updateStatus(ThingStatus.ONLINE);
+                setStatus(ThingStatus.ONLINE);
                 this.devStatMan.start();
             }
             if (connMan.getApplicationToken() != null) {
@@ -338,7 +340,7 @@ public class DssBridgeHandler extends BaseBridgeHandler
                 devStatMan.stop();
                 break;
             case CONNECTION_RESUMED:
-                updateStatus(ThingStatus.ONLINE);
+                setStatus(ThingStatus.ONLINE);
                 devStatMan.start();
                 sceneMan.start();
                 break;
@@ -356,6 +358,18 @@ public class DssBridgeHandler extends BaseBridgeHandler
             default:
                 // TODO: Fehlermeldung
         }
+    }
+
+    private void setStatus(ThingStatus status) {
+        updateStatus(ThingStatus.ONLINE);
+        // if (getBridge() != null) {
+        for (Thing thing : getThing().getThings()) {
+            ThingHandler handler = thing.getHandler();
+            if (handler != null) {
+                handler.initialize();
+            }
+        }
+        // }
     }
 
     @Override
@@ -409,7 +423,7 @@ public class DssBridgeHandler extends BaseBridgeHandler
     }
 
     public List<InternalScene> getScenes() {
-        return this.sceneMan.getScenes();
+        return sceneMan != null ? sceneMan.getScenes() : new LinkedList<InternalScene>();
     }
 
     public DigitalSTROMConnectionManager getConnectionManager() {

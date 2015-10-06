@@ -45,7 +45,7 @@ public class EventListener {
     private final DigitalSTROMConnectionManager connManager;
 
     private final String INVALID_SESSION = "Invalid session!";
-    private final String UNKNOWN_TOKEN = "Token " + ID + "not found!";
+    private final String UNKNOWN_TOKEN = "Token " + ID + " not found!";
 
     private HttpTransport transport = null;
     private DigitalSTROMAPI digitalSTROM;
@@ -147,6 +147,7 @@ public class EventListener {
                         }
 
                         if (errorStr != null && (errorStr.equals(INVALID_SESSION) || errorStr.equals(UNKNOWN_TOKEN))) {
+                            unsubscribe();
                             subscribe();
                         } else if (errorStr != null) {
                             /*

@@ -134,7 +134,8 @@ public class DsDeviceHandler extends BaseThingHandler implements DeviceStatusLis
         if (device == null) {
             initialize();
         } else {
-            loadSensorChannels(thing.getConfiguration());
+            // loadSensorChannels(thing.getConfiguration());
+            onDeviceAdded(device);
         }
     }
 
@@ -162,10 +163,11 @@ public class DsDeviceHandler extends BaseThingHandler implements DeviceStatusLis
                     updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.CONFIGURATION_PENDING,
                             "waiting for listener registartion");
                     logger.debug("Set status on {}", getThing().getStatus());
+                    // note: this call implicitly registers our handler as a device-listener on the bridge
+                    this.dssBridgeHandler.registerDeviceStatusListener(this);
+                } else {
+                    updateStatus(ThingStatus.ONLINE);
                 }
-                // note: this call implicitly registers our handler as a device-listener on the bridge
-                this.dssBridgeHandler = (DssBridgeHandler) thingHandler;
-                this.dssBridgeHandler.registerDeviceStatusListener(this);
 
             }
         }
@@ -349,6 +351,7 @@ public class DsDeviceHandler extends BaseThingHandler implements DeviceStatusLis
     public synchronized void onDeviceRemoved(Device device) {
         this.device = null;
         updateStatus(ThingStatus.OFFLINE);
+        logger.debug("Set status on {}", getThing().getStatus());
     }
 
     @Override

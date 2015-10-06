@@ -393,6 +393,7 @@ public class JSONDeviceImpl implements Device {
         }
         switch (this.outputMode) {
             case SWITCHED:
+            case SWITCH:
             case COMBINED_SWITCH:
             case SINGLE_SWITCH:
                 return true;
