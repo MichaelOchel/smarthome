@@ -240,8 +240,7 @@ public class DigitalSTROMJSONImpl implements DigitalSTROMAPI {
     @Override
     public boolean callZoneScene(String token, int id, String name, int groupID, String groupName,
             SceneEnum sceneNumber, boolean force) {
-        if (sceneNumber != null && validZoneScene(sceneNumber.getSceneNumber(), id)
-                && (withParameterZoneId(id) || name != null)) {
+        if (sceneNumber != null && (withParameterZoneId(id) || name != null)) {
             String response = null;
 
             if (withParameterZoneId(id)) {
@@ -468,8 +467,7 @@ public class DigitalSTROMJSONImpl implements DigitalSTROMAPI {
     @Override
     public boolean undoZoneScene(String token, int zoneID, String zoneName, int groupID, String groupName,
             SceneEnum sceneNumber) {
-        if (sceneNumber != null && validZoneScene(sceneNumber.getSceneNumber(), zoneID)
-                && (withParameterZoneId(zoneID) || zoneName != null)) {
+        if (sceneNumber != null && (withParameterZoneId(zoneID) || zoneName != null)) {
             String response = null;
 
             if (withParameterZoneId(zoneID)) {
@@ -572,14 +570,6 @@ public class DigitalSTROMJSONImpl implements DigitalSTROMAPI {
         }
 
         return false;
-    }
-
-    private boolean validZoneScene(int sceneNumber, int zoneId) {
-        if (zoneId == 0) {
-            return (sceneNumber > -1 && sceneNumber < 256);
-        } else {
-            return (sceneNumber > -1 && sceneNumber < 64);
-        }
     }
 
     @Override

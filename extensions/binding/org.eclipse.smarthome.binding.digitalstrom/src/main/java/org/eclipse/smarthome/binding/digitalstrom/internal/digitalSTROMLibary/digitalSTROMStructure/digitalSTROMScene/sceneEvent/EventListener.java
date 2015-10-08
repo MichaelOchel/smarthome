@@ -73,7 +73,7 @@ public class EventListener {
         if (!shutdown) {
             this.shutdown = true;
         }
-        // this.listener = null;
+        this.listener = null;
     }
 
     /**
@@ -84,7 +84,7 @@ public class EventListener {
             this.shutdown = false;
             subscribe();
         }
-        if (listener == null || !listener.isAlive()) {
+        if (listener == null) {
             this.listener = new Thread(runableListener);
             listener.start();
         }
@@ -146,7 +146,8 @@ public class EventListener {
                                     .toString();
                         }
 
-                        if (errorStr != null && (errorStr.equals(INVALID_SESSION) || errorStr.equals(UNKNOWN_TOKEN))) {
+                        if (errorStr != null
+                                && (errorStr.equals(INVALID_SESSION) || errorStr.contains(UNKNOWN_TOKEN))) {
                             unsubscribe();
                             subscribe();
                         } else if (errorStr != null) {

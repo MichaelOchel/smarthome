@@ -77,7 +77,8 @@ public class DigitalSTROMChannelTypeProvider implements ChannelTypeProvider {
             + getUnitString(SensorEnum.ACTIVE_POWER) + " of all connected circuits to the digitalSTROM-System.";
 
     private final String CHANNEL_TOTAL_ELECTRIC_METER_LABEL_EN = "total electric meter";
-    private final String CHANNEL_TOTAL_ELECTRIC_METER_DESCRIPTION_EN = "The total electric meter channel indicates the current electric meter value in Wh of all connected circuits to the digitalSTROM-System.";
+    private final String CHANNEL_TOTAL_ELECTRIC_METER_DESCRIPTION_EN = "The total electric meter channel indicates the current electric meter value in "
+            + getUnitString(SensorEnum.ELECTRIC_METER) + " of all connected circuits to the digitalSTROM-System.";
 
     private final String CHANNEL_SCENE_LABEL_EN = "Scene";
     private final String CHANNEL_SCENE_DESCRIPTION_EN = "The scene channel allows to call or undo a scene from digitalSTROM.";
@@ -158,7 +159,8 @@ public class DigitalSTROMChannelTypeProvider implements ChannelTypeProvider {
 
     private final ChannelType CHANNEL_TYPE_ACTIVE_POWER_EN = new ChannelType(
             new ChannelTypeUID(getUID(DigitalSTROMBindingConstants.CHANNEL_ACTIVE_POWER)), false, NUMBER,
-            CHANNEL_ACTIVE_POWER_LABEL_EN, CHANNEL_ACTIVE_POWER_DESCRIPTION_EN, null, Sets.newHashSet(ACTIVE_POWER, DS),
+            CHANNEL_ACTIVE_POWER_LABEL_EN, CHANNEL_ACTIVE_POWER_DESCRIPTION_EN, null,
+            Sets.newHashSet(ACTIVE_POWER, POWER_CONSUMPTION, DS),
             getSensorStateDescription(SensorEnum.ACTIVE_POWER.getUnitShortcut()), null);
 
     private final ChannelType CHANNEL_TYPE_ELECTRIC_METER_VALUE_EN = new ChannelType(
@@ -176,8 +178,8 @@ public class DigitalSTROMChannelTypeProvider implements ChannelTypeProvider {
     private final ChannelType CHANNEL_TYPE_POWER_CONSUMPTION_EN = new ChannelType(
             new ChannelTypeUID(getUID(DigitalSTROMBindingConstants.CHANNEL_TOTAL_ACTIVE_POWER)), false, NUMBER,
             CHANNEL_TOTAL_ACTIVE_POWER_LABEL_EN, CHANNEL_TOTAL_ACTIVE_POWER_DESCRIPTION_EN, "Energy",
-            Sets.newHashSet(ACTIVE_POWER, DS), getSensorStateDescription(SensorEnum.ACTIVE_POWER.getUnitShortcut()),
-            null);
+            Sets.newHashSet(ACTIVE_POWER, POWER_CONSUMPTION, DS),
+            getSensorStateDescription(SensorEnum.ACTIVE_POWER.getUnitShortcut()), null);
 
     private final ChannelType CHANNEL_TYPE_CHANNEL_TOTAL_ELECTRIC_METER_EN = new ChannelType( // changed
             new ChannelTypeUID(getUID(DigitalSTROMBindingConstants.CHANNEL_TOTAL_ELECTRIC_METER)), false, NUMBER,
@@ -230,12 +232,10 @@ public class DigitalSTROMChannelTypeProvider implements ChannelTypeProvider {
     private final String CHANNEL_SCENE_DESCRIPTION_DE = "Ruft eine Szene/Stimmung auf bzw. macht sie rückgänig.";
 
     private final String CHANNEL_TOTAL_ACTIVE_POWER_LABEL_DE = "gesamt Stromverbrauch";
-    private final String CHANNEL_TOTAL_ACTIVE_POWER_DESCRIPTION_DE = "Der gesamt Stromverbrauch Channel zeigt den aktuellen Stromverbrauch in "
-            + getUnitString(SensorEnum.ACTIVE_POWER)
-            + " von allen am digitalSTROM-System angschlossenen Stromkreisläufen an.";
+    private final String CHANNEL_TOTAL_ACTIVE_POWER_DESCRIPTION_DE = "Der gesamt Stromverbrauch Channel zeigt den aktuellen Stromverbrauch in Watt (W) von allen am digitalSTROM-System angschlossenen Stromkreisläufen an.";
 
     private final String CHANNEL_TOTAL_ELECTRIC_METER_LABEL_DE = "gesamt Stromzähler";
-    private final String CHANNEL_TOTAL_ELECTRIC_METER_DESCRIPTION_DE = "Der gesamt StromZähler Channel zeigt den aktuellen StromzählerStand in Wh von allen am digitalSTROM-System angschlossenen Stromkreisläufen an.";
+    private final String CHANNEL_TOTAL_ELECTRIC_METER_DESCRIPTION_DE = "Der gesamt StromZähler Channel zeigt den aktuellen StromzählerStand in Kilowatt pro Stunde (kWh) von allen am digitalSTROM-System angschlossenen Stromkreisläufen an.";
 
     // Tags
     private final String GELB = "gelb";
@@ -328,12 +328,14 @@ public class DigitalSTROMChannelTypeProvider implements ChannelTypeProvider {
     private final ChannelType CHANNEL_TYPE_TOTAL_ACTIVE_POWER_DE = new ChannelType( // changed
             new ChannelTypeUID(getUID(DigitalSTROMBindingConstants.CHANNEL_TOTAL_ACTIVE_POWER)), false, NUMBER,
             CHANNEL_TOTAL_ACTIVE_POWER_LABEL_DE, CHANNEL_TOTAL_ACTIVE_POWER_DESCRIPTION_DE, "Energy",
-            Sets.newHashSet(WIRKL, DS), getSensorStateDescription(SensorEnum.ACTIVE_POWER.getUnitShortcut()), null);
+            Sets.newHashSet(WIRKL, STROMVER, DS), getSensorStateDescription(SensorEnum.ACTIVE_POWER.getUnitShortcut()),
+            null);
 
     private final ChannelType CHANNEL_TYPE_CHANNEL_TOTAL_ELECTRIC_METER_DE = new ChannelType( // changed
             new ChannelTypeUID(getUID(DigitalSTROMBindingConstants.CHANNEL_TOTAL_ELECTRIC_METER)), false, NUMBER,
             CHANNEL_TOTAL_ELECTRIC_METER_LABEL_DE, CHANNEL_TOTAL_ELECTRIC_METER_DESCRIPTION_DE, "Energy",
-            Sets.newHashSet(STROMVER, DS), getSensorStateDescription("Wh"), null);
+            Sets.newHashSet(STROMVER, WIRKL, DS),
+            getSensorStateDescription(SensorEnum.ELECTRIC_METER.getUnitShortcut()), null);
 
     private final ChannelType CHANNEL_TYPE_SCENE_VALUE_DE = new ChannelType(
             new ChannelTypeUID(getUID(DigitalSTROMBindingConstants.CHANNEL_SCENE)), false, SWITCH,

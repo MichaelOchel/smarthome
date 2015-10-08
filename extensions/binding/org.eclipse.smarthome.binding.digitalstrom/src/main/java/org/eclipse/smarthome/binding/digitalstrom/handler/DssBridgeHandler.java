@@ -18,8 +18,11 @@ import org.eclipse.smarthome.binding.digitalstrom.DigitalSTROMBindingConstants;
 import org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.digitalSTROMConfiguration.DigitalSTROMConfig;
 import org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.digitalSTROMListener.DeviceStatusListener;
 import org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.digitalSTROMListener.DigitalSTROMConnectionListener;
+import org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.digitalSTROMListener.DigitalSTROMManagerStatusListener;
 import org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.digitalSTROMListener.SceneStatusListener;
 import org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.digitalSTROMListener.TotalPowerConsumptionListener;
+import org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.digitalSTROMListener.StateEnums.ManagerStates;
+import org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.digitalSTROMListener.StateEnums.ManagerTypes;
 import org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.digitalSTROMManager.DigitalSTROMConnectionManager;
 import org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.digitalSTROMManager.DigitalSTROMDeviceStatusManager;
 import org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.digitalSTROMManager.DigitalSTROMSceneManager;
@@ -56,7 +59,7 @@ import org.slf4j.LoggerFactory;
  * @author Mathias Siegele - Initial contribution
  */
 public class DssBridgeHandler extends BaseBridgeHandler
-        implements DigitalSTROMConnectionListener, TotalPowerConsumptionListener {
+        implements DigitalSTROMConnectionListener, TotalPowerConsumptionListener, DigitalSTROMManagerStatusListener {
 
     private Logger logger = LoggerFactory.getLogger(DssBridgeHandler.class);
 
@@ -113,11 +116,6 @@ public class DssBridgeHandler extends BaseBridgeHandler
 
                 this.connMan = new DigitalSTROMConnectionManagerImpl(loginConfig[0], loginConfig[1], loginConfig[2],
                         loginConfig[3], true, this);
-                /*
-                 * this.connMan = new DigitalSTROMConnectionManagerImpl(configuration.get(HOST).toString(),
-                 * configuration.get(USER_NAME).toString(), configuration.get(PASSWORD).toString(), null, false,
-                 * this);// configuration.get(APPLICATION_TOKEN).toString()
-                 */
             } else {
                 connMan.updateConfig(loginConfig[0], loginConfig[1], loginConfig[2], loginConfig[3]);
                 connMan.registerConnectionListener(this);
@@ -133,12 +131,15 @@ public class DssBridgeHandler extends BaseBridgeHandler
                 this.devStatMan = new DigitalSTROMDeviceStatusManagerImpl(this.connMan, this.structMan, this.sceneMan);
             }
             structMan.generateZoneGroupNames(connMan);
-            this.devStatMan.registerTotalPowerConsumptionListener(this);
+
+            devStatMan.registerStatusListener(this);
+            devStatMan.registerTotalPowerConsumptionListener(this);
 
             if (this.thingTypeProvider != null) {
                 this.thingTypeProvider.registerConnectionManagerHandler(connMan);
             }
 
+            // TODO: vorallem wegen der Discovery
             if (this.devListener != null) {
                 for (DeviceStatusListener listener : this.devListener) {
                     this.registerDeviceStatusListener(listener);
@@ -154,8 +155,14 @@ public class DssBridgeHandler extends BaseBridgeHandler
             }
 
             if (connMan.checkConnection()) {
-                setStatus(ThingStatus.ONLINE);
+                // if (!devStatMan.getManagerState().equals(ManagerStates.running)) {
                 this.devStatMan.start();
+                // }
+                this.onStatusChanged(devStatMan.getManagerType(), devStatMan.getManagerState());
+
+                // setStatus(ThingStatus.ONLINE);
+            } else {
+                // TODO: offline
             }
             if (connMan.getApplicationToken() != null) {
                 configuration.remove(USER_NAME);
@@ -177,19 +184,15 @@ public class DssBridgeHandler extends BaseBridgeHandler
     public void dispose() {
         logger.debug("Handler disposed.");
 
+        devStatMan.unregisterTotalPowerConsumptionListener();
+        devStatMan.unregisterStatusListener();
+        connMan.unregisterConnectionListener();
+
         this.devStatMan.stop();
 
         if (this.getThing().getStatus().equals(ThingStatus.ONLINE)) {
             updateStatus(ThingStatus.OFFLINE);
         }
-
-        devStatMan.unregisterTotalPowerConsumptionListener();
-        connMan.unregisterConnectionListener();
-        /*
-         * this.connMan = null;
-         * this.structMan = null;
-         * this.devStatMan = null;
-         */
     }
 
     @Override
@@ -234,7 +237,7 @@ public class DssBridgeHandler extends BaseBridgeHandler
         return loginConfig;
     }
 
-    /**** methods to store DeviceStatusListener ****/
+    /* methods to store DeviceStatusListener */
 
     /**
      * Registers a new {@link DeviceStatusListener} on the {@link DsBridgeHandler}.
@@ -284,7 +287,7 @@ public class DssBridgeHandler extends BaseBridgeHandler
      * @param deviceStatusListener
      */
     public synchronized void registerSceneStatusListener(SceneStatusListener sceneStatusListener) {
-        if (this.sceneMan != null) {
+        if (this.sceneMan != null && !generatingScenes) {
             if (sceneStatusListener == null) {
                 throw new NullPointerException("It's not allowed to pass a null DeviceStatusListener.");
             }
@@ -295,11 +298,15 @@ public class DssBridgeHandler extends BaseBridgeHandler
                 throw new NullPointerException("It's not allowed to pass a null ID.");
             }
         } else {
-            sceneListener = new LinkedList<SceneStatusListener>();
+            if (sceneListener == null) {
+                sceneListener = new LinkedList<SceneStatusListener>();
+            }
             sceneListener.add(sceneStatusListener);
         }
 
     }
+
+    List<SceneStatusListener> unregisterSceneStatusListeners = null;
 
     /**
      * Unregisters a new {@link DeviceStatusListener} on the {@link DsBridgeHandler}.
@@ -307,17 +314,30 @@ public class DssBridgeHandler extends BaseBridgeHandler
      * @param devicetatusListener
      */
     public void unregisterSceneStatusListener(SceneStatusListener sceneStatusListener) {
-        if (this.sceneMan != null) {
+        if (this.sceneMan != null && !generatingScenes) {
             if (sceneStatusListener.getID() != null) {
                 this.sceneMan.unregisterSceneListener(sceneStatusListener);
             } else {
                 throw new NullPointerException("It's not allowed to pass a null ID.");
             }
+        } else {
+            if (unregisterSceneStatusListeners == null) {
+                unregisterSceneStatusListeners = new LinkedList<SceneStatusListener>();
+            }
+            unregisterSceneStatusListeners.add(sceneStatusListener);
         }
     }
 
-    public void childThingRemoved(String dSID) {
-        devStatMan.removeDevice(dSID);
+    public void childThingRemoved(String id) {
+        if (id.split("-").length == 3) {
+            InternalScene scene = sceneMan.getInternalScene(id);
+            if (scene != null) {
+                sceneMan.removeInternalScene(id);
+                sceneMan.addInternalScene(scene);
+            }
+        } else {
+            devStatMan.removeDevice(id);
+        }
     }
 
     public void stopOutputValue(Device device) {
@@ -325,15 +345,36 @@ public class DssBridgeHandler extends BaseBridgeHandler
     }
 
     @Override
+    public void channelLinked(ChannelUID channelUID) {
+        switch (channelUID.getId()) {
+            case CHANNEL_TOTAL_ACTIVE_POWER:
+                updateChannelState(CHANNEL_TOTAL_ACTIVE_POWER, totalPowerConsumption);
+                break;
+            case CHANNEL_TOTAL_ELECTRIC_METER:
+                updateChannelState(CHANNEL_TOTAL_ELECTRIC_METER, totalEnergyMeterValue * 0.01);
+        }
+    }
+
+    private int totalPowerConsumption = 0;
+    private int totalEnergyMeterValue = 0;
+
+    @Override
     public void onTotalPowerConsumptionChanged(int newPowerConsumption) {
-        updateState(new ChannelUID(getThing().getUID(), CHANNEL_TOTAL_ACTIVE_POWER),
-                new DecimalType(newPowerConsumption));
+        totalPowerConsumption = newPowerConsumption;
+        updateChannelState(CHANNEL_TOTAL_ACTIVE_POWER, totalPowerConsumption);
     }
 
     @Override
     public void onEnergyMeterValueChanged(int newEnergyMeterValue) {
-        updateState(new ChannelUID(getThing().getUID(), CHANNEL_TOTAL_ELECTRIC_METER),
-                new DecimalType(newEnergyMeterValue));
+        logger.debug("energy meter updated to " + newEnergyMeterValue);
+        totalEnergyMeterValue = newEnergyMeterValue;
+        updateChannelState(CHANNEL_TOTAL_ELECTRIC_METER, totalEnergyMeterValue * 0.01);
+    }
+
+    private void updateChannelState(String channelID, double value) {
+        if (getThing().getChannel(channelID) != null) {
+            updateState(new ChannelUID(getThing().getUID(), channelID), new DecimalType(value));
+        }
     }
 
     @Override
@@ -369,9 +410,11 @@ public class DssBridgeHandler extends BaseBridgeHandler
         updateStatus(ThingStatus.ONLINE);
         // if (getBridge() != null) {
         for (Thing thing : getThing().getThings()) {
-            ThingHandler handler = thing.getHandler();
-            if (handler != null) {
-                handler.initialize();
+            if (!thing.getStatus().equals(ThingStatus.ONLINE)) {
+                ThingHandler handler = thing.getHandler();
+                if (handler != null) {
+                    handler.initialize();
+                }
             }
         }
         // }
@@ -433,6 +476,60 @@ public class DssBridgeHandler extends BaseBridgeHandler
 
     public DigitalSTROMConnectionManager getConnectionManager() {
         return this.connMan;
+    }
+
+    private boolean generatingScenes = false;
+
+    public boolean isGeneratingScenes() {
+        return generatingScenes;
+    }
+
+    @Override
+    public void onStatusChanged(ManagerTypes managerType, ManagerStates state) {
+        logger.debug("!!!!!!" + managerType.toString() + " " + state.toString() + "!!!!!!!");
+        if (managerType.equals(ManagerTypes.deviceStatusManager)) {
+            switch (state) {
+                case initialasing:
+
+                    this.updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.CONFIGURATION_PENDING,
+                            "Building digitalSTOM model.");
+                    break;
+                case running:
+                    if (!getThing().getStatus().equals(ThingStatus.ONLINE)) {
+                        setStatus(ThingStatus.ONLINE);
+                    }
+                    break;
+                case stopped:
+                    this.updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.NONE, "Status-Manager is stopped.");
+                    break;
+                default:
+                    break;
+            }
+        }
+        if (managerType.equals(ManagerTypes.sceneManager)) {
+            switch (state) {
+                case generatingScenes:
+                    generatingScenes = true;
+                    break;
+                case scenesGenerated:
+                    if (unregisterSceneStatusListeners != null) {
+                        for (SceneStatusListener sceneListener : this.unregisterSceneStatusListeners) {
+                            sceneMan.registerSceneListener(sceneListener);
+                        }
+                    }
+                    if (sceneListener != null) {
+                        for (SceneStatusListener sceneListener : this.sceneListener) {
+                            sceneMan.registerSceneListener(sceneListener);
+                        }
+                    }
+
+                    generatingScenes = false;
+                    break;
+                default:
+                    break;
+            }
+        }
+
     }
 
 }

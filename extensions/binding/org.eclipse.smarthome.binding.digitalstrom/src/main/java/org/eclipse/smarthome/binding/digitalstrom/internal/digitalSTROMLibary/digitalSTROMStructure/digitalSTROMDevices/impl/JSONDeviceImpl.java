@@ -28,6 +28,7 @@ import org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.di
 import org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.digitalSTROMStructure.digitalSTROMDevices.deviceParameters.FunctionalColorGroupEnum;
 import org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.digitalSTROMStructure.digitalSTROMDevices.deviceParameters.OutputModeEnum;
 import org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.digitalSTROMStructure.digitalSTROMScene.InternalScene;
+import org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.digitalSTROMStructure.digitalSTROMScene.constants.SceneEnum;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.slf4j.Logger;
@@ -396,6 +397,8 @@ public class JSONDeviceImpl implements Device {
             case SWITCH:
             case COMBINED_SWITCH:
             case SINGLE_SWITCH:
+            case WIPE:
+            case POWERSAVE:
                 return true;
             default:
                 return false;
@@ -566,6 +569,10 @@ public class JSONDeviceImpl implements Device {
             addEshThingStateUpdate(new DeviceStateUpdateImpl(DeviceStateUpdate.UPDATE_ACTIVE_POWER, 0));
             this.activePower = 0;
         } else {
+            if (outputMode.equals(OutputModeEnum.WIPE) && !isOn
+                    && activePower > DigitalSTROMConfig.STANDBY_ACTIVE_POWER) {
+                this.updateInternalDeviceState(new DeviceStateUpdateImpl(DeviceStateUpdate.UPDATE_ON_OFF, 1));
+            }
             addEshThingStateUpdate(new DeviceStateUpdateImpl(DeviceStateUpdate.UPDATE_ACTIVE_POWER, activePower));
             this.activePower = activePower;
             this.addActivePowerToMeterCache(this.getOutputValue(), activePower);
@@ -678,14 +685,10 @@ public class JSONDeviceImpl implements Device {
 
     @Override
     public synchronized void callNamedScene(InternalScene scene) {
-        // boolean haveStoredOutput =
-        // logger.debug("!!!!!!!!!!!!!!!!!!!!CALL NAMED SCENE CALL!!!!!!!!!!!!!!!!!!!!!");
         internalCallScene(scene.getSceneID());
         this.activeScene = scene;
-        // return haveStoredOutput;
     }
 
-    // weis net
     @Override
     public void checkSceneConfig(Short sceneNumber, int prio) {
         if (isDeviceWithOutput()) {
@@ -716,8 +719,10 @@ public class JSONDeviceImpl implements Device {
 
     @Override
     public synchronized void internalCallScene(Short sceneNumber) {
-        // logger.debug("!!!!!!!!!!!!!!!!!!!!CALL INTERNAL SCENE CALL1!!!!!!!!!!!!!!!!!!!!!");
         if (isDeviceWithOutput()) {
+            if (checkSceneNumber(sceneNumber)) {
+                return;
+            }
             if (containsSceneConfig(sceneNumber)) {
                 if (doIgnoreScene(sceneNumber)) {
                     return;
@@ -727,12 +732,6 @@ public class JSONDeviceImpl implements Device {
                         .add(new DeviceStateUpdateImpl(DeviceStateUpdate.UPDATE_SCENE_CONFIG, sceneNumber));
             }
 
-            // logger.debug("!!!!!!!!!!!!!!!!!!!!CALL INTERNAL SCENE CALL2!!!!!!!!!!!!!!!!!!!!!");
-            if (checkSceneNumber(sceneNumber)) {
-                return;
-            }
-
-            // boolean flag = false;
             if (sceneOutputMap.get(sceneNumber) != null) {
                 if (!isRollershutter()) {
                     this.outputValueBeforeSceneCall = this.outputValue;
@@ -758,10 +757,51 @@ public class JSONDeviceImpl implements Device {
     }
 
     private boolean checkSceneNumber(Short sceneNumber) {
-        switch (sceneNumber) {
+        if (this.outputMode.equals(OutputModeEnum.POWERSAVE)) {
+            switch (SceneEnum.getScene(sceneNumber)) {
+                case ABSENT:
+                case DEEP_OFF:
+                case SLEEPING:
+                    this.updateInternalDeviceState(new DeviceStateUpdateImpl(DeviceStateUpdate.UPDATE_ON_OFF, -1));
+                    return true;
+                case AREA_1_OFF:
+                case AREA_2_OFF:
+                case AREA_3_OFF:
+                case AREA_4_OFF:
+                case PRESET_0:
+                case PRESET_10:
+                case PRESET_20:
+                case PRESET_30:
+                case PRESET_40:
+                    return true;
+                default:
+                    break;
+            }
+        }
+        if (this.outputMode.equals(OutputModeEnum.WIPE)) {
+            switch (SceneEnum.getScene(sceneNumber)) {
+                case STANDBY:
+                case AUTO_STANDBY:
+                case AREA_1_OFF:
+                case AREA_2_OFF:
+                case AREA_3_OFF:
+                case AREA_4_OFF:
+                case PRESET_0:
+                case PRESET_10:
+                case PRESET_20:
+                case PRESET_30:
+                case PRESET_40:
+                    this.updateInternalDeviceState(new DeviceStateUpdateImpl(DeviceStateUpdate.UPDATE_ON_OFF, -1));
+                    return true;
+                default:
+                    break;
+
+            }
+        }
+        switch (SceneEnum.getScene(sceneNumber)) {
             // on scenes
-            case 51:
-            case 14:
+            case DEVICE_ON:
+            case MAXIMUM:
                 if (!isRollershutter()) {
                     this.updateInternalDeviceState(new DeviceStateUpdateImpl(DeviceStateUpdate.UPDATE_ON_OFF, 1));
                 } else {
@@ -769,8 +809,9 @@ public class JSONDeviceImpl implements Device {
                 }
                 return true;
             // off scenes
-            case 13:
-            case 50:
+            case MINIMUM:
+            case DEVICE_OFF:
+            case AUTO_OFF:
                 if (!isRollershutter()) {
                     this.updateInternalDeviceState(new DeviceStateUpdateImpl(DeviceStateUpdate.UPDATE_ON_OFF, -1));
                 } else {
@@ -778,11 +819,11 @@ public class JSONDeviceImpl implements Device {
                 }
                 return true;
             // increase scenes
-            case 11:
-            case 43:
-            case 45:
-            case 47:
-            case 49:
+            case INCREMENT:
+            case AREA_1_INCREMENT:
+            case AREA_2_INCREMENT:
+            case AREA_3_INCREMENT:
+            case AREA_4_INCREMENT:
                 if (isDimmable()) {
                     if (outputValue == maxOutputValue) {
                         return true;
@@ -809,11 +850,11 @@ public class JSONDeviceImpl implements Device {
                 }
                 return true;
             // decrease scenes
-            case 12:
-            case 42:
-            case 44:
-            case 46:
-            case 48:
+            case DECREMENT:
+            case AREA_1_DECREMENT:
+            case AREA_2_DECREMENT:
+            case AREA_3_DECREMENT:
+            case AREA_4_DECREMENT:
                 if (isDimmable()) {
                     if (outputValue == minOutputValue) {
                         return true;
@@ -844,29 +885,18 @@ public class JSONDeviceImpl implements Device {
 
                 return true;
             // Stop scenes
-            case 52:
-            case 53:
-            case 54:
-            case 55:
-            case 15:
+            case AREA_1_STOP:
+            case AREA_2_STOP:
+            case AREA_3_STOP:
+            case AREA_4_STOP:
+            case DEVICE_STOP:
+            case STOP:
                 this.deviceStateUpdates.add(new DeviceStateUpdateImpl(DeviceStateUpdate.UPDATE_OUTPUT_VALUE, 0));
                 return true;
             // Area Stepping continue scenes
-            case 10:
+            case AREA_STEPPING_CONTINUE:
                 // TODO: gute Frage was passiert hier?
                 return true;
-
-            // Auto-Off:
-            case 40:
-                // TOTO: checken ob das stimmt.
-                if (isDimmable()) {
-                    this.updateInternalDeviceState(new DeviceStateUpdateImpl(DeviceStateUpdate.UPDATE_ON_OFF, -1));
-                }
-                if (isRollershutter()) {
-                    this.updateInternalDeviceState(new DeviceStateUpdateImpl(DeviceStateUpdate.UPDATE_OPEN_CLOSE, -1));
-                }
-                return true;
-
             default:
                 return false;
         }
@@ -989,13 +1019,8 @@ public class JSONDeviceImpl implements Device {
     }
 
     // for ESH
-
-    // private List<DeviceStateUpdate> eshThingStateUpdates = Collections.synchronizedList(new
-    // LinkedList<DeviceStateUpdate>());//new LinkedList<DeviceStateUpdate>();
     private List<DeviceStateUpdate> deviceStateUpdates = Collections
             .synchronizedList(new LinkedList<DeviceStateUpdate>());// new LinkedList<DeviceStateUpdate>();
-
-    // private boolean isAddToESH = false;
 
     // save the last update time of the sensor data
     private long lastElectricMeterUpdate = System.currentTimeMillis();
@@ -1009,40 +1034,39 @@ public class JSONDeviceImpl implements Device {
 
     @Override
     public boolean isActivePowerUpToDate() {
-        return isOn && !isRollershutter()
+        logger.debug("!!!!!!!" + checkSensorRefreshTime(lastActivePowerUpdate));
+        return (outputMode.equals(OutputModeEnum.WIPE) && !isOn) || (isOn && !isRollershutter())
                 && !this.activePowerRefreshPriority.contains(DigitalSTROMConfig.REFRESH_PRIORITY_NEVER)
-                        ? (this.lastActivePowerUpdate + DigitalSTROMConfig.SENSORDATA_REFRESH_INTERVAL) > System
-                                .currentTimeMillis()
-                        : true;
+                        ? checkSensorRefreshTime(lastActivePowerUpdate) : true;
     }
 
     @Override
     public boolean isElectricMeterUpToDate() {
         return isOn && !isRollershutter()
                 && !this.electricMeterRefreshPriority.contains(DigitalSTROMConfig.REFRESH_PRIORITY_NEVER)
-                        ? (this.lastElectricMeterUpdate + DigitalSTROMConfig.SENSORDATA_REFRESH_INTERVAL) > System
-                                .currentTimeMillis()
-                        : true;
+                        ? checkSensorRefreshTime(lastElectricMeterUpdate) : true;
     }
 
     @Override
     public boolean isOutputCurrentUpToDate() {
         return isOn && !isRollershutter()
                 && !this.outputCurrentRefreshPriority.contains(DigitalSTROMConfig.REFRESH_PRIORITY_NEVER)
-                        ? (this.lastOutputCurrentUpdate + DigitalSTROMConfig.SENSORDATA_REFRESH_INTERVAL) > System
-                                .currentTimeMillis()
-                        : true;
+                        ? checkSensorRefreshTime(lastOutputCurrentUpdate) : true;
     }
 
-    // 1. Unterscheidung zwischen nötigen und nich nötigen Sensordatenabfragen?
-    // z.B. Lampe macht sinn, Rollershutter nicht, weil nur beim runter bzw. hochfahren Strom verbraucht wird
-    // 2. Wenn der Refreshinterval vom Nutzer bestimmt wird Zeit übergeben (eigene var, wegen Übergabe des Devices),
-    // da diese der Bridge-config entnommen werden muss
+    private boolean checkSensorRefreshTime(long lastTime) {
+        return (lastTime + DigitalSTROMConfig.SENSORDATA_REFRESH_INTERVAL) > System.currentTimeMillis();
+    }
+
     @Override
     public boolean isSensorDataUpToDate() {
-        return isOn && !isRollershutter() ? // Überprüfen ob es noch weitere gibt, bei denen es keinen Sinn macht
-                                            // Sensordaten zu erfassen
-        isActivePowerUpToDate() && isElectricMeterUpToDate() && isOutputCurrentUpToDate() : true;
+        if (outputMode.equals(OutputModeEnum.WIPE) && !isOn) {
+            return isActivePowerUpToDate();
+        }
+        logger.debug("!!!!!!!!!!!" + " " + outputMode.equals(OutputModeEnum.WIPE) + " " + !isOn + " "
+                + (outputMode.equals(OutputModeEnum.WIPE) && !isOn));
+        return isOn && !isRollershutter()
+                ? isActivePowerUpToDate() && isElectricMeterUpToDate() && isOutputCurrentUpToDate() : true;
     }
 
     @Override
@@ -1079,6 +1103,9 @@ public class JSONDeviceImpl implements Device {
 
     @Override
     public String getActivePowerRefreshPriority() {
+        if (outputMode.equals(OutputModeEnum.WIPE) && !isOn) {
+            return DigitalSTROMConfig.REFRESH_PRIORITY_LOW;
+        }
         return this.activePowerRefreshPriority;
     }
 
@@ -1167,7 +1194,9 @@ public class JSONDeviceImpl implements Device {
             }
 
             if (this.activeScene != null) {
-                this.activeScene.deviceSceneChanged((short) -1);
+                if (sceneOutputMap.get(activeScene.getSceneID()) != null) {
+                    this.activeScene.deviceSceneChanged((short) -1);
+                }
             }
             addEshThingStateUpdate(deviceStateUpdate);
 

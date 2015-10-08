@@ -104,15 +104,6 @@ public abstract class AbstractSensorJobExecutor {
     }
 
     /**
-     * Restarts the SensorJobExecuter Thread.
-     *
-     */
-    public synchronized void wakeUp() {
-        this.shutdown = false;
-        executer.run();
-    }
-
-    /**
      * Starts the SensorJobExecuter Thread.
      */
     public void startExecuter() {

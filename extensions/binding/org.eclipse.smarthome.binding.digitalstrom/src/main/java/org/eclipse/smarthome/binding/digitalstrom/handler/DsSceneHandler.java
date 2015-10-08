@@ -62,7 +62,7 @@ public class DsSceneHandler extends BaseThingHandler implements SceneStatusListe
     @Override
     public void initialize() {
         logger.debug("Initializing DigitalSTROM Scene handler.");
-        if (this.dssBridgeHandler == null) {
+        if (this.getDssBridgeHandler() == null) {
             updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.HANDLER_MISSING_ERROR, "Bridge is missig");
         } else {
             bridgeHandlerInitialized(dssBridgeHandler, this.getBridge());
@@ -79,15 +79,39 @@ public class DsSceneHandler extends BaseThingHandler implements SceneStatusListe
                 getDssBridgeHandler().unregisterSceneStatusListener(this);
             }
             sceneThingID = null;
+            scene = null;
         }
     }
 
     @Override
-    protected void bridgeHandlerInitialized(ThingHandler thingHandler, Bridge bridge) {
-        String configZoneID = getConfig().get(DigitalSTROMBindingConstants.SCENE_ZONE_ID).toString().toLowerCase();
-        String configGroupID = getConfig().get(DigitalSTROMBindingConstants.SCENE_GROUP_ID).toString().toLowerCase();
-        String configSceneID = getConfig().get(DigitalSTROMBindingConstants.SCENE_ID).toString().toLowerCase();
+    public void handleRemoval() {
+        if (getDssBridgeHandler() != null) {
+            this.dssBridgeHandler.childThingRemoved(sceneThingID);
+        }
+        updateStatus(ThingStatus.REMOVED);
+    }
 
+    @Override
+    protected void bridgeHandlerInitialized(ThingHandler thingHandler, Bridge bridge) {
+        String configZoneID;
+        String configGroupID;
+        String configSceneID;
+
+        if (getConfig().get(DigitalSTROMBindingConstants.SCENE_ZONE_ID) != null) {
+            configZoneID = getConfig().get(DigitalSTROMBindingConstants.SCENE_ZONE_ID).toString().toLowerCase();
+        } else {
+            configZoneID = "";
+        }
+        if (getConfig().get(DigitalSTROMBindingConstants.SCENE_GROUP_ID) != null) {
+            configGroupID = getConfig().get(DigitalSTROMBindingConstants.SCENE_GROUP_ID).toString().toLowerCase();
+        } else {
+            configGroupID = "";
+        }
+        if (getConfig().get(DigitalSTROMBindingConstants.SCENE_ID) != null) {
+            configSceneID = getConfig().get(DigitalSTROMBindingConstants.SCENE_ID).toString().toLowerCase();
+        } else {
+            configSceneID = "";
+        }
         logger.debug("zoneID: " + configZoneID);
         if (!configSceneID.isEmpty()) {
             this.sceneId = Short.parseShort(configSceneID);
@@ -154,11 +178,19 @@ public class DsSceneHandler extends BaseThingHandler implements SceneStatusListe
                             + configGroupID + "' does not exist, please check your configuration.");
                     return;
                 }
-
-                this.sceneThingID = zoneID + "-" + groupID + "-" + sceneId;
-                this.dssBridgeHandler.registerSceneStatusListener(this);
             }
+
+            this.sceneThingID = zoneID + "-" + groupID + "-" + sceneId;
+
+            updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.CONFIGURATION_PENDING,
+                    "waiting for listener registartion");
+            logger.debug("Set status on {}", getThing().getStatus());
+            this.dssBridgeHandler.registerSceneStatusListener(this);
+        } else {
+            updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.CONFIGURATION_ERROR, "No Scene-ID is set!");
+            logger.debug("Set status on {}", getThing().getStatus());
         }
+
     }
 
     @Override
@@ -215,9 +247,8 @@ public class DsSceneHandler extends BaseThingHandler implements SceneStatusListe
 
     @Override
     public void onSceneRemoved(InternalScene scene) {
-        this.scene = null;
-        updateStatus(ThingStatus.OFFLINE); // TODO: stimmt das?
-
+        scene = null;
+        updateStatus(ThingStatus.OFFLINE);
     }
 
     @Override
@@ -229,7 +260,7 @@ public class DsSceneHandler extends BaseThingHandler implements SceneStatusListe
             logger.debug("Set status on {}", getThing().getStatus());
         }
         this.scene = scene;
-        // onSceneStateChanged(scene.isActive());
+        onSceneStateChanged(scene.isActive());
     }
 
     @Override

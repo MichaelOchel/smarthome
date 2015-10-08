@@ -59,11 +59,11 @@ public enum SceneEnum implements Scene {
     MINIMUM(13), // Minimum output value
     MAXIMUM(14), // Maximum output value
     STOP(15), // Stop output value change at current position
-    AUTO_OFF(40), // we don't know
+    AUTO_OFF(40), // slowly fade down to off
 
     /* stepping scene commands */
-    INCREMENT(12), // Increment output value
-    DECREMENT(11), // Decrement output value
+    INCREMENT(11), // Increment output value
+    DECREMENT(12), // Decrement output value
 
     /* presets */
     PRESET_0(0), // Set output value to Preset 0 (Default: Off)

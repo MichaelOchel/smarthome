@@ -9,6 +9,7 @@ package org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.d
 
 import java.util.List;
 
+import org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.digitalSTROMListener.DigitalSTROMManagerStatusListener;
 import org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.digitalSTROMListener.SceneStatusListener;
 import org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.digitalSTROMStructure.digitalSTROMDevices.Device;
 import org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.digitalSTROMStructure.digitalSTROMDevices.deviceParameters.DSID;
@@ -128,4 +129,12 @@ public interface DigitalSTROMSceneManager {
     void start();
 
     void stop();
+
+    void removeInternalScene(String sceneID);
+
+    InternalScene getInternalScene(String sceneID);
+
+    public void registerStatusListener(DigitalSTROMManagerStatusListener statusListener);
+
+    public void unregisterStatusListener();
 }

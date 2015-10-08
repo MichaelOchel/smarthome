@@ -48,7 +48,7 @@ public enum SensorEnum {
      */
     ACTIVE_POWER(4, "watts", "W"),
     OUTPUT_CURRENT(5, "ampere", "mA"),
-    ELECTRIC_METER(6, "kilowatt hours)", "kWh"),
+    ELECTRIC_METER(6, "kilowatt hours", "kWh"),
     TEMPERATURE_INDOORS(9, "kelvin", "K"),
     TEMPERATURE_OUTDOORS(10, "kelvin", "K"),
     BRIGHTNESS_INDOORS(11, "lux", "Lx"),

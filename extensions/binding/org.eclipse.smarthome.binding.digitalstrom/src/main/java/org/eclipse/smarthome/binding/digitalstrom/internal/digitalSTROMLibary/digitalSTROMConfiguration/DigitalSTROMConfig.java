@@ -67,4 +67,6 @@ public class DigitalSTROMConfig {
 
     public static final int DEFAULT_EVENT_LISTENER_REFRESHINTERVAL = 1000;
     public static int EVENT_LISTENER_REFRESHINTERVAL = DEFAULT_EVENT_LISTENER_REFRESHINTERVAL;
+
+    public static final int STANDBY_ACTIVE_POWER = 2;
 }

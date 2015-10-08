@@ -35,7 +35,7 @@ public class DigitalSTROMBindingConstants {
 
     public final static Set<ThingTypeUID> SUPPORTED_THING_TYPES_UIDS = ImmutableSet.of(THING_TYPE_DSS_BRIDGE);
 
-    /**** List of all Channels ****/
+    /* List of all Channels */
 
     // Light
     public static final String CHANNEL_BRIGHTNESS = "brightness";
@@ -73,7 +73,7 @@ public class DigitalSTROMBindingConstants {
     public static final String GRAY_DEVICE_CONFIG = "binding:digitalstrom:grayDevice";
     public static final String DSS_BRIDE_CONFIG = "binding:digitalstrom:dssBridge";
 
-    /**** Bridge config properties ****/
+    /* Bridge config properties */
 
     public static final String HOST = "ipAddress";
     public static final String USER_NAME = "userName";
@@ -85,7 +85,7 @@ public class DigitalSTROMBindingConstants {
     public static final String DEFAULT_TRASH_DEVICE_DELEATE_TIME_KEY = "defaultTrashBinDeleateTime";
     public static final String TRUST_CERT_PATH_KEY = "trustCertPath";
 
-    /**** Device config properties ****/
+    /* Device config properties */
 
     public static final String DEVICE_UID = "dSUID";
     public static final String DEVICE_NAME = "deviceName";
@@ -112,7 +112,7 @@ public class DigitalSTROMBindingConstants {
 
     public final static int DEFAULT_SENSOR_READING_WAIT_TIME = 60000;
 
-    /**** Scene config ****/
+    /* Scene config */
     public static final String SCENE_NAME = "sceneName";
     public static final String SCENE_ZONE_ID = "zoneID";
     public static final String SCENE_GROUP_ID = "groupID";

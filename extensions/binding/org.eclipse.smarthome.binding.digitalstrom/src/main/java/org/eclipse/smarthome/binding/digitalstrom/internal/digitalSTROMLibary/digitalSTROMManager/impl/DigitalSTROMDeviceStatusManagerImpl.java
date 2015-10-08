@@ -14,8 +14,11 @@ import java.util.List;
 
 import org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.digitalSTROMConfiguration.DigitalSTROMConfig;
 import org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.digitalSTROMListener.DeviceStatusListener;
+import org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.digitalSTROMListener.DigitalSTROMManagerStatusListener;
 import org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.digitalSTROMListener.SceneStatusListener;
 import org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.digitalSTROMListener.TotalPowerConsumptionListener;
+import org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.digitalSTROMListener.StateEnums.ManagerStates;
+import org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.digitalSTROMListener.StateEnums.ManagerTypes;
 import org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.digitalSTROMManager.DigitalSTROMConnectionManager;
 import org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.digitalSTROMManager.DigitalSTROMDeviceStatusManager;
 import org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.digitalSTROMManager.DigitalSTROMSceneManager;
@@ -63,11 +66,13 @@ public class DigitalSTROMDeviceStatusManagerImpl implements DigitalSTROMDeviceSt
 
     /**** States ****/
     private long lastBinCheck = 0;
+    ManagerStates state = ManagerStates.stopped;
 
     private List<TrashDevice> trashDevices = new LinkedList<TrashDevice>();
 
     private DeviceStatusListener deviceDiscovery = null;
     private TotalPowerConsumptionListener totalPowerConsumptionListener = null;
+    private DigitalSTROMManagerStatusListener statusListener = null;
     private int tempConsumtion = 0;
     private int totalPowerConsumption = 0;
     private int tempEnergyMeter = 0;
@@ -95,11 +100,21 @@ public class DigitalSTROMDeviceStatusManagerImpl implements DigitalSTROMDeviceSt
         this.sceneMan = new DigitalSTROMSceneManagerImpl(connMan, strucMan);
     }
 
-    private boolean shutdown = false;
-    private Runnable pollingRunnable = new Runnable() {
-        // Thread schedduler2 = new Thread() {
+    private boolean shutdown = true;
+    private PollingRunnable pollingRunnable = null;
+
+    private class PollingRunnable implements Runnable { // = new Runnable()
+
+        // private boolean shutdown = false;
+        private boolean devicesLoaded = false;
+
+        public void shutdown() {
+            shutdown = true;
+        }
+
         @Override
         public void run() {
+            stateChanged(ManagerStates.initialasing);
             while (!shutdown) {
                 if (connMan.checkConnection()) {
                     logger.debug("start");
@@ -278,6 +293,15 @@ public class DigitalSTROMDeviceStatusManagerImpl implements DigitalSTROMDeviceSt
                         }
                     }
 
+                    if (!devicesLoaded) {
+                        logger.debug("Devices loaded");
+                        devicesLoaded = true;
+                        stateChanged(ManagerStates.running);
+                    } else {
+
+                    }
+
+                    // TODO: Generate everyTime Scenes or only when a Scene Discovery is added
                     if (!sceneMan.scenesGenerated() && sceneMan.isDiscoveryRegistrated()) {
                         logger.debug("generateScenes");
                         sceneMan.generateScenes();
@@ -326,19 +350,40 @@ public class DigitalSTROMDeviceStatusManagerImpl implements DigitalSTROMDeviceSt
                 }
 
             }
-
+            stateChanged(ManagerStates.stopped);
         }
     };
 
     @Override
-    public void start() {
+    public ManagerTypes getManagerType() {
+        return ManagerTypes.deviceStatusManager;
+    }
+
+    @Override
+    public ManagerStates getManagerState() {
+        return state;
+    }
+
+    private synchronized void stateChanged(ManagerStates state) {
+        if (statusListener != null) {
+            this.state = state;
+            statusListener.onStatusChanged(ManagerTypes.deviceStatusManager, state);
+        }
+    }
+
+    @Override
+    public synchronized void start() {
         // pollingJob = scheduler.scheduleAtFixedRate(pollingRunnable, 1, POLLING_FREQUENCY, TimeUnit.SECONDS);
         logger.debug("start Thread");
-        shutdown = false;
-        schedduler2 = new Thread(pollingRunnable);
-        schedduler2.start();
-        sceneMan.start();
-
+        if (shutdown) {
+            shutdown = false;
+            if (schedduler2 == null || !schedduler2.isAlive()) {
+                this.pollingRunnable = new PollingRunnable();
+                schedduler2 = new Thread(pollingRunnable);
+                schedduler2.start();
+            }
+            sceneMan.start();
+        }
         if (sceneJobExecuter != null) {
             this.sceneJobExecuter.startExecuter();
         }
@@ -349,9 +394,11 @@ public class DigitalSTROMDeviceStatusManagerImpl implements DigitalSTROMDeviceSt
     }
 
     @Override
-    public void stop() {
+    public synchronized void stop() {
         shutdown = true;
+        // pollingRunnable.shutdown();
         sceneMan.stop();
+        schedduler2 = null;
         if (sceneJobExecuter != null) {
             this.sceneJobExecuter.shutdown();
         }
@@ -363,14 +410,7 @@ public class DigitalSTROMDeviceStatusManagerImpl implements DigitalSTROMDeviceSt
 
     @Override
     public void restart() {
-        start();
 
-        if (this.sceneJobExecuter != null) {
-            this.sceneJobExecuter.wakeUp();
-        }
-        if (this.sensorJobExecuter != null) {
-            this.sensorJobExecuter.wakeUp();
-        }
     }
 
     class TrashDevice {
@@ -428,9 +468,22 @@ public class DigitalSTROMDeviceStatusManagerImpl implements DigitalSTROMDeviceSt
         strucMan.updateDevice(newDevice);
     }
 
+    private long lastSceneCall = 0;
+    private long sleepTime = 0;
+
     @Override
     public synchronized void sendSceneComandsToDSS(InternalScene scene, boolean call_undo) {
+        if (lastSceneCall + 1000 > System.currentTimeMillis()) {
+            sleepTime = System.currentTimeMillis() - lastSceneCall;
+            try {
+                Thread.sleep(sleepTime);
+            } catch (InterruptedException e) {
+                // TODO Auto-generated catch block
+                e.printStackTrace();
+            }
+        }
         if (this.connMan.checkConnection()) {
+            lastSceneCall = System.currentTimeMillis();
             boolean requestSucsessfull = false;
             // TODO: 1 second rule to send auto generated scene commands
             if (scene.getZoneID() == 0) {
@@ -445,14 +498,14 @@ public class DigitalSTROMDeviceStatusManagerImpl implements DigitalSTROMDeviceSt
                 if (call_undo) {
                     requestSucsessfull = this.digitalSTROMClient.callZoneScene(connMan.getSessionToken(),
                             scene.getZoneID(), null, scene.getGroupID(), null, SceneEnum.getScene(scene.getSceneID()),
-                            true);
+                            false);
                 } else {
                     requestSucsessfull = this.digitalSTROMClient.undoZoneScene(connMan.getSessionToken(),
                             scene.getZoneID(), null, scene.getGroupID(), null, SceneEnum.getScene(scene.getSceneID()));
                 }
             }
 
-            // logger.debug("scenecall sucsess?: " + requestSucsessfull);
+            logger.debug("scenecall sucsess?: " + requestSucsessfull);
             if (requestSucsessfull) {
                 this.sceneMan.addEcho(scene.getID());
                 if (call_undo) {
@@ -695,9 +748,14 @@ public class DigitalSTROMDeviceStatusManagerImpl implements DigitalSTROMDeviceSt
     public void registerDeviceListener(DeviceStatusListener deviceListener) {
         if (deviceListener != null) {
             String id = deviceListener.getID();
-            logger.debug("register DevListener with id: " + id);
+            logger.debug("register DeviceListener with id: " + id);
             if (id.equals(DeviceStatusListener.DEVICE_DESCOVERY)) {
                 this.deviceDiscovery = deviceListener;
+                if (getManagerState().equals(ManagerStates.running)) {
+                    for (Device device : strucMan.getDeviceMap().values()) {
+                        deviceDiscovery.onDeviceAdded(device);
+                    }
+                }
                 logger.debug("register device descovery");
             } else {
                 Device intDevice = strucMan.getDeviceByDSID(deviceListener.getID());
@@ -760,11 +818,17 @@ public class DigitalSTROMDeviceStatusManagerImpl implements DigitalSTROMDeviceSt
     @Override
     public void unregisterSceneListener(SceneStatusListener sceneListener) {
         this.sceneMan.unregisterSceneListener(sceneListener);
-        /*
-         * if (!sceneMan.scenesGenerated()) {
-         * logger.debug("generateScenes");
-         * sceneMan.generateScenes();
-         * }
-         */
+    }
+
+    @Override
+    public void registerStatusListener(DigitalSTROMManagerStatusListener statusListener) {
+        this.statusListener = statusListener;
+        this.sceneMan.registerStatusListener(statusListener);
+    }
+
+    @Override
+    public void unregisterStatusListener() {
+        this.statusListener = null;
+        this.sceneMan.unregisterStatusListener();
     }
 }

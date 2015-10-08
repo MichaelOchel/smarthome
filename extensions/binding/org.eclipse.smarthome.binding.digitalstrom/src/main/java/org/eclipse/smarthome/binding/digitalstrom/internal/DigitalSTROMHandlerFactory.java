@@ -91,19 +91,19 @@ public class DigitalSTROMHandlerFactory extends BaseThingHandlerFactory {
         if (thingTypeUID == null)
             return null;
 
-        if (DssBridgeHandler.SUPPORTED_THING_TYPES.contains(thing.getThingTypeUID())) {
+        if (DssBridgeHandler.SUPPORTED_THING_TYPES.contains(thingTypeUID)) {
             DssBridgeHandler handler = new DssBridgeHandler((Bridge) thing);
 
             registerServices(handler);
             return handler;
         }
 
-        if (DsDeviceHandler.SUPPORTED_THING_TYPES.contains(thing.getThingTypeUID())) {
+        if (DsDeviceHandler.SUPPORTED_THING_TYPES.contains(thingTypeUID)) {
 
             return new DsDeviceHandler(thing);
         }
 
-        if (DsSceneHandler.SUPPORTED_THING_TYPES.contains(thing.getThingTypeUID())) {
+        if (DsSceneHandler.SUPPORTED_THING_TYPES.contains(thingTypeUID)) {
             return new DsSceneHandler(thing);
         }
 

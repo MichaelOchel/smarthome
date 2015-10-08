@@ -95,7 +95,7 @@ public class DsDeviceHandler extends BaseThingHandler implements DeviceStatusLis
 
         if (!configdSID.isEmpty()) {
             dSID = configdSID;
-            if (this.dssBridgeHandler == null) {
+            if (getDssBridgeHandler() == null) {
                 updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.HANDLER_MISSING_ERROR, "Bridge is missig");
             } else {
                 bridgeHandlerInitialized(dssBridgeHandler, this.getBridge());
@@ -119,7 +119,7 @@ public class DsDeviceHandler extends BaseThingHandler implements DeviceStatusLis
 
     @Override
     public void handleRemoval() {
-        if (getDssBridgeHandler() != null) {
+        if (!getThing().getStatus().equals(ThingStatus.UNINITIALIZED) && getDssBridgeHandler() != null) {
             this.dssBridgeHandler.childThingRemoved(dSID);
         }
         updateStatus(ThingStatus.REMOVED);
@@ -134,8 +134,8 @@ public class DsDeviceHandler extends BaseThingHandler implements DeviceStatusLis
         if (device == null) {
             initialize();
         } else {
-            // loadSensorChannels(thing.getConfiguration());
-            onDeviceAdded(device);
+            loadSensorChannels(thing.getConfiguration());
+            // onDeviceAdded(device);
         }
     }
 
@@ -159,18 +159,16 @@ public class DsDeviceHandler extends BaseThingHandler implements DeviceStatusLis
             if (thingHandler instanceof DssBridgeHandler) {
                 this.dssBridgeHandler = (DssBridgeHandler) thingHandler;
 
-                if (device == null) {
-                    updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.CONFIGURATION_PENDING,
-                            "waiting for listener registartion");
-                    logger.debug("Set status on {}", getThing().getStatus());
-                    // note: this call implicitly registers our handler as a device-listener on the bridge
-                    this.dssBridgeHandler.registerDeviceStatusListener(this);
-                } else {
-                    updateStatus(ThingStatus.ONLINE);
-                }
-
+                updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.CONFIGURATION_PENDING,
+                        "waiting for listener registartion");
+                logger.debug("Set status on {}", getThing().getStatus());
+                // note: this call implicitly registers our handler as a device-listener on the bridge
+                this.dssBridgeHandler.registerDeviceStatusListener(this);
             }
+        } else {
+            updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.CONFIGURATION_ERROR, "No dSID is set!");
         }
+
     }
 
     @Override
@@ -356,7 +354,7 @@ public class DsDeviceHandler extends BaseThingHandler implements DeviceStatusLis
 
     @Override
     public synchronized void onDeviceAdded(Device device) {
-        if (device != null && device.isPresent()) {
+        if (device.isPresent()) {
             this.device = device;
             ThingStatusInfo statusInfo = this.dssBridgeHandler.getThing().getStatusInfo();
             updateStatus(statusInfo.getStatus(), statusInfo.getStatusDetail(), statusInfo.getDescription());
@@ -513,7 +511,21 @@ public class DsDeviceHandler extends BaseThingHandler implements DeviceStatusLis
             loadOutputChannel(null, null);
         }
 
-        if (device.getFunctionalColorGroup().equals(FunctionalColorGroupEnum.BLACK)) {
+        if (device.getFunctionalColorGroup().equals(FunctionalColorGroupEnum.YELLOW)) {
+            if (device.isDimmable() && (currentChannel == null || currentChannel != CHANNEL_BRIGHTNESS)) {
+                loadOutputChannel(CHANNEL_BRIGHTNESS, "Dimmer");
+            } else if (device.isRollershutter() && (currentChannel != null || currentChannel != CHANNEL_SHADE)) {
+                loadOutputChannel(CHANNEL_SHADE, "Rollershutter");
+            } else if (device.isSwitch() && (currentChannel != null || currentChannel != CHANNEL_LIGHT_SWITCH)) {
+                loadOutputChannel(CHANNEL_LIGHT_SWITCH, "Switch");
+            } else if (device.getOutputMode().equals(OutputModeEnum.COMBINED_2_STAGE_SWITCH)
+                    && (currentChannel != null || currentChannel != CHANNEL_COMBINED_2_STAGE_SWITCH)) {
+                loadOutputChannel(CHANNEL_COMBINED_2_STAGE_SWITCH, "String");
+            } else if (device.getOutputMode().equals(OutputModeEnum.COMBINED_3_STAGE_SWITCH)
+                    && (currentChannel != null || currentChannel != CHANNEL_COMBINED_3_STAGE_SWITCH)) {
+                loadOutputChannel(CHANNEL_COMBINED_3_STAGE_SWITCH, "String");
+            }
+        } else {
             if (device.isDimmable() && (currentChannel == null || currentChannel != CHANNEL_GENERAL_DIMM)) {
                 loadOutputChannel(CHANNEL_GENERAL_DIMM, "Dimmer");
             } else
@@ -527,20 +539,8 @@ public class DsDeviceHandler extends BaseThingHandler implements DeviceStatusLis
             } else if (device.getOutputMode().equals(OutputModeEnum.COMBINED_3_STAGE_SWITCH)
                     && (currentChannel != null || currentChannel != CHANNEL_GENERAL_COMBINED_3_STAGE_SWITCH)) {
                 loadOutputChannel(CHANNEL_GENERAL_COMBINED_3_STAGE_SWITCH, "String");
-            }
-        } else {
-            if (device.isDimmable() && (currentChannel == null || currentChannel != CHANNEL_BRIGHTNESS)) {
-                loadOutputChannel(CHANNEL_BRIGHTNESS, "Dimmer");
-            } else if (device.isRollershutter() && (currentChannel != null || currentChannel != CHANNEL_SHADE)) {
-                loadOutputChannel(CHANNEL_SHADE, "Rollershutter");
-            } else if (device.isSwitch() && (currentChannel != null || currentChannel != CHANNEL_LIGHT_SWITCH)) {
-                loadOutputChannel(CHANNEL_LIGHT_SWITCH, "Switch");
-            } else if (device.getOutputMode().equals(OutputModeEnum.COMBINED_2_STAGE_SWITCH)
-                    && (currentChannel != null || currentChannel != CHANNEL_COMBINED_2_STAGE_SWITCH)) {
-                loadOutputChannel(CHANNEL_COMBINED_2_STAGE_SWITCH, "String");
-            } else if (device.getOutputMode().equals(OutputModeEnum.COMBINED_3_STAGE_SWITCH)
-                    && (currentChannel != null || currentChannel != CHANNEL_COMBINED_3_STAGE_SWITCH)) {
-                loadOutputChannel(CHANNEL_COMBINED_3_STAGE_SWITCH, "String");
+            } else {
+                loadOutputChannel(null, null);
             }
         }
     }

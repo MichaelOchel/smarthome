@@ -159,8 +159,10 @@ public class InternalScene {
      */
     public void deviceSceneChanged(short sceneNumber) {
         if (this.SCENE_ID != sceneNumber) {
-            this.active = false;
-            informListener();
+            if (active) {
+                active = false;
+                informListener();
+            }
         }
     }
 

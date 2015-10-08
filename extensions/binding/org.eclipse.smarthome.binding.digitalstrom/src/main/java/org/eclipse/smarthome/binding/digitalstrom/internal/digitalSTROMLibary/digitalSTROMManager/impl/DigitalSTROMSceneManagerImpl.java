@@ -13,7 +13,10 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
+import org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.digitalSTROMListener.DigitalSTROMManagerStatusListener;
 import org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.digitalSTROMListener.SceneStatusListener;
+import org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.digitalSTROMListener.StateEnums.ManagerStates;
+import org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.digitalSTROMListener.StateEnums.ManagerTypes;
 import org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.digitalSTROMManager.DigitalSTROMConnectionManager;
 import org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.digitalSTROMManager.DigitalSTROMSceneManager;
 import org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.digitalSTROMManager.DigitalSTROMStructureManager;
@@ -38,6 +41,7 @@ public class DigitalSTROMSceneManagerImpl implements DigitalSTROMSceneManager {
     private DigitalSTROMStructureManager structureManager;
     private DigitalSTROMConnectionManager connectionManager;
     private SceneDiscovery discovery;
+    private DigitalSTROMManagerStatusListener statusListener = null;
 
     private boolean scenesGenerated = false;
 
@@ -59,7 +63,7 @@ public class DigitalSTROMSceneManagerImpl implements DigitalSTROMSceneManager {
     public void stop() {
         if (this.eventListener != null) {
             this.eventListener.shutdown();
-            // this.eventListener = null;
+            this.eventListener = null;
         }
     }
 
@@ -193,6 +197,16 @@ public class DigitalSTROMSceneManagerImpl implements DigitalSTROMSceneManager {
                 this.internalSceneMap.get(intScene.getID()).setSceneName(newSceneName);
             }
         }
+    }
+
+    @Override
+    public void removeInternalScene(String sceneID) {
+        this.internalSceneMap.remove(sceneID);
+    }
+
+    @Override
+    public InternalScene getInternalScene(String sceneID) {
+        return this.internalSceneMap.get(sceneID);
     }
 
     private InternalScene createNewScene(String sceneID) {
@@ -334,8 +348,9 @@ public class DigitalSTROMSceneManagerImpl implements DigitalSTROMSceneManager {
 
     @Override
     public void generateScenes() {
+        stateChanged(ManagerStates.generatingScenes);
         discovery.generateAllScenes(connectionManager, structureManager);
-        // discovery.generateAppartmentScence();
+        stateChanged(ManagerStates.scenesGenerated);
         scenesGenerated = true;
     }
 
@@ -344,8 +359,24 @@ public class DigitalSTROMSceneManagerImpl implements DigitalSTROMSceneManager {
         return this.discovery != null;
     }
 
+    private void stateChanged(ManagerStates state) {
+        if (statusListener != null) {
+            statusListener.onStatusChanged(ManagerTypes.sceneManager, state);
+        }
+    }
+
     @Override
     public List<InternalScene> getScenes() {
         return this.internalSceneMap != null ? new LinkedList<InternalScene>(this.internalSceneMap.values()) : null;
+    }
+
+    @Override
+    public void registerStatusListener(DigitalSTROMManagerStatusListener statusListener) {
+        this.statusListener = statusListener;
+    }
+
+    @Override
+    public void unregisterStatusListener() {
+        this.statusListener = null;
     }
 }
