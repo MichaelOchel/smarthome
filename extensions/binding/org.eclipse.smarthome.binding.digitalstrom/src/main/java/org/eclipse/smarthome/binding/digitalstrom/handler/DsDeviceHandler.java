@@ -57,9 +57,7 @@ import com.google.common.collect.Sets;
  * digitalSTROM device and handling commands which are send to one of the channels. <br>
  * <br>
  * For that it uses the {@link DssBridgeHandler} to execute the actual command and implements the
- * {@link DeviceStatusListener}
- * to get informed by changes from the accompanying {@link Device}.
- * <br>
+ * {@link DeviceStatusListener} to get informed about changes from the accompanying {@link Device}.
  *
  * @author Michael Ochel - Initial contribution
  * @author Matthias Siegele - Initial contribution
@@ -72,7 +70,7 @@ public class DsDeviceHandler extends BaseThingHandler implements DeviceStatusLis
     /**
      * The {@link DigitalSTROMThingTypeProvider} add the supported thing types
      */
-    public final static Set<ThingTypeUID> SUPPORTED_THING_TYPES = Sets.newHashSet();// THING_TYPE_GE_KM200,THING_TYPE_GE_KL200
+    public final static Set<ThingTypeUID> SUPPORTED_THING_TYPES = Sets.newHashSet();
 
     private String dSID = null;
 
@@ -92,7 +90,6 @@ public class DsDeviceHandler extends BaseThingHandler implements DeviceStatusLis
     public void initialize() {
         logger.debug("Initializing DigitalSTROM Device handler.");
         String configdSID = getConfig().get(DigitalSTROMBindingConstants.DEVICE_DSID).toString();
-
         if (!configdSID.isEmpty()) {
             dSID = configdSID;
             if (getDssBridgeHandler() == null) {
@@ -127,8 +124,6 @@ public class DsDeviceHandler extends BaseThingHandler implements DeviceStatusLis
 
     @Override
     public void thingUpdated(Thing thing) {
-        // TODO: perhaps our own sequence, because we not really need to dispose() and initialize() the thing after an
-        // update
         // dispose();
         this.thing = thing;
         if (device == null) {

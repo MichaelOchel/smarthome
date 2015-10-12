@@ -31,12 +31,13 @@ import com.google.common.collect.Sets;
 
 /**
  * The {@link DsSceneHandler} is responsible for handling commands,
- * which are send to one of the channels of an DigitalSTROM-Scene. It uses the {@link DsBridgeHandler} to execute the
- * actual
- * command.
+ * which are send to the channel of an DigitalSTROM-Scene.<br>
+ * For that it uses the {@link DsBridgeHandler} to execute the actual command, and implements the
+ * {@link SceneStatusListener}
+ * to get informed about changes from the accompanying {@link InternalScene}.
  *
  * @author Michael Ochel - Initial contribution
- * @author Mathias Siegele - Initial contribution
+ * @author Matthias Siegele - Initial contribution
  *
  */
 public class DsSceneHandler extends BaseThingHandler implements SceneStatusListener {

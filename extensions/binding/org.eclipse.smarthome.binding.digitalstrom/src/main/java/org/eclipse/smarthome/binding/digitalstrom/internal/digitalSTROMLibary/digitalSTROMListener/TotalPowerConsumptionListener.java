@@ -8,11 +8,12 @@
 package org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.digitalSTROMListener;
 
 /**
- *
- *
+ * The {@link TotalPowerConsumptionListener} is notified if the total power consumption or the total electric meter
+ * value
+ * has changed.
  *
  * @author Michael Ochel - Initial contribution
- * @author Mathias Siegele - Initial contribution
+ * @author Matthias Siegele - Initial contribution
  *
  */
 public interface TotalPowerConsumptionListener {

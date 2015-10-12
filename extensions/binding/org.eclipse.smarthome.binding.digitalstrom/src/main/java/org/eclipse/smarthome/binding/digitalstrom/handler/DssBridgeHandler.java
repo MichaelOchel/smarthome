@@ -53,10 +53,22 @@ import org.slf4j.LoggerFactory;
  * the framework.<br>
  * All {@link DsDeviceHandler}s and {@link DsSceneHandler} use the {@link DssBridgeHandler} to execute the actual
  * commands.
- * The {@link DssBridgeHandler} also informs all other digitalSTROM handler about status changes from the outside.
+ * <p>
+ * The {@link DssBridgeHandler} also:
+ * <ul>
+ * <li>manages the {@link DigitalSTROMDeviceStatusManager} (starts, stopps, register {@link DeviceStatusListener},
+ * register {@link SceneStatusListener} and so on)</li>
+ * <li>starts the {@link DigitalSTROMThingTypeProvider} if the connection is established</li>
+ * <li>load the configurations for the {@link DigitalSTROMConfig}.</li>
+ * <li>implements {@link DigitalSTROMManagerStatusListener} to manages the expiration of the Thing initalisations</li>
+ * <li>implements the {@link DigitalSTROMConnectionListener} to manages the {@link ThingStatus} of all connected Things
+ * </li>
+ * <li>and implements the {@link TotalPowerConsumptionListener} to uptate his Channels.</li>
+ * </ul>
+ * </p>
  *
  * @author Michael Ochel - Initial contribution
- * @author Mathias Siegele - Initial contribution
+ * @author Matthias Siegele - Initial contribution
  */
 public class DssBridgeHandler extends BaseBridgeHandler
         implements DigitalSTROMConnectionListener, TotalPowerConsumptionListener, DigitalSTROMManagerStatusListener {
@@ -139,7 +151,7 @@ public class DssBridgeHandler extends BaseBridgeHandler
                 this.thingTypeProvider.registerConnectionManagerHandler(connMan);
             }
 
-            // TODO: vorallem wegen der Discovery
+            // if the device discovery is added before the initialization is ready it will be added now.
             if (this.devListener != null) {
                 for (DeviceStatusListener listener : this.devListener) {
                     this.registerDeviceStatusListener(listener);
@@ -155,15 +167,10 @@ public class DssBridgeHandler extends BaseBridgeHandler
             }
 
             if (connMan.checkConnection()) {
-                // if (!devStatMan.getManagerState().equals(ManagerStates.running)) {
                 this.devStatMan.start();
-                // }
-                this.onStatusChanged(devStatMan.getManagerType(), devStatMan.getManagerState());
-
-                // setStatus(ThingStatus.ONLINE);
-            } else {
-                // TODO: offline
+                onStatusChanged(devStatMan.getManagerType(), devStatMan.getManagerState());
             }
+
             if (connMan.getApplicationToken() != null) {
                 configuration.remove(USER_NAME);
                 configuration.remove(PASSWORD);
@@ -208,15 +215,12 @@ public class DssBridgeHandler extends BaseBridgeHandler
             this.connMan = new DigitalSTROMConnectionManagerImpl(loginConfig[0], loginConfig[1], loginConfig[2],
                     loginConfig[3], this);
         }
-        // logger.debug(connMan.getApplicationToken());
 
-        // this.devStatMan.stop();
         if (connMan.removeApplicationToken()) {
             logger.debug("Application-Token deleated");
             updateStatus(ThingStatus.REMOVED);
 
         }
-        // this.connMan = null;
     }
 
     private String[] getLoginConfig(Configuration configuration) {
@@ -240,7 +244,7 @@ public class DssBridgeHandler extends BaseBridgeHandler
     /* methods to store DeviceStatusListener */
 
     /**
-     * Registers a new {@link DeviceStatusListener} on the {@link DsBridgeHandler}.
+     * Registers a new {@link DeviceStatusListener} on the {@link DigitalSTROMDeviceStatusManager}.
      *
      * @param deviceStatusListener
      */
@@ -262,6 +266,12 @@ public class DssBridgeHandler extends BaseBridgeHandler
 
     }
 
+    /**
+     * Register the {@link DigitalSTROMThingTypeProvider} to start them if the connection to the digitalSTROM-Server is
+     * established.
+     *
+     * @param thingTypeProvider
+     */
     public synchronized void registerThingTypeProvider(DigitalSTROMThingTypeProvider thingTypeProvider) {
         this.thingTypeProvider = thingTypeProvider;
     }
@@ -309,9 +319,9 @@ public class DssBridgeHandler extends BaseBridgeHandler
     List<SceneStatusListener> unregisterSceneStatusListeners = null;
 
     /**
-     * Unregisters a new {@link DeviceStatusListener} on the {@link DsBridgeHandler}.
+     * Unregisters a new {@link SceneStatusListener} on the {@link DigitalSTROMDeviceStatusManager}.
      *
-     * @param devicetatusListener
+     * @param sceneStatusListener
      */
     public void unregisterSceneStatusListener(SceneStatusListener sceneStatusListener) {
         if (this.sceneMan != null && !generatingScenes) {
@@ -328,6 +338,11 @@ public class DssBridgeHandler extends BaseBridgeHandler
         }
     }
 
+    /**
+     * Has to be called form a removed Thing-Child to rediscover the Thing.
+     *
+     * @param scene or device id
+     */
     public void childThingRemoved(String id) {
         if (id.split("-").length == 3) {
             InternalScene scene = sceneMan.getInternalScene(id);
@@ -340,6 +355,12 @@ public class DssBridgeHandler extends BaseBridgeHandler
         }
     }
 
+    /**
+     * Delegate a stopp command from a Thing to the {@link DigitalSTROMDeviceStatusManager#sendStopComandsToDSS(Device)}
+     * .
+     *
+     * @param device
+     */
     public void stopOutputValue(Device device) {
         this.devStatMan.sendStopComandsToDSS(device);
     }
@@ -402,13 +423,11 @@ public class DssBridgeHandler extends BaseBridgeHandler
                 }
 
             default:
-                // TODO: Fehlermeldung
         }
     }
 
     private void setStatus(ThingStatus status) {
-        updateStatus(ThingStatus.ONLINE);
-        // if (getBridge() != null) {
+        updateStatus(status);
         for (Thing thing : getThing().getThings()) {
             if (!thing.getStatus().equals(ThingStatus.ONLINE)) {
                 ThingHandler handler = thing.getHandler();
@@ -417,7 +436,6 @@ public class DssBridgeHandler extends BaseBridgeHandler
                 }
             }
         }
-        // }
     }
 
     @Override
@@ -445,48 +463,69 @@ public class DssBridgeHandler extends BaseBridgeHandler
                             "Server not found! Please check this points:\n" + " - DigitalSTROM-Server turned on?\n"
                                     + " - hostadress correct?\n" + " - ethernet cable connection established?");
                     break;
-                case INVALIDE_URL:
+                case INVALID_URL:
                     updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.CONFIGURATION_ERROR, "Invalide URL is set.");
                     break;
                 default:
-                    // TODO: Fehlermeldung
             }
         }
 
     }
 
+    /**
+     * Returns a list of all {@link Device}'s.
+     *
+     * @return device list
+     */
     public List<Device> getDevices() {
         return this.structMan.getDeviceMap() != null ? new LinkedList<Device>(this.structMan.getDeviceMap().values())
                 : null;
     }
 
+    /**
+     * Returns the {@link DigitalSTROMStructureManager}.
+     *
+     * @return DigitalSTROMStructureManager
+     */
     public DigitalSTROMStructureManager getStructureManager() {
         return this.structMan;
     }
 
+    /**
+     * Delegate a scene command from a Thing to the
+     * {@link DigitalSTROMDeviceStatusManager#sendSceneComandsToDSS(InternalScene, boolean)}
+     *
+     * @param scene
+     * @param call_undo
+     */
     public void sendSceneComandToDSS(InternalScene scene, boolean call_undo) {
         if (devStatMan != null) {
             devStatMan.sendSceneComandsToDSS(scene, call_undo);
         }
     }
 
+    /**
+     * Returns a list of all {@link InternalScene}'s.
+     *
+     * @return Scene list
+     */
     public List<InternalScene> getScenes() {
         return sceneMan != null ? sceneMan.getScenes() : new LinkedList<InternalScene>();
     }
 
+    /**
+     * Returns the {@link DigitalSTROMConnectionManager}.
+     *
+     * @return DigitalSTROMConnectionManager
+     */
     public DigitalSTROMConnectionManager getConnectionManager() {
         return this.connMan;
     }
 
     private boolean generatingScenes = false;
 
-    public boolean isGeneratingScenes() {
-        return generatingScenes;
-    }
-
     @Override
     public void onStatusChanged(ManagerTypes managerType, ManagerStates state) {
-        logger.debug("!!!!!!" + managerType.toString() + " " + state.toString() + "!!!!!!!");
         if (managerType.equals(ManagerTypes.deviceStatusManager)) {
             switch (state) {
                 case initialasing:

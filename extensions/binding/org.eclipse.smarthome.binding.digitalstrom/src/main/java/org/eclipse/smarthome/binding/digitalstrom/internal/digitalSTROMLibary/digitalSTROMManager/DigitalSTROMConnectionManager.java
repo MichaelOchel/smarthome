@@ -11,13 +11,11 @@ import org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.di
 import org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.digitalSTROMServerConnection.DigitalSTROMAPI;
 import org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.digitalSTROMServerConnection.HttpTransport;
 
-//Therefor he create the --- and provide ???
-
 /**
  * The {@link DigitalSTROMConnectionManager} manage the connection to a digitalSTROM-Server.
  *
  * @author Michael Ochel - Initial contribution
- * @author Mathias Siegele - Initial contribution
+ * @author Matthias Siegele - Initial contribution
  *
  */
 public interface DigitalSTROMConnectionManager {
@@ -80,8 +78,21 @@ public interface DigitalSTROMConnectionManager {
      */
     public void unregisterConnectionListener();
 
-    boolean removeApplicationToken();
+    /**
+     * Revoke the saved application-token from the digitalSTROM-Server.
+     * 
+     * @return
+     */
+    public boolean removeApplicationToken();
 
+    /**
+     * Updates the login configuration.
+     *
+     * @param host
+     * @param username
+     * @param password
+     * @param applicationToken
+     */
     public void updateConfig(String host, String username, String password, String applicationToken);
 
 }

@@ -84,7 +84,9 @@ public class DigitalSTROMConnectionManagerImpl implements DigitalSTROMConnection
     private void init(String host, int connectTimeout, int readTimeout, String username, String password,
             String applicationToken) {
         configuration = new HashMap<String, String>(4);
-        configuration.put(this.HOST, host);
+        if (host != null) {
+            configuration.put(this.HOST, host);
+        }
         configuration.put(this.APPLICATION_TOKEN, applicationToken);
         configuration.put(this.USER_NAME, username);
         configuration.put(this.PASSWORD, password);
@@ -164,7 +166,7 @@ public class DigitalSTROMConnectionManagerImpl implements DigitalSTROMConnection
                 break;
             case -2:
                 // System.err.println("Invalide URL!");
-                onConnectionLost(DigitalSTROMConnectionListener.INVALIDE_URL);
+                onConnectionLost(DigitalSTROMConnectionListener.INVALID_URL);
                 lastConnectionState = false;
                 break;
             case -3:

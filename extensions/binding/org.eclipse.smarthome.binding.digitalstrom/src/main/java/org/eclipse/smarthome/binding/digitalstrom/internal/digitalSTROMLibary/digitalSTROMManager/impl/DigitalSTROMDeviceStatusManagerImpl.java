@@ -108,10 +108,11 @@ public class DigitalSTROMDeviceStatusManagerImpl implements DigitalSTROMDeviceSt
         // private boolean shutdown = false;
         private boolean devicesLoaded = false;
 
-        public void shutdown() {
-            shutdown = true;
-        }
-
+        /*
+         * public void shutdown() {
+         * shutdown = true;
+         * }
+         */
         @Override
         public void run() {
             stateChanged(ManagerStates.initialasing);
@@ -302,7 +303,7 @@ public class DigitalSTROMDeviceStatusManagerImpl implements DigitalSTROMDeviceSt
                     }
 
                     // TODO: Generate everyTime Scenes or only when a Scene Discovery is added
-                    if (!sceneMan.scenesGenerated() && sceneMan.isDiscoveryRegistrated()) {
+                    if (!sceneMan.scenesGenerated() /* && sceneMan.isDiscoveryRegistrated() */) {
                         logger.debug("generateScenes");
                         sceneMan.generateScenes();
                     }

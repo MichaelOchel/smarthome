@@ -49,6 +49,7 @@ public class DigitalSTROMSceneManagerImpl implements DigitalSTROMSceneManager {
             DigitalSTROMStructureManager structureManager) {
         this.structureManager = structureManager;
         this.connectionManager = connectionManager;
+        this.discovery = new SceneDiscovery(this);
     }
 
     @Override
@@ -299,13 +300,15 @@ public class DigitalSTROMSceneManagerImpl implements DigitalSTROMSceneManager {
     public void registerSceneListener(SceneStatusListener sceneListener) {
         if (sceneListener != null) {
             String id = sceneListener.getID();
-            // logger.debug("register SceneListener with id: " + id);
             if (id.equals(SceneStatusListener.SCENE_DESCOVERY)) {
-                this.discovery = new SceneDiscovery(this);
                 discovery.registerSceneDiscovery(sceneListener);
-                // discovery.generateAllScenes(connectionManager, structureManager);
+                if (scenesGenerated()) {
+                    for (InternalScene scene : internalSceneMap.values()) {
+                        discovery.sceneDiscoverd(scene);
+                    }
+                }
             } else {
-                InternalScene intScene = this.internalSceneMap.get(sceneListener.getID());
+                InternalScene intScene = internalSceneMap.get(sceneListener.getID());
                 if (intScene != null) {
                     intScene.registerSceneListener(sceneListener);
                 } else {

@@ -8,10 +8,10 @@
 package org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.digitalSTROMListener;
 
 /**
- * The {@link DigitalSTROMConnectionListener} is notified when the connection state of digitalSTROM-Server has changed.
+ * The {@link DigitalSTROMConnectionListener} is notified if the connection state of digitalSTROM-Server has changed.
  *
  * @author Michael Ochel - Initial contribution
- * @author Mathias Siegele - Initial contribution
+ * @author Matthias Siegele - Initial contribution
  *
  */
 public interface DigitalSTROMConnectionListener {
@@ -55,27 +55,34 @@ public interface DigitalSTROMConnectionListener {
      */
     public final String CONNECTON_TIMEOUT = "connTimeout";
     /**
-     * State if no username or password is set and the given application-token can't be used.
+     * State if the host can't be found.
      */
     public final String HOST_NOT_FOUND = "hostNotFound";
 
-    public final String INVALIDE_URL = "invalideURL";
+    /**
+     * State if the the URL is invalid.
+     */
+    public final String INVALID_URL = "invalideURL";
 
     /**
      * This method is called when ever the connection state has changed from {@link #CONNECTION_LOST}
-     * to {@link #CONNECTION_RESUMED} and vice versa.
+     * to {@link #CONNECTION_RESUMED} and vice versa. It also will be called if the application-token is generated over
+     * {@link APPLICATION_TOKEN_GENERATED}.
      *
      * @param newConnectionState
      */
     public void onConnectionStateChange(String newConnectionState);
 
     /**
-     * This method is called when ever the connection state has changed to {@link #NOT_AUTHENTICATED}
+     * This method is called when ever the connection state has changed to {@link #NOT_AUTHENTICATED} or
+     * {@link CONNECTION_LOST}
      * and also passes the reason why. Reason can be:
      * <ul>
      * <li>{@link #WRONG_APP_TOKEN} if the given application-token can't be used.</li>
-     * <li>{@link #WRONG_USER_OR_PASSWORD} if the given username or password can't be used.</li>
-     * <li>{@link #NO_USER_PASSWORD} if no username or password is set and the given application-token can't be used.
+     * <li>{@link #WRONG_USER_OR_PASSWORD} if the given user name or password can't be used.</li>
+     * <li>{@link #NO_USER_PASSWORD} if no user name or password is set and the given application-token can't be used.
+     * <li>{@link #HOST_NOT_FOUND} if the host can't be found.
+     * <li>{@link #INVALID_URL} if the the URL is invalid.
      * </li>
      * </ul>
      *

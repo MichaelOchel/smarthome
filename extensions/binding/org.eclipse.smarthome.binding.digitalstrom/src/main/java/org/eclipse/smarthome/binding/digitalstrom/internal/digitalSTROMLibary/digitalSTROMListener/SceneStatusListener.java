@@ -14,8 +14,7 @@ import org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.di
  * {@link InternalScene} has been removed or added.
  *
  * @author Michael Ochel - Initial contribution
- * @author Mathias Siegele - Initial contribution
- *
+ * @author Matthias Siegele - Initial contribution
  */
 public interface SceneStatusListener {
 
@@ -24,15 +23,15 @@ public interface SceneStatusListener {
     /**
      * This method is called whenever the state of the given scene has changed.
      *
-     * @param device
+     * @param newState
      *
      */
-    public void onSceneStateChanged(boolean flag);
+    public void onSceneStateChanged(boolean newState);
 
     /**
      * This method is called whenever a scene is removed.
      *
-     * @param device
+     * @param scene
      *
      */
     public void onSceneRemoved(InternalScene scene);
@@ -40,14 +39,14 @@ public interface SceneStatusListener {
     /**
      * This method is called whenever a scene is added.
      *
-     * @param device
+     * @param scene
      *
      */
     public void onSceneAdded(InternalScene scene);
 
     /**
      * Return the id of this {@link SceneStatusListener}.
-     * 
+     *
      * @return listener id
      */
     public String getID();

@@ -13,11 +13,10 @@ import org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.di
 
 /**
  * The {@link DeviceStatusListener} is notified when a {@link Device} status has changed, a scene configuration is added
- * to a {@link Device}
- * or a device has been removed or added.
+ * to a {@link Device} or a device has been removed or added.
  *
  * @author Michael Ochel - Initial contribution
- * @author Mathias Siegele - Initial contribution
+ * @author Matthias Siegele - Initial contribution
  *
  */
 public interface DeviceStatusListener {
@@ -28,8 +27,8 @@ public interface DeviceStatusListener {
     public final static String DEVICE_DESCOVERY = "DeviceDiscovey";
 
     /**
-     * This method is called whenever the state of the given device has changed. The new state can be obtained by
-     * {@link #getNextESHThingUpdateStates()}.
+     * This method is called whenever the state of the given device has changed and passes the new device state as an
+     * {@link DeviceStateUpdate} object.
      *
      * @param deviceStateUpdate
      *
@@ -54,7 +53,7 @@ public interface DeviceStatusListener {
 
     /**
      * This method is called whenever a configuration of an {@link Device} has changed.
-     * For which configuration are able have a look at {@link ChangeableDeviceConfigEnum}.
+     * For which configuration are able please have a look at {@link ChangeableDeviceConfigEnum}.
      *
      * @param whichConfig
      *
