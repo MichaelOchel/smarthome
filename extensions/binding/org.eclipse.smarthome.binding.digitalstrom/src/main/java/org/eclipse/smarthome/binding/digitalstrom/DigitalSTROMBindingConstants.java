@@ -84,6 +84,7 @@ public class DigitalSTROMBindingConstants {
     public static final String SENSOR_DATA_UPDATE_INTERVALL = "sensorDataUpdateIntervall";
     public static final String DEFAULT_TRASH_DEVICE_DELEATE_TIME_KEY = "defaultTrashBinDeleateTime";
     public static final String TRUST_CERT_PATH_KEY = "trustCertPath";
+    public final static String SENSOR_WAIT_TIME = "sensorWaitTime";
 
     /* Device config properties */
 
@@ -110,7 +111,7 @@ public class DigitalSTROMBindingConstants {
     public static final String REFRESH_PRIORITY_MEDIUM = "medium";
     public static final String REFRESH_PRIORITY_HIGH = "high";
 
-    public final static int DEFAULT_SENSOR_READING_WAIT_TIME = 60000;
+    // public final static int DEFAULT_SENSOR_READING_WAIT_TIME = 60000;
 
     /* Scene config */
     public static final String SCENE_NAME = "sceneName";

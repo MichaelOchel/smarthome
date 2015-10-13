@@ -107,6 +107,13 @@ public class DssBridgeHandler extends BaseBridgeHandler
                         configuration.get(DigitalSTROMBindingConstants.SENSOR_DATA_UPDATE_INTERVALL).toString()
                                 + "000");
             }
+            if (configuration.get(DigitalSTROMBindingConstants.SENSOR_WAIT_TIME) != null && !configuration
+                    .get(DigitalSTROMBindingConstants.SENSOR_WAIT_TIME).toString().trim().replace(" ", "").isEmpty()) {
+
+                DigitalSTROMConfig.SENSOR_READING_WAIT_TIME = Integer
+                        .parseInt(configuration.get(DigitalSTROMBindingConstants.SENSOR_WAIT_TIME).toString() + "000");
+            }
+
             if (configuration.get(DigitalSTROMBindingConstants.DEFAULT_TRASH_DEVICE_DELEATE_TIME_KEY) != null
                     && !configuration.get(DigitalSTROMBindingConstants.DEFAULT_TRASH_DEVICE_DELEATE_TIME_KEY).toString()
                             .trim().replace(" ", "").isEmpty()) {

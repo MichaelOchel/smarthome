@@ -69,7 +69,15 @@
             	<label>@text/DSS_BRIDGE_PARM_CERT_PARTH_LABEL</label>
             	<description>@text/DSS_BRIDGE_PARM_CERT_PARTH_DESC</description>
             	<required>false</required>
-</parameter>
+</parameter><!--sensorWaitTime-->
+		<parameter name="sensorWaitTime" type="integer"
+			groupName="general" min="1">
+			<advanced>true</advanced>
+			<description>@text/DSS_BRIDGE_PARM_SENSOR_WAIT_DESC</description>
+			<default>60</default>
+			<label>@text/DSS_BRIDGE_PARM_SENSOR_WAIT_LABEL</label>
+			<required>false</required>
+		</parameter>
 
 	</config-description>
 </config-description:config-descriptions>

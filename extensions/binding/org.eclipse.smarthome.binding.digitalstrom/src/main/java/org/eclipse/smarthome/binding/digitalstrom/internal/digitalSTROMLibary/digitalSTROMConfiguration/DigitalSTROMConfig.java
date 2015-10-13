@@ -91,7 +91,7 @@ public class DigitalSTROMConfig {
     /**
      * Sets the interval to refresh the sensor data.
      */
-    public static final int DEFAULT_SENSORDATA_REFRESH_INTERVAL = 10000;
+    public static final int DEFAULT_SENSORDATA_REFRESH_INTERVAL = 60000;
     public static int SENSORDATA_REFRESH_INTERVAL = DEFAULT_SENSORDATA_REFRESH_INTERVAL;
 
     /**
