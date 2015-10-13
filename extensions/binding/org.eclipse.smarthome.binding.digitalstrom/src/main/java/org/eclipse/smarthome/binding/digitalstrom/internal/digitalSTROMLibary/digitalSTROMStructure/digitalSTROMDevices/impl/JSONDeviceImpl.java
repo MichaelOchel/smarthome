@@ -736,12 +736,12 @@ public class JSONDeviceImpl implements Device {
                 if (!isRollershutter()) {
                     this.outputValueBeforeSceneCall = this.outputValue;
                     this.outputValue = sceneOutputMap.get(sceneNumber).shortValue();
-                    addEshThingStateUpdate(
+                    updateInternalDeviceState(
                             new DeviceStateUpdateImpl(DeviceStateUpdate.UPDATE_BRIGHTNESS, this.outputValue));
                 } else {
                     this.outputValueBeforeSceneCall = this.slatPosition;
                     this.slatPosition = sceneOutputMap.get(sceneNumber);
-                    addEshThingStateUpdate(
+                    updateInternalDeviceState(
                             new DeviceStateUpdateImpl(DeviceStateUpdate.UPDATE_SLATPOSITION, this.slatPosition));
                 }
                 // flag = true;
@@ -919,10 +919,11 @@ public class JSONDeviceImpl implements Device {
     public synchronized void internalUndoScene() {
         if (!isRollershutter()) {
             this.outputValue = (short) this.outputValueBeforeSceneCall;
-            addEshThingStateUpdate(new DeviceStateUpdateImpl(DeviceStateUpdate.UPDATE_BRIGHTNESS, this.outputValue));
+            updateInternalDeviceState(new DeviceStateUpdateImpl(DeviceStateUpdate.UPDATE_BRIGHTNESS, this.outputValue));
         } else {
             this.slatPosition = this.outputValueBeforeSceneCall;
-            addEshThingStateUpdate(new DeviceStateUpdateImpl(DeviceStateUpdate.UPDATE_SLATPOSITION, this.slatPosition));
+            updateInternalDeviceState(
+                    new DeviceStateUpdateImpl(DeviceStateUpdate.UPDATE_SLATPOSITION, this.slatPosition));
         }
 
         if (this.activeScene != null) {
@@ -1194,7 +1195,8 @@ public class JSONDeviceImpl implements Device {
             }
 
             if (this.activeScene != null) {
-                if (sceneOutputMap.get(activeScene.getSceneID()) != null) {
+                if (sceneOutputMap.get(activeScene.getSceneID()) != null
+                        && sceneOutputMap.get(activeScene.getSceneID()) != outputValue) {
                     this.activeScene.deviceSceneChanged((short) -1);
                 }
             }
