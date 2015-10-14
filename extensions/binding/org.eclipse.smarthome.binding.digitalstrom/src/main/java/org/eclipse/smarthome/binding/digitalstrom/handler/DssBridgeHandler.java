@@ -396,7 +396,7 @@ public class DssBridgeHandler extends BaseBridgeHandler
     public void onEnergyMeterValueChanged(int newEnergyMeterValue) {
         logger.debug("energy meter updated to " + newEnergyMeterValue);
         totalEnergyMeterValue = newEnergyMeterValue;
-        updateChannelState(CHANNEL_TOTAL_ELECTRIC_METER, totalEnergyMeterValue * 0.01);
+        updateChannelState(CHANNEL_TOTAL_ELECTRIC_METER, totalEnergyMeterValue * 0.001);
     }
 
     private void updateChannelState(String channelID, double value) {
