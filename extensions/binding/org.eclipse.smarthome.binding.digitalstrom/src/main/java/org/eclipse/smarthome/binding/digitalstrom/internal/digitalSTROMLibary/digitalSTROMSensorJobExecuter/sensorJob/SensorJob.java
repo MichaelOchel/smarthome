@@ -7,53 +7,56 @@
  */
 package org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.digitalSTROMSensorJobExecuter.sensorJob;
 
+import org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.digitalSTROMSensorJobExecuter.AbstractSensorJobExecutor;
+import org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.digitalSTROMSensorJobExecuter.SceneSensorJobExecutor;
+import org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.digitalSTROMSensorJobExecuter.SensorJobExecutor;
 import org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.digitalSTROMServerConnection.DigitalSTROMAPI;
+import org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.digitalSTROMStructure.digitalSTROMDevices.Device;
 import org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.digitalSTROMStructure.digitalSTROMDevices.deviceParameters.DSID;
 
 /**
- * Interface for a DigitalSTROM-Sensor-Jobs.
+ * The {@link SensorJob} represents an executable job to read out digitalSTROM-Sensors or device configurations like
+ * scene values.<br>
+ * It can be added to an implementation of the {@link AbstractSensorJobExecutor} e.g. {@link SceneSensorJobExecutor} or
+ * {@link SensorJobExecutor}.
  *
- * @author Alexander Betker - initial
- * @author Alex Maier
- * @since 1.3.0
- *
- * @author Michael Ochel
- * @author Matthias Siegele
+ * @author Michael Ochel - Initial contribution
+ * @author Matthias Siegele - Initial contribution
  */
 public interface SensorJob {
 
     /**
-     * Returns the dSID of the ds-Device in which this job is to be executed.
-     * 
+     * Returns the dSID of the {@link Device} for which this job is to be executed.
+     *
      * @return dSID from the device
      */
     public DSID getDsid();
 
     /**
-     * Returns the dSID of the ds-Meter in which this job is to be executed.
-     * 
+     * Returns the dSID of the digitalSTROM-Meter on which this job is to be executed.
+     *
      * @return
      */
     public DSID getMeterDSID();
 
     /**
      * Executes the SensorJob.
-     * 
+     *
      * @param digitalSTROM client
      * @param sessionToken
      */
     public void execute(DigitalSTROMAPI digitalSTROM, String sessionToken);
 
     /**
-     * Returns the time when the Sensor-Job was initialized.
-     * 
-     * @return
+     * Returns the time when the {@link SensorJob} was initialized.
+     *
+     * @return the initialization time
      */
     public long getInitalisationTime();
 
     /**
-     * Sets the time when the Sensor-Job was initialized e.g. to decrease the priority of this job.
-     * 
+     * Sets the time when the {@link SensorJob} was initialized e.g. to decrease the priority of this {@link SensorJob}.
+     *
      * @param time
      */
     public void setInitalisationTime(long time);

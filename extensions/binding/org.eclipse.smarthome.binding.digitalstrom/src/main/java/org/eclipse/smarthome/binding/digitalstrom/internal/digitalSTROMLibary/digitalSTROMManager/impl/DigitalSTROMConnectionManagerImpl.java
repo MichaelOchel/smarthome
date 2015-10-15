@@ -10,6 +10,7 @@ package org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.d
 import java.net.HttpURLConnection;
 import java.util.HashMap;
 
+import org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.digitalSTROMConfiguration.DigitalSTROMConfig;
 import org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.digitalSTROMListener.DigitalSTROMConnectionListener;
 import org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.digitalSTROMManager.DigitalSTROMConnectionManager;
 import org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.digitalSTROMServerConnection.DigitalSTROMAPI;
@@ -17,13 +18,19 @@ import org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.di
 import org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.digitalSTROMServerConnection.impl.DigitalSTROMJSONImpl;
 import org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.digitalSTROMServerConnection.impl.HttpTransportImpl;
 
+/**
+ * The {@link DigitalSTROMConnectionManagerImpl} is the implementation of the {@link DigitalSTROMConnectionManager}.
+ *
+ * @author Michael Ochel - Initial contribution
+ * @author Matthias Siegele - Initial contribution
+ *
+ */
 public class DigitalSTROMConnectionManagerImpl implements DigitalSTROMConnectionManager {
 
-    public final String APPLICATION_TOKEN = "appT";
-    public final String USER_NAME = "user";
-    public final String PASSWORD = "pw";
-    public final String HOST = "host";
-    public final String APPLICATION_NAME = "ESH";
+    private final String APPLICATION_TOKEN = "appT";
+    private final String USER_NAME = "user";
+    private final String PASSWORD = "pw";
+    private final String HOST = "host";
 
     private DigitalSTROMConnectionListener connListener = null;
 
@@ -133,14 +140,11 @@ public class DigitalSTROMConnectionManagerImpl implements DigitalSTROMConnection
         switch (code) {
             case HttpURLConnection.HTTP_OK:
                 if (!lastConnectionState) {
-                    // System.err.println("Connection to DigitalSTROM-Server established.");
                     lastConnectionState = true;
                     onConnectionResumed();
                 }
                 break;
             case HttpURLConnection.HTTP_UNAUTHORIZED:
-                // //System.out.println("DigitalSTROM server {} send HTTPStatus {}" + this.getConfig().get(HOST)
-                // + HttpURLConnection.HTTP_UNAUTHORIZED);
                 lastConnectionState = false;
                 break;
             case HttpURLConnection.HTTP_FORBIDDEN:
@@ -152,7 +156,6 @@ public class DigitalSTROMConnectionManagerImpl implements DigitalSTROMConnection
                 }
                 if (this.digitalSTROMClient.checkConnection(sessionToken) == HttpURLConnection.HTTP_OK) {
                     if (!lastConnectionState) {
-                        // System.err.println("Connection to DigitalSTROM-Server established.");
                         onConnectionResumed();
                         lastConnectionState = true;
                     }
@@ -165,22 +168,17 @@ public class DigitalSTROMConnectionManagerImpl implements DigitalSTROMConnection
                 }
                 break;
             case -2:
-                // System.err.println("Invalide URL!");
                 onConnectionLost(DigitalSTROMConnectionListener.INVALID_URL);
                 lastConnectionState = false;
                 break;
             case -3:
             case -4:
-                // System.err.println("connection timeout!");
                 onConnectionLost(DigitalSTROMConnectionListener.CONNECTON_TIMEOUT);
                 lastConnectionState = false;
                 break;
             case -1:
                 connListener.onConnectionStateChange(DigitalSTROMConnectionListener.CONNECTION_LOST);
             case HttpURLConnection.HTTP_NOT_FOUND:
-                // System.err
-                // .println("Server not found! Please check this points:\n" + " - DigitalSTROM-Server turned on?\n"
-                // + " - hostadress correct?\n" + " - ethernet cable connection established?");
                 onConnectionLost(DigitalSTROMConnectionListener.HOST_NOT_FOUND);
 
                 lastConnectionState = false;
@@ -201,14 +199,8 @@ public class DigitalSTROMConnectionManagerImpl implements DigitalSTROMConnection
     private void onNotAuthentificated() {
 
         String applicationToken;
-        // String sessionToken;
-        // Configuration configuration = getConfig();
 
         boolean isAutentificated = false;
-
-        // //System.out.println(
-        // "DigitalSTROM server {} is not authentificated - please set a applicationToken or username and password."
-        // + configuration.get(HOST));
 
         if (configuration.get(APPLICATION_TOKEN) != null
                 && !(applicationToken = configuration.get(APPLICATION_TOKEN).toString()).isEmpty()) {
@@ -231,7 +223,8 @@ public class DigitalSTROMConnectionManagerImpl implements DigitalSTROMConnection
                 // System.out.println("Generating Applicationtoken with user and password.");
 
                 // generate applicationToken and test host is reachable
-                applicationToken = this.digitalSTROMClient.requestAppplicationToken(APPLICATION_NAME);
+                applicationToken = this.digitalSTROMClient
+                        .requestAppplicationToken(DigitalSTROMConfig.APPLICATION_NAME);
 
                 if (applicationToken != null && !applicationToken.trim().isEmpty()) {
                     // enable applicationToken
@@ -264,7 +257,7 @@ public class DigitalSTROMConnectionManagerImpl implements DigitalSTROMConnection
                 }
             }
         } else if (!isAutentificated) {
-            //// System.out.println("Can't find Username or password to genarate Appicationtoken.");
+            // System.out.println("Can't find Username or password to genarate Appicationtoken.");
 
             if (connListener != null) {
                 connListener.onConnectionStateChange(DigitalSTROMConnectionListener.NOT_AUTHENTICATED,

@@ -46,9 +46,9 @@ import org.slf4j.LoggerFactory;
  * @author Alexander Betker - Initial contribution
  * @author Alex Maier - Initial contribution
  * @author Michael Ochel - add SSL-Certification check, fixURI(String uri) and checkConnection(String testRequest)
- *         method
+ *         method, add interface
  * @author Matthias Siegele - add SSL-Certification check, fixURI(String uri) and checkConnection(String
- *         testRequest) method
+ *         testRequest) method, add interface
  */
 public class HttpTransportImpl implements HttpTransport {
 
@@ -356,10 +356,8 @@ public class HttpTransportImpl implements HttpTransport {
 
             HttpsURLConnection.setDefaultSSLSocketFactory(sslContext.getSocketFactory());
         } catch (KeyManagementException e) {
-            // TODO Auto-generated catch block
             e.printStackTrace();
         } catch (NoSuchAlgorithmException e) {
-            // TODO Auto-generated catch block
             e.printStackTrace();
         }
     }
@@ -372,7 +370,6 @@ public class HttpTransportImpl implements HttpTransport {
 
             trustedCert = (X509Certificate) certificateFactory.generateCertificate(this.certInputStream);
         } catch (CertificateException e) {
-            // TODO Auto-generated catch block
             if (e.getMessage().contains(NO_CERT_AT_PATH)) {
                 logger.error("Can't find a certificationfile at the certificationpath: " + trustedCertPath
                         + "\nPlease check the path!");
@@ -429,7 +426,6 @@ public class HttpTransportImpl implements HttpTransport {
 
             @Override
             public boolean verify(String arg0, SSLSession arg1) {
-                // TODO Auto-generated method stub
                 return true;
             }
 
@@ -443,7 +439,6 @@ public class HttpTransportImpl implements HttpTransport {
 
             @Override
             public boolean verify(String arg0, SSLSession arg1) {
-                // TODO Auto-generated method stub
                 return arg0.contains("dss.local.");
             }
 

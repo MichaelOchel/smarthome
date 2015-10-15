@@ -7,15 +7,6 @@
  */
 package org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.digitalSTROMStructure.digitalSTROMDevices;
 
-/**
- * Copyright (c) 2010-2014, openHAB.org and others.
- *
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
- * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
- */
-
 import java.util.List;
 
 import org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.digitalSTROMListener.DeviceStatusListener;
@@ -360,7 +351,7 @@ public interface Device {
      */
     public boolean doIgnoreScene(short sceneId);
 
-    // for ESH
+    // follow methods added by Michael Ochel and Matthias Siegele
 
     /**
      * Returns true if the power consumption is up to date or false if it has to be updated.
@@ -424,35 +415,6 @@ public interface Device {
     public String getOutputCurrentRefreshPriority();
 
     /**
-     * Returns true if the device is already added to the ESH and false if not.
-     *
-     * @return is added already (true = yes | false = no)
-     */
-
-    // public boolean isAddToESH();
-
-    /**
-     * With this method you can set the boolean to true if a device is added or false if it is deleted.
-     *
-     * @param isAdd (true = yes | false = no)
-     */
-    // public void setIsAddToESH(boolean isAdd);
-
-    /**
-     * Returns the next {@linkDeviceStateUpdate} to update the ESH-Thing to the current state.
-     *
-     * @return DeviceStateUpdate for ESH-Thing
-     */
-    // public DeviceStateUpdate getNextESHThingUpdateStates();
-
-    /**
-     * Returns true if the ESH-Thing is up to date.
-     *
-     * @return ESH-Thing is up to date (true = yes | false = no)
-     */
-    // public boolean isESHThingUpToDate();
-
-    /**
      * Returns true if the device is up to date.
      *
      * @return DigitalSTROM-Device is up to date (true = yes | false = no)
@@ -467,38 +429,102 @@ public interface Device {
     public DeviceStateUpdate getNextDeviceUpdateState();
 
     /**
-     * Update the in ESH internal stored device object.
+     * Update the internal stored device object.
      *
      * @param deviceStateUpdate
      */
     public void updateInternalDeviceState(DeviceStateUpdate deviceStateUpdate);
 
-    void callNamedScene(InternalScene scene);
+    /**
+     * Call the given {@link InternalScene} on this {@link Device} and updates it.
+     *
+     * @param scene
+     */
+    public void callInternalScene(InternalScene scene);
 
-    void undoNamedScene();
+    /**
+     * Undo the given {@link InternalScene} on this {@link Device} and updates it.
+     */
+    public void undoInternalScene();
 
-    void callScene(Short sceneNumber);
+    /**
+     * Initial a call scene for the given scene number.
+     *
+     * @param sceneNumber
+     */
+    public void callScene(Short sceneNumber);
 
-    InternalScene getAcitiveScene();
+    /**
+     * Returns the current active {@link InternalScene} otherwise null.
+     *
+     * @return active {@link InternalScene} or null
+     */
+    public InternalScene getAcitiveScene();
 
-    void undoScene();
+    /**
+     * Undo the active scene if a scene is active.
+     */
+    public void undoScene();
 
-    void checkSceneConfig(Short sceneNumber, int prio);
+    /**
+     * Checks the scene configuration for the given scene number and initial a scene configuration reading with the
+     * given priority if no scene configuration exists.
+     *
+     * @param sceneNumber
+     * @param prio
+     */
+    public void checkSceneConfig(Short sceneNumber, int prio);
 
-    void registerDeviceStateListener(DeviceStatusListener listener);
+    /**
+     * Register a {@link DeviceStatusListener} to this {@link Device}.
+     *
+     * @param listener
+     */
+    public void registerDeviceStateListener(DeviceStatusListener listener);
 
-    void unregisterDeviceStateListener();
+    /**
+     * Unregister the {@link DeviceStatusListener} to this {@link Device} if it exists.
+     */
+    public void unregisterDeviceStateListener();
 
-    boolean isListenerRegisterd();
+    /**
+     * Returns true if a {@link DeviceStatusListener} is registered to this {@link Device} otherwise false.
+     *
+     * @return return true if a lister is registerd otherwise false
+     */
+    public boolean isListenerRegisterd();
 
+    /**
+     * Sets the given output mode as new output mode of this {@link Device}.
+     *
+     * @param newOutputMode
+     */
     public void setOutputMode(OutputModeEnum newOutputMode);
 
-    List<Short> getSavedScenes();
+    /**
+     * Returns a {@link List} of all saved scene configurations.
+     *
+     * @return
+     */
+    public List<Short> getSavedScenes();
 
-    void internalCallScene(Short sceneNumber);
+    /**
+     * Initial a internal device update as call scene for the given scene number.
+     *
+     * @param sceneNumber
+     */
+    public void internalCallScene(Short sceneNumber);
 
-    void internalUndoScene();
+    /**
+     * Initial a internal device update as undo scene.
+     */
+    public void internalUndoScene();
 
-    boolean isSwitch();
+    /**
+     * Returns true if this {@link Device} is a device with a switch output mode.
+     *
+     * @return true if it is a switch otherwise false
+     */
+    public boolean isSwitch();
 
 }

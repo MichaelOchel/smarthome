@@ -18,6 +18,14 @@ import org.eclipse.smarthome.core.types.StateOption;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 
+/**
+ * The {@link DigitalSTROMChannelTypeProvider} implements the {@link ChannelTypeProvider} generates all supported
+ * {@link Channel}'s for digitalSTROM.
+ *
+ * @author Michael Ochel - Initial contribution
+ * @author Matthias Siegele - Initial contribution
+ *
+ */
 public class DigitalSTROMChannelTypeProvider implements ChannelTypeProvider {
 
     /* ChannelTypes */

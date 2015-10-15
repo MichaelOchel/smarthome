@@ -7,6 +7,13 @@
  */
 package org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.digitalSTROMStructure.digitalSTROMDevices.deviceParameters;
 
+/**
+ * The {@link ChangeableDeviceConfigEnum} lists all changeable device configurations.
+ *
+ * @author Michael Ochel - Initial contribution
+ * @author Matthias Siegele - Initial contribution
+ *
+ */
 public enum ChangeableDeviceConfigEnum {
 
     METER_DSID,
@@ -15,18 +22,4 @@ public enum ChangeableDeviceConfigEnum {
     GROUPS,
     FUNCTIONAL_GROUP,
     OUTPUT_MODE;
-
-    /*
-     * public final String METER_DSID = "meterDSID";
-     * 
-     * public final String DEVICE_NAME = "deviceName";
-     * 
-     * public final String ZONE_ID = "zoneID";
-     * 
-     * public final String GROUPS = "groups";
-     * 
-     * public final String FUNCTIONAL_GROUP = "functionalGroup";
-     * 
-     * public final String OUTPUT_MODE = "outputMode";
-     */
 }

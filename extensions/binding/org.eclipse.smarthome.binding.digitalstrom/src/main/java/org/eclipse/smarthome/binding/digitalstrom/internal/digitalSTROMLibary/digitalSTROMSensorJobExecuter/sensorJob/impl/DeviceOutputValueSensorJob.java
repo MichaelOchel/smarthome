@@ -20,12 +20,10 @@ import org.slf4j.LoggerFactory;
 
 /**
  * The {@link DeviceOutputValueSensorJob} is the implementation of a {@link SensorJob}
- * for reading out a device output value of a digitalSTROM-Device.
+ * for reading out the current device output value of a digitalSTROM-Device and update the {@link Device}.
  *
- * @author Alexander Betker
- * @author Alex Maier
- * @author Michael Ochel - updated and added some methods
- * @author Matthias Siegele - updated and added some methods
+ * @author Michael Ochel - Initial contribution
+ * @author Matthias Siegele - Initial contribution
  */
 public class DeviceOutputValueSensorJob implements SensorJob {
 

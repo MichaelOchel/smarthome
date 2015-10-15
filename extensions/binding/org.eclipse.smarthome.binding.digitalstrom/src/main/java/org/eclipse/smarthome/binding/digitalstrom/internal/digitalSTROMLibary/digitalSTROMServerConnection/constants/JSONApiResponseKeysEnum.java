@@ -8,7 +8,7 @@
 package org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.digitalSTROMServerConnection.constants;
 
 /**
- * The {@link JSONApiResponseKeysEnum} contains all DigitalSTROM-JSON response keys.
+ * The {@link JSONApiResponseKeysEnum} contains all digitalSTROM-JSON response keys.
  *
  * @author Alexander Betker
  * @since 1.3.0
@@ -197,7 +197,7 @@ public enum JSONApiResponseKeysEnum {
 
     /**
      * Returns the key.
-     * 
+     *
      * @return key
      */
     public String getKey() {

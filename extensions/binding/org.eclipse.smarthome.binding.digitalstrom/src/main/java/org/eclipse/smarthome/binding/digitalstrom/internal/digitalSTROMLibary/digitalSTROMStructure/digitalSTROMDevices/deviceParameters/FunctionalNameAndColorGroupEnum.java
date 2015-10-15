@@ -1,18 +1,10 @@
 package org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.digitalSTROMStructure.digitalSTROMDevices.deviceParameters;
 
-/**
- * Copyright (c) 2010-2014, openHAB.org and others.
- *
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
- * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
- */
-
 import java.util.HashMap;
 
 /**
- * The {@link FunctionalNameAndColorGroupEnum} contains all DigitalSTROM functional color groups.
+ * The {@link FunctionalNameAndColorGroupEnum} contains all digitalSTROM functional group names and links to their
+ * {@link FunctionalColorGroupEnum}.
  *
  * @see http://developer.digitalstrom.org/Architecture/ds-basics.pdf,
  *      "Table 1: digitalSTROM functional groups and their colors", page 9
@@ -67,19 +59,19 @@ public enum FunctionalNameAndColorGroupEnum {
 
     /**
      * Returns true if contains the given output mode id in DigitalSTROM, otherwise false.
-     * 
-     * @param colorGroup
+     *
+     * @param functionalNameGroupID
      * @return true if contains
      */
-    public static boolean containsColorGroup(Integer functionalColorGroupID) {
-        return colorGroups.keySet().contains(functionalColorGroupID);
+    public static boolean containsColorGroup(Integer functionalNameGroupID) {
+        return colorGroups.keySet().contains(functionalNameGroupID);
     }
 
     /**
-     * Returns the {@link FunctionalNameAndColorGroupEnum} of the given mode id.
-     * 
-     * @param modeID
-     * @return mode
+     * Returns the {@link FunctionalNameAndColorGroupEnum} of the given functional name group id.
+     *
+     * @param functionalNameGroupID
+     * @return FunctionalNameAndColorGroupEnum
      */
     public static FunctionalNameAndColorGroupEnum getMode(Integer functionalNameGroupID) {
         return colorGroups.get(functionalNameGroupID);
@@ -91,14 +83,19 @@ public enum FunctionalNameAndColorGroupEnum {
     }
 
     /**
-     * Returns the functional color group form this Object.
-     * 
-     * @return functional color group id
+     * Returns the functional name group id form this Object.
+     *
+     * @return functional name group id
      */
     public int getFunctionalColorGroup() {
         return colorGroup;
     }
 
+    /**
+     * Returns the {@link FunctionalColorGroupEnum} form this Object.
+     *
+     * @return FunctionalColorGroupEnum
+     */
     public FunctionalColorGroupEnum getFunctionalColor() {
         return color;
     }

@@ -17,13 +17,10 @@ import org.slf4j.LoggerFactory;
 
 /**
  * The {@link SceneConfigSensorJob} is the implementation of a {@link SensorJob}
- * for reading out a device scene output value of a digitalSTROM-Device.
- * It also store the scene output value of the scene into the {@link Device} and and persistent to ESH.
+ * for reading out a device scene output value of a digitalSTROM-Device and store it into the {@link Device}.
  *
- * @author Alexander Betker
- * @author Alex Maier
- * @author Michael Ochel - updated and added some methods
- * @author Matthias Siegele - updated and added some methods
+ * @author Michael Ochel - Initial contribution
+ * @author Matthias Siegele - Initial contribution
  */
 public class SceneConfigSensorJob implements SensorJob {
 
@@ -31,21 +28,18 @@ public class SceneConfigSensorJob implements SensorJob {
 
     private Device device = null;
     private short sceneId = 0;
-    // private DssBridgeHandler dssBridgeHandler;
     private DSID meterDSID = null;
     private long initalisationTime = 0;
 
     /**
-     * Creates a new {@link SceneConfigSensorJob} with the given scene id.
+     * Creates a new {@link SceneConfigSensorJob} for the given scene id.
      *
      * @param device
      * @param sceneId
-     * @param dssBridgeHandler
      */
-    public SceneConfigSensorJob(Device device, short sceneId) { // , DssBridgeHandler dssBridgeHandler
+    public SceneConfigSensorJob(Device device, short sceneId) {
         this.device = device;
         this.sceneId = sceneId;
-        // this.dssBridgeHandler = dssBridgeHandler;
         this.meterDSID = device.getMeterDSID();
         this.initalisationTime = System.currentTimeMillis();
     }

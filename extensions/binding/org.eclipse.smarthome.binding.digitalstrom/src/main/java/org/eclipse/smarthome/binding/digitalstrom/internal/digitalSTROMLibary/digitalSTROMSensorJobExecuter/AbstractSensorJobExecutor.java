@@ -20,6 +20,22 @@ import org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.di
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/**
+ * The {@link AbstractSensorJobExecutor} provides the working process to execute implementations of {@link SensorJobs}'s
+ * in the time interval that is set in {@link DigitalSTROMConfig#SENSOR_READING_WAIT_TIME}.
+ * <p>
+ * The follow methods can be overridden by subclasses to implement a execution priority:
+ * <ul>
+ * <li>{@link #addLowPriorityJob(SensorJob)}</li>
+ * <li>{@link #addMediumPriorityJob(SensorJob)}</li>
+ * <li>{@link #addHighPriorityJob(SensorJob)}</li>
+ * </ul>
+ * </p>
+ *
+ * @author Michael Ochel - Initial contribution
+ * @author Matthias Siegele - Initial contribution
+ *
+ */
 public abstract class AbstractSensorJobExecutor {
 
     private Logger logger = LoggerFactory.getLogger(AbstractSensorJobExecutor.class);
@@ -36,8 +52,8 @@ public abstract class AbstractSensorJobExecutor {
     private List<CircuitScheduler> circuitSchedulerList = Collections
             .synchronizedList(new LinkedList<CircuitScheduler>());
 
-    Thread executer = null;
-    Runnable executerRunnable = new Runnable() {
+    private Thread executer = null;
+    private Runnable executerRunnable = new Runnable() {
         @Override
         public void run() {
             logger.debug("start SensorJobExecuter");
@@ -81,20 +97,13 @@ public abstract class AbstractSensorJobExecutor {
         }
     };
 
-    /**
-     * Creates a new SensorJobExecuter.
-     *
-     * @param digitalSTROMAPI
-     * @param dssBrideHandler
-     */
     public AbstractSensorJobExecutor(DigitalSTROMConnectionManager connectionManager) {
         this.connectionManager = connectionManager;
         this.digitalSTROM = connectionManager.getDigitalSTROMAPI();
-        // this.dssBrideHandler = dssBrideHandler;
     }
 
     /**
-     * Stops the SensorJobExecuter Thread.
+     * Stops the Thread.
      *
      */
     public synchronized void shutdown() {
@@ -104,7 +113,7 @@ public abstract class AbstractSensorJobExecutor {
     }
 
     /**
-     * Starts the SensorJobExecuter Thread.
+     * Starts the Thread.
      */
     public void startExecuter() {
         if (shutdown) {
@@ -117,7 +126,7 @@ public abstract class AbstractSensorJobExecutor {
     }
 
     /**
-     * Adds a high priority SensorJob to the SensorJobExecuter.
+     * Adds a high priority {@link SensorJob}.
      *
      * @param sensorJob
      */
@@ -127,7 +136,7 @@ public abstract class AbstractSensorJobExecutor {
     }
 
     /**
-     * Adds a medium priority SensorJob to the SensorJobExecuter.
+     * Adds a medium priority {@link SensorJob}.
      *
      * @param sensorJob
      */
@@ -137,7 +146,7 @@ public abstract class AbstractSensorJobExecutor {
     }
 
     /**
-     * Adds a low priority SensorJob to the SensorJobExecuter.
+     * Adds a low priority {@link SensorJob}.
      *
      * @param sensorJob
      */
@@ -147,6 +156,7 @@ public abstract class AbstractSensorJobExecutor {
     }
 
     /**
+     * Adds the given {@link SensorJob}.
      *
      * @param sensorJob
      */
@@ -178,20 +188,9 @@ public abstract class AbstractSensorJobExecutor {
     }
 
     /**
-     * Removes all SensorJobs of a specific ds-device.
+     * Removes all SensorJobs of a specific {@link device}.
      *
-     * @param dsid of the ds-device
-     */
-    /*
-     * public void removeSensorJobs(DSID dsid) {
-     * Device device = this.dssBrideHandler.getDeviceByDSID(dsid.getValue());
-     * if(device != null){
-     * CircuitScheduler circuit = getCircuitScheduler(device.getMeterDSID());
-     * if(circuit != null){
-     * circuit.removeSensorJob(dsid);
-     * }
-     * }
-     * }
+     * @param device
      */
     public void removeSensorJobs(Device device) {
         // Device device = this.dssBrideHandler.getDeviceByDSID(dsid.getValue());

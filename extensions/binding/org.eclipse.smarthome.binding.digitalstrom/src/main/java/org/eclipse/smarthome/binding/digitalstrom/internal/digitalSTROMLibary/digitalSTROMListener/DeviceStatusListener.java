@@ -7,6 +7,7 @@
  */
 package org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.digitalSTROMListener;
 
+import org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.digitalSTROMManager.DigitalSTROMDeviceStatusManager;
 import org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.digitalSTROMStructure.digitalSTROMDevices.Device;
 import org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.digitalSTROMStructure.digitalSTROMDevices.deviceParameters.ChangeableDeviceConfigEnum;
 import org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.digitalSTROMStructure.digitalSTROMDevices.deviceParameters.DeviceStateUpdate;
@@ -14,6 +15,12 @@ import org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.di
 /**
  * The {@link DeviceStatusListener} is notified when a {@link Device} status has changed, a scene configuration is added
  * to a {@link Device} or a device has been removed or added.
+ *
+ * <p>
+ * By implementation with the id {@link #DEVICE_DESCOVERY} this listener is a device discovery and will be informed by
+ * the {@link DigitalSTROMDeviceStatusManager} if a new device would be found or is removed from the
+ * digitalSTROM-System if it is registered on the{@link DigitalSTROMDeviceStatusManager}.
+ * </p>
  *
  * @author Michael Ochel - Initial contribution
  * @author Matthias Siegele - Initial contribution

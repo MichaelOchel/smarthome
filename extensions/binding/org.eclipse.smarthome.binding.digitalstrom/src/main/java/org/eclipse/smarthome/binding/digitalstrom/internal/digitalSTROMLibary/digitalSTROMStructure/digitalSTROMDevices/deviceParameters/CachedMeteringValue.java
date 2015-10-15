@@ -6,25 +6,37 @@
  * http://www.eclipse.org/legal/epl-v10.html
  */
 package org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.digitalSTROMStructure.digitalSTROMDevices.deviceParameters;
-/**
- * Copyright (c) 2010-2014, openHAB.org and others.
- *
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
- * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
- */
 
 /**
+ * The {@link CachedMeteringValue} saves the metering value of an digitalSTROM-Circuit.
+ *
  * @author Alexander Betker
  * @since 1.3.0
+ *
+ * @author Michael Ochel - add missing java-doc
+ * @author Matthias Siegele - add missing java-doc
  */
 public interface CachedMeteringValue {
 
+    /**
+     * Returns the {@link DSID} of the digitalSTROM-Circuit.
+     *
+     * @return dSID digitalSTROM-Circuit
+     */
     public DSID getDsid();
 
+    /**
+     * Returns the saved sensor value.
+     * 
+     * @return sensor value
+     */
     public double getValue();
 
+    /**
+     * Returns the timestamp when the sensor value was read out.
+     *
+     * @return read out timestamp
+     */
     public String getDate();
 
 }

@@ -29,9 +29,14 @@ import org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.di
 import org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.digitalSTROMStructure.digitalSTROMScene.sceneEvent.EventItem;
 import org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.digitalSTROMStructure.digitalSTROMScene.sceneEvent.EventListener;
 
+/**
+ * The {@link DigitalSTROMSceneManagerImpl} is the implementation of the {@link DigitalSTROMSceneManager}.
+ *
+ * @author Michael Ochel - Initial contribution
+ * @author Matthias Siegele - Initial contribution
+ *
+ */
 public class DigitalSTROMSceneManagerImpl implements DigitalSTROMSceneManager {
-
-    // private Logger logger = LoggerFactory.getLogger(DigitalSTROMSceneManagerImpl2.class);
 
     private List<String> echoBox = Collections.synchronizedList(new LinkedList<String>());
     private Map<String, InternalScene> internalSceneMap = Collections
@@ -160,9 +165,12 @@ public class DigitalSTROMSceneManagerImpl implements DigitalSTROMSceneManager {
         if (intScene != null) {
             intScene.activateScene();
         } else {
-            scene.addReferenceDevices(
-                    this.structureManager.getReferenceDeviceListFromZoneXGroupX(scene.getZoneID(), scene.getGroupID()));
-            this.internalSceneMap.put(scene.getID(), scene);
+            if (SceneEnum.getScene(scene.getSceneID()) != null
+                    && structureManager.checkZoneGroupID(scene.getZoneID(), scene.getGroupID())) {
+                scene.addReferenceDevices(this.structureManager.getReferenceDeviceListFromZoneXGroupX(scene.getZoneID(),
+                        scene.getGroupID()));
+                this.internalSceneMap.put(scene.getID(), scene);
+            }
         }
     }
 
@@ -184,11 +192,13 @@ public class DigitalSTROMSceneManagerImpl implements DigitalSTROMSceneManager {
     @Override
     public void addInternalScene(InternalScene intScene) {
         if (!this.internalSceneMap.containsKey(intScene.getID())) {
-            intScene.addReferenceDevices(this.structureManager
-                    .getReferenceDeviceListFromZoneXGroupX(intScene.getZoneID(), intScene.getGroupID()));
-            this.internalSceneMap.put(intScene.getID(), intScene);
+            if (SceneEnum.getScene(intScene.getSceneID()) != null
+                    && structureManager.checkZoneGroupID(intScene.getZoneID(), intScene.getGroupID())) {
+                intScene.addReferenceDevices(this.structureManager
+                        .getReferenceDeviceListFromZoneXGroupX(intScene.getZoneID(), intScene.getGroupID()));
+                this.internalSceneMap.put(intScene.getID(), intScene);
 
-            // TODO: zone/group/device Überprüfung einbauen sonst falsche scene; rückgabe boolean wegen discovery
+            }
         } else {
             String oldSceneName = this.internalSceneMap.get(intScene.getID()).getSceneName();
             String newSceneName = intScene.getSceneName();
@@ -217,7 +227,8 @@ public class DigitalSTROMSceneManagerImpl implements DigitalSTROMSceneManager {
             short groupID = Short.parseShort(sceneData[1]);
             short sceneNumber = Short.parseShort(sceneData[2]);
             String sceneName = null;
-            if (SceneEnum.getScene(sceneNumber) != null) {
+            InternalScene intScene = null;
+            if (SceneEnum.getScene(sceneNumber) != null && structureManager.checkZoneGroupID(zoneID, groupID)) {
                 if (structureManager.getZoneName(zoneID) != null) {
                     sceneName = "Zone: " + structureManager.getZoneName(zoneID);
                     if (structureManager.getZoneGroupName(zoneID, groupID) != null) {
@@ -230,9 +241,8 @@ public class DigitalSTROMSceneManagerImpl implements DigitalSTROMSceneManager {
                 }
                 sceneName = sceneName + " Scene: "
                         + SceneEnum.getScene(sceneNumber).toString().toLowerCase().replace("_", " ");
+                intScene = new InternalScene(zoneID, groupID, sceneNumber, sceneName);
             }
-
-            InternalScene intScene = new InternalScene(zoneID, groupID, sceneNumber, sceneName);
 
             return intScene;
         } else {

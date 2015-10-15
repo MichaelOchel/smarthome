@@ -22,9 +22,14 @@ import org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.di
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 
+/**
+ * The {@link DigitalSTROMStructureManagerImpl} is the implemetation of the {@link DigitalSTROMStructureManager}.
+ *
+ * @author Michael Ochel - Initial contribution
+ * @author Matthias Siegele - Initial contribution
+ *
+ */
 public class DigitalSTROMStructureManagerImpl implements DigitalSTROMStructureManager {
-
-    // private Logger logger = LoggerFactory.getLogger(DigitalSTROMStructureManagerImpl2.class);
 
     private Map<Integer, HashMap<Short, List<Device>>> zoneGroupDeviceMap;
     private Map<DSID, Device> deviceMap;
@@ -34,30 +39,12 @@ public class DigitalSTROMStructureManagerImpl implements DigitalSTROMStructureMa
     private Map<String, Object[]> zoneGroupNameIdMap = null;
 
     public DigitalSTROMStructureManagerImpl(List<Device> referenceDeviceList) {
-        // zoneGroupDeviceMap = Collections.synchronizedMap(new HashMap<Integer, HashMap<Short, List<Device>>>());
         handleStructure(referenceDeviceList);
     }
 
     public DigitalSTROMStructureManagerImpl() {
 
     }
-
-    /**
-     * Build the Device {@link HashMap} with the dSID of the digitalSTROM device as key,
-     * this method also build a {@link HashMap} with the dSUID as key and the dSID as value
-     * to get a Device by the dSUID.
-     *
-     * @param deviceList
-     */
-    /*
-     * private void putDevicesToHashMap(List<Device> deviceList){
-     * if(!deviceList.isEmpty()){
-     * for(Device device:deviceList){
-     * putDeviceToHashMap(device);
-     * }
-     * }
-     * };
-     */
 
     private final String ZONE_GROUP_NAMES = "/json/property/query?query=/apartment/zones/*(ZoneID,name)/groups/*(group,name)";
 
@@ -230,11 +217,7 @@ public class DigitalSTROMStructureManagerImpl implements DigitalSTROMStructureMa
 
     @Override
     public List<Device> getReferenceDeviceListFromZoneXGroupX(int zoneID, short groupID) {
-        // if(zoneID == 0 && groupID == 0){
-        // return (List<Device>) this.deviceMap.values();
-        // } else{
         return getGroupsFromZoneX(zoneID) == null ? null : this.zoneGroupDeviceMap.get(zoneID).get(groupID);
-        // }
     }
 
     @Override
@@ -357,7 +340,6 @@ public class DigitalSTROMStructureManagerImpl implements DigitalSTROMStructureMa
 
     @Override
     public Set<Integer> getZoneIDs() {
-        // System.out.println(this.zoneGroupDeviceMap.size());
         return this.zoneGroupDeviceMap != null ? this.zoneGroupDeviceMap.keySet() : null;
     }
 

@@ -9,44 +9,37 @@ package org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.d
 
 import org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.digitalSTROMManager.DigitalSTROMConnectionManager;
 import org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.digitalSTROMSensorJobExecuter.sensorJob.SensorJob;
+import org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.digitalSTROMSensorJobExecuter.sensorJob.impl.SceneConfigSensorJob;
+import org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.digitalSTROMSensorJobExecuter.sensorJob.impl.SceneOutputValueSensorJob;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * This class performs the sensor Jobs by DigitalSTROM Rule 9 "Application processes that do automatic
- * cyclic reads of measured values are subject to a request limit: at maximum one request per minute
- * and circuit is allowed.".
- *
- * In addition priorities can be assigned to jobs therefor an {@link SceneSensorJobExecutor} offers the methods
- * {@link #addHighPriorityJob()}, {@link #addLowPriorityJob()} and {@link #addLowPriorityJob()}.
+ * The {@link SceneSensorJobExecutor} is the implementation of the {@link AbstractSensorJobExecuter} to execute
+ * digitalSTROM-Device scene configurations {@link SensorJob}'s e.g. {@link SceneConfigSensorJob} and
+ * {@link SceneOutputValueSensorJob}.
  * <p>
- * Note:
- * In contrast to the {@link SensorJobExecutor} the {@link SceneSensorJobExecutor} will execute {@link SensorJob}s with
- * high priority
- * always before medium priority {@link SensorJob}s and so on.
+ * In addition priorities can be assigned to jobs therefore an {@link SceneSensorJobExecutor} offers the methods
+ * {@link #addHighPriorityJob()}, {@link #addLowPriorityJob()} and {@link #addLowPriorityJob()}.
+ * </p>
+ * <p>
+ * <b>NOTE:</b><br>
+ * In contrast to the {@link SensorJobExecutor} the {@link SceneSensorJobExecutor} will execute {@link SensorJob}'s with
+ * high priority always before medium priority {@link SensorJob}s and so on.
+ * </p>
  *
- *
- * @author Michael Ochel
- * @author Matthias Siegele
+ * @author Michael Ochel - Initial contribution
+ * @author Matthias Siegele - Initial contribution
  *
  */
 public class SceneSensorJobExecutor extends AbstractSensorJobExecutor {
 
     private Logger logger = LoggerFactory.getLogger(SceneSensorJobExecutor.class);
 
-    /**
-     *
-     * @param connectionManager
-     */
     public SceneSensorJobExecutor(DigitalSTROMConnectionManager connectionManager) {
         super(connectionManager);
     }
 
-    /**
-     * Adds a high priority SensorJob to the SensorJobExecuter.
-     *
-     * @param sensorJob
-     */
     @Override
     public void addHighPriorityJob(SensorJob sensorJob) {
         if (sensorJob == null)
@@ -58,11 +51,6 @@ public class SceneSensorJobExecutor extends AbstractSensorJobExecutor {
 
     }
 
-    /**
-     * Adds a medium priority SensorJob to the SensorJobExecuter.
-     *
-     * @param sensorJob
-     */
     @Override
     public void addMediumPriorityJob(SensorJob sensorJob) {
         if (sensorJob == null)
@@ -73,11 +61,6 @@ public class SceneSensorJobExecutor extends AbstractSensorJobExecutor {
                 sensorJob.getDsid());
     }
 
-    /**
-     * Adds a low priority SensorJob to the SensorJobExecuter.
-     *
-     * @param sensorJob
-     */
     @Override
     public void addLowPriorityJob(SensorJob sensorJob) {
         if (sensorJob == null)

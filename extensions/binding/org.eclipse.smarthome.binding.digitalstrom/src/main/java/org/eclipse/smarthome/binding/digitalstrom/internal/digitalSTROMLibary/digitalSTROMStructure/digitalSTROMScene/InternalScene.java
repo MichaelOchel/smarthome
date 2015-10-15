@@ -14,6 +14,13 @@ import java.util.List;
 import org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.digitalSTROMListener.SceneStatusListener;
 import org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.digitalSTROMStructure.digitalSTROMDevices.Device;
 
+/**
+ * The {@link InternalScene} represents a digitalSTRROM-Scene for the internal model.
+ *
+ * @author Michael Ochel - Initial contribution
+ * @author Matthias Siegele - Initial contribution
+ *
+ */
 public class InternalScene {
 
     private final Short SCENE_ID;
@@ -55,17 +62,11 @@ public class InternalScene {
      * Activate this Scene.
      */
     public void activateScene() {
-        System.out.println("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!SCENE " + this.SceneName
-                + " ACTIVATED!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
         this.active = true;
         informListener();
-        System.out.println(
-                "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!DEVICES = " + this.devices + "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
         if (this.devices != null) {
             for (Device device : this.devices) {
-                device.callNamedScene(this);
-                System.out.println("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!INFORM DEVICE = " + device.getName()
-                        + "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+                device.callInternalScene(this);
             }
         }
     }
@@ -78,7 +79,7 @@ public class InternalScene {
         informListener();
         if (this.devices != null) {
             for (Device device : this.devices) {
-                device.undoNamedScene();
+                device.undoInternalScene();
             }
         }
     }
@@ -98,6 +99,11 @@ public class InternalScene {
         return this.active;
     }
 
+    /**
+     * Adds an affected {@link Device} to this {@link InternalScene} device list.
+     *
+     * @param device
+     */
     public void addDevice(Device device) {
         if (!this.devices.contains(device)) {
             this.devices.add(device);
@@ -111,11 +117,22 @@ public class InternalScene {
         device.checkSceneConfig(SCENE_ID, prio);
     }
 
+    /**
+     * Override the existing device list of this {@link InternalScene} with a new reference to a {@link List} of
+     * affected {@link Device}'s.
+     *
+     * @param deviceList
+     */
     public void addReferenceDevices(List<Device> deviceList) {
         this.devices = deviceList;
         checkDeviceSceneConfig();
     }
 
+    /**
+     * Proves if the scene configuration is saved to all {@link Device}'s. If not the device initials the reading out of
+     * the missing configuration with low priority if no listener is added, medium priority if a listener is added and
+     * high priority if this scene has been activated.
+     */
     public void checkDeviceSceneConfig() {
         int prio = 0;
         if (this.listener != null) {
@@ -130,21 +147,41 @@ public class InternalScene {
         }
     }
 
+    /**
+     * Returns the list of the affected {@link Device}'s.
+     *
+     * @return device list
+     */
     public List<Device> getDeviceList() {
         return this.devices;
 
     }
 
+    /**
+     * Adds a {@link List} of affected {@link Device}'s.
+     *
+     * @param deviceList
+     */
     public void addDevices(List<Device> deviceList) {
         for (Device device : deviceList) {
             addDevice(device);
         }
     }
 
+    /**
+     * Removes a not anymore affected {@link Device} from the device list.
+     * 
+     * @param device
+     */
     public void removeDevice(Device device) {
         this.devices.remove(device);
     }
 
+    /**
+     * Updates the affected {@link Device}'s with the given deviceList.
+     *
+     * @param deviceList
+     */
     public void updateDeviceList(List<Device> deviceList) {
         if (!this.devices.equals(deviceList)) {
             this.devices.clear();
@@ -220,6 +257,11 @@ public class InternalScene {
         return NAMED_SCENE_ID;
     }
 
+    /**
+     * Register a {@link SceneStatusListener} to this {@link InternalScene}.
+     *
+     * @param listener
+     */
     public synchronized void registerSceneListener(SceneStatusListener listener) {
         this.listener = listener;
         this.listener.onSceneAdded(this);
@@ -227,6 +269,9 @@ public class InternalScene {
 
     }
 
+    /**
+     * Unregister the {@link SceneStatusListener} from this {@link InternalScene}.
+     */
     public synchronized void unregisterSceneListener() {
         if (listener != null) {
             this.listener.onSceneRemoved(this);

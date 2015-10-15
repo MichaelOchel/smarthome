@@ -13,17 +13,17 @@ import java.util.PriorityQueue;
 
 import org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.digitalSTROMConfiguration.DigitalSTROMConfig;
 import org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.digitalSTROMSensorJobExecuter.sensorJob.SensorJob;
+import org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.digitalSTROMStructure.digitalSTROMDevices.Device;
 import org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.digitalSTROMStructure.digitalSTROMDevices.deviceParameters.DSID;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * This {@link CircuitScheduler} represents a circuit in DigitalSTROM and manages the priorities and execution times for
- * the
- * {@link SensorJob}s to be executed on this circuit.
+ * This {@link CircuitScheduler} represents a circuit in the digitalSTROM-System and manages the priorities and
+ * execution times for the {@link SensorJob}s to be executed on this circuit.
  *
  * @author Michael Ochel - Initial contribution
- * @author Mathias Siegele - Initial contribution
+ * @author Matthias Siegele - Initial contribution
  *
  */
 public class CircuitScheduler {
@@ -42,8 +42,6 @@ public class CircuitScheduler {
     private final DSID meterDSID;
     private long nextExecutionTime = System.currentTimeMillis();
     private PriorityQueue<SensorJob> sensorJobQueue = new PriorityQueue<SensorJob>(10, new SensorJobComparator());
-
-    // private Logger logger = LoggerFactory.getLogger(CircuitScheduler.class);
 
     /**
      * Creates a new {@link CircuitScheduler}.
@@ -78,7 +76,7 @@ public class CircuitScheduler {
     }
 
     /**
-     * Adds a new SensorJob to this {@link CircuitScheduler}.
+     * Adds a new SensorJob to this {@link CircuitScheduler}, if no {@link SensorJob} with a higher priority exists.
      *
      * @param sensorJob
      */
@@ -108,19 +106,8 @@ public class CircuitScheduler {
                         return true;
                     }
             }
-
-            // logger.debug("Remove SensorJobs from device with DSID {}."+ dsid);
         }
         return false;
-        /*
-         * SensorJob[] sensorJobs = (SensorJob[]) this.sensorJobQueue.toArray();
-         * for(int i = 0 ; i < sensorJobs.length ; i++ ){
-         * if(sensorJobs[i].equals(sensorJobs)){
-         * return sensorJobs[i];
-         * }
-         * }
-         * return null;
-         */
     }
 
     /**
@@ -149,7 +136,7 @@ public class CircuitScheduler {
     }
 
     /**
-     * Remove all {@link SensorJob} of a specific ds-device.
+     * Remove all {@link SensorJob} of a specific {@link Device} with the given {@link DSID}.
      *
      * @param dsid of the ds-device
      */

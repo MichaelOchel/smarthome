@@ -27,9 +27,8 @@ import org.slf4j.LoggerFactory;
  * to update the state of the internal saved {@link InternalScene} or directly the {@link Device} if it was a
  * device-scene.
  *
- * @author Michael Ochel
- * @author Matthias Siegele
- * @since 1.3.0
+ * @author Michael Ochel - Initial contribution
+ * @author Matthias Siegele - Initial contribution
  *
  */
 public class EventListener {
@@ -49,25 +48,17 @@ public class EventListener {
 
     private HttpTransport transport = null;
     private DigitalSTROMAPI digitalSTROM;
-    DigitalSTROMSceneManager sceneManager;
+    private DigitalSTROMSceneManager sceneManager;
 
-    /**
-     *
-     * @param connectionManager
-     * @param sceneManager
-     */
     public EventListener(DigitalSTROMConnectionManager connectionManager, DigitalSTROMSceneManager sceneManager) {
         this.transport = connectionManager.getHttpTransport();
         this.digitalSTROM = connectionManager.getDigitalSTROMAPI();
         this.connManager = connectionManager;
         this.sceneManager = sceneManager;
-
-        // this.subscribe();
-
     }
 
     /**
-     *
+     * Shutdown this {@link EventListener}.
      */
     public synchronized void shutdown() {
         if (!shutdown) {
@@ -77,7 +68,7 @@ public class EventListener {
     }
 
     /**
-     *
+     * Starts this {@link EventListener}.
      */
     public synchronized void start() {
         if (shutdown) {
@@ -112,7 +103,7 @@ public class EventListener {
         return false;
     }
 
-    public Runnable runableListener = new Runnable() {
+    private Runnable runableListener = new Runnable() {
 
         @Override
         public void run() {
@@ -122,7 +113,6 @@ public class EventListener {
 
                 if (request != null) {
                     String response = transport.execute(request);
-                    logger.debug("!!!!!!!!!!!!!!!! Scene: " + response + "!!!!!!!!!");
 
                     JSONObject responseObj = JSONResponseHandler.toJSONObject(response);
 
@@ -151,13 +141,7 @@ public class EventListener {
                             unsubscribe();
                             subscribe();
                         } else if (errorStr != null) {
-                            /*
-                             * if (errorStr != null && errorStr.equals(UNKNOWN_TOKEN)) {
-                             * subscribe();
-                             * } else {
-                             */
                             logger.error("Unknown error message in event response: " + errorStr);
-                            // }
                         }
                     }
                 }
@@ -166,7 +150,6 @@ public class EventListener {
                         wait(SLEEPTIME);
                     }
                 } catch (InterruptedException e) {
-                    // TODO Auto-generated catch block
                     e.printStackTrace();
                 }
             }

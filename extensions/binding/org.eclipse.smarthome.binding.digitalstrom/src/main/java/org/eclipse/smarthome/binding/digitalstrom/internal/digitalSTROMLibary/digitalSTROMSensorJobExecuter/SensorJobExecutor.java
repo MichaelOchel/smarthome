@@ -10,16 +10,26 @@ package org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.d
 import org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.digitalSTROMConfiguration.DigitalSTROMConfig;
 import org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.digitalSTROMManager.DigitalSTROMConnectionManager;
 import org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.digitalSTROMSensorJobExecuter.sensorJob.SensorJob;
+import org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.digitalSTROMSensorJobExecuter.sensorJob.impl.DeviceConsumptionSensorJob;
+import org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.digitalSTROMSensorJobExecuter.sensorJob.impl.DeviceOutputValueSensorJob;
 
 /**
- * This class performs the sensor Jobs by DigitalSTROM Rule 9 "Application processes that do automatic
- * cyclic reads of measured values are subject to a request limit: at maximum one request per minute
- * and circuit is allowed.".
- * <p>
- * In addition priorities can be assigned to jobs .
+ * The {@link SensorJobExecutor} is the implementation of the {@link AbstractSensorJobExecuter} to execute
+ * digitalSTROM-Device {@link SensorJob}'s e.g. {@link DeviceConsumptionSensorJob} and
+ * {@link DeviceOutputValueSensorJob}.
  *
- * @author Michael Ochel
- * @author Matthias Siegele
+ * <p>
+ * In addition priorities can be assigned to jobs, but the follow list schows the maximum devaluation of a
+ * {@link SensorJob} per priority.
+ * <ul>
+ * <li>low priority: read circuits before execution set in {@link DigitalSTROMConfig.LOW_PRIORITY_FACTOR}</li>
+ * <li>medium priority: read circuits before execution set in {@link DigitalSTROMConfig.MEDIUM_PRIORITY_FACTOR}</li>
+ * <li>high priority:read circuits before execution 0</li>
+ * </ul>
+ * </p>
+ *
+ * @author Michael Ochel - Initial contribution
+ * @author Matthias Siegele - Initial contribution
  *
  */
 public class SensorJobExecutor extends AbstractSensorJobExecutor {
@@ -32,22 +42,14 @@ public class SensorJobExecutor extends AbstractSensorJobExecutor {
         super(connectionManager);
     }
 
-    /**
-     * Adds a high priority SensorJob to the SensorJobExecuter.
-     * 
-     * @param sensorJob
-     */
+    @Override
     public void addHighPriorityJob(SensorJob sensorJob) {
         if (sensorJob == null)
             return;
         addSensorJobToCircuitScheduler(sensorJob);
     }
 
-    /**
-     * Adds a medium priority SensorJob to the SensorJobExecuter.
-     * 
-     * @param sensorJob
-     */
+    @Override
     public void addMediumPriorityJob(SensorJob sensorJob) {
         if (sensorJob == null)
             return;
@@ -55,11 +57,7 @@ public class SensorJobExecutor extends AbstractSensorJobExecutor {
         addSensorJobToCircuitScheduler(sensorJob);
     }
 
-    /**
-     * Adds a low priority SensorJob to the SensorJobExecuter.
-     * 
-     * @param sensorJob
-     */
+    @Override
     public void addLowPriorityJob(SensorJob sensorJob) {
         if (sensorJob == null)
             return;

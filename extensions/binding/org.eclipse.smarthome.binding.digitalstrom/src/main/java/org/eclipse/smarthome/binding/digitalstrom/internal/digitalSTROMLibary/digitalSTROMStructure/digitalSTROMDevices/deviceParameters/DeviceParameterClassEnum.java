@@ -6,16 +6,10 @@
  * http://www.eclipse.org/legal/epl-v10.html
  */
 package org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.digitalSTROMStructure.digitalSTROMDevices.deviceParameters;
-/**
- * Copyright (c) 2010-2014, openHAB.org and others.
- *
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
- * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
- */
 
 /**
+ * The {@link DeviceParameterClassEnum} lists all digitalSTROM-device parameter classes.
+ *
  * @author Alexander Betker
  * @since 1.3.0
  * @version digitalSTROM-API 1.14.5
@@ -44,7 +38,7 @@ public enum DeviceParameterClassEnum {
 
     /**
      * output status
-     * 
+     *
      * possible OffsetParameters:
      * - READ_OUTPUT
      */
@@ -62,6 +56,11 @@ public enum DeviceParameterClassEnum {
         this.classIndex = index;
     }
 
+    /**
+     * Returns the index of the {@link DeviceParameterClassEnum}.
+     *
+     * @return index
+     */
     public int getClassIndex() {
         return this.classIndex;
     }

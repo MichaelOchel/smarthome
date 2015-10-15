@@ -40,7 +40,6 @@ import com.google.common.collect.Sets;
  * The {@link DigitalSTROMHandlerFactory} is responsible for creating things and thing
  * handlers.
  *
- * @author Alex Maier - Initial contribution
  * @author Michael Ochel - Initial contribution
  * @author Mathias Siegele - Initial contribution
  *

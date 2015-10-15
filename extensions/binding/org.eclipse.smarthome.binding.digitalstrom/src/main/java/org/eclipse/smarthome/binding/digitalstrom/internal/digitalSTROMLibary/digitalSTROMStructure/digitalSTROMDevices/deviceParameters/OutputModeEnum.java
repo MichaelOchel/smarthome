@@ -6,21 +6,15 @@
  * http://www.eclipse.org/legal/epl-v10.html
  */
 package org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.digitalSTROMStructure.digitalSTROMDevices.deviceParameters;
-/**
- * Copyright (c) 2010-2014, openHAB.org and others.
- *
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
- * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
- */
 
 import java.util.HashMap;
 
 /**
- * @author Alexander Betker
- * @since 1.3.0
- * @version digitalSTROM-API 1.14.5
+ * The {@link OutputModeEnum} lists all available digitalSTROM-device output modes.
+ *
+ * @author Michael Ochel - Initial contribution
+ * @author Matthias Siegele - Initial contribution
+ * @see http://developer.digitalstrom.org/Architecture/ds-basics.pdf Table 36: Output Mode Register, page 51
  */
 public enum OutputModeEnum {
 
@@ -82,18 +76,35 @@ public enum OutputModeEnum {
         }
     }
 
-    public static boolean containsMode(Integer mode) {
-        return outputModes.keySet().contains(mode);
+    /**
+     * Returns true if the output mode id contains in digitalSTROM otherwise false.
+     *
+     * @param modeID
+     * @return true if contains otherwise false
+     */
+    public static boolean containsMode(Integer modeID) {
+        return outputModes.keySet().contains(modeID);
     }
 
-    public static OutputModeEnum getMode(Integer mode) {
-        return outputModes.get(mode);
+    /**
+     * Returns the {@link OutputModeEnum} for the given modeID, otherwise null.
+     * 
+     * @param modeID
+     * @return OutputModeEnum or null
+     */
+    public static OutputModeEnum getMode(Integer modeID) {
+        return outputModes.get(modeID);
     }
 
     private OutputModeEnum(int outputMode) {
         this.mode = outputMode;
     }
 
+    /**
+     * Returns the id of this {@link OutputModeEnum} object.
+     *
+     * @return mode id
+     */
     public int getMode() {
         return mode;
     }

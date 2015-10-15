@@ -26,6 +26,14 @@ import org.eclipse.smarthome.core.thing.type.ThingType;
 
 import com.google.common.collect.Lists;
 
+/**
+ * The {@link DigitalSTROMThingTypeProvider} implements the {@link ThingTypeProvider} to generate all supported GE, SW
+ * and GR digitalSTROM-Devices as {@link ThingType}'s directly from the digitalSTROM-Server.
+ *
+ * @author Michael Ochel - Initial contribution
+ * @author Matthias Siegele - Initial contribution
+ *
+ */
 public class DigitalSTROMThingTypeProvider implements ThingTypeProvider {
 
     List<String> supportedBridgeTypeUIDs = Lists
@@ -120,14 +128,16 @@ public class DigitalSTROMThingTypeProvider implements ThingTypeProvider {
         return new ChannelDefinition(id, new ChannelTypeUID(getUID(id)));
     }
 
-    /*
-     * new ChannelType(new ChannelTypeUID(getUID(id)), false, item, label,
-     * description, category, tags, state, null), null, label, description)
-     */
     private String getUID(String id) {
         return DigitalSTROMBindingConstants.BINDING_ID + ":" + id;
     }
 
+    /**
+     * Registers the {@link DigitalSTROMConnectionManager} to read out the {@link Device}'s from the digitalSTROM-Server
+     * and generates the supported {@link ThingType}'s.
+     *
+     * @param connMan
+     */
     public void registerConnectionManagerHandler(DigitalSTROMConnectionManager connMan) {
         if (connMan != null) {
             if (connMan.checkConnection()) {

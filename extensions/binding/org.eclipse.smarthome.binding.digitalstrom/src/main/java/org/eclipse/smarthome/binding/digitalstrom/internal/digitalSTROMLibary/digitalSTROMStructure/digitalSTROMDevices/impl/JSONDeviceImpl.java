@@ -37,9 +37,8 @@ import org.slf4j.LoggerFactory;
 /**
  * The {@link JSONDeviceImpl} is the implementation of the {@link Device}.
  *
- * @author Alexander Betker
- * @author Alex Maier
- * @since 1.3.0
+ * @author Michael Ochel - Initial contribution
+ * @author Matthias Siegele - Initial contribution
  */
 public class JSONDeviceImpl implements Device {
 
@@ -684,7 +683,7 @@ public class JSONDeviceImpl implements Device {
     private int outputValueBeforeSceneCall = 0;
 
     @Override
-    public synchronized void callNamedScene(InternalScene scene) {
+    public synchronized void callInternalScene(InternalScene scene) {
         internalCallScene(scene.getSceneID());
         this.activeScene = scene;
     }
@@ -705,7 +704,7 @@ public class JSONDeviceImpl implements Device {
     }
 
     @Override
-    public synchronized void undoNamedScene() {
+    public synchronized void undoInternalScene() {
         internalUndoScene();
         this.activeScene = null;
     }

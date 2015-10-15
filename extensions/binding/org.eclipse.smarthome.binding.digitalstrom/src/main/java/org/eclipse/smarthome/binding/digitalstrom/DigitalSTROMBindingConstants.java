@@ -14,10 +14,11 @@ import org.eclipse.smarthome.core.thing.ThingTypeUID;
 import com.google.common.collect.ImmutableSet;
 
 /**
- * The {@link DigitalSTROMBinding} class defines common constants, which are
+ * The {@link DigitalSTROMBindingConstants} class defines common constants, which are
  * used across the whole binding.
  *
- * @author Alex Maier - Initial contribution
+ * @author Michael Ochel - Initial contribution
+ * @author Mathias Siegele - Initial contribution
  */
 public class DigitalSTROMBindingConstants {
 

@@ -6,14 +6,6 @@
  * http://www.eclipse.org/legal/epl-v10.html
  */
 package org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.digitalSTROMServerConnection.impl;
-/**
- * Copyright (c) 2010-2014, openHAB.org and others.
- *
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
- * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
- */
 
 import org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.digitalSTROMServerConnection.constants.JSONApiResponseKeysEnum;
 import org.json.simple.JSONObject;
@@ -23,19 +15,19 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * The {@link JSONResponseHandler} checks an DigitalSTROM-JSON response and can parse it to an {@link JSONObject}.
+ * The {@link JSONResponseHandler} checks an digitalSTROM-JSON response and can parse it to an {@link JSONObject}.
  *
  * @author Alexander Betker - Initial contribution
  * @author Alex Maier - Initial contribution
- * @author Michael Ochel - add Java-Doc
- * @author Michael Ochel - add Java-Doc
+ * @author Michael Ochel - add Java-Doc and make methods static
+ * @author Matthias Siegele - add Java-Doc and make methods static
  */
 public class JSONResponseHandler {
 
     private static final Logger logger = LoggerFactory.getLogger(JSONResponseHandler.class);
 
     /**
-     * Checks the DigitalSTROM-JSON response and return true if it wars successful, otherwise false
+     * Checks the digitalSTROM-JSON response and return true if it wars successful, otherwise false
      *
      * @param jsonResponse
      * @return true on success
@@ -54,7 +46,7 @@ public class JSONResponseHandler {
     }
 
     /**
-     * Returns the {@link JSONObject} from the given DigitalSTROM-JSON response {@link String} or null if the json
+     * Returns the {@link JSONObject} from the given digitalSTROM-JSON response {@link String} or null if the json
      * response wars empty.
      *
      * @param jsonResponse
@@ -72,7 +64,7 @@ public class JSONResponseHandler {
     }
 
     /**
-     * Returns the result {@link JSONObject} from the given DigitalSTROM-JSON response {@link JSONObject}.
+     * Returns the result {@link JSONObject} from the given digitalSTROM-JSON response {@link JSONObject}.
      *
      * @param jsonObject
      * @return json result object

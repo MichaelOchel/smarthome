@@ -7,11 +7,20 @@
  */
 package org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.digitalSTROMListener;
 
+import org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.digitalSTROMManager.DigitalSTROMDeviceStatusManager;
+import org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.digitalSTROMManager.DigitalSTROMSceneManager;
 import org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.digitalSTROMStructure.digitalSTROMScene.InternalScene;
 
 /**
  * The {@link SceneStatusListener} is notified when a {@link InternalScene} status has changed or a
  * {@link InternalScene} has been removed or added.
+ *
+ * <p>
+ * By implementation with the id {@link #SCENE_DESCOVERY} this listener is a scene discovery and will be informed by
+ * the {@link DigitalSTROMSceneManager} if a new scene would be found or is removed from the
+ * internal-digitalSTROM-System-model if it is registered over the {@link DigitalSTROMDeviceStatusManager} or directly
+ * on the {@link DigitalSTROMSceneManager}.
+ * </p>
  *
  * @author Michael Ochel - Initial contribution
  * @author Matthias Siegele - Initial contribution

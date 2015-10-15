@@ -14,7 +14,7 @@ import java.util.List;
 import com.google.common.collect.Lists;
 
 /**
- * The {@link FunctionalColorGroupEnum} contains all DigitalSTROM functional color groups.
+ * The {@link FunctionalColorGroupEnum} contains all digitalSTROM functional color groups.
  *
  * @see http://developer.digitalstrom.org/Architecture/ds-basics.pdf,
  *      "Table 1: digitalSTROM functional groups and their colors", page 9 [04.09.2015]
@@ -64,9 +64,9 @@ public enum FunctionalColorGroupEnum {
     }
 
     /**
-     * Returns true if contains the given output mode id in DigitalSTROM, otherwise false.
-     * 
-     * @param colorGroup
+     * Returns true if contains the given functional color group id in digitalSTROM exits, otherwise false.
+     *
+     * @param functionalColorGroupID
      * @return true if contains
      */
     public static boolean containsColorGroup(Integer functionalColorGroupID) {
@@ -74,8 +74,8 @@ public enum FunctionalColorGroupEnum {
     }
 
     /**
-     * Returns the {@link FunctionalColorGroupEnum} of the given mode id.
-     * 
+     * Returns the {@link FunctionalColorGroupEnum} of the given color id.
+     *
      * @param modeID
      * @return mode
      */
@@ -88,8 +88,8 @@ public enum FunctionalColorGroupEnum {
     }
 
     /**
-     * Returns the functional color group form this Object.
-     * 
+     * Returns the functional color group id form this Object.
+     *
      * @return functional color group id
      */
     public List<Integer> getFunctionalColorGroup() {

@@ -25,6 +25,14 @@ import org.json.simple.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/**
+ * The {@link SceneDiscovery} can read out various digitalSTROM-Scene types and generates a list of theirs or managing
+ * over the {@link DigitalSTROMSceneManager}.
+ *
+ * @author Michael Ochel - Initial contribution
+ * @author Matthias Siegele - Initial contribution
+ *
+ */
 public class SceneDiscovery {
 
     private static final Logger logger = LoggerFactory.getLogger(SceneDiscovery.class);
@@ -39,15 +47,31 @@ public class SceneDiscovery {
     private final String reachableScenesQuery = "/json/zone/getReachableScenes?id=";
     private final String reachableGroupsQuery = "/json/apartment/getReachableGroups?token=";
 
+    /**
+     * Creates a new {@link SceneDiscovery} with scene managing over the {@link DigitalSTROMSceneManager}
+     *
+     * @param genList
+     */
     public SceneDiscovery(DigitalSTROMSceneManager sceneManager) {
         this.sceneManager = sceneManager;
 
     }
 
+    /**
+     * Creates a new {@link SceneDiscovery} and generate only a list of all scenes if genList is true.
+     *
+     * @param genList
+     */
     public SceneDiscovery(boolean genList) {
         this.genList = genList;
     }
 
+    /**
+     * Generates all named, reachable, apratmet and zone scenes.
+     *
+     * @param connectionManager
+     * @param structureManager
+     */
     public void generateAllScenes(DigitalSTROMConnectionManager connectionManager,
             DigitalSTROMStructureManager structureManager) {
         generateNamedScenes(connectionManager);
@@ -56,6 +80,12 @@ public class SceneDiscovery {
         generateReachableScenes(connectionManager, structureManager);
     }
 
+    /**
+     * Generates all named scenes.
+     *
+     * @param connectionManager
+     * @return success true otherwise false
+     */
     public boolean generateNamedScenes(DigitalSTROMConnectionManager connectionManager) {
         if (connectionManager.checkConnection()) {
             String response = connectionManager.getHttpTransport()
@@ -73,6 +103,9 @@ public class SceneDiscovery {
         return false;
     }
 
+    /**
+     * Generates all apartment scenes.
+     */
     public void generateAppartmentScence() {
         for (ApartmentSceneEnum apartmentScene : ApartmentSceneEnum.values()) {
 
@@ -135,6 +168,13 @@ public class SceneDiscovery {
 
     }
 
+    /**
+     * Generates all zone scenes.
+     *
+     * @param connectionManager
+     * @param structureManager
+     * @return success true otherwise false
+     */
     public boolean generateZoneScenes(DigitalSTROMConnectionManager connectionManager,
             DigitalSTROMStructureManager structureManager) {
         HashMap<Integer, List<Short>> reachableGroups = getReachableGroups(connectionManager);
@@ -170,6 +210,13 @@ public class SceneDiscovery {
         return false;
     }
 
+    /**
+     * Generates all reachable scenes.
+     *
+     * @param connectionManager
+     * @param structureManager
+     * @return success true otherwise false
+     */
     public boolean generateReachableScenes(DigitalSTROMConnectionManager connectionManager,
             DigitalSTROMStructureManager structureManager) {
         HashMap<Integer, List<Short>> reachableGroups = getReachableGroups(connectionManager);
@@ -294,6 +341,11 @@ public class SceneDiscovery {
         return reachableGroupsMap;
     }
 
+    /**
+     * Informs the registered {@link SceneStausListener} as scene discovery about a new scene.
+     *
+     * @param scene
+     */
     public void sceneDiscoverd(InternalScene scene) {
         if (scene != null) {
             if (!isStandardScene(scene.getSceneID())) {
@@ -327,14 +379,27 @@ public class SceneDiscovery {
         }
     }
 
+    /**
+     * Registers the given {@link SceneStatusListener} as scene discovery.
+     *
+     * @param listener
+     */
     public void registerSceneDiscovery(SceneStatusListener listener) {
         this.discovery = listener;
     }
 
+    /**
+     * Unregisters the {@link SceneStatusListener} as scene discovery from this {@link InternalScene}.
+     */
     public void unRegisterDiscovery() {
         this.discovery = null;
     }
 
+    /**
+     * Returns the list of all generated {@link InternalScene}'s if the list should generated.
+     *
+     * @return List of all {@link InternalScene} or null
+     */
     public List<InternalScene> getNamedSceneList() {
         return this.namedScenes;
     }

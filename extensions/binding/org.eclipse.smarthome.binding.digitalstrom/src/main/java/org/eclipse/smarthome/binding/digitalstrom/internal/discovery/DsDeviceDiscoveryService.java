@@ -29,11 +29,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * The {@link DsDeviceDiscoveryService} discovered all DigitalSTROM-Devices
+ * The {@link DsDeviceDiscoveryService} discovered all digitalSTROM-Devices
  * which are be able to add them to the ESH-Inbox.
  *
- * @author Michael Ochel
- * @author Matthias Siegele
+ * @author Michael Ochel - Initial contribution
+ * @author Matthias Siegele - Initial contribution
  */
 public class DsDeviceDiscoveryService extends AbstractDiscoveryService implements DeviceStatusListener {
 

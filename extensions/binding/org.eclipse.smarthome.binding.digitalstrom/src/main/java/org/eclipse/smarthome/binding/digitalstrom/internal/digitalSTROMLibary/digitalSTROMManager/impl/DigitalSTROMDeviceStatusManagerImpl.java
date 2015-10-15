@@ -14,6 +14,7 @@ import java.util.List;
 
 import org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.digitalSTROMConfiguration.DigitalSTROMConfig;
 import org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.digitalSTROMListener.DeviceStatusListener;
+import org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.digitalSTROMListener.DigitalSTROMConnectionListener;
 import org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.digitalSTROMListener.DigitalSTROMManagerStatusListener;
 import org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.digitalSTROMListener.SceneStatusListener;
 import org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.digitalSTROMListener.TotalPowerConsumptionListener;
@@ -47,6 +48,13 @@ import org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.di
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/**
+ * The {@link DigitalSTROMDeviceStatusManagerImpl} is the implementation of the the
+ * {@link DigitalSTROMDeviceStatusManager}.
+ *
+ * @author Michael Ochel - Initial contribution
+ * @author Matthias Siegele - Initial contribution
+ */
 public class DigitalSTROMDeviceStatusManagerImpl implements DigitalSTROMDeviceStatusManager {
 
     private Logger logger = LoggerFactory.getLogger(DigitalSTROMDeviceStatusManagerImpl.class);
@@ -103,16 +111,9 @@ public class DigitalSTROMDeviceStatusManagerImpl implements DigitalSTROMDeviceSt
     private boolean shutdown = true;
     private PollingRunnable pollingRunnable = null;
 
-    private class PollingRunnable implements Runnable { // = new Runnable()
-
-        // private boolean shutdown = false;
+    private class PollingRunnable implements Runnable {
         private boolean devicesLoaded = false;
 
-        /*
-         * public void shutdown() {
-         * shutdown = true;
-         * }
-         */
         @Override
         public void run() {
             stateChanged(ManagerStates.initialasing);
@@ -176,7 +177,7 @@ public class DigitalSTROMDeviceStatusManagerImpl implements DigitalSTROMDeviceSt
                             if (eshDevice.isPresent()) {
                                 if (eshDevice.isListenerRegisterd()) {
                                     logger.debug("Check device updates");
-                                    // check device state updates from esh
+                                    // check device state updates
                                     while (!eshDevice.isDeviceUpToDate()) {
                                         DeviceStateUpdate deviceStateUpdate = eshDevice.getNextDeviceUpdateState();
                                         if (deviceStateUpdate != null) {
@@ -279,6 +280,7 @@ public class DigitalSTROMDeviceStatusManagerImpl implements DigitalSTROMDeviceSt
                                 }
                             }
 
+                            // TODO: move discovery in DigitalSTROMStructureManagerImpl.addDevice
                             if (deviceDiscovery != null) {
                                 if (currentDevice.isDeviceWithOutput()) {
                                     deviceDiscovery.onDeviceAdded(currentDevice);
@@ -302,7 +304,7 @@ public class DigitalSTROMDeviceStatusManagerImpl implements DigitalSTROMDeviceSt
 
                     }
 
-                    // TODO: Generate everyTime Scenes or only when a Scene Discovery is added
+                    // Generate everyTime Scenes or only when a Scene Discovery is added
                     if (!sceneMan.scenesGenerated() /* && sceneMan.isDiscoveryRegistrated() */) {
                         logger.debug("generateScenes");
                         sceneMan.generateScenes();
@@ -346,7 +348,6 @@ public class DigitalSTROMDeviceStatusManagerImpl implements DigitalSTROMDeviceSt
                         wait(POLLING_FREQUENCY);
                     }
                 } catch (InterruptedException e) {
-                    // TODO Auto-generated catch block
                     e.printStackTrace();
                 }
 
@@ -374,7 +375,6 @@ public class DigitalSTROMDeviceStatusManagerImpl implements DigitalSTROMDeviceSt
 
     @Override
     public synchronized void start() {
-        // pollingJob = scheduler.scheduleAtFixedRate(pollingRunnable, 1, POLLING_FREQUENCY, TimeUnit.SECONDS);
         logger.debug("start Thread");
         if (shutdown) {
             shutdown = false;
@@ -397,7 +397,6 @@ public class DigitalSTROMDeviceStatusManagerImpl implements DigitalSTROMDeviceSt
     @Override
     public synchronized void stop() {
         shutdown = true;
-        // pollingRunnable.shutdown();
         sceneMan.stop();
         schedduler2 = null;
         if (sceneJobExecuter != null) {
@@ -409,24 +408,43 @@ public class DigitalSTROMDeviceStatusManagerImpl implements DigitalSTROMDeviceSt
         }
     }
 
-    @Override
-    public void restart() {
-
-    }
-
-    class TrashDevice {
+    /**
+     * The {@link TrashDevice} saves not present {@link Device}'s, but at this point not deleted from the
+     * digitalSTROM-System, temporary to get back the configuration of the {@link Device}'s faster.
+     *
+     * @author Michael Ochel - Initial contribution
+     * @author Matthias Siegele - Initial contribution
+     *
+     */
+    private class TrashDevice {
         private Device device;
         private int timeStamp;
 
+        /**
+         * Creates a new {@link TrashDevice}.
+         *
+         * @param device
+         */
         public TrashDevice(Device device) {
             this.device = device;
             this.timeStamp = Calendar.getInstance().get(Calendar.DAY_OF_YEAR);
         }
 
+        /**
+         * Returns the saved {@link Device}.
+         *
+         * @return device
+         */
         public Device getDevice() {
             return device;
         }
 
+        /**
+         * Returns true if the time for the {@link TrashDevice} is over and it can be deleted.
+         *
+         * @param dayOfYear
+         * @return true = time to delete | false = not time to delete
+         */
         public boolean isTimeToDelete(int dayOfYear) {
             return this.timeStamp + DigitalSTROMConfig.TRASH_DEVICE_DELEATE_TIME <= dayOfYear;
         }
@@ -479,14 +497,12 @@ public class DigitalSTROMDeviceStatusManagerImpl implements DigitalSTROMDeviceSt
             try {
                 Thread.sleep(sleepTime);
             } catch (InterruptedException e) {
-                // TODO Auto-generated catch block
                 e.printStackTrace();
             }
         }
         if (this.connMan.checkConnection()) {
             lastSceneCall = System.currentTimeMillis();
             boolean requestSucsessfull = false;
-            // TODO: 1 second rule to send auto generated scene commands
             if (scene.getZoneID() == 0) {
                 if (call_undo) {
                     requestSucsessfull = this.digitalSTROMClient.callApartmentScene(connMan.getSessionToken(),
@@ -578,10 +594,6 @@ public class DigitalSTROMDeviceStatusManagerImpl implements DigitalSTROMDeviceSt
                         requestSucsessfull = digitalSTROMClient.decreaseValue(connMan.getSessionToken(),
                                 device.getDSID());
                         if (requestSucsessfull) {
-                            // TODO: checken ob man auch dsuid ins event packen kann, sonst zu dsid �ndern ... siehe
-                            // auch TODO im EventListener ...
-                            // evtl. echo ganz weg lassen und hier kein eshStateupdate schicken .. muss aber in
-                            // DeviceImpl ge�ndert weren
                             sceneMan.addEcho(device.getDSID().getValue(), (short) SceneEnum.DECREMENT.getSceneNumber());
                         }
                         break;
@@ -590,19 +602,12 @@ public class DigitalSTROMDeviceStatusManagerImpl implements DigitalSTROMDeviceSt
                         requestSucsessfull = digitalSTROMClient.increaseValue(connMan.getSessionToken(),
                                 device.getDSID());
                         if (requestSucsessfull) {
-                            // TODO: checken ob man auch dsuid ins event packen kann, sonst zu dsid �ndern ... siehe
-                            // auch TODO im EventListener
                             sceneMan.addEcho(device.getDSID().getValue(), (short) SceneEnum.INCREMENT.getSceneNumber());
                         }
                         break;
                     case DeviceStateUpdate.UPDATE_BRIGHTNESS:
                         requestSucsessfull = digitalSTROMClient.setDeviceValue(connMan.getSessionToken(),
                                 device.getDSID(), null, deviceStateUpdate.getValue());
-                        /*
-                         * if(requestSucsessfull && deviceStateUpdate.getValue() <= 0){
-                         * this.sensorJobExecuter.removeSensorJobs(device.getDSID());
-                         * }
-                         */
                         break;
                     case DeviceStateUpdate.UPDATE_OPEN_CLOSE:
                     case DeviceStateUpdate.UPDATE_ON_OFF:
@@ -714,7 +719,6 @@ public class DigitalSTROMDeviceStatusManagerImpl implements DigitalSTROMDeviceSt
                     sceneJobExecuter.addHighPriorityJob(
                             new SceneOutputValueSensorJob(device, (short) deviceStateUpdate.getValue()));
                     updateSensorData(new DeviceOutputValueSensorJob(device), DigitalSTROMConfig.REFRESH_PRIORITY_HIGH);
-                    // sensorJobExecuter.addHighPriorityJob(new DeviceOutputValueSensorJob(device));
                 } else {
                     sceneJobExecuter
                             .addHighPriorityJob(new SceneConfigSensorJob(device, (short) deviceStateUpdate.getValue()));
@@ -831,5 +835,15 @@ public class DigitalSTROMDeviceStatusManagerImpl implements DigitalSTROMDeviceSt
     public void unregisterStatusListener() {
         this.statusListener = null;
         this.sceneMan.unregisterStatusListener();
+    }
+
+    @Override
+    public void reisterDigitalSTROMConnectionListener(DigitalSTROMConnectionListener connectionListener) {
+        this.connMan.registerConnectionListener(connectionListener);
+    }
+
+    @Override
+    public void unreisterDigitalSTROMConnectionListener() {
+        this.connMan.unregisterConnectionListener();
     }
 }

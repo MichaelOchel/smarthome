@@ -14,48 +14,45 @@ import org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.di
 import org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.digitalSTROMStructure.digitalSTROMDevices.deviceParameters.DeviceStateUpdate;
 import org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.digitalSTROMStructure.digitalSTROMDevices.deviceParameters.DeviceStateUpdateImpl;
 import org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.digitalSTROMStructure.digitalSTROMDevices.deviceParameters.SensorEnum;
-import org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.digitalSTROMStructure.digitalSTROMDevices.deviceParameters.SensorIndexEnum;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
  * The {@link DeviceConsumptionSensorJob} is the implementation of a {@link SensorJob}
- * for reading out a power consumption of a digitalSTROM-Device.
+ * for reading out the current value of the of a digitalSTROM-Device sensor and update the {@link Device}.
  *
- * @author Alexander Betker
- * @author Alex Maier
- * @author Michael Ochel - updated and added some methods
- * @author Matthias Siegele - updated and added some methods
+ * @author Michael Ochel - Initial contribution
+ * @author Matthias Siegele - Initial contribution
  *
  */
 public class DeviceConsumptionSensorJob implements SensorJob {
 
     private static final Logger logger = LoggerFactory.getLogger(DeviceConsumptionSensorJob.class);
     private Device device = null;
-    private SensorEnum sensorIndex = null;
+    private SensorEnum sensorType = null;
     private DSID meterDSID = null;
     private long initalisationTime = 0;
 
     /**
-     * Creates a new {@link DeviceConsumptionSensorJob} with the given {@link SensorIndexEnum}.
+     * Creates a new {@link DeviceConsumptionSensorJob} with the given {@link SensorEnum}.
      *
      * @param device
      * @param type sensor index
      */
     public DeviceConsumptionSensorJob(Device device, SensorEnum type) {
         this.device = device;
-        this.sensorIndex = type;
+        this.sensorType = type;
         this.meterDSID = device.getMeterDSID();
         this.initalisationTime = System.currentTimeMillis();
     }
 
     @Override
     public void execute(DigitalSTROMAPI digitalSTROM, String token) {
-        int consumption = digitalSTROM.getDeviceSensorValue(token, this.device.getDSID(), null, this.sensorIndex);
-        logger.debug("SensorIndex: " + this.sensorIndex + ", DeviceConsumption : " + consumption + ", DSID: "
+        int consumption = digitalSTROM.getDeviceSensorValue(token, this.device.getDSID(), null, this.sensorType);
+        logger.debug("SensorIndex: " + this.sensorType + ", DeviceConsumption : " + consumption + ", DSID: "
                 + this.device.getDSID().getValue());
 
-        switch (this.sensorIndex) {
+        switch (this.sensorType) {
 
             case ACTIVE_POWER:
                 // logger.info("DeviceConsumption : "+consumption+", DSID: "+this.device.getDSID().getValue());
@@ -79,15 +76,15 @@ public class DeviceConsumptionSensorJob implements SensorJob {
     public boolean equals(Object obj) {
         if (obj instanceof DeviceConsumptionSensorJob) {
             DeviceConsumptionSensorJob other = (DeviceConsumptionSensorJob) obj;
-            String device = this.device.getDSID().getValue() + this.sensorIndex.getSensorType();
-            return device.equals(other.device.getDSID().getValue() + other.sensorIndex.getSensorType());
+            String device = this.device.getDSID().getValue() + this.sensorType.getSensorType();
+            return device.equals(other.device.getDSID().getValue() + other.sensorType.getSensorType());
         }
         return false;
     }
 
     @Override
     public int hashCode() {
-        return new String(this.device.getDSID().getValue() + this.sensorIndex.getSensorType()).hashCode();
+        return new String(this.device.getDSID().getValue() + this.sensorType.getSensorType()).hashCode();
     }
 
     @Override

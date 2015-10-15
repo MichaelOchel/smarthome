@@ -23,7 +23,7 @@ import java.util.Map;
 import org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.digitalSTROMStructure.digitalSTROMScene.constants.EventPropertyEnum;
 
 /**
- * The {@link EventItem} represent a event item of an DigitalSTROM-Event.
+ * The {@link EventItem} represent a event item of an digitalSTROM-Event.
  *
  * @author Alexander Betker
  * @since 1.3.0

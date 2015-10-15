@@ -6,14 +6,6 @@
  * http://www.eclipse.org/legal/epl-v10.html
  */
 package org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.digitalSTROMServerConnection;
-/**
- * Copyright (c) 2010-2014, openHAB.org and others.
- *
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
- * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
- */
 
 import java.util.List;
 
@@ -32,11 +24,18 @@ import org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.di
 import org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.digitalSTROMStructure.digitalSTROMScene.constants.SceneEnum;
 
 /**
- * digitalSTROM-API based on dSS-Version 1.14.5
+ * digitalSTROM-API based on dSS-Version higher then 1.14.5
  *
  * @author Alexander Betker
  * @see http://developer.digitalstrom.org/download/dss/dss-1.14.5-doc/dss-1.14.5-json_api.html
  * @since 1.3.0
+ *
+ * @author Michael Ochel - add missing java-doc, update digitalSTROM-JSON-API as far as possible to the pfd version from
+ *         June 19, 2014 and add checkConnection method
+ * @author Matthias Siegele - add missing java-doc, update digitalSTROM-JSON-API as far as possible to the pfd version
+ *         from
+ *         June 19, 2014 and add checkConnection method
+ * @see http://developer.digitalstrom.org/Architecture/v1.1/dss-json.pdf
  */
 public interface DigitalSTROMAPI {
 
@@ -173,7 +172,7 @@ public interface DigitalSTROMAPI {
      * @param sensorIndex required
      * @return
      */
-    public short getDeviceSensorValue(String token, DSID dsid, String name, SensorEnum sensorIndex);
+    public short getDeviceSensorValue(String token, DSID dsid, String name, SensorIndexEnum sensorIndex);
 
     /**
      * Calls scene sceneNumber on the device
@@ -292,34 +291,148 @@ public interface DigitalSTROMAPI {
      * Returns cached energy meter value or cached power consumption
      * value in watt (W). The type parameter defines what should
      * be returned, valid types, 'energyDelta' are 'energy' and
-     * 'consumption'. 'energy' and 'energyDelta' are available in two units:
-     * 'Wh' (default) and 'Ws'. The from parameter follows the set-syntax,
-     * currently it supports: .meters(dsid1,dsid2,...) and .meters(all)
+     * 'consumption' you can also see at {@link MeteringTypeEnum}. 'energy' and 'energyDelta' are available in two
+     * units: 'Wh' (default) and 'Ws' you can also see at {@link MeteringUnitsEnum}. The meterDSIDs parameter follows
+     * the
+     * set-syntax, currently it supports: .meters(dsid1,dsid2,...) and .meters(all)
      *
      * @param type required
-     * @param from required
+     * @param meterDSIDs required
      * @param unit optional
-     * @return
+     * @return cached metering values
+     */
+    public List<CachedMeteringValue> getLatest(String token, MeteringTypeEnum type, String meterDSIDs,
+            MeteringUnitsEnum unit);
+
+    /**
+     * Returns cached energy meter value or cached power consumption
+     * value in watt (W). The type parameter defines what should
+     * be returned, valid types, 'energyDelta' are 'energy' and
+     * 'consumption' you can also see at {@link MeteringTypeEnum}. 'energy' and 'energyDelta' are available in two
+     * units: 'Wh' (default) and 'Ws' you can also see at {@link MeteringUnitsEnum}. <br>
+     * The meterDSIDs parameter you can directly pass a {@link List} of the digitalSTROM-Meter dSID's as {@link String}.
+     *
+     * @param type required
+     * @param meterDSIDs required
+     * @param unit optional
+     * @return cached metering values
+     *
+     * @author Michael Ochel
+     * @author Matthias Siegele
      */
     public List<CachedMeteringValue> getLatest(String token, MeteringTypeEnum type, List<String> meterDSIDs,
             MeteringUnitsEnum unit);
 
-    // TODO: Doc
-    public int checkConnection(String token);
+    /**
+     * Checks the connection and returns the HTTP-Status-Code.
+     *
+     * @param sessionToken required
+     * @return HTTP-Status-Code
+     *
+     * @author Michael Ochel
+     * @author Matthias Siegele
+     */
+    public int checkConnection(String sessionToken);
 
-    public int getSceneValue(String token, DSID dsid, short sceneId);
+    /**
+     * Returns the configured scene output value for the given sceneId of the digitalSTROM-Device with the given dSID.
+     *
+     * @param sessionToken required
+     * @param dsid required
+     * @param sceneId required
+     * @return scene value
+     *
+     * @author Michael Ochel
+     * @author Matthias Siegele
+     */
+    public int getSceneValue(String sessionToken, DSID dSID, short sceneId);
 
-    public boolean increaseValue(String sessionToken, DSID dsid);
+    /**
+     * Call the INC scene on the digitalSTROM-Device with the given dSID and returns true if the request was success.
+     *
+     * @param sessionToken required
+     * @param dSID required
+     * @return success true otherwise false
+     *
+     * @author Michael Ochel
+     * @author Matthias Siegele
+     */
+    public boolean increaseValue(String sessionToken, DSID dSID);
 
-    public boolean decreaseValue(String sessionToken, DSID dsid);
+    /**
+     * Call the DEC scene on the digitalSTROM-Device with the given dSID and returns true if the request was successful.
+     *
+     * @param sessionToken required
+     * @param dSID required
+     * @return success true otherwise false
+     *
+     * @author Michael Ochel
+     * @author Matthias Siegele
+     */
+    public boolean decreaseValue(String sessionToken, DSID dSID);
 
-    boolean undoDeviceScene(String token, DSID dsid, Scene sceneNumber);
+    /**
+     * Undo the given sceneNumer of the digitalSTROM-Device with the given dSID and returns true if the request was
+     * successful.
+     *
+     * @param sessionToken required
+     * @param dsid required
+     * @param sceneNumber required
+     * @return success true otherwise false
+     *
+     * @author Michael Ochel
+     * @author Matthias Siegele
+     */
+    boolean undoDeviceScene(String sessionToken, DSID dsid, Scene sceneNumber);
 
-    boolean undoApartmentScene(String token, int groupID, String groupName, Scene sceneNumber);
+    /**
+     * Undo the given sceneNumer on the digitalSTROM apartment-group with the given groupID or groupName and returns
+     * true
+     * if the request was successful.
+     *
+     * @param sessionToken required
+     * @param groupID needs either groupID or groupName
+     * @param groupName needs either groupID or groupName
+     * @param sceneNumber required
+     * @return success true otherwise false
+     *
+     * @author Michael Ochel
+     * @author Matthias Siegele
+     */
+    boolean undoApartmentScene(String sessionToken, int groupID, String groupName, Scene sceneNumber);
 
-    boolean undoZoneScene(String token, int zoneID, String zoneName, int groupID, String groupName,
+    /**
+     * Undo the given sceneNumer on the digitalSTROM zone-group with the given zoneID or zoneName and groupID or
+     * groupName and returns true if the request was successful.
+     *
+     * @param sessionToken
+     * @param zoneID needs either zoneID or zoneName
+     * @param zoneName needs either zoneID or zoneName
+     * @param groupID needs either groupID or groupName
+     * @param groupName needs either groupID or groupName
+     * @param sceneNumber required
+     * @return success true otherwise false
+     *
+     * @author Michael Ochel
+     * @author Matthias Siegele
+     */
+    boolean undoZoneScene(String sessionToken, int zoneID, String zoneName, int groupID, String groupName,
             SceneEnum sceneNumber);
 
-    public short getDeviceSensorValue(String token, DSID dsid, String name, SensorIndexEnum sensorIndex);
+    /**
+     * Returns the digitalSTROM-device sensor value for the digitalSTROM-device with the given dSID or deviceName and
+     * the given sensorType. If the sensorType is supports from the device and the request was successful it returns
+     * the sensor value otherwise -1.
+     *
+     * @param sessionToken required
+     * @param dSID needs either dSID or deviceName
+     * @param name
+     * @param sensortype required
+     * @return success sensor value otherwise -1
+     *
+     * @author Michael Ochel
+     * @author Matthias Siegele
+     */
+    public short getDeviceSensorValue(String sessionToken, DSID dSID, String deviceName, SensorEnum sensortype);
 
 }

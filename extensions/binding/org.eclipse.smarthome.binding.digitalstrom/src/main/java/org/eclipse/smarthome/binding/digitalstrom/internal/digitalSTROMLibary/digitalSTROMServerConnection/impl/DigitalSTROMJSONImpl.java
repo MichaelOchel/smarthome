@@ -6,14 +6,6 @@
  * http://www.eclipse.org/legal/epl-v10.html
  */
 package org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.digitalSTROMServerConnection.impl;
-/**
- * Copyright (c) 2010-2014, openHAB.org and others.
- *
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
- * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
- */
 
 import java.util.Collection;
 import java.util.LinkedList;
@@ -46,14 +38,17 @@ import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 
 /**
+ * The {@link DigitalSTROMJSONImpl} is the implemetation of the {@link DigitalSTROMAPI}.
+ *
  * @author Alexander Betker
  * @author Alex Maier
  * @since 1.3.0
  * @version digitalSTROM-API 1.14.5
+ *
+ * @author Michael Ochel - implements new methods and updates
+ * @author Matthias Siegele - implements new methods and updates
  */
 public class DigitalSTROMJSONImpl implements DigitalSTROMAPI {
-
-    // private static final Logger logger = LoggerFactory.getLogger(DigitalSTROMJSONImpl.class);
 
     private HttpTransport transport = null;
 
@@ -838,58 +833,6 @@ public class DigitalSTROMJSONImpl implements DigitalSTROMAPI {
             }
         }
         return -1;
-        /*
-         * String response = null;
-         *
-         * if (dsid != null && dsid.getValue() != null) {
-         * if (name != null) {
-         * response = transport.execute(
-         * JSONRequestConstants.JSON_DEVICE_GET_SENSOR_VALUE + JSONRequestConstants.PARAMETER_TOKEN
-         * + token + JSONRequestConstants.INFIX_PARAMETER_DSID + dsid.getValue()
-         * + JSONRequestConstants.INFIX_PARAMETER_NAME + name
-         * + JSONRequestConstants.INFIX_PARAMETER_SENSOR_INDEX + sensorType.getSensorType(),
-         * DigitalSTROMConfig.CONNECTION_SENSORDATA_TIMEOUT,
-         * DigitalSTROMConfig.READ_SENSORDATA_TIMEOUT);
-         * } else {
-         * response = transport.execute(
-         * JSONRequestConstants.JSON_DEVICE_GET_SENSOR_VALUE + JSONRequestConstants.PARAMETER_TOKEN
-         * + token + JSONRequestConstants.INFIX_PARAMETER_DSID + dsid.getValue()
-         * + JSONRequestConstants.INFIX_PARAMETER_SENSOR_INDEX + sensorType.getSensorType(),
-         * DigitalSTROMConfig.CONNECTION_SENSORDATA_TIMEOUT,
-         * DigitalSTROMConfig.READ_SENSORDATA_TIMEOUT);
-         * }
-         * } else if (name != null) {
-         * response = transport.execute(
-         * JSONRequestConstants.JSON_DEVICE_GET_SENSOR_VALUE + JSONRequestConstants.PARAMETER_TOKEN + token
-         * + JSONRequestConstants.INFIX_PARAMETER_NAME + name
-         * + JSONRequestConstants.INFIX_PARAMETER_SENSOR_INDEX + sensorType.getSensorType(),
-         * DigitalSTROMConfig.CONNECTION_SENSORDATA_TIMEOUT, DigitalSTROMConfig.READ_SENSORDATA_TIMEOUT);
-         * }
-         *
-         * JSONObject responseObj = JSONResponseHandler.toJSONObject(response);
-         *
-         * if (JSONResponseHandler.checkResponse(responseObj)) {
-         * JSONObject valueObject = JSONResponseHandler.getResultJSONObject(responseObj);
-         *
-         * if (valueObject != null && valueObject
-         * .get(JSONApiResponseKeysEnum.DEVICE_GET_SENSOR_VALUE_SENSOR_VALUE.getKey()) != null) {
-         * short value = -1;
-         * try {
-         * value = Short.parseShort(valueObject
-         * .get(JSONApiResponseKeysEnum.DEVICE_GET_SENSOR_VALUE_SENSOR_VALUE.getKey()).toString());
-         * } catch (java.lang.NumberFormatException e) {
-         * // logger.error
-         * System.err.println("NumberFormatException by getDeviceSensorValue: " + valueObject
-         * .get(JSONApiResponseKeysEnum.DEVICE_GET_SENSOR_VALUE_SENSOR_VALUE.getKey()).toString());
-         * }
-         *
-         * return value;
-         * }
-         * }
-         *
-         * }
-         * return -1;
-         */
     }
 
     @Override
@@ -1215,6 +1158,48 @@ public class DigitalSTROMJSONImpl implements DigitalSTROMAPI {
     }
 
     @Override
+    public List<CachedMeteringValue> getLatest(String token, MeteringTypeEnum type, String meterDSIDs,
+            MeteringUnitsEnum unit) {
+        if (type != null && meterDSIDs != null) {
+
+            String response = null;
+
+            if (unit != null && type != MeteringTypeEnum.consumption) {
+                response = transport.execute(JSONRequestConstants.JSON_METERING_GET_LATEST
+                        + JSONRequestConstants.PARAMETER_TOKEN + token + JSONRequestConstants.INFIX_PARAMETER_TYPE
+                        + type.name() + JSONRequestConstants.INFIX_PARAMETER_FROM + meterDSIDs
+                        + JSONRequestConstants.INFIX_PARAMETER_UNIT + unit.name());
+            } else {
+                response = transport.execute(JSONRequestConstants.JSON_METERING_GET_LATEST
+                        + JSONRequestConstants.PARAMETER_TOKEN + token + JSONRequestConstants.INFIX_PARAMETER_TYPE
+                        + type.name() + JSONRequestConstants.INFIX_PARAMETER_FROM + meterDSIDs);
+            }
+
+            JSONObject responseObj = JSONResponseHandler.toJSONObject(response);
+            if (JSONResponseHandler.checkResponse(responseObj)) {
+                JSONObject latestObj = JSONResponseHandler.getResultJSONObject(responseObj);
+
+                if (latestObj != null
+                        && latestObj.get(JSONApiResponseKeysEnum.METERING_GET_LATEST.getKey()) instanceof JSONArray) {
+                    JSONArray array = (JSONArray) latestObj.get(JSONApiResponseKeysEnum.METERING_GET_LATEST.getKey());
+
+                    List<CachedMeteringValue> list = new LinkedList<CachedMeteringValue>();
+
+                    for (int i = 0; i < array.size(); i++) {
+                        if (array.get(i) instanceof JSONObject) {
+                            list.add(new JSONCachedMeteringValueImpl((JSONObject) array.get(i)));
+                        }
+
+                    }
+                    return list;
+                }
+            }
+
+        }
+        return null;
+    }
+
+    @Override
     public boolean setDeviceValue(String token, DSID dsid, String name, int value) {
         if (((dsid != null && dsid.getValue() != null) || name != null) && valueInRange(value)) {
             String response = null;
@@ -1437,13 +1422,17 @@ public class DigitalSTROMJSONImpl implements DigitalSTROMAPI {
 
     @Override
     public boolean increaseValue(String sessionToken, DSID dsid) {
-        // TODO Auto-generated method stub
-        return false;
+        String response = null;
+
+        response = transport.execute("/json/device/increaseValue?dsid=" + dsid.toString() + "&token=" + sessionToken);
+        return JSONResponseHandler.checkResponse(JSONResponseHandler.toJSONObject(response));
     }
 
     @Override
     public boolean decreaseValue(String sessionToken, DSID dsid) {
-        // TODO Auto-generated method stub
-        return false;
+        String response = null;
+
+        response = transport.execute("/json/device/decreaseValue?dsid=" + dsid.toString() + "&token=" + sessionToken);
+        return JSONResponseHandler.checkResponse(JSONResponseHandler.toJSONObject(response));
     }
 }

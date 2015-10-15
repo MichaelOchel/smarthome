@@ -7,25 +7,19 @@
  */
 package org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.digitalSTROMStructure.digitalSTROMScene.constants;
 
-/**
- * Copyright (c) 2010-2014, openHAB.org and others.
- *
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
- * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
- */
-
 import java.util.HashMap;
 
 /**
- * Apartment scenes are usually called in a whole zone or apartment using the broadcast group (=0).
- * They have a id between 64 and 127
+ * The {@link ApartmentSceneEnum} lists all group independent scenes from digitalSTROM which are callable at the
+ * digitalSTROM web interface.
  *
  * @author Alexander Betker
  * @see digitalSTROM wiki on http://redmine.digitalstrom.org/projects/dss/wiki/Scene_table
- * @since 1.3.0
- * @version digitalSTROM-API 1.14.5
+ *
+ * @author Michael Ochel - add new scenes and deleted scenes which are show as zone scenes in the dss-web-interface
+ * @author Mathias Siegele - add new scenes and deleted scenes which are show as zone scenes in the dss-web-interface
+ * @see http://developer.digitalstrom.org/Architecture/ds-basics.pdf , Table 35: Group independent activities and scene
+ *      command values, page 47 and dss-web-interface
  */
 public enum ApartmentSceneEnum implements Scene {
 
@@ -69,7 +63,7 @@ public enum ApartmentSceneEnum implements Scene {
 
     /**
      * Returns the apartment scene from the given scene number.
-     * 
+     *
      * @param sceneNumber
      * @return apartment scene
      */

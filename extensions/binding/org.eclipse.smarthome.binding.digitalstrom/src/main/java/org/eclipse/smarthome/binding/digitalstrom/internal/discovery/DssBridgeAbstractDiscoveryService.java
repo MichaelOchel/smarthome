@@ -21,10 +21,10 @@ import org.eclipse.smarthome.core.thing.ThingUID;
 
 /**
  * The {@link DssBridgeAbstractDiscoveryParticipant} is responsible for discovering new and
- * removed DigitalSTROM bridges. It uses the central {@link AbstractDiscoveryService}.
+ * removed digitalSTROM bridges. It uses the central {@link AbstractDiscoveryService}.
  *
- * @author Michael Ochel
- * @author Matthias Siegele
+ * @author Michael Ochel - Initial contribution
+ * @author Matthias Siegele - Initial contribution
  *
  */
 public class DssBridgeAbstractDiscoveryService extends AbstractDiscoveryService {

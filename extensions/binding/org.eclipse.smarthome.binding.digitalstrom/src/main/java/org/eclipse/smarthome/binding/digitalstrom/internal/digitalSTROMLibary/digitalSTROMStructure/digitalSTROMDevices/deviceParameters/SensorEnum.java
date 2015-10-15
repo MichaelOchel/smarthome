@@ -11,11 +11,11 @@ package org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.d
 import java.util.HashMap;
 
 /**
+ * The {@link SensorEnum} lists all available digitalSTROM sensor types.
  *
- * @author Michael Ochel
- * @author Matthias Siegele
- * @since 1.3.0
- * @version digitalSTROM-API 1.14.5
+ * @author Michael Ochel - Initial contribution
+ * @author Matthias Siegele - Initial contribution
+ * @see http://developer.digitalstrom.org/Architecture/ds-basics.pdf Table 36: Output Mode Register, page 51
  */
 public enum SensorEnum {
     /*
@@ -77,12 +77,24 @@ public enum SensorEnum {
         }
     }
 
-    public static boolean containsSensor(Integer index) {
-        return sensorEnums.keySet().contains(index);
+    /**
+     * Returns true if the given typeIndex contains in digitalSTROM otherwise false.
+     *
+     * @param typeIndex
+     * @return true if contains otherwise false
+     */
+    public static boolean containsSensor(Integer typeIndex) {
+        return sensorEnums.keySet().contains(typeIndex);
     }
 
-    public static SensorEnum getSensor(Integer index) {
-        return sensorEnums.get(index);
+    /**
+     * Returns the {@link SensorEnum} for the given typeIndex, otherwise null.
+     *
+     * @param typeIndex
+     * @return SensorEnum or null
+     */
+    public static SensorEnum getSensor(Integer typeIndex) {
+        return sensorEnums.get(typeIndex);
     }
 
     SensorEnum(int sensorType, String unit, String unitShortcut) {
@@ -91,14 +103,29 @@ public enum SensorEnum {
         this.unitShortcut = unitShortcut;
     }
 
+    /**
+     * Returns the typeIndex of this {@link OutputModeEnum} object.
+     *
+     * @return typeIndex
+     */
     public int getSensorType() {
         return this.sensorType;
     }
 
+    /**
+     * Returns the unit of this {@link OutputModeEnum} object.
+     *
+     * @return unit
+     */
     public String getUnit() {
         return this.unit;
     }
 
+    /**
+     * Returns the unit shortcut of this {@link OutputModeEnum} object.
+     *
+     * @return unit shortcut
+     */
     public String getUnitShortcut() {
         return this.unitShortcut;
     }

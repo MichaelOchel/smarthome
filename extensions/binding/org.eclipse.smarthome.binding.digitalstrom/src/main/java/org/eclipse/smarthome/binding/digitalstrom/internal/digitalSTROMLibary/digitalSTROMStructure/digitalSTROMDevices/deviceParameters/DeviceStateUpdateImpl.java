@@ -7,6 +7,13 @@
  */
 package org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.digitalSTROMStructure.digitalSTROMDevices.deviceParameters;
 
+/**
+ * The {@link DeviceStateUpdateImpl} is the implementation of the {@link DeviceStateUpdate}.
+ *
+ * @author Michael Ochel - Initial contribution
+ * @author Matthias Siegele - Initial contribution
+ *
+ */
 public class DeviceStateUpdateImpl implements DeviceStateUpdate {
 
     private final String UPDATE_TYPE;

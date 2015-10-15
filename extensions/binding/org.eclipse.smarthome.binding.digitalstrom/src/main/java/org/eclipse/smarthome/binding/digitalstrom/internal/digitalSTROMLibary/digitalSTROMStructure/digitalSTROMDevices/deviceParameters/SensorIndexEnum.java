@@ -6,19 +6,16 @@
  * http://www.eclipse.org/legal/epl-v10.html
  */
 package org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.digitalSTROMStructure.digitalSTROMDevices.deviceParameters;
-/**
- * Copyright (c) 2010-2014, openHAB.org and others.
- *
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
- * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
- */
 
 /**
+ * The {@link SensorIndexEnum} lists all available digitalSTROM sensor index.
+ *
  * @author Alexander Betker
  * @since 1.3.0
  * @version digitalSTROM-API 1.14.5
+ *
+ * @author Michael Ochel - add missing java-doc and sensor-type
+ * @author Matthias Siegele - add missing java-doc and sensor-type
  */
 public enum SensorIndexEnum {
 
@@ -34,10 +31,20 @@ public enum SensorIndexEnum {
         this.type = type;
     }
 
+    /**
+     * Returns the sensor index of this {@link SensorIndexEnum} object.
+     *
+     * @return sensor index
+     */
     public int getIndex() {
         return index;
     }
 
+    /**
+     * Returns the sensor type id of this {@link SensorIndexEnum} object.
+     *
+     * @return sensor type id
+     */
     public int getType() {
         return type;
     }

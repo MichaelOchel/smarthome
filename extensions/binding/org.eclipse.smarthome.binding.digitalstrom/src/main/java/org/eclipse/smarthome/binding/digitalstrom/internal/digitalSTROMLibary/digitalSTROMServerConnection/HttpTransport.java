@@ -18,24 +18,22 @@ package org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.d
 /**
  * The {@link HttpTransport} executes an request to the DigitalSTROM-Server.
  *
- * @author Michael Ochel - add SSL-Certification check, add fixURI(String uri) and checkConnection(String testRequest)
- *         method
- * @author Matthias Siegele - add SSL-Certification check, add fixURI(String uri) and checkConnection(String
- *         testRequest) method
+ * @author Michael Ochel - Initial contribution
+ * @author Matthias Siegele - Initial contribution
  */
 public interface HttpTransport {
 
     /**
-     * Executes a DigitalSTROM-request.
-     * 
+     * Executes a digitalSTROM-request.
+     *
      * @param request
      * @return response
      */
     public String execute(String request);
 
     /**
-     * Executes a DigitalSTROM-request.
-     * 
+     * Executes a digitalSTROM-request.
+     *
      * @param request
      * @param connectTimeout
      * @param readTimeout
@@ -44,8 +42,8 @@ public interface HttpTransport {
     public String execute(String request, int connectTimeout, int readTimeout);
 
     /**
-     * Executes a DigitalSTROM test request and returns the HTTP-Code.
-     * 
+     * Executes a digitalSTROM test request and returns the HTTP-Code.
+     *
      * @param testRequest
      * @return HTTP-Code
      */
