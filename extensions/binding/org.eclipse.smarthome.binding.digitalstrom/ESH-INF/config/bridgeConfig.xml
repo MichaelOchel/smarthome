@@ -52,7 +52,7 @@
             <!--sensorDataUpdateIntervall--><parameter
             	name="sensorDataUpdateIntervall" type="integer"
             	groupName="general" min="60">
-            	<default>60</default>
+            	<default>120</default>
             	<label>@text/DSS_BRIDGE_PARM_SENSOR_INTER_LABEL</label>
             	<description>@text/DSS_BRIDGE_PARM_SENSOR_INTER_DESC</description>
             	<required>false</required>
