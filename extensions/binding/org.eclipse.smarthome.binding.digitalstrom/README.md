@@ -54,7 +54,7 @@ Wenn der digitalSTROM-Server nicht automatisch gefunden wird, z.B. weil weil sic
 | Path to the SLL Certificate | trustCertPath | Here you can specify the path to the SLL certificate for the digitalSTROM-Server. You can download it from digitalSTROM server. Otherwise the SSL certificate will be ignored. | false | false |
 
 *digitalSTROM-Server informations*
-The group parameters * digitalSTROM-server informations * only includes informatative parameters which have no special functionality .
+The group parameters *digitalSTROM-server informations* only includes informatative parameters which have no special functionality .
 
 
 | Parameter Label | Parameter ID| Description  | Required | Advanced 
@@ -69,16 +69,16 @@ Hier können generelle Binding Konfigurationen vorgenommen werden, folgende Tabe
 
 Here you can set general binding configuration parameters, which shown in following table. 
 
-| Parameter Label | Parameter ID| Description  | Required | Advanced | default |
-|-----------------|------------------------|--------------|----------------- |------------- |
+| Parameter Label | Parameter ID| Description  | Required | Advanced | default 
+|-----------------|------------------------|--------------|----------------- |------------- | ----------------- |
 | Sensor update interval | sensorDataUpdateIntervall | Sets the Seconds after the digitalSTROM-Device sensor data will be updated. If the priority is higher then 'never'. | false | false | 60 |
 | Days to be slaked Trashbin devices | defaultTrashBinDeleateTime| Sets the days after the temporary saved digitalSTROM-Device configuration from not reachable digitalSTROM-Devices get permanently deleted. | false | false | 7 |
 | Wait time sensor reading | sensorWaitTime| Waiting time between the evaluation of the sensor values and the reading of the scenes in seconds. ATTENTION: digitalSTROM Rule 8 and 9 require a waiting period of 1 minute. Values less than 60 seconds could affect the digitalSTROM system. | false | true | 60 | 
 
 In the thing file, a manual configuration looks e.g. like
-
+```
 Bridge digitalstrom:dssBridge:dssBridge1 [ ipAddress ="dss.local.",  userName =”dssadmin”, password =“dssadmin” sensorDataUpdateIntervall =”180”]
-
+```
 If the digitalSTROM-server can’t be found automatically for example if the server isn’t located at the local network or mDNS is deactivated, you can insert a network-address or URL manually through the graphical user interface of the paper ui or insert it textual into the \*.thing configuration file. Further you have to set a username and password or a valid application-token. It is possible to deposit   
 
 *digitalSTROM-Devices*
@@ -86,7 +86,7 @@ Each digitalSTROM-Device needs the device ID named dSID as configuration paramet
 Furthermore a supported digitalSTROM-Device have at this point only informative parameter.
 The following table showed all parameters: 
 
-| Parameter Label | Parameter ID| Description  | Required | Advanced |
+| Parameter Label | Parameter ID| Description  | Required | Advanced 
 |-----------------|------------------------|--------------|----------------- |------------- |
 | Device ID | dSID| The unique identifier of a digitalSTOM-Device. | true | false |
 | Device UID | dSUID | The unique identifier of a digitalSTOM-Device. With virtual devices. | false | false | 
@@ -101,7 +101,7 @@ The following table showed all parameters:
 The GE and SW digitalSTROM-Devices have usually sensors to capture power consumption data. So these devices have the following paramters to read them out.  
 
 | Parameter Label | Parameter ID| Description  | Required | Advanced | Default |
-|-----------------|------------------------|--------------|----------------- |------------- |
+|-----------------|------------------------|--------------|----------------- |------------- | -----------|
 | Active power refresh priority | ActivePowerRefreshPriority | Set the refresh priority for the active power sensor value. Can be never, low priority, medium priority or high priority. | false | false | never |
 | Electric meter refresh priority | ElectricMeterRefreshPriority | Set the refresh priority for the Electric meter sensor value. Can be never, low priority, medium priority or high priority. | false | false | never |
 | Output current refresh priority | OutputCurrentRefreshPriority | Set the refresh priority for the output current sensor value. Can be never, low priority, medium priority or high priority. | false | false | never |
