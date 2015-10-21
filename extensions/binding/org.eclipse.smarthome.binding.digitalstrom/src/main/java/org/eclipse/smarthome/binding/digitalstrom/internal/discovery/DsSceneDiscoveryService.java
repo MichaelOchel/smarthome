@@ -9,6 +9,7 @@ package org.eclipse.smarthome.binding.digitalstrom.internal.discovery;
 
 import static org.eclipse.smarthome.binding.digitalstrom.DigitalSTROMBindingConstants.*;
 
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
@@ -63,16 +64,27 @@ public class DsSceneDiscoveryService extends AbstractDiscoveryService implements
      */
     @Override
     public void deactivate() {
-        digitalSTROMBridgeHandler.unregisterSceneStatusListener(this);
+        if (digitalSTROMBridgeHandler != null) {
+            digitalSTROMBridgeHandler.unregisterSceneStatusListener(this);
+        }
+        removeOlderResults(new Date().getTime());
     }
 
     @Override
     protected void startScan() {
-        if (digitalSTROMBridgeHandler.getScenes() != null) {
-            for (InternalScene scene : digitalSTROMBridgeHandler.getScenes()) {
-                onSceneAddedInternal(scene);
+        if (digitalSTROMBridgeHandler != null) {
+            if (digitalSTROMBridgeHandler.getScenes() != null) {
+                for (InternalScene scene : digitalSTROMBridgeHandler.getScenes()) {
+                    onSceneAddedInternal(scene);
+                }
             }
         }
+    }
+
+    @Override
+    protected synchronized void stopScan() {
+        super.stopScan();
+        removeOlderResults(getTimestampOfLastScan());
     }
 
     @Override

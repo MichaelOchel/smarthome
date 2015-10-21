@@ -46,7 +46,7 @@ import com.google.common.collect.Sets;
  */
 public class DigitalSTROMHandlerFactory extends BaseThingHandlerFactory {
 
-    private Map<ThingUID, ServiceRegistration<?>> discoveryServiceRegs = new HashMap<>();
+    private Map<String, ServiceRegistration<?>> discoveryServiceRegs = new HashMap<>();
 
     public final static Set<ThingTypeUID> SUPPORTED_THING_TYPES = Sets.union(DsSceneHandler.SUPPORTED_THING_TYPES,
             Sets.union(DssBridgeHandler.SUPPORTED_THING_TYPES, DsDeviceHandler.SUPPORTED_THING_TYPES));
@@ -112,18 +112,18 @@ public class DigitalSTROMHandlerFactory extends BaseThingHandlerFactory {
     private void registerServices(DssBridgeHandler handler) {
         if (handler != null) {
             DsDeviceDiscoveryService deviceDiscoveryService = new DsDeviceDiscoveryService(handler);
-
             DsSceneDiscoveryService sceneDiscoveryService = new DsSceneDiscoveryService(handler);
+
             DigitalSTROMThingTypeProvider thingTypeProvider = new DigitalSTROMThingTypeProvider();
             handler.registerThingTypeProvider(thingTypeProvider);
 
             deviceDiscoveryService.activate();
             sceneDiscoveryService.activate();
-            this.discoveryServiceRegs.put(handler.getThing().getUID(), bundleContext.registerService(
+            this.discoveryServiceRegs.put(handler.getThing().getUID() + "d", bundleContext.registerService(
                     DiscoveryService.class.getName(), deviceDiscoveryService, new Hashtable<String, Object>()));
-            this.discoveryServiceRegs.put(handler.getThing().getUID(), bundleContext.registerService(
+            this.discoveryServiceRegs.put(handler.getThing().getUID() + "s", bundleContext.registerService(
                     DiscoveryService.class.getName(), sceneDiscoveryService, new Hashtable<String, Object>()));
-            this.discoveryServiceRegs.put(handler.getThing().getUID(), bundleContext.registerService(
+            this.discoveryServiceRegs.put(handler.getThing().getUID() + "ttp", bundleContext.registerService(
                     ThingTypeProvider.class.getName(), thingTypeProvider, new Hashtable<String, Object>()));
         }
     }
@@ -196,9 +196,45 @@ public class DigitalSTROMHandlerFactory extends BaseThingHandlerFactory {
     private boolean checkUserPassword(Configuration configuration) {
         if ((configuration.get(USER_NAME) != null && configuration.get(PASSWORD) != null)
                 && (!configuration.get(USER_NAME).toString().trim().isEmpty()
-                        && !configuration.get(PASSWORD).toString().trim().isEmpty())) { // notwendig?
+                        && !configuration.get(PASSWORD).toString().trim().isEmpty())) {
             return true;
         }
         return false;
+    }
+
+    @Override
+    protected synchronized void removeHandler(ThingHandler thingHandler) {
+        if (thingHandler instanceof DssBridgeHandler) {
+            ServiceRegistration<?> serviceRegD = this.discoveryServiceRegs.get(thingHandler.getThing().getUID() + "d");
+            ServiceRegistration<?> serviceRegS = this.discoveryServiceRegs.get(thingHandler.getThing().getUID() + "s");
+            ServiceRegistration<?> serviceRegTtp = this.discoveryServiceRegs
+                    .get(thingHandler.getThing().getUID() + "ttp");
+            if (serviceRegD != null) {
+                // remove device discovery service, if bridge handler is removed
+                DsDeviceDiscoveryService service = (DsDeviceDiscoveryService) bundleContext
+                        .getService(serviceRegD.getReference());
+                service.deactivate();
+                serviceRegD.unregister();
+                discoveryServiceRegs.remove(thingHandler.getThing().getUID() + "d");
+            }
+            if (serviceRegS != null) {
+                // remove scene discovery service, if bridge handler is removed
+                DsSceneDiscoveryService service = (DsSceneDiscoveryService) bundleContext
+                        .getService(serviceRegS.getReference());
+                service.deactivate();
+                serviceRegS.unregister();
+                discoveryServiceRegs.remove(thingHandler.getThing().getUID() + "s");
+            }
+            if (serviceRegTtp != null) {
+                // remove thingTypeProvider service, if bridge handler is removed
+                /*
+                 * DigitalSTROMThingTypeProvider service = (DigitalSTROMThingTypeProvider) bundleContext
+                 * .getService(serviceRegS.getReference());
+                 * service.deactivate();
+                 */
+                serviceRegTtp.unregister();
+                discoveryServiceRegs.remove(thingHandler.getThing().getUID() + "s");
+            }
+        }
     }
 }

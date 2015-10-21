@@ -9,6 +9,7 @@ package org.eclipse.smarthome.binding.digitalstrom.internal.discovery;
 
 import static org.eclipse.smarthome.binding.digitalstrom.DigitalSTROMBindingConstants.*;
 
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
@@ -59,6 +60,7 @@ public class DsDeviceDiscoveryService extends AbstractDiscoveryService implement
         if (digitalSTROMBridgeHandler != null) {
             digitalSTROMBridgeHandler.registerDeviceStatusListener(this);
         }
+
         // this.startScan();
     }
 
@@ -70,6 +72,7 @@ public class DsDeviceDiscoveryService extends AbstractDiscoveryService implement
         if (digitalSTROMBridgeHandler != null) {
             digitalSTROMBridgeHandler.unregisterDeviceStatusListener(this);
         }
+        removeOlderResults(new Date().getTime());
     }
 
     @Override
@@ -81,6 +84,12 @@ public class DsDeviceDiscoveryService extends AbstractDiscoveryService implement
                 }
             }
         }
+    }
+
+    @Override
+    protected synchronized void stopScan() {
+        super.stopScan();
+        removeOlderResults(getTimestampOfLastScan());
     }
 
     @Override
