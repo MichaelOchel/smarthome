@@ -86,8 +86,6 @@ public class JSONDeviceImpl implements Device {
 
     private List<Short> groupList = new LinkedList<Short>();
 
-    // private List<DeviceListener> deviceListenerList = Collections.synchronizedList(new LinkedList<DeviceListener>());
-
     /*
      * Cache the last MeterValues to get MeterData directly
      * the key is the output value and the value is an Integer array for the meter data (0 = powerConsumption, 1 =
@@ -447,10 +445,7 @@ public class JSONDeviceImpl implements Device {
             } else {
                 this.deviceStateUpdates.add(new DeviceStateUpdateImpl(DeviceStateUpdate.UPDATE_BRIGHTNESS_INCREASE,
                         outputValue + getDimmStep()));
-                // outputValue += getDimmStep();
             }
-            // setIsOn(true);
-            // notifyDeviceListener(this.dsid.getValue());
         }
 
         if (isRollershutter()) {
@@ -460,11 +455,9 @@ public class JSONDeviceImpl implements Device {
             if ((slatPosition + getDimmStep()) > slatPosition) {
                 this.deviceStateUpdates
                         .add(new DeviceStateUpdateImpl(DeviceStateUpdate.UPDATE_SLATPOSITION, maxSlatPosition));
-                // outputValue = maxOutputValue;
             } else {
                 this.deviceStateUpdates.add(new DeviceStateUpdateImpl(DeviceStateUpdate.UPDATE_SLAT_INCREASE,
                         slatPosition + getDimmStep()));
-                // outputValue += getDimmStep();
             }
         }
     }
@@ -473,11 +466,6 @@ public class JSONDeviceImpl implements Device {
     public synchronized void decrease() {
         if (isDimmable()) {
             if (outputValue == minOutputValue) {
-                /*
-                 * if (outputValue == 0) {
-                 * setIsOn(false);
-                 * }
-                 */
                 return;
             }
 
@@ -539,16 +527,12 @@ public class JSONDeviceImpl implements Device {
         if (position < minSlatPosition) {
             this.deviceStateUpdates
                     .add(new DeviceStateUpdateImpl(DeviceStateUpdate.UPDATE_SLATPOSITION, minSlatPosition));
-            // slatPosition = minSlatPosition;
         } else if (position > this.maxSlatPosition) {
             this.deviceStateUpdates
                     .add(new DeviceStateUpdateImpl(DeviceStateUpdate.UPDATE_SLATPOSITION, maxSlatPosition));
-            // slatPosition = this.maxSlatPosition;
         } else {
             this.deviceStateUpdates.add(new DeviceStateUpdateImpl(DeviceStateUpdate.UPDATE_SLATPOSITION, position));
-            // this.slatPosition = position;
         }
-        // notifyDeviceListener(this.dsid.getValue());
     }
 
     @Override
@@ -743,15 +727,12 @@ public class JSONDeviceImpl implements Device {
                     updateInternalDeviceState(
                             new DeviceStateUpdateImpl(DeviceStateUpdate.UPDATE_SLATPOSITION, this.slatPosition));
                 }
-                // flag = true;
             } else {
                 this.deviceStateUpdates
                         .add(new DeviceStateUpdateImpl(DeviceStateUpdate.UPDATE_SCENE_OUTPUT, sceneNumber));
             }
             activeSceneNumber = sceneNumber;
             informLastSceneAboutSceneCall(sceneNumber);
-
-            // return flag;
         }
     }
 
@@ -894,7 +875,7 @@ public class JSONDeviceImpl implements Device {
                 return true;
             // Area Stepping continue scenes
             case AREA_STEPPING_CONTINUE:
-                // TODO: gute Frage was passiert hier?
+                // TODO: we don't know what will be happened when this scene was called. Some one know it?
                 return true;
             default:
                 return false;
@@ -1034,7 +1015,6 @@ public class JSONDeviceImpl implements Device {
 
     @Override
     public boolean isActivePowerUpToDate() {
-        logger.debug("!!!!!!!" + checkSensorRefreshTime(lastActivePowerUpdate));
         return (outputMode.equals(OutputModeEnum.WIPE) && !isOn) || (isOn && !isRollershutter())
                 && !this.activePowerRefreshPriority.contains(DigitalSTROMConfig.REFRESH_PRIORITY_NEVER)
                         ? checkSensorRefreshTime(lastActivePowerUpdate) : true;
@@ -1063,8 +1043,6 @@ public class JSONDeviceImpl implements Device {
         if (outputMode.equals(OutputModeEnum.WIPE) && !isOn) {
             return isActivePowerUpToDate();
         }
-        logger.debug("!!!!!!!!!!!" + " " + outputMode.equals(OutputModeEnum.WIPE) + " " + !isOn + " "
-                + (outputMode.equals(OutputModeEnum.WIPE) && !isOn));
         return isOn && !isRollershutter()
                 ? isActivePowerUpToDate() && isElectricMeterUpToDate() && isOutputCurrentUpToDate() : true;
     }
