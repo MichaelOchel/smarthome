@@ -6,7 +6,7 @@ layout: documentation
 
 # digitalSTROM Binding
 
- This binding integrates the [digitalSTROM-System](http://www.digitalstrom.de/).
+  This binding integrates the [digitalSTROM-System](http://www.digitalstrom.de/).
 The integration happens through the digitalSTROM-Server, which acts as an gateway to the digitalSTROM-Devices. The digitalSTROM-Server communicate through the digitalSTROM-Meter with the digitalSTROM-Devices which are directly connected to the power-line.
 
 
@@ -44,8 +44,8 @@ The following table shows all tested digitalSTROM-Devices with their output-mode
 
 ## Thing Configuration
 
-*digitalSTROM-Server:*
-*Connection configuration*
+**digitalSTROM-Server:** 
+*Connection configuration* 
  If the digitalSTROM-Server isn’t found automatically, e.g. because the server isn’t placed at the local network or the mDNS-service is deactivated, you have to insert the network address or URL and the authentication data manually through the graphical user interface or type it into the \*.thing with textual configuration.
 
 | Parameter Label | Parameter ID| Description  | Required | Advanced 
@@ -56,7 +56,7 @@ The following table shows all tested digitalSTROM-Devices with their output-mode
 | Application-Token | applicationToken | The application token to authenticate to the digitalSTROM-Server. | user name and password or application-token| false |
 | Path to the SLL Certificate | trustCertPath | Here you can specify the path to the SLL certificate for the digitalSTROM-Server. You can download it from digitalSTROM server. Otherwise the SSL certificate will be ignored. | false | false |
 
-*digitalSTROM-Server informations*
+*digitalSTROM-Server informations* 
  The group parameters *digitalSTROM-server informations* only includes informative parameters which have no special functionality .
 
 
@@ -67,7 +67,7 @@ The following table shows all tested digitalSTROM-Devices with their output-mode
 
 
 
-*General configuration*
+*General configuration*  
  Here you can set general binding configuration parameters, which shown in following table: 
 
 | Parameter Label | Parameter ID| Description  | Required | Advanced | default 
@@ -81,7 +81,7 @@ In the thing file, a manual configuration looks e.g. like
 Bridge digitalstrom:dssBridge:dssBridge1 [ ipAddress ="dss.local.",  userName =”dssadmin”, password =“dssadmin” sensorDataUpdateIntervall =”180”]
 ```
 
-*digitalSTROM-Devices*
+**digitalSTROM-Devices**  
 Each digitalSTROM-Device needs the device ID named dSID as configuration parameter. The device ID is printed as serial number on the digitalSTOM-Device and can also be found within the web-interface from the digitalSTROM-Server. 
 Furthermore a supported digitalSTROM-Device have at this point only informative parameter.
 The following table showed all parameters: 
