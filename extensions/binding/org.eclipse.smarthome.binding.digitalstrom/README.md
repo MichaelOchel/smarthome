@@ -14,7 +14,7 @@ The integration happens through the digitalSTROM-Server, which acts as an gatewa
 [picture_source](https://www.digitalstrom.org/wp-content/uploads/2013/12/digitalSTROM-allianz-header-standardisierung.jpg "various digitalSTROM clamps")
 ## Supported Things
 
- The digitalSTROM-Server is required as a "bridge" for accessing any other digitalSTROM-Devices.
+ The digitalSTROM-Server is required as a *"bridge"* for accessing any other digitalSTROM-Devices.
 
 At this point almost all available *GE*, *SW* and *GR* digitalSTROM-Devices with an set output-mode  unequal *disabled* or *PWM* are supported by this binding. Furthermore the digitalSTROM-Scene concept is part of the digitalSTROM-binding. This scenes are implemented as virtual things.
 
@@ -41,11 +41,22 @@ The following table shows all tested digitalSTROM-Devices with their output-mode
 
  The digitalSTROM-Server is discovered through mDNS or *dss.local.* in the local network. Once the server is added as a Thing, you have to set a user name and password or insert a valid application-token to authenticate on the server. If the binding is authorized, it automatically reads all supported devices and scenes that are set up on the digitalSTROM-System and puts them into the inbox.
 
+## digitalSTROM-Server configuration
+
+ You have to install the [digitalSTROM-Server-Addon](ESH-DS-ADDON.zip) on your digitalSTROM-Server then the Binding get informed by call-, undo-scenes and button-clicks from outside e.g. from the digiatlSTROM-App. 
+
+
+**Instruction:**
+ 1. Unzip the [digitalSTROM-Server-Addon](ESH-DS-ADDON.zip).
+ 2. Open an connection with an SCP-Client like [WinSCP](http://winscp.net/eng/download.php) for Windows or [Fugu](http://fugu.de.softonic.com/mac) for Mac to the filesystem of the digitalSTROM-Server. 
+ 3. copy *"esh/esh.js"* to the folder *"usr/share/dss/add-ons/"*
+ 4. copy *"esh.xml"* to the folder *"user/share/dss/data/subsription.d/"*
+ 5. restart the digitalSTROM-Server
 
 ## Thing Configuration
 
-**digitalSTROM-Server:** 
-*Connection configuration* 
+**digitalSTROM-Server:**
+*Connection configuration:*  
  If the digitalSTROM-Server isn’t found automatically, e.g. because the server isn’t placed at the local network or the mDNS-service is deactivated, you have to insert the network address or URL and the authentication data manually through the graphical user interface or type it into the \*.thing with textual configuration.
 
 | Parameter Label | Parameter ID| Description  | Required | Advanced 
@@ -56,7 +67,8 @@ The following table shows all tested digitalSTROM-Devices with their output-mode
 | Application-Token | applicationToken | The application token to authenticate to the digitalSTROM-Server. | user name and password or application-token| false |
 | Path to the SLL Certificate | trustCertPath | Here you can specify the path to the SLL certificate for the digitalSTROM-Server. You can download it from digitalSTROM server. Otherwise the SSL certificate will be ignored. | false | false |
 
-*digitalSTROM-Server informations* 
+*digitalSTROM-Server informations:*   
+ 
  The group parameters *digitalSTROM-server informations* only includes informative parameters which have no special functionality .
 
 
@@ -67,7 +79,7 @@ The following table shows all tested digitalSTROM-Devices with their output-mode
 
 
 
-*General configuration*  
+*General configuration:*     
  Here you can set general binding configuration parameters, which shown in following table: 
 
 | Parameter Label | Parameter ID| Description  | Required | Advanced | default 
@@ -81,7 +93,7 @@ In the thing file, a manual configuration looks e.g. like
 Bridge digitalstrom:dssBridge:dssBridge1 [ ipAddress ="dss.local.",  userName =”dssadmin”, password =“dssadmin” sensorDataUpdateIntervall =”180”]
 ```
 
-**digitalSTROM-Devices**  
+**digitalSTROM-Devices:**     
 Each digitalSTROM-Device needs the device ID named dSID as configuration parameter. The device ID is printed as serial number on the digitalSTOM-Device and can also be found within the web-interface from the digitalSTROM-Server. 
 Furthermore a supported digitalSTROM-Device have at this point only informative parameter.
 The following table showed all parameters: 
@@ -195,7 +207,7 @@ sitemap demo label="Main Menu"
         Switch item=Scene 
     }
     Frame {
-        Slider item= Shade 
+        Slider item=Shade 
     }
 }
 ```
