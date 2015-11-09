@@ -10,8 +10,8 @@ layout: documentation
 The integration happens through the digitalSTROM-Server, which acts as an gateway to the digitalSTROM-Devices. The digitalSTROM-Server communicate through the digitalSTROM-Meter with the digitalSTROM-Devices which are directly connected to the power-line.
 
 
-![various_digitalSTROM_clamps](doc/digitalSTROM-allianz-header-standardisierung.jpg)
-[picture_source](https://www.digitalstrom.org/wp-content/uploads/2013/12/digitalSTROM-allianz-header-standardisierung.jpg "various digitalSTROM clamps")
+![various_digitalSTROM_clamps](doc/DS-Clamps.jpg)
+Thanks to Kai Kreuzer for the picture.
 ## Supported Things
 
  The digitalSTROM-Server is required as a *"bridge"* for accessing any other digitalSTROM-Devices.
