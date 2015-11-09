@@ -15,6 +15,7 @@ import java.util.Map.Entry;
 
 import org.eclipse.smarthome.config.core.ConfigDescriptionRegistry;
 import org.eclipse.smarthome.config.core.Configuration;
+import org.eclipse.smarthome.config.core.status.ConfigStatusProvider;
 import org.eclipse.smarthome.core.thing.Thing;
 import org.eclipse.smarthome.core.thing.ThingTypeUID;
 import org.eclipse.smarthome.core.thing.ThingUID;
@@ -27,19 +28,20 @@ import org.osgi.util.tracker.ServiceTracker;
 
 /**
  * {@link BaseThingHandlerFactory} provides a base implementation for the {@link ThingHandlerFactory} interface. It
- * provides the OSGi service
- * registration logic.
+ * provides the OSGi service registration logic.
  *
  * @author Dennis Nobel - Initial contribution
  * @author Benedikt Niehues - fix for Bug https://bugs.eclipse.org/bugs/show_bug.cgi?id=445137 considering
  *         default values
- *
+ * @author Thomas Höfer - added config status provider service registration
  */
 public abstract class BaseThingHandlerFactory implements ThingHandlerFactory {
 
     protected BundleContext bundleContext;
 
     private Map<String, ServiceRegistration<ThingHandler>> thingHandlers = new HashMap<>();
+    private Map<String, ServiceRegistration<ConfigStatusProvider>> configStatusProviders = new HashMap<>();
+
     private ServiceTracker<ThingTypeRegistry, ThingTypeRegistry> thingTypeRegistryServiceTracker;
     private ServiceTracker<ConfigDescriptionRegistry, ConfigDescriptionRegistry> configDescriptionRegistryServiceTracker;
 
@@ -71,17 +73,29 @@ public abstract class BaseThingHandlerFactory implements ThingHandlerFactory {
         for (ServiceRegistration<ThingHandler> serviceRegistration : this.thingHandlers.values()) {
             unregisterHandler(serviceRegistration);
         }
+        for (ServiceRegistration<ConfigStatusProvider> serviceRegistration : configStatusProviders.values()) {
+            if (serviceRegistration != null) {
+                serviceRegistration.unregister();
+            }
+        }
         thingTypeRegistryServiceTracker.close();
         configDescriptionRegistryServiceTracker.close();
         this.thingHandlers.clear();
+        this.configStatusProviders.clear();
         this.bundleContext = null;
     }
 
     @Override
     public void unregisterHandler(Thing thing) {
-        ServiceRegistration<ThingHandler> serviceRegistration = thingHandlers.remove(thing.getUID().toString());
-        if (serviceRegistration != null) {
-            unregisterHandler(serviceRegistration);
+        ServiceRegistration<ThingHandler> thingHandlerServiceRegistration = thingHandlers
+                .remove(thing.getUID().toString());
+        if (thingHandlerServiceRegistration != null) {
+            unregisterHandler(thingHandlerServiceRegistration);
+        }
+        ServiceRegistration<ConfigStatusProvider> configStatusProviderServiceRegistration = configStatusProviders
+                .remove(thing.getUID().getAsString());
+        if (configStatusProviderServiceRegistration != null) {
+            configStatusProviderServiceRegistration.unregister();
         }
     }
 
@@ -117,19 +131,31 @@ public abstract class BaseThingHandlerFactory implements ThingHandlerFactory {
         if (thingHandler instanceof BaseThingHandler) {
             ((BaseThingHandler) thingHandler).postInitialize();
         }
+        ServiceRegistration<ThingHandler> thingHandlderServiceRegistration = registerThingHandlerAsService(thing,
+                thingHandler);
+        thingHandlers.put(thing.getUID().toString(), thingHandlderServiceRegistration);
 
-        ServiceRegistration<ThingHandler> serviceRegistration = registerAsService(thing, thingHandler);
-        thingHandlers.put(thing.getUID().toString(), serviceRegistration);
+        if (thingHandler instanceof ConfigStatusProvider) {
+            ServiceRegistration<ConfigStatusProvider> configStatusProviderServiceRegistration = registerConfigValidatorAsService(
+                    thingHandler);
+            configStatusProviders.put(thing.getUID().getAsString(), configStatusProviderServiceRegistration);
+        }
     }
 
-    private ServiceRegistration<ThingHandler> registerAsService(Thing thing, ThingHandler thingHandler) {
-
+    private ServiceRegistration<ThingHandler> registerThingHandlerAsService(Thing thing, ThingHandler thingHandler) {
         Dictionary<String, Object> serviceProperties = getServiceProperties(thing, thingHandler);
 
         @SuppressWarnings("unchecked")
         ServiceRegistration<ThingHandler> serviceRegistration = (ServiceRegistration<ThingHandler>) bundleContext
                 .registerService(ThingHandler.class.getName(), thingHandler, serviceProperties);
 
+        return serviceRegistration;
+    }
+
+    private ServiceRegistration<ConfigStatusProvider> registerConfigValidatorAsService(ThingHandler thingHandler) {
+        @SuppressWarnings("unchecked")
+        ServiceRegistration<ConfigStatusProvider> serviceRegistration = (ServiceRegistration<ConfigStatusProvider>) bundleContext
+                .registerService(ConfigStatusProvider.class.getName(), thingHandler, null);
         return serviceRegistration;
     }
 
