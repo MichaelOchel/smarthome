@@ -8,12 +8,15 @@
 package org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.digitalSTROMStructure.digitalSTROMScene.sceneEvent;
 
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
-import java.util.Set;
+import java.util.Map.Entry;
 
 import org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.digitalSTROMServerConnection.constants.JSONApiResponseKeysEnum;
 import org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.digitalSTROMStructure.digitalSTROMScene.constants.EventPropertyEnum;
-import org.json.simple.JSONObject;
+
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
 
 /**
  * The {@link JSONEventItemImpl} is the implementation of the {@link EventItem}.
@@ -28,25 +31,24 @@ public class JSONEventItemImpl implements EventItem {
     private Map<EventPropertyEnum, String> properties = new HashMap<EventPropertyEnum, String>();
 
     /**
-     * Creates a new {@link JSONEventItemImpl} from the given DigitalSTROM-Event-Item {@link JSONObject}.
-     * 
+     * Creates a new {@link JSONEventItemImpl} from the given DigitalSTROM-Event-Item {@link JsonObject}.
+     *
      * @param event item json object
      */
-    public JSONEventItemImpl(JSONObject object) {
+    public JSONEventItemImpl(JsonObject object) {
 
-        name = object.get(JSONApiResponseKeysEnum.EVENT_NAME.getKey()).toString();
+        name = object.get(JSONApiResponseKeysEnum.EVENT_NAME.getKey()).getAsString();
 
-        if (object.get(JSONApiResponseKeysEnum.EVENT_PROPERTIES.getKey()) instanceof JSONObject) {
+        if (object.get(JSONApiResponseKeysEnum.EVENT_PROPERTIES.getKey()) instanceof JsonObject) {
 
-            JSONObject propObj = (JSONObject) object.get(JSONApiResponseKeysEnum.EVENT_PROPERTIES.getKey());
+            JsonObject propObj = (JsonObject) object.get(JSONApiResponseKeysEnum.EVENT_PROPERTIES.getKey());
 
-            @SuppressWarnings("unchecked")
-            Set<String> keys = propObj.keySet();
+            Iterator<Entry<String, JsonElement>> inter = propObj.entrySet().iterator();
 
-            for (String key : keys) {
-
-                if (EventPropertyEnum.containsId(key)) {
-                    addProperty(EventPropertyEnum.getProperty(key), propObj.get(key).toString());
+            while (inter.hasNext()) {
+                Entry<String, JsonElement> entry = inter.next();
+                if (EventPropertyEnum.containsId(entry.getKey())) {
+                    addProperty(EventPropertyEnum.getProperty(entry.getKey()), entry.getValue().getAsString());
                 }
             }
 

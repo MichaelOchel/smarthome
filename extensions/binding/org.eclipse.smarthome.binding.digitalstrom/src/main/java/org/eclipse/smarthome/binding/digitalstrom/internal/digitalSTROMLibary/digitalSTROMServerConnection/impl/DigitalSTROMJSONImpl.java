@@ -7,7 +7,6 @@
  */
 package org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.digitalSTROMServerConnection.impl;
 
-import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -34,8 +33,9 @@ import org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.di
 import org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.digitalSTROMStructure.digitalSTROMScene.constants.Scene;
 import org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.digitalSTROMStructure.digitalSTROMScene.constants.SceneEnum;
 import org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.digitalSTROMStructure.impl.JSONApartmentImpl;
-import org.json.simple.JSONArray;
-import org.json.simple.JSONObject;
+
+import com.google.gson.JsonArray;
+import com.google.gson.JsonObject;
 
 /**
  * The {@link DigitalSTROMJSONImpl} is the implemetation of the {@link DigitalSTROMAPI}.
@@ -45,8 +45,8 @@ import org.json.simple.JSONObject;
  * @since 1.3.0
  * @version digitalSTROM-API 1.14.5
  *
- * @author Michael Ochel - implements new methods and updates
- * @author Matthias Siegele - implements new methods and updates
+ * @author Michael Ochel - implements new methods, updates and change from SimpleJSON to GSON
+ * @author Matthias Siegele - implements new methods, updates and change from SimpleJSON to GSON
  */
 public class DigitalSTROMJSONImpl implements DigitalSTROMAPI {
 
@@ -126,7 +126,7 @@ public class DigitalSTROMJSONImpl implements DigitalSTROMAPI {
                 }
             }
 
-            if (JSONResponseHandler.checkResponse(JSONResponseHandler.toJSONObject(response))) {
+            if (JSONResponseHandler.checkResponse(JSONResponseHandler.toJsonObject(response))) {
                 return true;
             }
 
@@ -162,7 +162,7 @@ public class DigitalSTROMJSONImpl implements DigitalSTROMAPI {
                                 + JSONRequestConstants.INFIX_PARAMETER_SCENE_NUMBER + sceneNumber.getSceneNumber());
             }
 
-            if (JSONResponseHandler.checkResponse(JSONResponseHandler.toJSONObject(response))) {
+            if (JSONResponseHandler.checkResponse(JSONResponseHandler.toJsonObject(response))) {
                 return true;
             }
 
@@ -181,14 +181,14 @@ public class DigitalSTROMJSONImpl implements DigitalSTROMAPI {
         response = transport.execute(
                 JSONRequestConstants.JSON_APARTMENT_GET_STRUCTURE + JSONRequestConstants.PARAMETER_TOKEN + token);
 
-        JSONObject responseObj = JSONResponseHandler.toJSONObject(response);
+        JsonObject responseObj = JSONResponseHandler.toJsonObject(response);
 
         if (JSONResponseHandler.checkResponse(responseObj)) {
-            JSONObject apartObj = JSONResponseHandler.getResultJSONObject(responseObj);
+            JsonObject apartObj = JSONResponseHandler.getResultJsonObject(responseObj);
 
             if (apartObj != null && apartObj.get(JSONApiResponseKeysEnum.APARTMENT_GET_STRUCTURE.getKey()) != null) {
                 return new JSONApartmentImpl(
-                        (JSONObject) apartObj.get(JSONApiResponseKeysEnum.APARTMENT_GET_STRUCTURE.getKey()));
+                        (JsonObject) apartObj.get(JSONApiResponseKeysEnum.APARTMENT_GET_STRUCTURE.getKey()));
             }
         }
 
@@ -208,17 +208,17 @@ public class DigitalSTROMJSONImpl implements DigitalSTROMAPI {
                     JSONRequestConstants.JSON_APARTMENT_GET_DEVICES + JSONRequestConstants.PARAMETER_TOKEN + token);
         }
 
-        JSONObject responseObj = JSONResponseHandler.toJSONObject(response);
+        JsonObject responseObj = JSONResponseHandler.toJsonObject(response);
 
         if (JSONResponseHandler.checkResponse(responseObj)
-                && responseObj.get(JSONApiResponseKeysEnum.APARTMENT_GET_DEVICES.getKey()) instanceof JSONArray) {
-            JSONArray array = (JSONArray) responseObj.get(JSONApiResponseKeysEnum.APARTMENT_GET_DEVICES.getKey());
+                && responseObj.get(JSONApiResponseKeysEnum.APARTMENT_GET_DEVICES.getKey()) instanceof JsonArray) {
+            JsonArray array = (JsonArray) responseObj.get(JSONApiResponseKeysEnum.APARTMENT_GET_DEVICES.getKey());
 
             List<Device> deviceList = new LinkedList<Device>();
 
             for (int i = 0; i < array.size(); i++) {
-                if (array.get(i) instanceof org.json.simple.JSONObject) {
-                    deviceList.add(new JSONDeviceImpl((JSONObject) array.get(i)));
+                if (array.get(i) instanceof JsonObject) {
+                    deviceList.add(new JSONDeviceImpl((JsonObject) array.get(i)));
                 }
             }
             return deviceList;
@@ -450,7 +450,7 @@ public class DigitalSTROMJSONImpl implements DigitalSTROMAPI {
 
             }
 
-            if (JSONResponseHandler.checkResponse(JSONResponseHandler.toJSONObject(response))) {
+            if (JSONResponseHandler.checkResponse(JSONResponseHandler.toJsonObject(response))) {
                 return true;
             }
 
@@ -558,7 +558,7 @@ public class DigitalSTROMJSONImpl implements DigitalSTROMAPI {
                 }
             }
 
-            if (JSONResponseHandler.checkResponse(JSONResponseHandler.toJSONObject(response))) {
+            if (JSONResponseHandler.checkResponse(JSONResponseHandler.toJsonObject(response))) {
                 return true;
             }
 
@@ -588,7 +588,7 @@ public class DigitalSTROMJSONImpl implements DigitalSTROMAPI {
                                 + JSONRequestConstants.INFIX_PARAMETER_NAME + name);
             }
 
-            if (JSONResponseHandler.checkResponse(JSONResponseHandler.toJSONObject(response))) {
+            if (JSONResponseHandler.checkResponse(JSONResponseHandler.toJsonObject(response))) {
                 return true;
             }
 
@@ -617,7 +617,7 @@ public class DigitalSTROMJSONImpl implements DigitalSTROMAPI {
                                 + token + JSONRequestConstants.INFIX_PARAMETER_NAME + name);
             }
 
-            if (JSONResponseHandler.checkResponse(JSONResponseHandler.toJSONObject(response))) {
+            if (JSONResponseHandler.checkResponse(JSONResponseHandler.toJsonObject(response))) {
                 return true;
             }
 
@@ -660,10 +660,10 @@ public class DigitalSTROMJSONImpl implements DigitalSTROMAPI {
                         DigitalSTROMConfig.CONNECTION_SENSORDATA_TIMEOUT, DigitalSTROMConfig.READ_SENSORDATA_TIMEOUT);
             }
 
-            JSONObject responseObj = JSONResponseHandler.toJSONObject(response);
+            JsonObject responseObj = JSONResponseHandler.toJsonObject(response);
 
             if (JSONResponseHandler.checkResponse(responseObj)) {
-                JSONObject configObject = JSONResponseHandler.getResultJSONObject(responseObj);
+                JsonObject configObject = JSONResponseHandler.getResultJsonObject(responseObj);
 
                 if (configObject != null) {
                     return new JSONDeviceConfigImpl(configObject);
@@ -708,22 +708,15 @@ public class DigitalSTROMJSONImpl implements DigitalSTROMAPI {
                         DigitalSTROMConfig.CONNECTION_SENSORDATA_TIMEOUT, DigitalSTROMConfig.READ_SENSORDATA_TIMEOUT);
             }
 
-            JSONObject responseObj = JSONResponseHandler.toJSONObject(response);
+            JsonObject responseObj = JSONResponseHandler.toJsonObject(response);
 
             if (JSONResponseHandler.checkResponse(responseObj)) {
-                JSONObject valueObject = JSONResponseHandler.getResultJSONObject(responseObj);
+                JsonObject valueObject = JSONResponseHandler.getResultJsonObject(responseObj);
 
                 if (valueObject != null
                         && valueObject.get(JSONApiResponseKeysEnum.DEVICE_GET_OUTPUT_VALUE.getKey()) != null) {
                     int value = -1;
-                    try {
-                        value = Integer.parseInt(
-                                valueObject.get(JSONApiResponseKeysEnum.DEVICE_GET_OUTPUT_VALUE.getKey()).toString());
-                    } catch (java.lang.NumberFormatException e) {
-                        // logger.error
-                        System.err.println("NumberFormatException by getDeviceOutputValue: "
-                                + valueObject.get(JSONApiResponseKeysEnum.DEVICE_GET_OUTPUT_VALUE.getKey()).toString());
-                    }
+                    value = valueObject.get(JSONApiResponseKeysEnum.DEVICE_GET_OUTPUT_VALUE.getKey()).getAsInt();
                     return value;
                 }
             }
@@ -765,7 +758,7 @@ public class DigitalSTROMJSONImpl implements DigitalSTROMAPI {
                         + JSONRequestConstants.INFIX_PARAMETER_VALUE + value);
             }
 
-            if (JSONResponseHandler.checkResponse(JSONResponseHandler.toJSONObject(response))) {
+            if (JSONResponseHandler.checkResponse(JSONResponseHandler.toJsonObject(response))) {
                 return true;
             }
 
@@ -803,10 +796,10 @@ public class DigitalSTROMJSONImpl implements DigitalSTROMAPI {
                         DigitalSTROMConfig.CONNECTION_SENSORDATA_TIMEOUT, DigitalSTROMConfig.READ_SENSORDATA_TIMEOUT);
             }
 
-            JSONObject responseObj = JSONResponseHandler.toJSONObject(response);
+            JsonObject responseObj = JSONResponseHandler.toJsonObject(response);
 
             if (JSONResponseHandler.checkResponse(responseObj)) {
-                JSONObject sceneSpec = JSONResponseHandler.getResultJSONObject(responseObj);
+                JsonObject sceneSpec = JSONResponseHandler.getResultJsonObject(responseObj);
 
                 if (sceneSpec != null) {
                     return new JSONDeviceSceneSpecImpl(sceneSpec);
@@ -865,22 +858,16 @@ public class DigitalSTROMJSONImpl implements DigitalSTROMAPI {
                         DigitalSTROMConfig.CONNECTION_SENSORDATA_TIMEOUT, DigitalSTROMConfig.READ_SENSORDATA_TIMEOUT);
             }
 
-            JSONObject responseObj = JSONResponseHandler.toJSONObject(response);
+            JsonObject responseObj = JSONResponseHandler.toJsonObject(response);
 
             if (JSONResponseHandler.checkResponse(responseObj)) {
-                JSONObject valueObject = JSONResponseHandler.getResultJSONObject(responseObj);
+                JsonObject valueObject = JSONResponseHandler.getResultJsonObject(responseObj);
 
                 if (valueObject != null && valueObject
                         .get(JSONApiResponseKeysEnum.DEVICE_GET_SENSOR_VALUE_SENSOR_VALUE.getKey()) != null) {
                     short value = -1;
-                    try {
-                        value = Short.parseShort(valueObject
-                                .get(JSONApiResponseKeysEnum.DEVICE_GET_SENSOR_VALUE_SENSOR_VALUE.getKey()).toString());
-                    } catch (java.lang.NumberFormatException e) {
-                        // logger.error
-                        System.err.println("NumberFormatException by getDeviceSensorValue: " + valueObject
-                                .get(JSONApiResponseKeysEnum.DEVICE_GET_SENSOR_VALUE_SENSOR_VALUE.getKey()).toString());
-                    }
+                    value = valueObject.get(JSONApiResponseKeysEnum.DEVICE_GET_SENSOR_VALUE_SENSOR_VALUE.getKey())
+                            .getAsShort();
 
                     return value;
                 }
@@ -939,7 +926,7 @@ public class DigitalSTROMJSONImpl implements DigitalSTROMAPI {
                 }
             }
 
-            if (JSONResponseHandler.checkResponse(JSONResponseHandler.toJSONObject(response))) {
+            if (JSONResponseHandler.checkResponse(JSONResponseHandler.toJsonObject(response))) {
                 return true;
             }
 
@@ -959,7 +946,7 @@ public class DigitalSTROMJSONImpl implements DigitalSTROMAPI {
                                 + JSONRequestConstants.INFIX_PARAMETER_SCENE_NUMBER + sceneNumber.getSceneNumber());
             }
 
-            if (JSONResponseHandler.checkResponse(JSONResponseHandler.toJSONObject(response))) {
+            if (JSONResponseHandler.checkResponse(JSONResponseHandler.toJsonObject(response))) {
                 return true;
             }
 
@@ -979,7 +966,7 @@ public class DigitalSTROMJSONImpl implements DigitalSTROMAPI {
                             + JSONRequestConstants.INFIX_PARAMETER_SUBSCRIPTION_ID + subscriptionID,
                     connectionTimeout, readTimeout);
 
-            if (JSONResponseHandler.checkResponse(JSONResponseHandler.toJSONObject(response))) {
+            if (JSONResponseHandler.checkResponse(JSONResponseHandler.toJsonObject(response))) {
                 return true;
             }
 
@@ -999,7 +986,7 @@ public class DigitalSTROMJSONImpl implements DigitalSTROMAPI {
                             + JSONRequestConstants.INFIX_PARAMETER_SUBSCRIPTION_ID + subscriptionID,
                     connectionTimeout, readTimeout);
 
-            if (JSONResponseHandler.checkResponse(JSONResponseHandler.toJSONObject(response))) {
+            if (JSONResponseHandler.checkResponse(JSONResponseHandler.toJsonObject(response))) {
                 return true;
             }
 
@@ -1032,20 +1019,15 @@ public class DigitalSTROMJSONImpl implements DigitalSTROMAPI {
         response = transport
                 .execute(JSONRequestConstants.JSON_SYSTEM_TIME + JSONRequestConstants.PARAMETER_TOKEN + token);
 
-        JSONObject responseObj = JSONResponseHandler.toJSONObject(response);
+        JsonObject responseObj = JSONResponseHandler.toJsonObject(response);
 
         if (JSONResponseHandler.checkResponse(responseObj)) {
-            JSONObject obj = JSONResponseHandler.getResultJSONObject(responseObj);
+            JsonObject obj = JSONResponseHandler.getResultJsonObject(responseObj);
 
             if (obj != null && obj.get(JSONApiResponseKeysEnum.SYSTEM_GET_TIME.getKey()) != null) {
                 int time = -1;
-                try {
-                    time = Integer.parseInt(obj.get(JSONApiResponseKeysEnum.SYSTEM_GET_TIME.getKey()).toString());
-                } catch (java.lang.NumberFormatException e) {
-                    // logger.error
-                    System.err.println("NumberFormatException by getTime: "
-                            + obj.get(JSONApiResponseKeysEnum.SYSTEM_GET_TIME.getKey()).toString());
-                }
+                time = obj.get(JSONApiResponseKeysEnum.SYSTEM_GET_TIME.getKey()).getAsInt();
+
                 return time;
             }
         }
@@ -1064,31 +1046,24 @@ public class DigitalSTROMJSONImpl implements DigitalSTROMAPI {
         response = transport.execute(
                 JSONRequestConstants.JSON_METERING_GET_RESOLUTIONS + JSONRequestConstants.PARAMETER_TOKEN + token);
 
-        JSONObject responseObj = JSONResponseHandler.toJSONObject(response);
+        JsonObject responseObj = JSONResponseHandler.toJsonObject(response);
 
         if (JSONResponseHandler.checkResponse(responseObj)) {
-            JSONObject resObj = JSONResponseHandler.getResultJSONObject(responseObj);
+            JsonObject resObj = JSONResponseHandler.getResultJsonObject(responseObj);
 
             if (resObj != null
-                    && resObj.get(JSONApiResponseKeysEnum.METERING_GET_RESOLUTIONS.getKey()) instanceof JSONArray) {
-                JSONArray array = (JSONArray) resObj.get(JSONApiResponseKeysEnum.METERING_GET_RESOLUTIONS.getKey());
+                    && resObj.get(JSONApiResponseKeysEnum.METERING_GET_RESOLUTIONS.getKey()) instanceof JsonArray) {
+                JsonArray array = (JsonArray) resObj.get(JSONApiResponseKeysEnum.METERING_GET_RESOLUTIONS.getKey());
 
                 List<Integer> resolutionList = new LinkedList<Integer>();
 
                 for (int i = 0; i < array.size(); i++) {
-                    if (array.get(i) instanceof org.json.simple.JSONObject) {
-                        JSONObject jObject = (JSONObject) array.get(i);
+                    if (array.get(i) instanceof JsonObject) {
+                        JsonObject jObject = (JsonObject) array.get(i);
 
                         if (jObject.get(JSONApiResponseKeysEnum.METERING_GET_RESOLUTION.getKey()) != null) {
                             int val = -1;
-                            try {
-                                val = Integer.parseInt(jObject
-                                        .get(JSONApiResponseKeysEnum.METERING_GET_RESOLUTION.getKey()).toString());
-                            } catch (java.lang.NumberFormatException e) {
-                                // logger.error
-                                System.err.println("NumberFormatException in getResolutions: " + jObject
-                                        .get(JSONApiResponseKeysEnum.METERING_GET_RESOLUTION.getKey()).toString());
-                            }
+                            val = jObject.get(JSONApiResponseKeysEnum.METERING_GET_RESOLUTION.getKey()).getAsInt();
                             if (val != -1) {
                                 resolutionList.add(val);
                             }
@@ -1133,19 +1108,19 @@ public class DigitalSTROMJSONImpl implements DigitalSTROMAPI {
                         + type.name() + JSONRequestConstants.INFIX_PARAMETER_FROM + jsonMeterList);
             }
 
-            JSONObject responseObj = JSONResponseHandler.toJSONObject(response);
+            JsonObject responseObj = JSONResponseHandler.toJsonObject(response);
             if (JSONResponseHandler.checkResponse(responseObj)) {
-                JSONObject latestObj = JSONResponseHandler.getResultJSONObject(responseObj);
+                JsonObject latestObj = JSONResponseHandler.getResultJsonObject(responseObj);
 
                 if (latestObj != null
-                        && latestObj.get(JSONApiResponseKeysEnum.METERING_GET_LATEST.getKey()) instanceof JSONArray) {
-                    JSONArray array = (JSONArray) latestObj.get(JSONApiResponseKeysEnum.METERING_GET_LATEST.getKey());
+                        && latestObj.get(JSONApiResponseKeysEnum.METERING_GET_LATEST.getKey()) instanceof JsonArray) {
+                    JsonArray array = (JsonArray) latestObj.get(JSONApiResponseKeysEnum.METERING_GET_LATEST.getKey());
 
                     List<CachedMeteringValue> list = new LinkedList<CachedMeteringValue>();
 
                     for (int i = 0; i < array.size(); i++) {
-                        if (array.get(i) instanceof JSONObject) {
-                            list.add(new JSONCachedMeteringValueImpl((JSONObject) array.get(i)));
+                        if (array.get(i) instanceof JsonObject) {
+                            list.add(new JSONCachedMeteringValueImpl((JsonObject) array.get(i)));
                         }
 
                     }
@@ -1175,19 +1150,19 @@ public class DigitalSTROMJSONImpl implements DigitalSTROMAPI {
                         + type.name() + JSONRequestConstants.INFIX_PARAMETER_FROM + meterDSIDs);
             }
 
-            JSONObject responseObj = JSONResponseHandler.toJSONObject(response);
+            JsonObject responseObj = JSONResponseHandler.toJsonObject(response);
             if (JSONResponseHandler.checkResponse(responseObj)) {
-                JSONObject latestObj = JSONResponseHandler.getResultJSONObject(responseObj);
+                JsonObject latestObj = JSONResponseHandler.getResultJsonObject(responseObj);
 
                 if (latestObj != null
-                        && latestObj.get(JSONApiResponseKeysEnum.METERING_GET_LATEST.getKey()) instanceof JSONArray) {
-                    JSONArray array = (JSONArray) latestObj.get(JSONApiResponseKeysEnum.METERING_GET_LATEST.getKey());
+                        && latestObj.get(JSONApiResponseKeysEnum.METERING_GET_LATEST.getKey()) instanceof JsonArray) {
+                    JsonArray array = (JsonArray) latestObj.get(JSONApiResponseKeysEnum.METERING_GET_LATEST.getKey());
 
                     List<CachedMeteringValue> list = new LinkedList<CachedMeteringValue>();
 
                     for (int i = 0; i < array.size(); i++) {
-                        if (array.get(i) instanceof JSONObject) {
-                            list.add(new JSONCachedMeteringValueImpl((JSONObject) array.get(i)));
+                        if (array.get(i) instanceof JsonObject) {
+                            list.add(new JSONCachedMeteringValueImpl((JsonObject) array.get(i)));
                         }
 
                     }
@@ -1222,7 +1197,7 @@ public class DigitalSTROMJSONImpl implements DigitalSTROMAPI {
                         + name + JSONRequestConstants.INFIX_PARAMETER_VALUE + value);
             }
 
-            if (JSONResponseHandler.checkResponse(JSONResponseHandler.toJSONObject(response))) {
+            if (JSONResponseHandler.checkResponse(JSONResponseHandler.toJsonObject(response))) {
                 return true;
             }
 
@@ -1238,24 +1213,17 @@ public class DigitalSTROMJSONImpl implements DigitalSTROMAPI {
                 .execute(JSONRequestConstants.JSON_PROPERTY_QUERY + JSONRequestConstants.PARAMETER_TOKEN + token
                         + JSONRequestConstants.INFIX_PARAMETER_QUERY + JSONRequestConstants.QUERY_GET_METERLIST);
 
-        JSONObject responseObj = JSONResponseHandler.toJSONObject(response);
+        JsonObject responseObj = JSONResponseHandler.toJsonObject(response);
 
         if (JSONResponseHandler.checkResponse(responseObj)) {
-            JSONObject obj = JSONResponseHandler.getResultJSONObject(responseObj);
+            JsonObject obj = JSONResponseHandler.getResultJsonObject(responseObj);
 
-            if (obj != null && obj.get(JSONApiResponseKeysEnum.DS_METER_QUERY.getKey()) instanceof JSONArray) {
-                JSONArray array = (JSONArray) obj.get(JSONApiResponseKeysEnum.DS_METER_QUERY.getKey());
+            if (obj != null && obj.get(JSONApiResponseKeysEnum.DS_METER_QUERY.getKey()) instanceof JsonArray) {
+                JsonArray array = (JsonArray) obj.get(JSONApiResponseKeysEnum.DS_METER_QUERY.getKey());
 
                 for (int i = 0; i < array.size(); i++) {
-                    if (array.get(i) instanceof JSONObject) {
-                        JSONObject elem = (JSONObject) array.get(i);
-
-                        @SuppressWarnings("unchecked")
-                        Collection<String> k = elem.values();
-
-                        for (String s : k) {
-                            meterList.add(s);
-                        }
+                    if (array.get(i) instanceof JsonObject) {
+                        meterList.add(array.get(i).getAsJsonObject().get("dSID").getAsString());
                     }
                 }
             }
@@ -1270,15 +1238,15 @@ public class DigitalSTROMJSONImpl implements DigitalSTROMAPI {
 
             response = transport.execute(JSONRequestConstants.JSON_SYSTEM_LOGIN_APPLICATION + loginToken);
 
-            JSONObject responseObj = JSONResponseHandler.toJSONObject(response);
+            JsonObject responseObj = JSONResponseHandler.toJsonObject(response);
 
             if (JSONResponseHandler.checkResponse(responseObj)) {
-                JSONObject obj = JSONResponseHandler.getResultJSONObject(responseObj);
+                JsonObject obj = JSONResponseHandler.getResultJsonObject(responseObj);
 
                 String tokenStr = null;
 
                 if (obj != null && obj.get(JSONApiResponseKeysEnum.SYSTEM_LOGIN.getKey()) != null) {
-                    tokenStr = obj.get(JSONApiResponseKeysEnum.SYSTEM_LOGIN.getKey()).toString();
+                    tokenStr = obj.get(JSONApiResponseKeysEnum.SYSTEM_LOGIN.getKey()).getAsString();
 
                 }
 
@@ -1297,15 +1265,15 @@ public class DigitalSTROMJSONImpl implements DigitalSTROMAPI {
         response = transport.execute(JSONRequestConstants.JSON_SYSTEM_LOGIN + JSONRequestConstants.PARAMETER_USER + user
                 + JSONRequestConstants.INFIX_PARAMETER_PASSWORD + password);
 
-        JSONObject responseObj = JSONResponseHandler.toJSONObject(response);
+        JsonObject responseObj = JSONResponseHandler.toJsonObject(response);
 
         if (JSONResponseHandler.checkResponse(responseObj)) {
-            JSONObject obj = JSONResponseHandler.getResultJSONObject(responseObj);
+            JsonObject obj = JSONResponseHandler.getResultJsonObject(responseObj);
 
             String tokenStr = null;
 
             if (obj != null && obj.get(JSONApiResponseKeysEnum.SYSTEM_LOGIN.getKey()) != null) {
-                tokenStr = obj.get(JSONApiResponseKeysEnum.SYSTEM_LOGIN.getKey()).toString();
+                tokenStr = obj.get(JSONApiResponseKeysEnum.SYSTEM_LOGIN.getKey()).getAsString();
             }
 
             if (tokenStr != null) {
@@ -1319,7 +1287,7 @@ public class DigitalSTROMJSONImpl implements DigitalSTROMAPI {
     public boolean logout() {
         String response = transport.execute(JSONRequestConstants.JSON_SYSTEM_LOGOUT);
 
-        if (JSONResponseHandler.checkResponse(JSONResponseHandler.toJSONObject(response))) {
+        if (JSONResponseHandler.checkResponse(JSONResponseHandler.toJsonObject(response))) {
             return true;
         }
         return false;
@@ -1329,13 +1297,13 @@ public class DigitalSTROMJSONImpl implements DigitalSTROMAPI {
     public String getDSID(String token) {
         String response = transport.execute(JSONRequestConstants.JSON_SYSTEM_GET_DSID + token);
 
-        JSONObject responseObj = JSONResponseHandler.toJSONObject(response);
+        JsonObject responseObj = JSONResponseHandler.toJsonObject(response);
 
         if (JSONResponseHandler.checkResponse(responseObj)) {
-            JSONObject obj = JSONResponseHandler.getResultJSONObject(responseObj);
+            JsonObject obj = JSONResponseHandler.getResultJsonObject(responseObj);
 
             if (obj != null) {
-                String dsID = obj.get(JSONApiResponseKeysEnum.SYSTEM_DSID.getKey()).toString();
+                String dsID = obj.get(JSONApiResponseKeysEnum.SYSTEM_DSID.getKey()).getAsString();
 
                 if (dsID != null)
                     return dsID;
@@ -1352,7 +1320,7 @@ public class DigitalSTROMJSONImpl implements DigitalSTROMAPI {
                 "/json/system/enableToken?applicationToken=" + applicationToken + "&token=" + sessionToken, 10000,
                 20000);
 
-        JSONObject responseObj = JSONResponseHandler.toJSONObject(response);
+        JsonObject responseObj = JSONResponseHandler.toJsonObject(response);
 
         return JSONResponseHandler.checkResponse(responseObj);
     }
@@ -1361,13 +1329,14 @@ public class DigitalSTROMJSONImpl implements DigitalSTROMAPI {
     public String requestAppplicationToken(String applicationName) {
         String response = transport.execute("/json/system/requestApplicationToken?applicationName=" + applicationName);
 
-        JSONObject responseObj = JSONResponseHandler.toJSONObject(response);
+        JsonObject responseObj = JSONResponseHandler.toJsonObject(response);
 
         if (JSONResponseHandler.checkResponse(responseObj)) {
-            JSONObject obj = JSONResponseHandler.getResultJSONObject(responseObj);
+            JsonObject obj = JSONResponseHandler.getResultJsonObject(responseObj);
 
             if (obj != null) {
-                String aplicationToken = obj.get(JSONApiResponseKeysEnum.SYSTEM_APPLICATION_TOKEN.getKey()).toString();
+                String aplicationToken = obj.get(JSONApiResponseKeysEnum.SYSTEM_APPLICATION_TOKEN.getKey())
+                        .getAsString();
 
                 if (aplicationToken != null)
                     return aplicationToken;
@@ -1383,7 +1352,7 @@ public class DigitalSTROMJSONImpl implements DigitalSTROMAPI {
         response = transport
                 .execute("/json/system/revokeToken?applicationToken=" + applicationToken + "&token=" + sessionToken);
 
-        JSONObject responseObj = JSONResponseHandler.toJSONObject(response);
+        JsonObject responseObj = JSONResponseHandler.toJsonObject(response);
 
         return JSONResponseHandler.checkResponse(responseObj);
 
@@ -1402,19 +1371,13 @@ public class DigitalSTROMJSONImpl implements DigitalSTROMAPI {
                 "/json/device/getSceneValue?dsid=" + dsid.toString() + "&sceneID=" + sceneId + "&token=" + token, 4000,
                 20000);
 
-        JSONObject responseObj = JSONResponseHandler.toJSONObject(response);
+        JsonObject responseObj = JSONResponseHandler.toJsonObject(response);
 
         if (JSONResponseHandler.checkResponse(responseObj)) {
-            JSONObject obj = JSONResponseHandler.getResultJSONObject(responseObj);
-
-            String valueString = null;
+            JsonObject obj = JSONResponseHandler.getResultJsonObject(responseObj);
 
             if (obj != null && obj.get("value") != null) {
-                valueString = obj.get("value").toString();
-            }
-
-            if (valueString != null) {
-                return Integer.parseInt(valueString);
+                return obj.get("value").getAsInt();
             }
         }
         return -1;
@@ -1425,7 +1388,7 @@ public class DigitalSTROMJSONImpl implements DigitalSTROMAPI {
         String response = null;
 
         response = transport.execute("/json/device/increaseValue?dsid=" + dsid.toString() + "&token=" + sessionToken);
-        return JSONResponseHandler.checkResponse(JSONResponseHandler.toJSONObject(response));
+        return JSONResponseHandler.checkResponse(JSONResponseHandler.toJsonObject(response));
     }
 
     @Override
@@ -1433,6 +1396,6 @@ public class DigitalSTROMJSONImpl implements DigitalSTROMAPI {
         String response = null;
 
         response = transport.execute("/json/device/decreaseValue?dsid=" + dsid.toString() + "&token=" + sessionToken);
-        return JSONResponseHandler.checkResponse(JSONResponseHandler.toJSONObject(response));
+        return JSONResponseHandler.checkResponse(JSONResponseHandler.toJsonObject(response));
     }
 }

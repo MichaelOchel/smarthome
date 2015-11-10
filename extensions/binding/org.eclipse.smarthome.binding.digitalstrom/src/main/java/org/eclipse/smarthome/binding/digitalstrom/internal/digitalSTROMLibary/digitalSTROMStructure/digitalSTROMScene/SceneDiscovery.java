@@ -20,10 +20,11 @@ import org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.di
 import org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.digitalSTROMStructure.digitalSTROMScene.constants.ApartmentSceneEnum;
 import org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.digitalSTROMStructure.digitalSTROMScene.constants.SceneEnum;
 import org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.digitalSTROMStructure.digitalSTROMScene.constants.ZoneSceneEnum;
-import org.json.simple.JSONArray;
-import org.json.simple.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import com.google.gson.JsonArray;
+import com.google.gson.JsonObject;
 
 /**
  * The {@link SceneDiscovery} can read out various digitalSTROM-Scene types and generates a list of theirs or managing
@@ -93,9 +94,9 @@ public class SceneDiscovery {
             if (response == null) {
                 return false;
             } else {
-                JSONObject responsJsonObj = JSONResponseHandler.toJSONObject(response);
+                JsonObject responsJsonObj = JSONResponseHandler.toJsonObject(response);
                 if (JSONResponseHandler.checkResponse(responsJsonObj)) {
-                    addScenesToList(JSONResponseHandler.getResultJSONObject(responsJsonObj));
+                    addScenesToList(JSONResponseHandler.getResultJsonObject(responsJsonObj));
                     return true;
                 }
             }
@@ -122,33 +123,32 @@ public class SceneDiscovery {
         }
     }
 
-    private void addScenesToList(JSONObject resultJsonObj) {
-        if (resultJsonObj.get(JSONApiResponseKeysEnum.APARTMENT_GET_STRUCTURE_ZONES.getKey()) instanceof JSONArray) {
-            JSONArray zones = (JSONArray) resultJsonObj
+    private void addScenesToList(JsonObject resultJsonObj) {
+        if (resultJsonObj.get(JSONApiResponseKeysEnum.APARTMENT_GET_STRUCTURE_ZONES.getKey()) instanceof JsonArray) {
+            JsonArray zones = (JsonArray) resultJsonObj
                     .get(JSONApiResponseKeysEnum.APARTMENT_GET_STRUCTURE_ZONES.getKey());
             for (int i = 0; i < zones.size(); i++) {
 
-                if (((JSONObject) zones.get(i)).get(JSONApiResponseKeysEnum.APARTMENT_GET_STRUCTURE_ZONES_GROUPS
-                        .getKey()) instanceof org.json.simple.JSONArray) {
+                if (((JsonObject) zones.get(i)).get(
+                        JSONApiResponseKeysEnum.APARTMENT_GET_STRUCTURE_ZONES_GROUPS.getKey()) instanceof JsonArray) {
 
-                    JSONArray groups = (JSONArray) ((JSONObject) zones.get(i))
+                    JsonArray groups = (JsonArray) ((JsonObject) zones.get(i))
                             .get(JSONApiResponseKeysEnum.APARTMENT_GET_STRUCTURE_ZONES_GROUPS.getKey());
 
                     for (int j = 0; j < groups.size(); j++) {
 
-                        if (((JSONObject) groups.get(j)).get("scenes") instanceof org.json.simple.JSONArray) {
+                        if (((JsonObject) groups.get(j)).get("scenes") instanceof JsonArray) {
 
-                            JSONArray scenes = (JSONArray) ((JSONObject) groups.get(j)).get("scenes");
+                            JsonArray scenes = (JsonArray) ((JsonObject) groups.get(j)).get("scenes");
                             for (int k = 0; k < scenes.size(); k++) {
-                                if (scenes.get(k) instanceof org.json.simple.JSONObject) {
+                                if (scenes.get(k).isJsonObject()) {
 
-                                    JSONObject sceneJsonObject = ((JSONObject) scenes.get(k));
-                                    int zoneID = Integer.parseInt(((JSONObject) zones.get(i)).get("ZoneID").toString());
-                                    short groupID = Short
-                                            .parseShort(((JSONObject) groups.get(j)).get("group").toString());
+                                    JsonObject sceneJsonObject = ((JsonObject) scenes.get(k));
+                                    int zoneID = ((JsonObject) zones.get(i)).get("ZoneID").getAsInt();
+                                    short groupID = ((JsonObject) groups.get(j)).get("group").getAsShort();
                                     InternalScene scene = new InternalScene(zoneID, groupID,
-                                            Short.parseShort(sceneJsonObject.get("scene").toString()),
-                                            sceneJsonObject.get("name").toString());
+                                            sceneJsonObject.get("scene").getAsShort(),
+                                            sceneJsonObject.get("name").getAsString());
 
                                     if (genList) {
                                         System.out.print("Namend Scene: " + scene.toString());
@@ -232,16 +232,16 @@ public class SceneDiscovery {
                             if (response == null) {
                                 return false;
                             } else {
-                                JSONObject responsJsonObj = JSONResponseHandler.toJSONObject(response);
+                                JsonObject responsJsonObj = JSONResponseHandler.toJsonObject(response);
                                 if (JSONResponseHandler.checkResponse(responsJsonObj)) {
-                                    JSONObject resultJsonObj = JSONResponseHandler.getResultJSONObject(responsJsonObj);
+                                    JsonObject resultJsonObj = JSONResponseHandler.getResultJsonObject(responsJsonObj);
                                     if (resultJsonObj.get(JSONApiResponseKeysEnum.ZONE_GET_REACHABLE_SCENES
-                                            .getKey()) instanceof JSONArray) {
-                                        JSONArray scenes = (JSONArray) resultJsonObj
+                                            .getKey()) instanceof JsonArray) {
+                                        JsonArray scenes = (JsonArray) resultJsonObj
                                                 .get(JSONApiResponseKeysEnum.ZONE_GET_REACHABLE_SCENES.getKey());
                                         if (scenes != null) {
                                             for (int i = 0; i < scenes.size(); i++) {
-                                                short sceneNumber = Short.parseShort(scenes.get(i).toString());
+                                                short sceneNumber = scenes.get(i).getAsShort();
                                                 String sceneName = null;
                                                 if (SceneEnum.getScene(sceneNumber) != null) {
                                                     if (structureManager.getZoneName(zoneID) != null
@@ -278,20 +278,21 @@ public class SceneDiscovery {
                                     }
 
                                     try {
+                                        // sleep 1 second, because sometimes the server dosen't answer if the requests
+                                        // were sent to fast
                                         Thread.sleep(1000);
                                     } catch (InterruptedException e) {
-                                        // TODO Auto-generated catch block
                                         e.printStackTrace();
                                     }
                                 }
                             }
 
                             try {
+                                // sleep 1 second, because sometimes the server dosen't answer if the requests were sent
+                                // to fast
                                 Thread.sleep(1000);
                             } catch (InterruptedException e) {
-                                // TODO Auto-generated catch block
                                 e.printStackTrace();
-
                             }
                         }
                     }
@@ -310,28 +311,26 @@ public class SceneDiscovery {
             if (response == null) {
                 return null;
             } else {
-                JSONObject responsJsonObj = JSONResponseHandler.toJSONObject(response);
+                JsonObject responsJsonObj = JSONResponseHandler.toJsonObject(response);
                 if (JSONResponseHandler.checkResponse(responsJsonObj)) {
-                    JSONObject resultJsonObj = JSONResponseHandler.getResultJSONObject(responsJsonObj);
+                    JsonObject resultJsonObj = JSONResponseHandler.getResultJsonObject(responsJsonObj);
                     if (resultJsonObj
-                            .get(JSONApiResponseKeysEnum.APARTMENT_GET_STRUCTURE_ZONES.getKey()) instanceof JSONArray) {
-                        JSONArray zones = (JSONArray) resultJsonObj
+                            .get(JSONApiResponseKeysEnum.APARTMENT_GET_STRUCTURE_ZONES.getKey()) instanceof JsonArray) {
+                        JsonArray zones = (JsonArray) resultJsonObj
                                 .get(JSONApiResponseKeysEnum.APARTMENT_GET_STRUCTURE_ZONES.getKey());
                         reachableGroupsMap = new HashMap<Integer, List<Short>>(zones.size());
                         List<Short> groupList;
                         for (int i = 0; i < zones.size(); i++) {
-                            if (((JSONObject) zones.get(i))
+                            if (((JsonObject) zones.get(i))
                                     .get(JSONApiResponseKeysEnum.APARTMENT_GET_STRUCTURE_ZONES_GROUPS
-                                            .getKey()) instanceof JSONArray) {
-                                JSONArray groups = (JSONArray) ((JSONObject) zones.get(i))
+                                            .getKey()) instanceof JsonArray) {
+                                JsonArray groups = (JsonArray) ((JsonObject) zones.get(i))
                                         .get(JSONApiResponseKeysEnum.APARTMENT_GET_STRUCTURE_ZONES_GROUPS.getKey());
                                 groupList = new LinkedList<Short>();
                                 for (int k = 0; k < groups.size(); k++) {
-                                    groupList.add(Short.parseShort(groups.get(k).toString()));
+                                    groupList.add(groups.get(k).getAsShort());
                                 }
-                                reachableGroupsMap.put(
-                                        Integer.parseInt(((JSONObject) zones.get(i)).get("zoneID").toString()),
-                                        groupList);
+                                reachableGroupsMap.put(((JsonObject) zones.get(i)).get("zoneID").getAsInt(), groupList);
                             }
                         }
                     }
@@ -348,20 +347,25 @@ public class SceneDiscovery {
      */
     public void sceneDiscoverd(InternalScene scene) {
         if (scene != null) {
-            if (!isStandardScene(scene.getSceneID())) {
-                if (this.discovery != null) {
-                    this.discovery.onSceneAdded(scene);
-                    logger.debug("Inform scene discovery aboud added scene with id: " + scene.getID());
-                } else {
-                    logger.debug("Can't inform scene discovery aboud added scene with id: " + scene.getID()
-                            + " because scene discovery is disabled");
+            if (SceneEnum.containsScene((int) scene.getSceneID())) {
+                if (!isStandardScene(scene.getSceneID())) {
+                    if (this.discovery != null) {
+                        this.discovery.onSceneAdded(scene);
+                        logger.debug("Inform scene discovery aboud added scene with id: " + scene.getID());
+                    } else {
+                        logger.debug("Can't inform scene discovery aboud added scene with id: " + scene.getID()
+                                + " because scene discovery is disabled");
+                    }
                 }
+                this.sceneManager.addInternalScene(scene);
+            } else {
+                logger.debug("Added scene with id: " + scene.getID() + " is un not usage scene!");
             }
-            this.sceneManager.addInternalScene(scene);
         }
     }
 
     private boolean isStandardScene(short sceneID) {
+
         switch (SceneEnum.getScene(sceneID)) {
             case INCREMENT:
             case DECREMENT:
@@ -377,6 +381,7 @@ public class SceneDiscovery {
             default:
                 return false;
         }
+
     }
 
     /**

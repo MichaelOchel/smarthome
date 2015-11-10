@@ -29,10 +29,11 @@ import org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.di
 import org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.digitalSTROMStructure.digitalSTROMDevices.deviceParameters.OutputModeEnum;
 import org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.digitalSTROMStructure.digitalSTROMScene.InternalScene;
 import org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.digitalSTROMStructure.digitalSTROMScene.constants.SceneEnum;
-import org.json.simple.JSONArray;
-import org.json.simple.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import com.google.gson.JsonArray;
+import com.google.gson.JsonObject;
 
 /**
  * The {@link JSONDeviceImpl} is the implementation of the {@link Device}.
@@ -99,72 +100,56 @@ public class JSONDeviceImpl implements Device {
     private Map<Short, Integer> sceneOutputMap = Collections.synchronizedMap(new HashMap<Short, Integer>());
 
     /**
-     * Creates a new {@link JSONDeviceImpl} from the given DigitalSTROM-Device {@link JSONObject}.
+     * Creates a new {@link JSONDeviceImpl} from the given DigitalSTROM-Device {@link JsonObject}.
      *
      * @param group json object
      */
-    public JSONDeviceImpl(JSONObject object) {
+    public JSONDeviceImpl(JsonObject object) {
 
         if (object.get(JSONApiResponseKeysEnum.DEVICE_NAME.getKey()) != null) {
-            this.name = object.get(JSONApiResponseKeysEnum.DEVICE_NAME.getKey()).toString();
+            this.name = object.get(JSONApiResponseKeysEnum.DEVICE_NAME.getKey()).getAsString();
         }
 
         if (object.get(JSONApiResponseKeysEnum.DEVICE_ID.getKey()) != null) {
-            this.dsid = new DSID(object.get(JSONApiResponseKeysEnum.DEVICE_ID.getKey()).toString());
+            this.dsid = new DSID(object.get(JSONApiResponseKeysEnum.DEVICE_ID.getKey()).getAsString());
         } else if (object.get(JSONApiResponseKeysEnum.DEVICE_ID_QUERY.getKey()) != null) {
-            this.dsid = new DSID(object.get(JSONApiResponseKeysEnum.DEVICE_ID_QUERY.getKey()).toString());
+            this.dsid = new DSID(object.get(JSONApiResponseKeysEnum.DEVICE_ID_QUERY.getKey()).getAsString());
         }
 
         if (object.get(JSONApiResponseKeysEnum.DEVICE_METER_ID.getKey()) != null) {
-            this.meterDSID = new DSID(object.get(JSONApiResponseKeysEnum.DEVICE_METER_ID.getKey()).toString());
+            this.meterDSID = new DSID(object.get(JSONApiResponseKeysEnum.DEVICE_METER_ID.getKey()).getAsString());
         }
 
         if (object.get(JSONApiResponseKeysEnum.DEVICE_DSUID.getKey()) != null) {
-            this.dSUID = object.get(JSONApiResponseKeysEnum.DEVICE_DSUID.getKey()).toString();
+            this.dSUID = object.get(JSONApiResponseKeysEnum.DEVICE_DSUID.getKey()).getAsString();
         }
 
         if (object.get(JSONApiResponseKeysEnum.DEVICE_ID.getKey()) != null) {
-            this.hwInfo = object.get(JSONApiResponseKeysEnum.DEVICE_HW_INFO.getKey()).toString();
+            this.hwInfo = object.get(JSONApiResponseKeysEnum.DEVICE_HW_INFO.getKey()).getAsString();
         }
 
         if (object.get(JSONApiResponseKeysEnum.DEVICE_ON.getKey()) != null) {
-            this.isOn = object.get(JSONApiResponseKeysEnum.DEVICE_ON.getKey()).toString().equals("true");
+            this.isOn = object.get(JSONApiResponseKeysEnum.DEVICE_ON.getKey()).getAsBoolean();
         }
 
         if (object.get(JSONApiResponseKeysEnum.DEVICE_IS_PRESENT.getKey()) != null) {
-            this.isPresent = object.get(JSONApiResponseKeysEnum.DEVICE_IS_PRESENT.getKey()).toString().equals("true");
+            this.isPresent = object.get(JSONApiResponseKeysEnum.DEVICE_IS_PRESENT.getKey()).getAsBoolean();
         } else if (object.get(JSONApiResponseKeysEnum.DEVICE_IS_PRESENT_QUERY.getKey()) != null) {
-            this.isPresent = object.get(JSONApiResponseKeysEnum.DEVICE_IS_PRESENT_QUERY.getKey()).toString()
-                    .equals("true");
+            this.isPresent = object.get(JSONApiResponseKeysEnum.DEVICE_IS_PRESENT_QUERY.getKey()).getAsBoolean();
         }
 
-        String zoneStr = null;
         if (object.get(JSONApiResponseKeysEnum.DEVICE_ZONE_ID.getKey()) != null) {
-            zoneStr = object.get(JSONApiResponseKeysEnum.DEVICE_ZONE_ID.getKey()).toString();
+            zoneId = object.get(JSONApiResponseKeysEnum.DEVICE_ZONE_ID.getKey()).getAsInt();
         } else if (object.get(JSONApiResponseKeysEnum.DEVICE_ZONE_ID_QUERY.getKey()) != null) {
-            zoneStr = object.get(JSONApiResponseKeysEnum.DEVICE_ZONE_ID_QUERY.getKey()).toString();
+            zoneId = object.get(JSONApiResponseKeysEnum.DEVICE_ZONE_ID_QUERY.getKey()).getAsInt();
         }
 
-        if (zoneStr != null) {
-            try {
-                this.zoneId = Integer.parseInt(zoneStr);
-            } catch (java.lang.NumberFormatException e) {
-                logger.error("NumberFormatException by parsing zoneId: " + zoneStr);
-            }
-        }
-
-        if (object.get(JSONApiResponseKeysEnum.DEVICE_GROUPS.getKey()) instanceof JSONArray) {
-            JSONArray array = (JSONArray) object.get(JSONApiResponseKeysEnum.DEVICE_GROUPS.getKey());
+        if (object.get(JSONApiResponseKeysEnum.DEVICE_GROUPS.getKey()) instanceof JsonArray) {
+            JsonArray array = (JsonArray) object.get(JSONApiResponseKeysEnum.DEVICE_GROUPS.getKey());
 
             for (int i = 0; i < array.size(); i++) {
                 if (array.get(i) != null) {
-                    String value = array.get(i).toString();
-                    short tmp = -1;
-                    try {
-                        tmp = Short.parseShort(value);
-                    } catch (java.lang.NumberFormatException e) {
-                        logger.error("NumberFormatException by parsing groups: " + value);
-                    }
+                    short tmp = array.get(i).getAsShort();
 
                     if (tmp != -1) {
                         this.groupList.add(tmp);
@@ -180,13 +165,7 @@ public class JSONDeviceImpl implements Device {
         }
 
         if (object.get(JSONApiResponseKeysEnum.DEVICE_OUTPUT_MODE.getKey()) != null) {
-            int tmp = -1;
-            try {
-                tmp = Integer.parseInt(object.get(JSONApiResponseKeysEnum.DEVICE_OUTPUT_MODE.getKey()).toString());
-            } catch (java.lang.NumberFormatException e) {
-                logger.error("NumberFormatException by parsing outputmode: "
-                        + object.get(JSONApiResponseKeysEnum.DEVICE_OUTPUT_MODE.getKey()).toString());
-            }
+            int tmp = object.get(JSONApiResponseKeysEnum.DEVICE_OUTPUT_MODE.getKey()).getAsInt();
 
             if (tmp != -1) {
                 if (OutputModeEnum.containsMode(tmp)) {
@@ -664,6 +643,7 @@ public class JSONDeviceImpl implements Device {
     /* Begin-Scenes */
 
     private InternalScene activeScene = null;
+    private InternalScene lastScene = null;
     private int outputValueBeforeSceneCall = 0;
 
     @Override
@@ -689,8 +669,14 @@ public class JSONDeviceImpl implements Device {
 
     @Override
     public synchronized void undoInternalScene() {
-        internalUndoScene();
-        this.activeScene = null;
+        if (this.lastScene != null) {
+            this.activeScene = this.lastScene;
+            this.lastScene = null;
+            activeScene.activateScene();
+        } else {
+            internalUndoScene();
+            this.activeScene = null;
+        }
     }
 
     @Override
@@ -885,6 +871,7 @@ public class JSONDeviceImpl implements Device {
     private void informLastSceneAboutSceneCall(short sceneNumber) {
         if (this.activeScene != null && this.activeScene.getSceneID() != sceneNumber) {
             this.activeScene.deviceSceneChanged(sceneNumber);
+            this.lastScene = this.activeScene;
             this.activeScene = null;
         }
     }
@@ -1022,7 +1009,7 @@ public class JSONDeviceImpl implements Device {
 
     @Override
     public boolean isElectricMeterUpToDate() {
-        return isOn && !isRollershutter()
+        return (isOn || this.electricMeter == 0) && !isRollershutter()
                 && !this.electricMeterRefreshPriority.contains(DigitalSTROMConfig.REFRESH_PRIORITY_NEVER)
                         ? checkSensorRefreshTime(lastElectricMeterUpdate) : true;
     }
@@ -1040,11 +1027,7 @@ public class JSONDeviceImpl implements Device {
 
     @Override
     public boolean isSensorDataUpToDate() {
-        if (outputMode.equals(OutputModeEnum.WIPE) && !isOn) {
-            return isActivePowerUpToDate();
-        }
-        return isOn && !isRollershutter()
-                ? isActivePowerUpToDate() && isElectricMeterUpToDate() && isOutputCurrentUpToDate() : true;
+        return isActivePowerUpToDate() && isElectricMeterUpToDate() && isOutputCurrentUpToDate();
     }
 
     @Override

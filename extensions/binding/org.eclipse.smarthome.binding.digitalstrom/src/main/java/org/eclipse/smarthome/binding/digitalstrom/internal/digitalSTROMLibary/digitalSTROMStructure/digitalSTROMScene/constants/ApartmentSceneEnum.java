@@ -71,6 +71,16 @@ public enum ApartmentSceneEnum implements Scene {
         return apartmentScenes.get(sceneNumber);
     }
 
+    /**
+     * Returns true if the given scene number contains in digitalSTROM apartment scenes otherwise false.
+     *
+     * @param sceneNumber
+     * @return true if contains otherwise false
+     */
+    public static boolean containsScene(Integer sceneNumber) {
+        return apartmentScenes.keySet().contains(sceneNumber);
+    }
+
     @Override
     public int getSceneNumber() {
         return this.sceneNumber;

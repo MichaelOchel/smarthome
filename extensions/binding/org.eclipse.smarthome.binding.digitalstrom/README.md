@@ -11,7 +11,6 @@ The integration happens through the digitalSTROM-Server, which acts as an gatewa
 
 
 ![various_digitalSTROM_clamps](doc/DS-Clamps.jpg)
-Thanks to Kai Kreuzer for the picture.
 ## Supported Things
 
  The digitalSTROM-Server is required as a *"bridge"* for accessing any other digitalSTROM-Devices.
@@ -40,13 +39,22 @@ The following table shows all tested digitalSTROM-Devices with their output-mode
 ## Discovery
 
  The digitalSTROM-Server is discovered through mDNS or *dss.local.* in the local network. Once the server is added as a Thing, you have to set a user name and password or insert a valid application-token to authenticate on the server. If the binding is authorized, it automatically reads all supported devices and scenes that are set up on the digitalSTROM-System and puts them into the inbox.
+ 
+ Discovered scenes are all user named scenes, reachable scenes from push-buttons, apartment scenes and zone scenes. The discovery also will discover all called scenes if they aren't automatically discovered yet. 
 
-## digitalSTROM-Server configuration
+## digitalSTROM-Scenes
+### General
+ The device scene configuration will be saved persistently to the things to update the device state faster. For that each scene configuration of each device has to read out first, because of the digitalSTROM-Rule 9 that requires a waiting period of 1 minute that take some time so that at the first start a scene call can be take some time to read it out and update the device state. To read it out faster only the discovered or called scenes will be red out. 
+ 
+ **Note:**
+ Because the digitalSTROM-Server can't inform the Binding about save scene events at this time the persistently saved scene configurations can't be updated. The current troubleshooting to read out the new scene configuration after a save scene action at the digitalSTROM-Server is to delete the Thing, restart the openHAB 2 server and add the Thing again. Than the scene configuration will be red out again.    
+ 
+### digitalSTROM-Server configuration
 
  You have to install the [digitalSTROM-Server-Addon](ESH-DS-ADDON.zip) on your digitalSTROM-Server then the Binding get informed by call-, undo-scenes and button-clicks from outside e.g. from the digiatlSTROM-App. 
 
 
-**Instruction:**
+*Instruction:*
  1. Unzip the [digitalSTROM-Server-Addon](ESH-DS-ADDON.zip).
  2. Open an connection with an SCP-Client like [WinSCP](http://winscp.net/eng/download.php) for Windows or [Fugu](http://fugu.de.softonic.com/mac) for Mac to the filesystem of the digitalSTROM-Server. 
  3. copy *"esh/esh.js"* to the folder *"usr/share/dss/add-ons/"*
@@ -55,8 +63,10 @@ The following table shows all tested digitalSTROM-Devices with their output-mode
 
 ## Thing Configuration
 
-**digitalSTROM-Server:**
-*Connection configuration:*  
+### digitalSTROM-Server:
+The digitalSTROM-Server-Thing have the following configuration parameter groups *connection configuration*, *digitalSTROM-Server informations* and *general configurations*.
+
+####Connection configuration:  
  If the digitalSTROM-Server isn’t found automatically, e.g. because the server isn’t placed at the local network or the mDNS-service is deactivated, you have to insert the network address or URL and the authentication data manually through the graphical user interface or type it into the \*.thing with textual configuration.
 
 | Parameter Label | Parameter ID| Description  | Required | Advanced 
@@ -67,7 +77,7 @@ The following table shows all tested digitalSTROM-Devices with their output-mode
 | Application-Token | applicationToken | The application token to authenticate to the digitalSTROM-Server. | user name and password or application-token| false |
 | Path to the SLL Certificate | trustCertPath | Here you can specify the path to the SLL certificate for the digitalSTROM-Server. You can download it from digitalSTROM server. Otherwise the SSL certificate will be ignored. | false | false |
 
-*digitalSTROM-Server informations:*   
+#### digitalSTROM-Server informations:  
  
  The group parameters *digitalSTROM-server informations* only includes informative parameters which have no special functionality .
 
@@ -79,7 +89,7 @@ The following table shows all tested digitalSTROM-Devices with their output-mode
 
 
 
-*General configuration:*     
+#### General configuration:    
  Here you can set general binding configuration parameters, which shown in following table: 
 
 | Parameter Label | Parameter ID| Description  | Required | Advanced | default 
@@ -93,7 +103,10 @@ In the thing file, a manual configuration looks e.g. like
 Bridge digitalstrom:dssBridge:dssBridge1 [ ipAddress ="dss.local.",  userName =”dssadmin”, password =“dssadmin” sensorDataUpdateIntervall =”180”]
 ```
 
-**digitalSTROM-Devices:**     
+### digitalSTROM-Devices: 
+The digitalSTROM-Device-Things have the following configuration parameter groups *Device informations* and *Sensor setup*.
+   
+#### Device informations
 Each digitalSTROM-Device needs the device ID named dSID as configuration parameter. The device ID is printed as serial number on the digitalSTOM-Device and can also be found within the web-interface from the digitalSTROM-Server. 
 Furthermore a supported digitalSTROM-Device have at this point only informative parameter.
 The following table showed all parameters: 
@@ -110,6 +123,7 @@ The following table showed all parameters:
 | Device Output mode | outputmode | The current digitalSTROM-Device output mode e.g. 22 = dimmable. | false | false |   
 | Device functional color group | funcColorGroup | The current digitalSTROM-Device functional color group e.g. yellow = light. | false | false |   
 
+#### Sensor setup
 The GE and SW digitalSTROM-Devices have usually sensors to capture power consumption data. So these devices have the following parameters to read them out.  
 
 | Parameter Label | Parameter ID| Description  | Required | Advanced | Default |
@@ -118,7 +132,8 @@ The GE and SW digitalSTROM-Devices have usually sensors to capture power consump
 | Electric meter refresh priority | ElectricMeterRefreshPriority | Set the refresh priority for the Electric meter sensor value. Can be never, low priority, medium priority or high priority. | false | false | never |
 | Output current refresh priority | OutputCurrentRefreshPriority | Set the refresh priority for the output current sensor value. Can be never, low priority, medium priority or high priority. | false | false | never |
 
-The digitalSTROM-scenes can be defined with following parameters.  
+### digitalSTROM-Scenes
+The digitalSTROM-Scenes can be defined with following parameters.  
 
 | Parameter Label | Parameter ID| Description  | Required | Advanced | 
 |-----------------|------------------------|--------------|----------------- |------------- |
@@ -155,7 +170,7 @@ All devices support some of the following channels:
 | generalCombined3StageSwitch  | String | The 3 stage device device channel allows to turn both relais of the ds-device on or off or switch both relais of the ds-device separated from each other on or off. | SW-UMR200 | 
 | activePower | Number | The active power channel indicates the current active power in watt (W) of the device." | GE, SW | 
 | outputCurrent | Number | The output current channel indicates the current output current in amper (A) of the device." | GE, SW | 
-| electricMeter | Number | "The electric meter channel indicates the current electric meter value in killowatts hours (kWh) of the device. | GE, SW | 
+| electricMeter | Number | The electric meter channel indicates the current electric meter value in killowatts hours (kWh) of the device. | GE, SW | 
 | totalActivePower |  | The total power consumption channel indicates the current consumption power in watt (W)  of all connected circuits to the digitalSTROM-System. | dssBridge | 
 | totalElectricMeter | Number | The total electric meter channel indicates the current electric meter value in killowatt hours of all connected circuits to the digitalSTROM-System. | dssBridge  | 
 | scene | Switch | The scene channel allows to call or undo a scene from digitalSTROM. | Scene | 

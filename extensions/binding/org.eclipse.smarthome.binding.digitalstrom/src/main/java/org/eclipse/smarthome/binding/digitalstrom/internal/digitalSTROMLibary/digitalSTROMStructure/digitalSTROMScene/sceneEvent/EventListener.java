@@ -17,10 +17,11 @@ import org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.di
 import org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.digitalSTROMServerConnection.impl.JSONResponseHandler;
 import org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.digitalSTROMStructure.digitalSTROMDevices.Device;
 import org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.digitalSTROMStructure.digitalSTROMScene.InternalScene;
-import org.json.simple.JSONArray;
-import org.json.simple.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import com.google.gson.JsonArray;
+import com.google.gson.JsonObject;
 
 /**
  * If someone call or undo a scene the {@link DigitalSTROMSceneManager} will get a notification
@@ -114,14 +115,14 @@ public class EventListener {
                 if (request != null) {
                     String response = transport.execute(request);
 
-                    JSONObject responseObj = JSONResponseHandler.toJSONObject(response);
+                    JsonObject responseObj = JSONResponseHandler.toJsonObject(response);
 
                     if (JSONResponseHandler.checkResponse(responseObj)) {
-                        JSONObject obj = JSONResponseHandler.getResultJSONObject(responseObj);
+                        JsonObject obj = JSONResponseHandler.getResultJsonObject(responseObj);
 
                         if (obj != null
-                                && obj.get(JSONApiResponseKeysEnum.EVENT_GET_EVENT.getKey()) instanceof JSONArray) {
-                            JSONArray array = (JSONArray) obj.get(JSONApiResponseKeysEnum.EVENT_GET_EVENT.getKey());
+                                && obj.get(JSONApiResponseKeysEnum.EVENT_GET_EVENT.getKey()) instanceof JsonArray) {
+                            JsonArray array = (JsonArray) obj.get(JSONApiResponseKeysEnum.EVENT_GET_EVENT.getKey());
                             try {
                                 handleEvent(array);
                             } catch (Exception e) {
@@ -180,7 +181,7 @@ public class EventListener {
         return this.unsubscribeEvent(this.EVENT_NAME, this.ID);
     }
 
-    private void handleEvent(JSONArray array) {
+    private void handleEvent(JsonArray array) {
         if (array.size() > 0) {
             Event event = new JSONEventImpl(array);
 

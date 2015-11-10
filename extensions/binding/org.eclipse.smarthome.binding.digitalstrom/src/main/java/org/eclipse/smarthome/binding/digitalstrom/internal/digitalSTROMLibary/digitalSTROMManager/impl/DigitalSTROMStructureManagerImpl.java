@@ -19,8 +19,9 @@ import org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.di
 import org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.digitalSTROMServerConnection.impl.JSONResponseHandler;
 import org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.digitalSTROMStructure.digitalSTROMDevices.Device;
 import org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.digitalSTROMStructure.digitalSTROMDevices.deviceParameters.DSID;
-import org.json.simple.JSONArray;
-import org.json.simple.JSONObject;
+
+import com.google.gson.JsonArray;
+import com.google.gson.JsonObject;
 
 /**
  * The {@link DigitalSTROMStructureManagerImpl} is the implemetation of the {@link DigitalSTROMStructureManager}.
@@ -56,33 +57,31 @@ public class DigitalSTROMStructureManagerImpl implements DigitalSTROMStructureMa
             if (response == null) {
                 return false;
             } else {
-                JSONObject responsJsonObj = JSONResponseHandler.toJSONObject(response);
+                JsonObject responsJsonObj = JSONResponseHandler.toJsonObject(response);
                 if (JSONResponseHandler.checkResponse(responsJsonObj)) {
-                    JSONObject resultJsonObj = JSONResponseHandler.getResultJSONObject(responsJsonObj);
-                    if (resultJsonObj.get("zones") instanceof JSONArray) {
-                        JSONArray zones = (JSONArray) resultJsonObj.get("zones");
+                    JsonObject resultJsonObj = JSONResponseHandler.getResultJsonObject(responsJsonObj);
+                    if (resultJsonObj.get("zones") instanceof JsonArray) {
+                        JsonArray zones = (JsonArray) resultJsonObj.get("zones");
                         if (this.zoneGroupIdNameMap == null) {
                             this.zoneGroupIdNameMap = new HashMap<Integer, Object[]>(zones.size());
                             this.zoneGroupNameIdMap = new HashMap<String, Object[]>(zones.size());
                         }
                         if (zones != null) {
                             for (int i = 0; i < zones.size(); i++) {
-                                if (((JSONObject) zones.get(i)).get("groups") instanceof JSONArray) {
-                                    JSONArray groups = (JSONArray) ((JSONObject) zones.get(i)).get("groups");
-                                    if (!groups.isEmpty()) {
+                                if (((JsonObject) zones.get(i)).get("groups") instanceof JsonArray) {
+                                    JsonArray groups = (JsonArray) ((JsonObject) zones.get(i)).get("groups");
+                                    if (groups.size() != 0) {
                                         Object[] zoneIdNameGroups = new Object[2];
                                         Object[] zoneNameIdGroups = new Object[2];
-                                        int zoneID = Integer
-                                                .parseInt(((JSONObject) zones.get(i)).get("ZoneID").toString());
-                                        String zoneName = ((JSONObject) zones.get(i)).get("name").toString();
+                                        int zoneID = ((JsonObject) zones.get(i)).get("ZoneID").getAsInt();
+                                        String zoneName = ((JsonObject) zones.get(i)).get("name").getAsString();
                                         zoneIdNameGroups[0] = zoneName;
                                         zoneNameIdGroups[0] = zoneID;
                                         HashMap<Short, String> groupIdNames = new HashMap<Short, String>();
                                         HashMap<String, Short> groupNameIds = new HashMap<String, Short>();
                                         for (int k = 0; k < groups.size(); k++) {
-                                            short groupID = Short
-                                                    .parseShort(((JSONObject) groups.get(k)).get("group").toString());
-                                            String groupName = ((JSONObject) groups.get(k)).get("name").toString();
+                                            short groupID = ((JsonObject) groups.get(k)).get("group").getAsShort();
+                                            String groupName = ((JsonObject) groups.get(k)).get("name").getAsString();
                                             groupIdNames.put(groupID, groupName);
                                             groupNameIds.put(groupName, groupID);
                                         }

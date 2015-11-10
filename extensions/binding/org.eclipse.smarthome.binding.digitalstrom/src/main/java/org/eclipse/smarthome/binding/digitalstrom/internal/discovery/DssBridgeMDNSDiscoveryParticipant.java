@@ -48,7 +48,6 @@ public class DssBridgeMDNSDiscoveryParticipant implements MDNSDiscoveryParticipa
 
     @Override
     public String getServiceType() {
-        // TODO Auto-generated method stub
         return "_tcp.local.";
     }
 
@@ -76,7 +75,9 @@ public class DssBridgeMDNSDiscoveryParticipant implements MDNSDiscoveryParticipa
             DigitalSTROMAPI digitalSTROMClient = new DigitalSTROMJSONImpl(hostAdress,
                     DigitalSTROMConfig.DEFAULT_CONNECTION_TIMEOUT, DigitalSTROMConfig.DEFAULT_READ_TIMEOUT);
             dsid = digitalSTROMClient.getDSID("123");
-            return new ThingUID(DigitalSTROMBindingConstants.THING_TYPE_DSS_BRIDGE, dsid);
+            if (dsid != null) {
+                return new ThingUID(DigitalSTROMBindingConstants.THING_TYPE_DSS_BRIDGE, dsid);
+            }
         }
         return null;
     }

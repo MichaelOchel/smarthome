@@ -15,69 +15,55 @@ import org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.di
 import org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.digitalSTROMStructure.Zone;
 import org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.digitalSTROMStructure.digitalSTROMDevices.Device;
 import org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.digitalSTROMStructure.digitalSTROMDevices.impl.JSONDeviceImpl;
-import org.json.simple.JSONArray;
-import org.json.simple.JSONObject;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+
+import com.google.gson.JsonArray;
+import com.google.gson.JsonObject;
 
 /**
  * The {@link JSONZoneImpl} is the implementation of the {@link Zone}.
  *
  * @author Alexander Betker
- * @since 1.3.0
+ * @author Michael Ochel - change from SimpleJSON to GSON
+ * @author Matthias Siegele - change from SimpleJSON to GSON
  */
 public class JSONZoneImpl implements Zone {
 
-    private static final Logger logger = LoggerFactory.getLogger(JSONZoneImpl.class);
-
-    private int zoneId = 0;
+    private int zoneId = -1;
     private String name = null;
 
     private List<DetailedGroupInfo> groupList = null;
     private List<Device> deviceList = null;
 
-    public JSONZoneImpl(JSONObject object) {
+    public JSONZoneImpl(JsonObject object) {
         this.groupList = new LinkedList<DetailedGroupInfo>();
         this.deviceList = new LinkedList<Device>();
 
         if (object.get(JSONApiResponseKeysEnum.APARTMENT_GET_STRUCTURE_ZONES_NAME.getKey()) != null) {
-            this.name = object.get(JSONApiResponseKeysEnum.APARTMENT_GET_STRUCTURE_ZONES_NAME.getKey()).toString();// getValue(object,
-                                                                                                                   // DigitalSTROMJSONApiResultKeysEnum.APARTMENT_GET_STRUCTURE_ZONES_NAME.getKey());
+            this.name = object.get(JSONApiResponseKeysEnum.APARTMENT_GET_STRUCTURE_ZONES_NAME.getKey()).getAsString();
         }
 
-        String zoneIdStr = null;
         if (object.get(JSONApiResponseKeysEnum.APARTMENT_GET_STRUCTURE_ZONES_ID.getKey()) != null) {
-            zoneIdStr = object.get(JSONApiResponseKeysEnum.APARTMENT_GET_STRUCTURE_ZONES_ID.getKey()).toString();
+            zoneId = object.get(JSONApiResponseKeysEnum.APARTMENT_GET_STRUCTURE_ZONES_ID.getKey()).getAsInt();
         }
-        if (zoneIdStr == null) {
+        if (zoneId == -1) {
             if (object.get(JSONApiResponseKeysEnum.QUERY_ZONE_ID.getKey()) != null) {
-                zoneIdStr = object.get(JSONApiResponseKeysEnum.QUERY_ZONE_ID.getKey()).toString();
+                zoneId = object.get(JSONApiResponseKeysEnum.QUERY_ZONE_ID.getKey()).getAsInt();
             }
         }
 
-        if (zoneIdStr != null) {
-            try {
-                this.zoneId = Integer.parseInt(zoneIdStr);
-            } catch (java.lang.NumberFormatException e) {
-                logger.error("NumberFormatException by getting zoneID: " + zoneIdStr);
-            }
-        }
-
-        if (object.get(JSONApiResponseKeysEnum.APARTMENT_GET_STRUCTURE_ZONES_DEVICES
-                .getKey()) instanceof org.json.simple.JSONArray) {
-            JSONArray list = (JSONArray) object
+        if (object.get(JSONApiResponseKeysEnum.APARTMENT_GET_STRUCTURE_ZONES_DEVICES.getKey()) instanceof JsonArray) {
+            JsonArray list = (JsonArray) object
                     .get(JSONApiResponseKeysEnum.APARTMENT_GET_STRUCTURE_ZONES_DEVICES.getKey());
             for (int i = 0; i < list.size(); i++) {
-                this.deviceList.add(new JSONDeviceImpl((JSONObject) list.get(i)));
+                this.deviceList.add(new JSONDeviceImpl((JsonObject) list.get(i)));
             }
         }
 
-        if (object.get(JSONApiResponseKeysEnum.APARTMENT_GET_STRUCTURE_ZONES_GROUPS
-                .getKey()) instanceof org.json.simple.JSONArray) {
-            JSONArray groupList = (JSONArray) object
+        if (object.get(JSONApiResponseKeysEnum.APARTMENT_GET_STRUCTURE_ZONES_GROUPS.getKey()) instanceof JsonArray) {
+            JsonArray groupList = (JsonArray) object
                     .get(JSONApiResponseKeysEnum.APARTMENT_GET_STRUCTURE_ZONES_GROUPS.getKey());
             for (int i = 0; i < groupList.size(); i++) {
-                this.groupList.add(new JSONDetailedGroupInfoImpl((JSONObject) groupList.get(i)));
+                this.groupList.add(new JSONDetailedGroupInfoImpl((JsonObject) groupList.get(i)));
             }
         }
 

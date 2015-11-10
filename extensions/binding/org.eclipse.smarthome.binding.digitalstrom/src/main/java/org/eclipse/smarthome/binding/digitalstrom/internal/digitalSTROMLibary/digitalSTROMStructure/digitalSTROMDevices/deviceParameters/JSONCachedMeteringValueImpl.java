@@ -8,41 +8,33 @@
 package org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.digitalSTROMStructure.digitalSTROMDevices.deviceParameters;
 
 import org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.digitalSTROMServerConnection.constants.JSONApiResponseKeysEnum;
-import org.json.simple.JSONObject;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+
+import com.google.gson.JsonObject;
 
 /**
  * The {@link JSONCachedMeteringValueImpl} is the implementation of the {@link CachedMeteringValue}.
  *
  * @author Alexander Betker
- * @since 1.3.0
+ * @author Michael Ochel - change from SimpleJSON to GSON
+ * @author Matthias Siegele - change from SimpleJSON to GSON
  */
 public class JSONCachedMeteringValueImpl implements CachedMeteringValue {
-
-    private static final Logger logger = LoggerFactory.getLogger(JSONCachedMeteringValueImpl.class);
 
     private DSID dsid = null;
     private double value = 0;
     private String date = null;
 
-    public JSONCachedMeteringValueImpl(JSONObject jObject) {
+    public JSONCachedMeteringValueImpl(JsonObject jObject) {
         if (jObject.get(JSONApiResponseKeysEnum.METERING_GET_LATEST_DSID.getKey()) != null) {
-            this.dsid = new DSID(jObject.get(JSONApiResponseKeysEnum.METERING_GET_LATEST_DSID.getKey()).toString());
+            this.dsid = new DSID(jObject.get(JSONApiResponseKeysEnum.METERING_GET_LATEST_DSID.getKey()).getAsString());
         }
 
         if (jObject.get(JSONApiResponseKeysEnum.METERING_GET_LATEST_VALUE.getKey()) != null) {
-            try {
-                this.value = Double.parseDouble(
-                        jObject.get(JSONApiResponseKeysEnum.METERING_GET_LATEST_VALUE.getKey()).toString());
-            } catch (java.lang.NumberFormatException e) {
-                logger.error("NumberFormatException by getting value: "
-                        + jObject.get(JSONApiResponseKeysEnum.METERING_GET_LATEST_VALUE.getKey()).toString());
-            }
+            this.value = jObject.get(JSONApiResponseKeysEnum.METERING_GET_LATEST_VALUE.getKey()).getAsDouble();
         }
 
         if (jObject.get(JSONApiResponseKeysEnum.METERING_GET_LATEST_DATE.getKey()) != null) {
-            this.date = jObject.get(JSONApiResponseKeysEnum.METERING_GET_LATEST_DATE.getKey()).toString();
+            this.date = jObject.get(JSONApiResponseKeysEnum.METERING_GET_LATEST_DATE.getKey()).getAsString();
         }
 
     }

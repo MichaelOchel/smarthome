@@ -98,7 +98,7 @@ public class DsDeviceDiscoveryService extends AbstractDiscoveryService implement
     }
 
     private void onDeviceAddedInternal(Device device) {
-        if (device.isDeviceWithOutput()) {
+        if (device.isDeviceWithOutput() && device.isPresent()) {
             ThingUID thingUID = getThingUID(device);
             if (thingUID != null) {
                 ThingUID bridgeUID = digitalSTROMBridgeHandler.getThing().getUID();

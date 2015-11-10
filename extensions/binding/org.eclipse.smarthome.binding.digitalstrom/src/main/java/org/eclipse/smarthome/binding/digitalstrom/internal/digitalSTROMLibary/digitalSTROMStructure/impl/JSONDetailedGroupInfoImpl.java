@@ -12,48 +12,41 @@ import java.util.List;
 
 import org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.digitalSTROMServerConnection.constants.JSONApiResponseKeysEnum;
 import org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.digitalSTROMStructure.DetailedGroupInfo;
-import org.json.simple.JSONArray;
-import org.json.simple.JSONObject;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+
+import com.google.gson.JsonArray;
+import com.google.gson.JsonObject;
 
 /**
  * The {@link JSONDetailedGroupInfoImpl} is the implementation of the {@link DetailedGroupInfo}.
  *
  * @author Alexander Betker
- * @since 1.3.0
+ * @author Michael Ochel - change from SimpleJSON to GSON
+ * @author Matthias Siegele - change from SimpleJSON to GSON
  */
 public class JSONDetailedGroupInfoImpl implements DetailedGroupInfo {
-
-    private static final Logger logger = LoggerFactory.getLogger(JSONDetailedGroupInfoImpl.class);
 
     private String name = null;
     private short groupId = 0;
 
     private List<String> deviceList = null;
 
-    public JSONDetailedGroupInfoImpl(JSONObject jObject) {
+    public JSONDetailedGroupInfoImpl(JsonObject jObject) {
         this.deviceList = new LinkedList<String>();
 
         if (jObject.get(JSONApiResponseKeysEnum.GROUP_NAME.getKey()) != null) {
-            name = jObject.get(JSONApiResponseKeysEnum.GROUP_NAME.getKey()).toString();
+            name = jObject.get(JSONApiResponseKeysEnum.GROUP_NAME.getKey()).getAsString();
         }
 
         if (jObject.get(JSONApiResponseKeysEnum.GROUP_ID.getKey()) != null) {
-            try {
-                this.groupId = Short.parseShort(jObject.get(JSONApiResponseKeysEnum.GROUP_ID.getKey()).toString());
-            } catch (java.lang.NumberFormatException e) {
-                logger.error("NumberFormatException by parsing groupID: "
-                        + jObject.get(JSONApiResponseKeysEnum.GROUP_ID.getKey()).toString());
-            }
+            this.groupId = jObject.get(JSONApiResponseKeysEnum.GROUP_ID.getKey()).getAsShort();
         }
 
-        if (jObject.get(JSONApiResponseKeysEnum.GROUP_DEVICES.getKey()) instanceof JSONArray) {
-            JSONArray array = (JSONArray) jObject.get(JSONApiResponseKeysEnum.GROUP_DEVICES.getKey());
+        if (jObject.get(JSONApiResponseKeysEnum.GROUP_DEVICES.getKey()) instanceof JsonArray) {
+            JsonArray array = (JsonArray) jObject.get(JSONApiResponseKeysEnum.GROUP_DEVICES.getKey());
 
             for (int i = 0; i < array.size(); i++) {
                 if (array.get(i) != null) {
-                    deviceList.add(array.get(i).toString());
+                    deviceList.add(array.get(i).getAsString());
                 }
             }
         }

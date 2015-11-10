@@ -46,6 +46,16 @@ public enum ZoneSceneEnum implements Scene {
         return zoneScenes.get(sceneNumber);
     }
 
+    /**
+     * Returns true if the given scene number contains in digitalSTROM zone scenes otherwise false.
+     *
+     * @param sceneNumber
+     * @return true if contains otherwise false
+     */
+    public static boolean containsScene(Integer sceneNumber) {
+        return zoneScenes.keySet().contains(sceneNumber);
+    }
+
     @Override
     public int getSceneNumber() {
         return this.sceneNumber;

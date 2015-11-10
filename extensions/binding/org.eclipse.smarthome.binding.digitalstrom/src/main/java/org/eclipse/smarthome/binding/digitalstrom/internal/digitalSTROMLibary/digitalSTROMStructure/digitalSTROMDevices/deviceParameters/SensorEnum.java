@@ -96,6 +96,16 @@ public enum SensorEnum {
         return sensorEnums.get(typeIndex);
     }
 
+    /**
+     * Returns true if the given sensor type index contains in digitalSTROM sensor types otherwise false.
+     *
+     * @param sceneNumber
+     * @return true if contains otherwise false
+     */
+    public static boolean containsScene(Integer typeIndex) {
+        return sensorEnums.keySet().contains(typeIndex);
+    }
+
     SensorEnum(int sensorType, String unit, String unitShortcut) {
         this.sensorType = sensorType;
         this.unit = unit;

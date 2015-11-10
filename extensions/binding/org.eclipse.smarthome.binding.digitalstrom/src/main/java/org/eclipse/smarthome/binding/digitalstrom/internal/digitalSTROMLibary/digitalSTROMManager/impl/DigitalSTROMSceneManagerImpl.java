@@ -160,7 +160,6 @@ public class DigitalSTROMSceneManagerImpl implements DigitalSTROMSceneManager {
 
     @Override
     public void callInternalScene(InternalScene scene) {
-        // eig. unn�tig
         InternalScene intScene = this.internalSceneMap.get(scene.getID());
         if (intScene != null) {
             intScene.activateScene();
@@ -200,12 +199,14 @@ public class DigitalSTROMSceneManagerImpl implements DigitalSTROMSceneManager {
 
             }
         } else {
+            InternalScene oldScene = this.internalSceneMap.get(intScene.getID());
             String oldSceneName = this.internalSceneMap.get(intScene.getID()).getSceneName();
             String newSceneName = intScene.getSceneName();
             if ((oldSceneName.contains("Zone:") && oldSceneName.contains("Group:") && oldSceneName.contains("Scene:"))
                     && !(newSceneName.contains("Zone:") && newSceneName.contains("Group:")
                             && newSceneName.contains("Scene:"))) {
-                this.internalSceneMap.get(intScene.getID()).setSceneName(newSceneName);
+                oldScene.setSceneName(newSceneName);
+                this.discovery.sceneDiscoverd(oldScene);
             }
         }
     }

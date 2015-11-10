@@ -343,7 +343,12 @@ public class DsDeviceHandler extends BaseThingHandler implements DeviceStatusLis
     @Override
     public synchronized void onDeviceRemoved(Device device) {
         this.device = null;
-        updateStatus(ThingStatus.OFFLINE);
+        if (!device.isPresent()) {
+            updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.NONE,
+                    "Device is not present in the digitalSTROM system.");
+        } else {
+            updateStatus(ThingStatus.OFFLINE);
+        }
         logger.debug("Set status on {}", getThing().getStatus());
     }
 

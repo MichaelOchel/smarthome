@@ -154,6 +154,16 @@ public enum SceneEnum implements Scene {
         return digitalstromScenes.get(sceneNumber);
     }
 
+    /**
+     * Returns true if the given scene number contains in digitalSTROM scenes otherwise false.
+     *
+     * @param sceneNumber
+     * @return true if contains otherwise false
+     */
+    public static boolean containsScene(Integer sceneNumber) {
+        return digitalstromScenes.keySet().contains(sceneNumber);
+    }
+
     @Override
     public int getSceneNumber() {
         return this.sceneNumber;

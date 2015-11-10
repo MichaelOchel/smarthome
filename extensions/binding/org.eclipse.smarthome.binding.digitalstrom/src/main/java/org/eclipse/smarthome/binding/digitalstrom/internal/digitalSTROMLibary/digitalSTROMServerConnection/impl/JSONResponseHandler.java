@@ -8,19 +8,20 @@
 package org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.digitalSTROMServerConnection.impl;
 
 import org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.digitalSTROMServerConnection.constants.JSONApiResponseKeysEnum;
-import org.json.simple.JSONObject;
-import org.json.simple.parser.JSONParser;
-import org.json.simple.parser.ParseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParseException;
+import com.google.gson.JsonParser;
+
 /**
- * The {@link JSONResponseHandler} checks an digitalSTROM-JSON response and can parse it to an {@link JSONObject}.
+ * The {@link JSONResponseHandler} checks an digitalSTROM-JSON response and can parse it to an {@link JsonObject}.
  *
  * @author Alexander Betker - Initial contribution
  * @author Alex Maier - Initial contribution
- * @author Michael Ochel - add Java-Doc and make methods static
- * @author Matthias Siegele - add Java-Doc and make methods static
+ * @author Michael Ochel - add Java-Doc, make methods static and change from SimpleJSON to GSON
+ * @author Matthias Siegele - add Java-Doc, make methods static and change from SimpleJSON to GSON
  */
 public class JSONResponseHandler {
 
@@ -32,7 +33,7 @@ public class JSONResponseHandler {
      * @param jsonResponse
      * @return true on success
      */
-    public static boolean checkResponse(JSONObject jsonResponse) {
+    public static boolean checkResponse(JsonObject jsonResponse) {
         if (jsonResponse == null)
             return false;
         else if (jsonResponse.get(JSONApiResponseKeysEnum.RESPONSE_OK.getKey()) != null) {
@@ -40,23 +41,23 @@ public class JSONResponseHandler {
                     .equals(JSONApiResponseKeysEnum.RESPONSE_SUCCESSFUL.getKey());
         } else {
             logger.error("JSONResponseHandler: error in json request. Error message : "
-                    + jsonResponse.get(JSONApiResponseKeysEnum.RESPONSE_MESSAGE).toString());
+                    + jsonResponse.get(JSONApiResponseKeysEnum.RESPONSE_MESSAGE.getKey()).toString());
         }
         return false;
     }
 
     /**
-     * Returns the {@link JSONObject} from the given digitalSTROM-JSON response {@link String} or null if the json
+     * Returns the {@link JsonObject} from the given digitalSTROM-JSON response {@link String} or null if the json
      * response wars empty.
      *
      * @param jsonResponse
      * @return jsonObject
      */
-    public static JSONObject toJSONObject(String jsonResponse) {
+    public static JsonObject toJsonObject(String jsonResponse) {
         if (jsonResponse != null && !jsonResponse.trim().equals("")) {
             try {
-                return (JSONObject) new JSONParser().parse(jsonResponse);
-            } catch (ParseException e) {
+                return (JsonObject) new JsonParser().parse(jsonResponse);
+            } catch (JsonParseException e) {
                 logger.error("JSONResponseHandler: " + e.getLocalizedMessage());
             }
         }
@@ -64,14 +65,14 @@ public class JSONResponseHandler {
     }
 
     /**
-     * Returns the result {@link JSONObject} from the given digitalSTROM-JSON response {@link JSONObject}.
+     * Returns the result {@link JsonObject} from the given digitalSTROM-JSON response {@link JsonObject}.
      *
      * @param jsonObject
      * @return json result object
      */
-    public static JSONObject getResultJSONObject(JSONObject jsonObject) {
+    public static JsonObject getResultJsonObject(JsonObject jsonObject) {
         if (jsonObject != null) {
-            return (JSONObject) jsonObject.get(JSONApiResponseKeysEnum.RESULT.getKey());
+            return (JsonObject) jsonObject.get(JSONApiResponseKeysEnum.RESULT.getKey());
         }
         return null;
     }

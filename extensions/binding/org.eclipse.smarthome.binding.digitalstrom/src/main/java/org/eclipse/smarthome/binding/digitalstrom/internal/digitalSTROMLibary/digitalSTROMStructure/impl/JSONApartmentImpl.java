@@ -13,26 +13,28 @@ import java.util.Map;
 import org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.digitalSTROMServerConnection.constants.JSONApiResponseKeysEnum;
 import org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.digitalSTROMStructure.Apartment;
 import org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.digitalSTROMStructure.Zone;
-import org.json.simple.JSONArray;
-import org.json.simple.JSONObject;
+
+import com.google.gson.JsonArray;
+import com.google.gson.JsonObject;
 
 /**
  * The {@link JSONApartmentImpl} is the implementation of the {@link Apartment}.
  *
  * @author Alexander Betker
- * @since 1.3.0
+ * @author Michael Ochel - change from SimpleJSON to GSON
+ * @author Matthias Siegele - change from SimpleJSON to GSON
  */
 public class JSONApartmentImpl implements Apartment {
 
     private Map<Integer, Zone> zoneMap = new HashMap<Integer, Zone>();
 
-    public JSONApartmentImpl(JSONObject jObject) {
-        if (jObject.get(JSONApiResponseKeysEnum.APARTMENT_GET_STRUCTURE_ZONES.getKey()) instanceof JSONArray) {
-            JSONArray zones = (JSONArray) jObject.get(JSONApiResponseKeysEnum.APARTMENT_GET_STRUCTURE_ZONES.getKey());
+    public JSONApartmentImpl(JsonObject jObject) {
+        if (jObject.get(JSONApiResponseKeysEnum.APARTMENT_GET_STRUCTURE_ZONES.getKey()) instanceof JsonArray) {
+            JsonArray zones = (JsonArray) jObject.get(JSONApiResponseKeysEnum.APARTMENT_GET_STRUCTURE_ZONES.getKey());
 
             for (int i = 0; i < zones.size(); i++) {
-                if (zones.get(i) instanceof org.json.simple.JSONObject) {
-                    Zone zone = new JSONZoneImpl((JSONObject) zones.get(i));
+                if (zones.get(i) instanceof JsonObject) {
+                    Zone zone = new JSONZoneImpl((JsonObject) zones.get(i));
                     zoneMap.put(zone.getZoneId(), zone);
                 }
             }

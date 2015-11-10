@@ -116,7 +116,11 @@ public class DigitalSTROMDeviceStatusManagerImpl implements DigitalSTROMDeviceSt
 
         @Override
         public void run() {
-            stateChanged(ManagerStates.initialasing);
+            if (!devicesLoaded) {
+                stateChanged(ManagerStates.running);
+            } else {
+                stateChanged(ManagerStates.initialasing);
+            }
             while (!shutdown) {
                 if (connMan.checkConnection()) {
                     logger.debug("start");
@@ -280,7 +284,7 @@ public class DigitalSTROMDeviceStatusManagerImpl implements DigitalSTROMDeviceSt
                                 }
                             }
 
-                            // TODO: move discovery in DigitalSTROMStructureManagerImpl.addDevice
+                            // TODO: may move discovery in DigitalSTROMStructureManagerImpl.addDevice
                             if (deviceDiscovery != null) {
                                 if (currentDevice.isDeviceWithOutput()) {
                                     deviceDiscovery.onDeviceAdded(currentDevice);
@@ -300,12 +304,9 @@ public class DigitalSTROMDeviceStatusManagerImpl implements DigitalSTROMDeviceSt
                         logger.debug("Devices loaded");
                         devicesLoaded = true;
                         stateChanged(ManagerStates.running);
-                    } else {
-
                     }
 
-                    // Generate everyTime Scenes or only when a Scene Discovery is added
-                    if (!sceneMan.scenesGenerated() /* && sceneMan.isDiscoveryRegistrated() */) {
+                    if (!sceneMan.scenesGenerated()) {
                         logger.debug("generateScenes");
                         sceneMan.generateScenes();
                     }

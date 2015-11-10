@@ -10,8 +10,8 @@ package org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.d
 import java.util.LinkedList;
 import java.util.List;
 
-import org.json.simple.JSONArray;
-import org.json.simple.JSONObject;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonObject;
 
 /**
  * The {@link JSONEventImpl} is the implementation of the {@link Event}.
@@ -28,12 +28,12 @@ public class JSONEventImpl implements Event {
      *
      * @param event json array
      */
-    public JSONEventImpl(JSONArray array) {
+    public JSONEventImpl(JsonArray array) {
         this.eventItemList = new LinkedList<EventItem>();
 
         for (int i = 0; i < array.size(); i++) {
-            if (array.get(i) instanceof JSONObject) {
-                this.eventItemList.add(new JSONEventItemImpl((JSONObject) array.get(i)));
+            if (array.get(i) instanceof JsonObject) {
+                this.eventItemList.add(new JSONEventItemImpl((JsonObject) array.get(i)));
             }
         }
     }

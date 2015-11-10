@@ -10,19 +10,17 @@ package org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.d
 import org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.digitalSTROMServerConnection.constants.JSONApiResponseKeysEnum;
 import org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.digitalSTROMStructure.digitalSTROMScene.constants.Scene;
 import org.eclipse.smarthome.binding.digitalstrom.internal.digitalSTROMLibary.digitalSTROMStructure.digitalSTROMScene.constants.SceneEnum;
-import org.json.simple.JSONObject;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+
+import com.google.gson.JsonObject;
 
 /**
  * The {@link JSONDeviceSceneSpecImpl} is the implementation of the {@link DeviceSceneSpec}.
  *
  * @author Alexander Betker
- * @since 1.3.0
+ * @author Michael Ochel - change from SimpleJSON to GSON
+ * @author Matthias Siegele - change from SimpleJSON to GSON
  */
 public class JSONDeviceSceneSpecImpl implements DeviceSceneSpec {
-
-    private static final Logger logger = LoggerFactory.getLogger(JSONDeviceSceneSpecImpl.class);
 
     private Scene scene = null;
     private boolean dontcare = false;
@@ -30,16 +28,10 @@ public class JSONDeviceSceneSpecImpl implements DeviceSceneSpec {
     private boolean specialMode = false;
     private boolean flashMode = false;
 
-    public JSONDeviceSceneSpecImpl(JSONObject jObject) {
+    public JSONDeviceSceneSpecImpl(JsonObject jObject) {
         if (jObject.get(JSONApiResponseKeysEnum.DEVICE_GET_SCENE_MODE_SCENE_ID.getKey()) != null) {
             int val = -1;
-            try {
-                val = Integer.parseInt(
-                        jObject.get(JSONApiResponseKeysEnum.DEVICE_GET_SCENE_MODE_SCENE_ID.getKey()).toString());
-            } catch (java.lang.NumberFormatException e) {
-                logger.error("NumberFormatException by getting sceneID: "
-                        + jObject.get(JSONApiResponseKeysEnum.DEVICE_GET_SCENE_MODE_SCENE_ID.getKey()).toString());
-            }
+            val = jObject.get(JSONApiResponseKeysEnum.DEVICE_GET_SCENE_MODE_SCENE_ID.getKey()).getAsInt();
 
             if (val > -1) {
                 this.scene = SceneEnum.getScene(val);
@@ -47,23 +39,23 @@ public class JSONDeviceSceneSpecImpl implements DeviceSceneSpec {
         }
 
         if (jObject.get(JSONApiResponseKeysEnum.DEVICE_GET_SCENE_MODE_DONT_CARE.getKey()) != null) {
-            this.dontcare = jObject.get(JSONApiResponseKeysEnum.DEVICE_GET_SCENE_MODE_DONT_CARE.getKey()).toString()
-                    .equals("true");
+            this.dontcare = jObject.get(JSONApiResponseKeysEnum.DEVICE_GET_SCENE_MODE_DONT_CARE.getKey())
+                    .getAsBoolean();
         }
 
         if (jObject.get(JSONApiResponseKeysEnum.DEVICE_GET_SCENE_MODE_LOCAL_PRIO.getKey()) != null) {
-            this.localPrio = jObject.get(JSONApiResponseKeysEnum.DEVICE_GET_SCENE_MODE_LOCAL_PRIO.getKey()).toString()
-                    .equals("true");
+            this.localPrio = jObject.get(JSONApiResponseKeysEnum.DEVICE_GET_SCENE_MODE_LOCAL_PRIO.getKey())
+                    .getAsBoolean();
         }
 
         if (jObject.get(JSONApiResponseKeysEnum.DEVICE_GET_SCENE_MODE_SPECIAL_MODE.getKey()) != null) {
             this.specialMode = jObject.get(JSONApiResponseKeysEnum.DEVICE_GET_SCENE_MODE_SPECIAL_MODE.getKey())
-                    .toString().equals("true");
+                    .getAsBoolean();
         }
 
         if (jObject.get(JSONApiResponseKeysEnum.DEVICE_GET_SCENE_MODE_FLASH_MODE.getKey()) != null) {
-            this.flashMode = jObject.get(JSONApiResponseKeysEnum.DEVICE_GET_SCENE_MODE_FLASH_MODE.getKey()).toString()
-                    .equals("true");
+            this.flashMode = jObject.get(JSONApiResponseKeysEnum.DEVICE_GET_SCENE_MODE_FLASH_MODE.getKey())
+                    .getAsBoolean();
         }
     }
 
