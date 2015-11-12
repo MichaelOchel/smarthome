@@ -131,6 +131,7 @@ public abstract class BaseThingHandlerFactory implements ThingHandlerFactory {
         if (thingHandler instanceof BaseThingHandler) {
             ((BaseThingHandler) thingHandler).postInitialize();
         }
+
         ServiceRegistration<ThingHandler> thingHandlderServiceRegistration = registerThingHandlerAsService(thing,
                 thingHandler);
         thingHandlers.put(thing.getUID().toString(), thingHandlderServiceRegistration);
