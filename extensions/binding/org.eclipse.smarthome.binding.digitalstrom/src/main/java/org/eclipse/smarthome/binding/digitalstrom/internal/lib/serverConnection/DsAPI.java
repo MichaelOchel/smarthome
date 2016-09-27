@@ -49,8 +49,8 @@ public interface DsAPI {
      * @param force not required
      * @return true, if successful
      */
-    public boolean callApartmentScene(String sessionToken, int groupID, String groupName, Scene sceneNumber,
-            boolean force);
+    public boolean callApartmentScene(String sessionToken, Short groupID, String groupName, Scene sceneNumber,
+            Boolean force);
 
     /**
      * Returns all zones
@@ -66,7 +66,7 @@ public interface DsAPI {
      * @param unassigned not required
      * @return List of devices
      */
-    public List<Device> getApartmentDevices(String sessionToken, boolean unassigned);
+    public List<Device> getApartmentDevices(String sessionToken, Boolean unassigned);
 
     /**
      * Returns a list of dSID's of all meters(dSMs)
@@ -87,8 +87,8 @@ public interface DsAPI {
      * @param force not required
      * @return true on success
      */
-    public boolean callZoneScene(String sessionToken, int zoneID, String zoneName, int groupID, String groupName,
-            SceneEnum sceneNumber, boolean force);
+    public boolean callZoneScene(String sessionToken, Integer zoneID, String zoneName, Short groupID, String groupName,
+            SceneEnum sceneNumber, Boolean force);
 
     /**
      * Turns the device on. This will call the scene "max" on the device.
@@ -116,7 +116,7 @@ public interface DsAPI {
      * @param value required (0 - 255)
      * @return true, if successful
      */
-    public boolean setDeviceValue(String sessionToken, DSID dSID, String deviceName, int value);
+    public boolean setDeviceValue(String sessionToken, DSID dSID, String deviceName, Integer value);
 
     /**
      * Gets the value of configuration class at offset index.
@@ -128,7 +128,7 @@ public interface DsAPI {
      * @return config with values
      */
     public DeviceConfig getDeviceConfig(String sessionToken, DSID dSID, String deviceName,
-            DeviceParameterClassEnum clazz, int index);
+            DeviceParameterClassEnum clazz, Integer index);
 
     /**
      * Gets the device output value from parameter at the given offset.
@@ -140,7 +140,7 @@ public interface DsAPI {
      * @param offset required (known offset f.e. 0)
      * @return
      */
-    public int getDeviceOutputValue(String sessionToken, DSID dSID, String deviceName, int offset);
+    public int getDeviceOutputValue(String sessionToken, DSID dSID, String deviceName, Short offset);
 
     /**
      * Sets the device output value at the given offset. The available
@@ -152,7 +152,7 @@ public interface DsAPI {
      * @param value required (0 - 65535)
      * @return true, if successful
      */
-    public boolean setDeviceOutputValue(String sessionToken, DSID dSID, String deviceName, int offset, int value);
+    public boolean setDeviceOutputValue(String sessionToken, DSID dSID, String deviceName, Short offset, Integer value);
 
     /**
      * Gets the device configuration for a specific scene command.
@@ -162,7 +162,7 @@ public interface DsAPI {
      * @param sceneID required (0 .. 255)
      * @return scene configuration
      */
-    public DeviceSceneSpec getDeviceSceneMode(String sessionTokens, DSID dSID, String deviceName, short sceneID);
+    public DeviceSceneSpec getDeviceSceneMode(String sessionTokens, DSID dSID, String deviceName, Short sceneID);
 
     /**
      * Requests the sensor value for a given index.
@@ -183,7 +183,7 @@ public interface DsAPI {
      * @param force not required
      * @return true, if successful
      */
-    public boolean callDeviceScene(String sessionToken, DSID dSID, String deviceName, Scene sceneNumber, boolean force);
+    public boolean callDeviceScene(String sessionToken, DSID dSID, String deviceName, Scene sceneNumber, Boolean force);
 
     /**
      * Subscribes to an event given by the name. The subscriptionID is a unique id
@@ -195,7 +195,7 @@ public interface DsAPI {
      * @param subscriptionID required
      * @return true on success
      */
-    public boolean subscribeEvent(String sessionToken, String eventName, int subscriptionID, int connectionTimeout,
+    public boolean subscribeEvent(String sessionToken, String eventName, Integer subscriptionID, int connectionTimeout,
             int readTimeout);
 
     /**
@@ -206,8 +206,8 @@ public interface DsAPI {
      * @param subscriptionID required
      * @return true on success
      */
-    public boolean unsubscribeEvent(String sessionToken, String eventName, int subscriptionID, int connectionTimeout,
-            int readTimeout);
+    public boolean unsubscribeEvent(String sessionToken, String eventName, Integer subscriptionID,
+            int connectionTimeout, int readTimeout);
 
     /**
      * Gets event information and output. The subscriptionID is a unique id
@@ -220,7 +220,7 @@ public interface DsAPI {
      * @param timeout optional
      * @return Event-String
      */
-    public String getEvent(String sessionToken, int subscriptionID, int timeout);
+    public String getEvent(String sessionToken, Integer subscriptionID, Integer timeout);
 
     /**
      * Returns the dSS time in UTC seconds since epoch.
@@ -348,7 +348,7 @@ public interface DsAPI {
      * @author Michael Ochel
      * @author Matthias Siegele
      */
-    public int[] getSceneValue(String sessionToken, DSID dSID, short sceneId);
+    public int[] getSceneValue(String sessionToken, DSID dSID, Short sceneId);
 
     /**
      * Calls the INC scene on the digitalSTROM-Device with the given dSID and returns true if the request was success.
@@ -387,7 +387,7 @@ public interface DsAPI {
      * @author Michael Ochel
      * @author Matthias Siegele
      */
-    boolean undoDeviceScene(String sessionToken, DSID dsid, Scene sceneNumber);
+    public boolean undoDeviceScene(String sessionToken, DSID dsid, Scene sceneNumber);
 
     /**
      * Undo the given sceneNumer on the digitalSTROM apartment-group with the given groupID or groupName and returns
@@ -403,7 +403,7 @@ public interface DsAPI {
      * @author Michael Ochel
      * @author Matthias Siegele
      */
-    boolean undoApartmentScene(String sessionToken, int groupID, String groupName, Scene sceneNumber);
+    public boolean undoApartmentScene(String sessionToken, Short groupID, String groupName, Scene sceneNumber);
 
     /**
      * Undo the given sceneNumer on the digitalSTROM zone-group with the given zoneID or zoneName and groupID or
@@ -420,7 +420,7 @@ public interface DsAPI {
      * @author Michael Ochel
      * @author Matthias Siegele
      */
-    boolean undoZoneScene(String sessionToken, int zoneID, String zoneName, int groupID, String groupName,
+    public boolean undoZoneScene(String sessionToken, Integer zoneID, String zoneName, Short groupID, String groupName,
             SceneEnum sceneNumber);
 
     /**
@@ -454,7 +454,7 @@ public interface DsAPI {
      * @param zoneID required
      * @return name of the given zone id
      */
-    public String getZoneName(String sessionToken, int zoneID);
+    public String getZoneName(String sessionToken, Integer zoneID);
 
     /**
      * Returns user defined name of the device from the given dSID
@@ -483,5 +483,5 @@ public interface DsAPI {
      * @param sceneID (between 0 and 127)
      * @return name of the scene otherwise null
      */
-    public String getSceneName(String sessionToken, int zoneID, int groupID, short sceneID);
+    public String getSceneName(String sessionToken, Integer zoneID, Short groupID, Short sceneID);
 }

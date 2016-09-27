@@ -32,7 +32,7 @@ public enum SensorIndexEnum {
      *
      * @return sensor index
      */
-    public int getIndex() {
+    public Integer getIndex() {
         return index;
     }
 
@@ -41,7 +41,7 @@ public enum SensorIndexEnum {
      *
      * @return sensor type id
      */
-    public int getType() {
+    public Integer getType() {
         return type;
     }
 }
