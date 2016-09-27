@@ -153,7 +153,7 @@ public enum SceneEnum implements Scene {
     }
 
     @Override
-    public short getSceneNumber() {
+    public Short getSceneNumber() {
         return this.sceneNumber;
     }
 }

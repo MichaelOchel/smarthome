@@ -15,6 +15,11 @@ import org.eclipse.smarthome.binding.digitalstrom.internal.lib.serverConnection.
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.serverConnection.HttpTransport;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.serverConnection.constants.JSONApiResponseKeysEnum;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.serverConnection.constants.JSONRequestConstants;
+import org.eclipse.smarthome.binding.digitalstrom.internal.lib.serverConnection.simpleURLBuilder.SimpleRequestBuilder;
+import org.eclipse.smarthome.binding.digitalstrom.internal.lib.serverConnection.simpleURLBuilder.constants.Classes;
+import org.eclipse.smarthome.binding.digitalstrom.internal.lib.serverConnection.simpleURLBuilder.constants.Functions;
+import org.eclipse.smarthome.binding.digitalstrom.internal.lib.serverConnection.simpleURLBuilder.constants.Interfaces;
+import org.eclipse.smarthome.binding.digitalstrom.internal.lib.serverConnection.simpleURLBuilder.constants.ParameterTyps;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.Apartment;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.Device;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.CachedMeteringValue;
@@ -33,6 +38,8 @@ import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.impl.JSONApartmentImpl;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.scene.constants.Scene;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.scene.constants.SceneEnum;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
@@ -42,11 +49,14 @@ import com.google.gson.JsonObject;
  *
  * @author Alexander Betker
  * @author Alex Maier
- * @author Michael Ochel - implements new methods, updates and change from SimpleJSON to GSON
- * @author Matthias Siegele - implements new methods, updates and change from SimpleJSON to GSON
+ * @author Michael Ochel - implements new methods, API updates and change SimpleJSON to GSON and requests building with
+ *         constants to SimpleRequestBuilder
+ * @author Matthias Siegele - implements new methods, API updates and change SimpleJSON to GSON and requests building
+ *         with constants to SimpleRequestBuilder
  */
 public class DsAPIImpl implements DsAPI {
 
+    private Logger logger = LoggerFactory.getLogger(DsAPIImpl.class);
     private HttpTransport transport = null;
 
     public DsAPIImpl(HttpTransport transport) {
@@ -61,106 +71,43 @@ public class DsAPIImpl implements DsAPI {
         this.transport = new HttpTransportImpl(uri, connectTimeout, readTimeout, aceptAllCerts);
     }
 
-    private boolean withParameterGroupId(int groupID) {
-        return (groupID > -1);
+    private String getParameterGroupIdString(Short groupID) {
+        return groupID != null && groupID > -1 ? groupID.toString() : null;
     }
 
     @Override
-    public boolean callApartmentScene(String token, int groupID, String groupName, Scene sceneNumber, boolean force) {
+    public boolean callApartmentScene(String token, Short groupID, String groupName, Scene sceneNumber, Boolean force) {
         if (sceneNumber != null && isValidApartmentSceneNumber(sceneNumber.getSceneNumber())) {
-            String response = null;
-
-            if (groupName != null) {
-                if (withParameterGroupId(groupID)) {
-                    if (force) {
-                        response = transport.execute(JSONRequestConstants.JSON_APARTMENT_CALLSCENE
-                                + JSONRequestConstants.PARAMETER_TOKEN + token
-                                + JSONRequestConstants.INFIX_PARAMETER_GROUP_ID + groupID
-                                + JSONRequestConstants.INFIX_PARAMETER_GROUP_NAME + groupName
-                                + JSONRequestConstants.INFIX_PARAMETER_SCENE_NUMBER + sceneNumber.getSceneNumber()
-                                + JSONRequestConstants.INFIX_PARAMETER_FORCE_TRUE);
-                    } else {
-                        response = transport.execute(JSONRequestConstants.JSON_APARTMENT_CALLSCENE
-                                + JSONRequestConstants.PARAMETER_TOKEN + token
-                                + JSONRequestConstants.INFIX_PARAMETER_GROUP_ID + groupID
-                                + JSONRequestConstants.INFIX_PARAMETER_GROUP_NAME + groupName
-                                + JSONRequestConstants.INFIX_PARAMETER_SCENE_NUMBER + sceneNumber.getSceneNumber());
-                    }
-                } else {
-                    if (force) {
-                        response = transport.execute(JSONRequestConstants.JSON_APARTMENT_CALLSCENE
-                                + JSONRequestConstants.PARAMETER_TOKEN + token
-                                + JSONRequestConstants.INFIX_PARAMETER_GROUP_NAME + groupName
-                                + JSONRequestConstants.INFIX_PARAMETER_SCENE_NUMBER + sceneNumber.getSceneNumber()
-                                + JSONRequestConstants.INFIX_PARAMETER_FORCE_TRUE);
-                    } else {
-                        response = transport.execute(JSONRequestConstants.JSON_APARTMENT_CALLSCENE
-                                + JSONRequestConstants.PARAMETER_TOKEN + token
-                                + JSONRequestConstants.INFIX_PARAMETER_GROUP_NAME + groupName
-                                + JSONRequestConstants.INFIX_PARAMETER_SCENE_NUMBER + sceneNumber.getSceneNumber());
-                    }
-                }
-            } else if (withParameterGroupId(groupID)) {
-                if (force) {
-                    response = transport.execute(
-                            JSONRequestConstants.JSON_APARTMENT_CALLSCENE + JSONRequestConstants.PARAMETER_TOKEN + token
-                                    + JSONRequestConstants.INFIX_PARAMETER_GROUP_ID + groupID
-                                    + JSONRequestConstants.INFIX_PARAMETER_SCENE_NUMBER + sceneNumber.getSceneNumber()
-                                    + JSONRequestConstants.INFIX_PARAMETER_FORCE_TRUE);
-                } else {
-                    response = transport.execute(
-                            JSONRequestConstants.JSON_APARTMENT_CALLSCENE + JSONRequestConstants.PARAMETER_TOKEN + token
-                                    + JSONRequestConstants.INFIX_PARAMETER_GROUP_ID + groupID
-                                    + JSONRequestConstants.INFIX_PARAMETER_SCENE_NUMBER + sceneNumber.getSceneNumber());
-                }
-            } else {
-                if (force) {
-                    response = transport.execute(
-                            JSONRequestConstants.JSON_APARTMENT_CALLSCENE + JSONRequestConstants.PARAMETER_TOKEN + token
-                                    + JSONRequestConstants.INFIX_PARAMETER_SCENE_NUMBER + sceneNumber.getSceneNumber()
-                                    + JSONRequestConstants.INFIX_PARAMETER_FORCE_TRUE);
-                } else {
-                    response = transport.execute(
-                            JSONRequestConstants.JSON_APARTMENT_CALLSCENE + JSONRequestConstants.PARAMETER_TOKEN + token
-                                    + JSONRequestConstants.INFIX_PARAMETER_SCENE_NUMBER + sceneNumber.getSceneNumber());
-                }
-            }
-            if (JSONResponseHandler.checkResponse(JSONResponseHandler.toJsonObject(response))) {
-                return true;
+            try {
+                String response = transport.execute(
+                        SimpleRequestBuilder.buildNewRequest(Interfaces.JSON).addRequestClass(Classes.APARTMENT)
+                                .addFunction(Functions.CALL_SCENE).addParameter(ParameterTyps.TOKEN, token)
+                                .addParameter(ParameterTyps.GROUP_ID, getParameterGroupIdString(groupID))
+                                .addParameter(ParameterTyps.GROUP_NAME, groupName)
+                                .addParameter(ParameterTyps.SCENENUMBER, sceneNumber.toString())
+                                .addParameter(ParameterTyps.FORCE, force.toString()).buildRequestString());
+                return JSONResponseHandler.checkResponse(JSONResponseHandler.toJsonObject(response));
+            } catch (Exception e) {
+                logger.debug("An exception occurred", e);
             }
         }
         return false;
     }
 
     @Override
-    public boolean undoApartmentScene(String token, int groupID, String groupName, Scene sceneNumber) {
+    public boolean undoApartmentScene(String token, Short groupID, String groupName, Scene sceneNumber) {
         if (sceneNumber != null && isValidApartmentSceneNumber(sceneNumber.getSceneNumber())) {
-            String response = null;
-
-            if (groupName != null) {
-                if (withParameterGroupId(groupID)) {
-                    response = transport.execute(
-                            JSONRequestConstants.JSON_APARTMENT_UNDOSCENE + JSONRequestConstants.PARAMETER_TOKEN + token
-                                    + JSONRequestConstants.INFIX_PARAMETER_GROUP_ID + groupID
-                                    + JSONRequestConstants.INFIX_PARAMETER_GROUP_NAME + groupName
-                                    + JSONRequestConstants.INFIX_PARAMETER_SCENE_NUMBER + sceneNumber.getSceneNumber());
-                } else {
-                    response = transport.execute(
-                            JSONRequestConstants.JSON_APARTMENT_UNDOSCENE + JSONRequestConstants.PARAMETER_TOKEN + token
-                                    + JSONRequestConstants.INFIX_PARAMETER_GROUP_NAME + groupName
-                                    + JSONRequestConstants.INFIX_PARAMETER_SCENE_NUMBER + sceneNumber.getSceneNumber());
-                }
-            } else if (withParameterGroupId(groupID)) {
-                response = transport.execute(JSONRequestConstants.JSON_APARTMENT_UNDOSCENE
-                        + JSONRequestConstants.PARAMETER_TOKEN + token + JSONRequestConstants.INFIX_PARAMETER_GROUP_ID
-                        + groupID + JSONRequestConstants.INFIX_PARAMETER_SCENE_NUMBER + sceneNumber.getSceneNumber());
-            } else {
-                response = transport.execute(
-                        JSONRequestConstants.JSON_APARTMENT_UNDOSCENE + JSONRequestConstants.PARAMETER_TOKEN + token
-                                + JSONRequestConstants.INFIX_PARAMETER_SCENE_NUMBER + sceneNumber.getSceneNumber());
-            }
-            if (JSONResponseHandler.checkResponse(JSONResponseHandler.toJsonObject(response))) {
-                return true;
+            try {
+                String response = transport.execute(
+                        SimpleRequestBuilder.buildNewRequest(Interfaces.JSON).addRequestClass(Classes.APARTMENT)
+                                .addFunction(Functions.UNDO_SCENE).addParameter(ParameterTyps.TOKEN, token)
+                                .addParameter(ParameterTyps.GROUP_ID, getParameterGroupIdString(groupID))
+                                .addParameter(ParameterTyps.GROUP_NAME, groupName)
+                                .addParameter(ParameterTyps.SCENENUMBER, sceneNumber.getSceneNumber().toString())
+                                .buildRequestString());
+                return JSONResponseHandler.checkResponse(JSONResponseHandler.toJsonObject(response));
+            } catch (Exception e) {
+                logger.debug("An exception occurred", e);
             }
         }
         return false;
@@ -172,396 +119,116 @@ public class DsAPIImpl implements DsAPI {
 
     @Override
     public Apartment getApartmentStructure(String token) {
-        String response = null;
+        try {
+            String response = transport.execute(SimpleRequestBuilder.buildNewRequest(Interfaces.JSON)
+                    .addRequestClass(Classes.APARTMENT).addFunction(Functions.GET_STRUCTURE)
+                    .addParameter(ParameterTyps.TOKEN, token).buildRequestString());
 
-        response = transport.execute(
-                JSONRequestConstants.JSON_APARTMENT_GET_STRUCTURE + JSONRequestConstants.PARAMETER_TOKEN + token);
+            JsonObject responseObj = JSONResponseHandler.toJsonObject(response);
 
-        JsonObject responseObj = JSONResponseHandler.toJsonObject(response);
-
-        if (JSONResponseHandler.checkResponse(responseObj)) {
-            JsonObject apartObj = JSONResponseHandler.getResultJsonObject(responseObj);
-            if (apartObj != null && apartObj.get(JSONApiResponseKeysEnum.APARTMENT_GET_STRUCTURE.getKey()) != null) {
-                return new JSONApartmentImpl(
-                        (JsonObject) apartObj.get(JSONApiResponseKeysEnum.APARTMENT_GET_STRUCTURE.getKey()));
+            if (JSONResponseHandler.checkResponse(responseObj)) {
+                JsonObject apartObj = JSONResponseHandler.getResultJsonObject(responseObj);
+                if (checkBlankField(apartObj, JSONApiResponseKeysEnum.APARTMENT_GET_STRUCTURE.getKey())) {
+                    return new JSONApartmentImpl(
+                            (JsonObject) apartObj.get(JSONApiResponseKeysEnum.APARTMENT_GET_STRUCTURE.getKey()));
+                }
             }
+        } catch (Exception e) {
+            logger.debug("An exception occurred", e);
         }
         return null;
     }
 
     @Override
-    public List<Device> getApartmentDevices(String token, boolean unassigned) {
-        String response = null;
+    public List<Device> getApartmentDevices(String token, Boolean unassigned) {
+        try {
+            String response = transport
+                    .execute(SimpleRequestBuilder.buildNewRequest(Interfaces.JSON).addRequestClass(Classes.APARTMENT)
+                            .addFunction(Functions.GET_DEVICES).addParameter(ParameterTyps.TOKEN, token)
+                            .addParameter(ParameterTyps.UNASSIGNED, unassigned.toString()).buildRequestString());
+            JsonObject responseObj = JSONResponseHandler.toJsonObject(response);
+            if (JSONResponseHandler.checkResponse(responseObj)
+                    && responseObj.get(JSONApiResponseKeysEnum.APARTMENT_GET_DEVICES.getKey()) instanceof JsonArray) {
+                JsonArray array = (JsonArray) responseObj.get(JSONApiResponseKeysEnum.APARTMENT_GET_DEVICES.getKey());
 
-        if (unassigned) {
-            response = transport
-                    .execute(JSONRequestConstants.JSON_APARTMENT_GET_DEVICES + JSONRequestConstants.PARAMETER_TOKEN
-                            + token + JSONRequestConstants.INFIX_PARAMETER_UNASSIGNED_TRUE);
-        } else {
-            response = transport.execute(
-                    JSONRequestConstants.JSON_APARTMENT_GET_DEVICES + JSONRequestConstants.PARAMETER_TOKEN + token);
-        }
-
-        JsonObject responseObj = JSONResponseHandler.toJsonObject(response);
-        if (JSONResponseHandler.checkResponse(responseObj)
-                && responseObj.get(JSONApiResponseKeysEnum.APARTMENT_GET_DEVICES.getKey()) instanceof JsonArray) {
-            JsonArray array = (JsonArray) responseObj.get(JSONApiResponseKeysEnum.APARTMENT_GET_DEVICES.getKey());
-
-            List<Device> deviceList = new LinkedList<Device>();
-            for (int i = 0; i < array.size(); i++) {
-                if (array.get(i) instanceof JsonObject) {
-                    deviceList.add(new JSONDeviceImpl((JsonObject) array.get(i)));
+                List<Device> deviceList = new LinkedList<Device>();
+                for (int i = 0; i < array.size(); i++) {
+                    if (array.get(i) instanceof JsonObject) {
+                        deviceList.add(new JSONDeviceImpl((JsonObject) array.get(i)));
+                    }
                 }
+                return deviceList;
             }
-            return deviceList;
+        } catch (Exception e) {
+            logger.debug("An exception occurred", e);
         }
         return new LinkedList<Device>();
     }
 
-    private boolean withParameterZoneId(int id) {
-        return (id > -1);
+    private String getParameterZoneIdString(Integer id) {
+        return id > -1 ? null : id.toString();
     }
 
     @Override
-    public boolean callZoneScene(String token, int id, String name, int groupID, String groupName,
-            SceneEnum sceneNumber, boolean force) {
-        if (sceneNumber != null && (withParameterZoneId(id) || name != null)) {
-            String response = null;
-            if (withParameterZoneId(id)) {
-                if (name != null) {
-                    if (withParameterGroupId(groupID)) {
-                        if (groupName != null) {
-                            if (force) {
-                                response = transport.execute(JSONRequestConstants.JSON_ZONE_CALLSCENE
-                                        + JSONRequestConstants.PARAMETER_TOKEN + token
-                                        + JSONRequestConstants.INFIX_PARAMETER_ID + id
-                                        + JSONRequestConstants.INFIX_PARAMETER_NAME + name
-                                        + JSONRequestConstants.INFIX_PARAMETER_SCENE_NUMBER
-                                        + sceneNumber.getSceneNumber() + JSONRequestConstants.INFIX_PARAMETER_GROUP_ID
-                                        + groupID + JSONRequestConstants.INFIX_PARAMETER_GROUP_NAME + groupName
-                                        + JSONRequestConstants.INFIX_PARAMETER_FORCE_TRUE);
-                            } else {
-                                response = transport.execute(JSONRequestConstants.JSON_ZONE_CALLSCENE
-                                        + JSONRequestConstants.PARAMETER_TOKEN + token
-                                        + JSONRequestConstants.INFIX_PARAMETER_ID + id
-                                        + JSONRequestConstants.INFIX_PARAMETER_NAME + name
-                                        + JSONRequestConstants.INFIX_PARAMETER_SCENE_NUMBER
-                                        + sceneNumber.getSceneNumber() + JSONRequestConstants.INFIX_PARAMETER_GROUP_ID
-                                        + groupID + JSONRequestConstants.INFIX_PARAMETER_GROUP_NAME + groupName);
-                            }
-                        } else {
-                            if (force) {
-                                response = transport.execute(JSONRequestConstants.JSON_ZONE_CALLSCENE
-                                        + JSONRequestConstants.PARAMETER_TOKEN + token
-                                        + JSONRequestConstants.INFIX_PARAMETER_ID + id
-                                        + JSONRequestConstants.INFIX_PARAMETER_NAME + name
-                                        + JSONRequestConstants.INFIX_PARAMETER_SCENE_NUMBER
-                                        + sceneNumber.getSceneNumber() + JSONRequestConstants.INFIX_PARAMETER_GROUP_ID
-                                        + groupID + JSONRequestConstants.INFIX_PARAMETER_FORCE_TRUE);
-                            } else {
-                                response = transport.execute(
-                                        JSONRequestConstants.JSON_ZONE_CALLSCENE + JSONRequestConstants.PARAMETER_TOKEN
-                                                + token + JSONRequestConstants.INFIX_PARAMETER_ID + id
-                                                + JSONRequestConstants.INFIX_PARAMETER_NAME + name
-                                                + JSONRequestConstants.INFIX_PARAMETER_SCENE_NUMBER
-                                                + sceneNumber.getSceneNumber()
-                                                + JSONRequestConstants.INFIX_PARAMETER_GROUP_ID + groupID);
-                            }
-                        }
-                    } else if (groupName != null) {
-                        if (force) {
-                            response = transport.execute(JSONRequestConstants.JSON_ZONE_CALLSCENE
-                                    + JSONRequestConstants.PARAMETER_TOKEN + token
-                                    + JSONRequestConstants.INFIX_PARAMETER_ID + id
-                                    + JSONRequestConstants.INFIX_PARAMETER_NAME + name
-                                    + JSONRequestConstants.INFIX_PARAMETER_SCENE_NUMBER + sceneNumber.getSceneNumber()
-                                    + JSONRequestConstants.INFIX_PARAMETER_GROUP_NAME + groupName
-                                    + JSONRequestConstants.INFIX_PARAMETER_FORCE_TRUE);
-                        } else {
-                            response = transport.execute(JSONRequestConstants.JSON_ZONE_CALLSCENE
-                                    + JSONRequestConstants.PARAMETER_TOKEN + token
-                                    + JSONRequestConstants.INFIX_PARAMETER_ID + id
-                                    + JSONRequestConstants.INFIX_PARAMETER_NAME + name
-                                    + JSONRequestConstants.INFIX_PARAMETER_SCENE_NUMBER + sceneNumber.getSceneNumber()
-                                    + JSONRequestConstants.INFIX_PARAMETER_GROUP_NAME + groupName);
-                        }
-                    } else {
-                        if (force) {
-                            response = transport.execute(JSONRequestConstants.JSON_ZONE_CALLSCENE
-                                    + JSONRequestConstants.PARAMETER_TOKEN + token
-                                    + JSONRequestConstants.INFIX_PARAMETER_ID + id
-                                    + JSONRequestConstants.INFIX_PARAMETER_NAME + name
-                                    + JSONRequestConstants.INFIX_PARAMETER_SCENE_NUMBER + sceneNumber.getSceneNumber()
-                                    + JSONRequestConstants.INFIX_PARAMETER_FORCE_TRUE);
-                        } else {
-                            response = transport.execute(JSONRequestConstants.JSON_ZONE_CALLSCENE
-                                    + JSONRequestConstants.PARAMETER_TOKEN + token
-                                    + JSONRequestConstants.INFIX_PARAMETER_ID + id
-                                    + JSONRequestConstants.INFIX_PARAMETER_NAME + name
-                                    + JSONRequestConstants.INFIX_PARAMETER_SCENE_NUMBER + sceneNumber.getSceneNumber());
-                        }
-                    }
-                } else {
-                    if (withParameterGroupId(groupID)) {
-                        if (groupName != null) {
-                            if (force) {
-                                response = transport.execute(JSONRequestConstants.JSON_ZONE_CALLSCENE
-                                        + JSONRequestConstants.PARAMETER_TOKEN + token
-                                        + JSONRequestConstants.INFIX_PARAMETER_ID + id
-                                        + JSONRequestConstants.INFIX_PARAMETER_SCENE_NUMBER
-                                        + sceneNumber.getSceneNumber() + JSONRequestConstants.INFIX_PARAMETER_GROUP_ID
-                                        + groupID + JSONRequestConstants.INFIX_PARAMETER_GROUP_NAME + groupName
-                                        + JSONRequestConstants.INFIX_PARAMETER_FORCE_TRUE);
-                            } else {
-                                response = transport.execute(JSONRequestConstants.JSON_ZONE_CALLSCENE
-                                        + JSONRequestConstants.PARAMETER_TOKEN + token
-                                        + JSONRequestConstants.INFIX_PARAMETER_ID + id
-                                        + JSONRequestConstants.INFIX_PARAMETER_SCENE_NUMBER
-                                        + sceneNumber.getSceneNumber() + JSONRequestConstants.INFIX_PARAMETER_GROUP_ID
-                                        + groupID + JSONRequestConstants.INFIX_PARAMETER_GROUP_NAME + groupName);
-                            }
-                        } else {
-                            if (force) {
-                                response = transport.execute(JSONRequestConstants.JSON_ZONE_CALLSCENE
-                                        + JSONRequestConstants.PARAMETER_TOKEN + token
-                                        + JSONRequestConstants.INFIX_PARAMETER_ID + id
-                                        + JSONRequestConstants.INFIX_PARAMETER_SCENE_NUMBER
-                                        + sceneNumber.getSceneNumber() + JSONRequestConstants.INFIX_PARAMETER_GROUP_ID
-                                        + groupID + JSONRequestConstants.INFIX_PARAMETER_FORCE_TRUE);
-                            } else {
-                                response = transport.execute(
-                                        JSONRequestConstants.JSON_ZONE_CALLSCENE + JSONRequestConstants.PARAMETER_TOKEN
-                                                + token + JSONRequestConstants.INFIX_PARAMETER_ID + id
-                                                + JSONRequestConstants.INFIX_PARAMETER_SCENE_NUMBER
-                                                + sceneNumber.getSceneNumber()
-                                                + JSONRequestConstants.INFIX_PARAMETER_GROUP_ID + groupID);
-                            }
-                        }
-                    } else if (groupName != null) {
-                        if (force) {
-                            response = transport.execute(JSONRequestConstants.JSON_ZONE_CALLSCENE
-                                    + JSONRequestConstants.PARAMETER_TOKEN + token
-                                    + JSONRequestConstants.INFIX_PARAMETER_ID + id
-                                    + JSONRequestConstants.INFIX_PARAMETER_SCENE_NUMBER + sceneNumber.getSceneNumber()
-                                    + JSONRequestConstants.INFIX_PARAMETER_GROUP_NAME + groupName
-                                    + JSONRequestConstants.INFIX_PARAMETER_FORCE_TRUE);
-                        } else {
-                            response = transport.execute(JSONRequestConstants.JSON_ZONE_CALLSCENE
-                                    + JSONRequestConstants.PARAMETER_TOKEN + token
-                                    + JSONRequestConstants.INFIX_PARAMETER_ID + id
-                                    + JSONRequestConstants.INFIX_PARAMETER_SCENE_NUMBER + sceneNumber.getSceneNumber()
-                                    + JSONRequestConstants.INFIX_PARAMETER_GROUP_NAME + groupName);
-                        }
-                    } else {
-                        if (force) {
-                            response = transport.execute(JSONRequestConstants.JSON_ZONE_CALLSCENE
-                                    + JSONRequestConstants.PARAMETER_TOKEN + token
-                                    + JSONRequestConstants.INFIX_PARAMETER_ID + id
-                                    + JSONRequestConstants.INFIX_PARAMETER_SCENE_NUMBER + sceneNumber.getSceneNumber()
-                                    + JSONRequestConstants.INFIX_PARAMETER_FORCE_TRUE);
-                        } else {
-                            response = transport.execute(JSONRequestConstants.JSON_ZONE_CALLSCENE
-                                    + JSONRequestConstants.PARAMETER_TOKEN + token
-                                    + JSONRequestConstants.INFIX_PARAMETER_ID + id
-                                    + JSONRequestConstants.INFIX_PARAMETER_SCENE_NUMBER + sceneNumber.getSceneNumber());
-                        }
-                    }
-                }
-            } else if (name != null) {
-                if (withParameterGroupId(groupID)) {
-                    if (groupName != null) {
-                        if (force) {
-                            response = transport.execute(JSONRequestConstants.JSON_ZONE_CALLSCENE
-                                    + JSONRequestConstants.PARAMETER_TOKEN + token
-                                    + JSONRequestConstants.INFIX_PARAMETER_NAME + name
-                                    + JSONRequestConstants.INFIX_PARAMETER_SCENE_NUMBER + sceneNumber.getSceneNumber()
-                                    + JSONRequestConstants.INFIX_PARAMETER_GROUP_ID + groupID
-                                    + JSONRequestConstants.INFIX_PARAMETER_GROUP_NAME + groupName
-                                    + JSONRequestConstants.INFIX_PARAMETER_FORCE_TRUE);
-                        } else {
-                            response = transport.execute(JSONRequestConstants.JSON_ZONE_CALLSCENE
-                                    + JSONRequestConstants.PARAMETER_TOKEN + token
-                                    + JSONRequestConstants.INFIX_PARAMETER_NAME + name
-                                    + JSONRequestConstants.INFIX_PARAMETER_SCENE_NUMBER + sceneNumber.getSceneNumber()
-                                    + JSONRequestConstants.INFIX_PARAMETER_GROUP_ID + groupID
-                                    + JSONRequestConstants.INFIX_PARAMETER_GROUP_NAME + groupName);
-                        }
-                    } else {
-                        if (force) {
-                            response = transport.execute(JSONRequestConstants.JSON_ZONE_CALLSCENE
-                                    + JSONRequestConstants.PARAMETER_TOKEN + token
-                                    + JSONRequestConstants.INFIX_PARAMETER_NAME + name
-                                    + JSONRequestConstants.INFIX_PARAMETER_SCENE_NUMBER + sceneNumber.getSceneNumber()
-                                    + JSONRequestConstants.INFIX_PARAMETER_GROUP_ID + groupID
-                                    + JSONRequestConstants.INFIX_PARAMETER_FORCE_TRUE);
-                        } else {
-                            response = transport.execute(JSONRequestConstants.JSON_ZONE_CALLSCENE
-                                    + JSONRequestConstants.PARAMETER_TOKEN + token
-                                    + JSONRequestConstants.INFIX_PARAMETER_NAME + name
-                                    + JSONRequestConstants.INFIX_PARAMETER_SCENE_NUMBER + sceneNumber.getSceneNumber()
-                                    + JSONRequestConstants.INFIX_PARAMETER_GROUP_ID + groupID);
-                        }
-                    }
-                } else if (groupName != null) {
-                    if (force) {
-                        response = transport
-                                .execute(JSONRequestConstants.JSON_ZONE_CALLSCENE + JSONRequestConstants.PARAMETER_TOKEN
-                                        + token + JSONRequestConstants.INFIX_PARAMETER_NAME + name
-                                        + JSONRequestConstants.INFIX_PARAMETER_SCENE_NUMBER
-                                        + sceneNumber.getSceneNumber() + JSONRequestConstants.INFIX_PARAMETER_GROUP_NAME
-                                        + groupName + JSONRequestConstants.INFIX_PARAMETER_FORCE_TRUE);
-                    } else {
-                        response = transport.execute(JSONRequestConstants.JSON_ZONE_CALLSCENE
-                                + JSONRequestConstants.PARAMETER_TOKEN + token
-                                + JSONRequestConstants.INFIX_PARAMETER_NAME + name
-                                + JSONRequestConstants.INFIX_PARAMETER_SCENE_NUMBER + sceneNumber.getSceneNumber()
-                                + JSONRequestConstants.INFIX_PARAMETER_GROUP_NAME + groupName);
-                    }
-                } else {
-                    if (force) {
-                        response = transport.execute(JSONRequestConstants.JSON_ZONE_CALLSCENE
-                                + JSONRequestConstants.PARAMETER_TOKEN + token
-                                + JSONRequestConstants.INFIX_PARAMETER_NAME + name
-                                + JSONRequestConstants.INFIX_PARAMETER_SCENE_NUMBER + sceneNumber.getSceneNumber()
-                                + JSONRequestConstants.INFIX_PARAMETER_FORCE_TRUE);
-                    } else {
-                        response = transport.execute(JSONRequestConstants.JSON_ZONE_CALLSCENE
-                                + JSONRequestConstants.PARAMETER_TOKEN + token
-                                + JSONRequestConstants.INFIX_PARAMETER_NAME + name
-                                + JSONRequestConstants.INFIX_PARAMETER_SCENE_NUMBER + sceneNumber.getSceneNumber());
-                    }
-                }
-            }
-            if (JSONResponseHandler.checkResponse(JSONResponseHandler.toJsonObject(response))) {
-                return true;
+    public boolean callZoneScene(String token, Integer id, String name, Short groupID, String groupName,
+            SceneEnum sceneNumber, Boolean force) {
+        if (sceneNumber != null && (getParameterZoneIdString(id) != null || name != null)) {
+            try {
+                String response = transport
+                        .execute(SimpleRequestBuilder.buildNewRequest(Interfaces.JSON).addRequestClass(Classes.ZONE)
+                                .addFunction(Functions.CALL_SCENE).addParameter(ParameterTyps.TOKEN, token)
+                                .addParameter(ParameterTyps.ID, getParameterZoneIdString(id))
+                                .addParameter(ParameterTyps.NAME, name)
+                                .addParameter(ParameterTyps.GROUP_ID, getParameterGroupIdString(groupID))
+                                .addParameter(ParameterTyps.GROUP_NAME, groupName)
+                                .addParameter(ParameterTyps.SCENENUMBER, sceneNumber.getSceneNumber().toString())
+                                .addParameter(ParameterTyps.FORCE, force.toString()).buildRequestString());
+
+                return JSONResponseHandler.checkResponse(JSONResponseHandler.toJsonObject(response));
+            } catch (Exception e) {
+                logger.debug("An exception occurred", e);
             }
         }
         return false;
     }
 
     @Override
-    public boolean undoZoneScene(String token, int zoneID, String zoneName, int groupID, String groupName,
+    public boolean undoZoneScene(String token, Integer zoneID, String zoneName, Short groupID, String groupName,
             SceneEnum sceneNumber) {
-        if (sceneNumber != null && (withParameterZoneId(zoneID) || zoneName != null)) {
-            String response = null;
-            if (withParameterZoneId(zoneID)) {
-                if (zoneName != null) {
-                    if (withParameterGroupId(groupID)) {
-                        if (groupName != null) {
-                            response = transport.execute(JSONRequestConstants.JSON_ZONE_UNDOSCENE
-                                    + JSONRequestConstants.PARAMETER_TOKEN + token
-                                    + JSONRequestConstants.INFIX_PARAMETER_ID + zoneID
-                                    + JSONRequestConstants.INFIX_PARAMETER_NAME + zoneName
-                                    + JSONRequestConstants.INFIX_PARAMETER_SCENE_NUMBER + sceneNumber.getSceneNumber()
-                                    + JSONRequestConstants.INFIX_PARAMETER_GROUP_ID + groupID
-                                    + JSONRequestConstants.INFIX_PARAMETER_GROUP_NAME + groupName);
-                        } else {
-                            response = transport.execute(JSONRequestConstants.JSON_ZONE_UNDOSCENE
-                                    + JSONRequestConstants.PARAMETER_TOKEN + token
-                                    + JSONRequestConstants.INFIX_PARAMETER_ID + zoneID
-                                    + JSONRequestConstants.INFIX_PARAMETER_NAME + zoneName
-                                    + JSONRequestConstants.INFIX_PARAMETER_SCENE_NUMBER + sceneNumber.getSceneNumber()
-                                    + JSONRequestConstants.INFIX_PARAMETER_GROUP_ID + groupID);
-                        }
-                    } else if (groupName != null) {
-                        response = transport.execute(JSONRequestConstants.JSON_ZONE_UNDOSCENE
-                                + JSONRequestConstants.PARAMETER_TOKEN + token + JSONRequestConstants.INFIX_PARAMETER_ID
-                                + zoneID + JSONRequestConstants.INFIX_PARAMETER_NAME + zoneName
-                                + JSONRequestConstants.INFIX_PARAMETER_SCENE_NUMBER + sceneNumber.getSceneNumber()
-                                + JSONRequestConstants.INFIX_PARAMETER_GROUP_NAME + groupName);
-                    } else {
-                        response = transport.execute(JSONRequestConstants.JSON_ZONE_UNDOSCENE
-                                + JSONRequestConstants.PARAMETER_TOKEN + token + JSONRequestConstants.INFIX_PARAMETER_ID
-                                + zoneID + JSONRequestConstants.INFIX_PARAMETER_NAME + zoneName
-                                + JSONRequestConstants.INFIX_PARAMETER_SCENE_NUMBER + sceneNumber.getSceneNumber());
-                    }
-                } else {
-                    if (withParameterGroupId(groupID)) {
-                        if (groupName != null) {
-                            response = transport.execute(JSONRequestConstants.JSON_ZONE_UNDOSCENE
-                                    + JSONRequestConstants.PARAMETER_TOKEN + token
-                                    + JSONRequestConstants.INFIX_PARAMETER_ID + zoneID
-                                    + JSONRequestConstants.INFIX_PARAMETER_SCENE_NUMBER + sceneNumber.getSceneNumber()
-                                    + JSONRequestConstants.INFIX_PARAMETER_GROUP_ID + groupID
-                                    + JSONRequestConstants.INFIX_PARAMETER_GROUP_NAME + groupName);
-                        } else {
-                            response = transport.execute(JSONRequestConstants.JSON_ZONE_UNDOSCENE
-                                    + JSONRequestConstants.PARAMETER_TOKEN + token
-                                    + JSONRequestConstants.INFIX_PARAMETER_ID + zoneID
-                                    + JSONRequestConstants.INFIX_PARAMETER_SCENE_NUMBER + sceneNumber.getSceneNumber()
-                                    + JSONRequestConstants.INFIX_PARAMETER_GROUP_ID + groupID);
-                        }
-                    } else if (groupName != null) {
-                        response = transport.execute(JSONRequestConstants.JSON_ZONE_UNDOSCENE
-                                + JSONRequestConstants.PARAMETER_TOKEN + token + JSONRequestConstants.INFIX_PARAMETER_ID
-                                + zoneID + JSONRequestConstants.INFIX_PARAMETER_SCENE_NUMBER
-                                + sceneNumber.getSceneNumber() + JSONRequestConstants.INFIX_PARAMETER_GROUP_NAME
-                                + groupName);
-                    } else {
-                        response = transport.execute(JSONRequestConstants.JSON_ZONE_UNDOSCENE
-                                + JSONRequestConstants.PARAMETER_TOKEN + token + JSONRequestConstants.INFIX_PARAMETER_ID
-                                + zoneID + JSONRequestConstants.INFIX_PARAMETER_SCENE_NUMBER
-                                + sceneNumber.getSceneNumber());
-                    }
-                }
-            } else if (zoneName != null) {
-                if (withParameterGroupId(groupID)) {
-                    if (groupName != null) {
-                        response = transport
-                                .execute(JSONRequestConstants.JSON_ZONE_UNDOSCENE + JSONRequestConstants.PARAMETER_TOKEN
-                                        + token + JSONRequestConstants.INFIX_PARAMETER_NAME + zoneName
-                                        + JSONRequestConstants.INFIX_PARAMETER_SCENE_NUMBER
-                                        + sceneNumber.getSceneNumber() + JSONRequestConstants.INFIX_PARAMETER_GROUP_ID
-                                        + groupID + JSONRequestConstants.INFIX_PARAMETER_GROUP_NAME + groupName);
-                    } else {
-                        response = transport.execute(JSONRequestConstants.JSON_ZONE_UNDOSCENE
-                                + JSONRequestConstants.PARAMETER_TOKEN + token
-                                + JSONRequestConstants.INFIX_PARAMETER_NAME + zoneName
-                                + JSONRequestConstants.INFIX_PARAMETER_SCENE_NUMBER + sceneNumber.getSceneNumber()
-                                + JSONRequestConstants.INFIX_PARAMETER_GROUP_ID + groupID);
-                    }
-                } else if (groupName != null) {
-                    response = transport
-                            .execute(JSONRequestConstants.JSON_ZONE_UNDOSCENE + JSONRequestConstants.PARAMETER_TOKEN
-                                    + token + JSONRequestConstants.INFIX_PARAMETER_NAME + zoneName
-                                    + JSONRequestConstants.INFIX_PARAMETER_SCENE_NUMBER + sceneNumber.getSceneNumber()
-                                    + JSONRequestConstants.INFIX_PARAMETER_GROUP_NAME + groupName);
-                } else {
-                    response = transport
-                            .execute(JSONRequestConstants.JSON_ZONE_UNDOSCENE + JSONRequestConstants.PARAMETER_TOKEN
-                                    + token + JSONRequestConstants.INFIX_PARAMETER_NAME + zoneName
-                                    + JSONRequestConstants.INFIX_PARAMETER_SCENE_NUMBER + sceneNumber.getSceneNumber());
-                }
-            }
-            if (JSONResponseHandler.checkResponse(JSONResponseHandler.toJsonObject(response))) {
-                return true;
+        if (sceneNumber != null && (getParameterZoneIdString(zoneID) != null || zoneName != null)) {
+            try {
+                String response = transport
+                        .execute(SimpleRequestBuilder.buildNewRequest(Interfaces.JSON).addRequestClass(Classes.ZONE)
+                                .addFunction(Functions.CALL_SCENE).addParameter(ParameterTyps.TOKEN, token)
+                                .addParameter(ParameterTyps.ID, getParameterZoneIdString(zoneID))
+                                .addParameter(ParameterTyps.NAME, zoneName)
+                                .addParameter(ParameterTyps.GROUP_ID, getParameterGroupIdString(groupID))
+                                .addParameter(ParameterTyps.GROUP_NAME, groupName)
+                                .addParameter(ParameterTyps.SCENENUMBER, sceneNumber.getSceneNumber().toString())
+                                .buildRequestString());
+                return JSONResponseHandler.checkResponse(JSONResponseHandler.toJsonObject(response));
+            } catch (Exception e) {
+                logger.debug("An exception occurred", e);
             }
         }
         return false;
+    }
+
+    private String getDsidString(DSID dsid) {
+        return dsid != null ? dsid.getValue() : null;
     }
 
     @Override
     public boolean turnDeviceOn(String token, DSID dsid, String name) {
-        if (((dsid != null && dsid.getValue() != null) || name != null)) {
-            String response = null;
-            if (dsid != null && dsid.getValue() != null) {
-                if (name != null) {
-                    response = transport.execute(JSONRequestConstants.JSON_DEVICE_TURN_ON
-                            + JSONRequestConstants.PARAMETER_TOKEN + token + JSONRequestConstants.INFIX_PARAMETER_DSID
-                            + dsid.getValue() + JSONRequestConstants.INFIX_PARAMETER_NAME + name);
-                } else {
-                    response = transport
-                            .execute(JSONRequestConstants.JSON_DEVICE_TURN_ON + JSONRequestConstants.PARAMETER_TOKEN
-                                    + token + JSONRequestConstants.INFIX_PARAMETER_DSID + dsid.getValue());
-                }
-            } else if (name != null) {
-                response = transport
-                        .execute(JSONRequestConstants.JSON_DEVICE_TURN_ON + JSONRequestConstants.PARAMETER_TOKEN + token
-                                + JSONRequestConstants.INFIX_PARAMETER_NAME + name);
-            }
-
-            if (JSONResponseHandler.checkResponse(JSONResponseHandler.toJsonObject(response))) {
-                return true;
+        if (((getDsidString(dsid) != null) || name != null)) {
+            try {
+                String response = transport.execute(SimpleRequestBuilder.buildNewRequest(Interfaces.JSON)
+                        .addRequestClass(Classes.DEVICE).addFunction(Functions.TURN_ON)
+                        .addParameter(ParameterTyps.TOKEN, token).addParameter(ParameterTyps.DSID, getDsidString(dsid))
+                        .addParameter(ParameterTyps.NAME, name).buildRequestString());
+                return JSONResponseHandler.checkResponse(JSONResponseHandler.toJsonObject(response));
+            } catch (Exception e) {
+                logger.debug("An exception occurred", e);
             }
         }
         return false;
@@ -569,197 +236,132 @@ public class DsAPIImpl implements DsAPI {
 
     @Override
     public boolean turnDeviceOff(String token, DSID dsid, String name) {
-        if (((dsid != null && dsid.getValue() != null) || name != null)) {
-            String response = null;
-            if (dsid != null && dsid.getValue() != null) {
-                if (name != null) {
-                    response = transport.execute(JSONRequestConstants.JSON_DEVICE_TURN_OFF
-                            + JSONRequestConstants.PARAMETER_TOKEN + token + JSONRequestConstants.INFIX_PARAMETER_DSID
-                            + dsid.getValue() + JSONRequestConstants.INFIX_PARAMETER_NAME + name);
-                } else {
-                    response = transport
-                            .execute(JSONRequestConstants.JSON_DEVICE_TURN_OFF + JSONRequestConstants.PARAMETER_TOKEN
-                                    + token + JSONRequestConstants.INFIX_PARAMETER_DSID + dsid.getValue());
-                }
-            } else if (name != null) {
-                response = transport
-                        .execute(JSONRequestConstants.JSON_DEVICE_TURN_OFF + JSONRequestConstants.PARAMETER_TOKEN
-                                + token + JSONRequestConstants.INFIX_PARAMETER_NAME + name);
+        if (((getDsidString(dsid) != null) || name != null)) {
+            try {
+                String response = transport.execute(SimpleRequestBuilder.buildNewRequest(Interfaces.JSON)
+                        .addRequestClass(Classes.DEVICE).addFunction(Functions.TURN_OFF)
+                        .addParameter(ParameterTyps.TOKEN, token).addParameter(ParameterTyps.DSID, getDsidString(dsid))
+                        .addParameter(ParameterTyps.NAME, name).buildRequestString());
+
+                return JSONResponseHandler.checkResponse(JSONResponseHandler.toJsonObject(response));
+            } catch (Exception e) {
+                logger.debug("An exception occurred", e);
             }
 
-            if (JSONResponseHandler.checkResponse(JSONResponseHandler.toJsonObject(response))) {
-                return true;
-            }
         }
         return false;
     }
 
     @Override
     public DeviceConfig getDeviceConfig(String token, DSID dsid, String name, DeviceParameterClassEnum class_,
-            int index) {
-        if (((dsid != null && dsid.getValue() != null) || name != null) && class_ != null
-                && withParameterIndex(index)) {
-            String response = null;
-            if (dsid != null && dsid.getValue() != null) {
-                if (name != null) {
-                    response = transport.execute(
-                            JSONRequestConstants.JSON_DEVICE_GET_CONFIG + JSONRequestConstants.PARAMETER_TOKEN + token
-                                    + JSONRequestConstants.INFIX_PARAMETER_DSID + dsid.getValue()
-                                    + JSONRequestConstants.INFIX_PARAMETER_NAME + name
-                                    + JSONRequestConstants.INFIX_PARAMETER_CLASS + class_.getClassIndex()
-                                    + JSONRequestConstants.INFIX_PARAMETER_INDEX + index,
-                            transport.getSensordataConnectionTimeout(), transport.getSensordataReadTimeout());
-                } else {
-                    response = transport.execute(
-                            JSONRequestConstants.JSON_DEVICE_GET_CONFIG + JSONRequestConstants.PARAMETER_TOKEN + token
-                                    + JSONRequestConstants.INFIX_PARAMETER_DSID + dsid.getValue()
-                                    + JSONRequestConstants.INFIX_PARAMETER_CLASS + class_.getClassIndex()
-                                    + JSONRequestConstants.INFIX_PARAMETER_INDEX + index,
-                            transport.getSensordataConnectionTimeout(), transport.getSensordataReadTimeout());
-                }
-            } else if (name != null) {
-                response = transport.execute(
-                        JSONRequestConstants.JSON_DEVICE_GET_CONFIG + JSONRequestConstants.PARAMETER_TOKEN + token
-                                + JSONRequestConstants.INFIX_PARAMETER_NAME + name
-                                + JSONRequestConstants.INFIX_PARAMETER_CLASS + class_.getClassIndex()
-                                + JSONRequestConstants.INFIX_PARAMETER_INDEX + index,
-                        transport.getSensordataConnectionTimeout(), transport.getSensordataReadTimeout());
-            }
-            JsonObject responseObj = JSONResponseHandler.toJsonObject(response);
+            Integer index) {
+        if (((getDsidString(dsid) != null) || name != null) && class_ != null
+                && getParameterIndexString(index) != null) {
+            try {
+                String response = transport.execute(SimpleRequestBuilder.buildNewRequest(Interfaces.JSON)
+                        .addRequestClass(Classes.DEVICE).addFunction(Functions.GET_CONFIG)
+                        .addParameter(ParameterTyps.TOKEN, token).addParameter(ParameterTyps.DSID, getDsidString(dsid))
+                        .addParameter(ParameterTyps.NAME, name)
+                        .addParameter(ParameterTyps.CLASS, class_.getClassIndex().toString())
+                        .addParameter(ParameterTyps.INDEX, getParameterIndexString(index)).buildRequestString());
 
-            if (JSONResponseHandler.checkResponse(responseObj)) {
-                JsonObject configObject = JSONResponseHandler.getResultJsonObject(responseObj);
+                JsonObject responseObj = JSONResponseHandler.toJsonObject(response);
 
-                if (configObject != null) {
-                    return new JSONDeviceConfigImpl(configObject);
+                if (JSONResponseHandler.checkResponse(responseObj)) {
+                    JsonObject configObject = JSONResponseHandler.getResultJsonObject(responseObj);
+
+                    if (configObject != null) {
+                        return new JSONDeviceConfigImpl(configObject);
+                    }
                 }
+            } catch (Exception e) {
+                logger.debug("An exception occurred", e);
             }
         }
         return null;
     }
 
-    private boolean withParameterIndex(int index) {
-        return (index > -1);
+    private String getParameterIndexString(Integer index) {
+        return index > -1 ? null : index.toString();
     }
 
     @Override
-    public int getDeviceOutputValue(String token, DSID dsid, String name, int offset) {
-        if (((dsid != null && dsid.getValue() != null) || name != null) && withParameterOffset(offset)) {
-            String response = null;
-            if (dsid != null && dsid.getValue() != null) {
-                if (name != null) {
-                    response = transport.execute(
-                            JSONRequestConstants.JSON_DEVICE_GET_OUTPUT_VALUE + JSONRequestConstants.PARAMETER_TOKEN
-                                    + token + JSONRequestConstants.INFIX_PARAMETER_DSID + dsid.getValue()
-                                    + JSONRequestConstants.INFIX_PARAMETER_NAME + name
-                                    + JSONRequestConstants.INFIX_PARAMETER_OFFSET + offset,
-                            transport.getSensordataConnectionTimeout(), transport.getSensordataReadTimeout());
-                } else {
-                    response = transport.execute(
-                            JSONRequestConstants.JSON_DEVICE_GET_OUTPUT_VALUE + JSONRequestConstants.PARAMETER_TOKEN
-                                    + token + JSONRequestConstants.INFIX_PARAMETER_DSID + dsid.getValue()
-                                    + JSONRequestConstants.INFIX_PARAMETER_OFFSET + offset,
-                            transport.getSensordataConnectionTimeout(), transport.getSensordataReadTimeout());
+    public int getDeviceOutputValue(String token, DSID dsid, String name, Short offset) {
+        if (((getDsidString(dsid) != null) || name != null) && getParameterOffsetString(offset) != null) {
+            try {
+                String response = transport.execute(SimpleRequestBuilder.buildNewRequest(Interfaces.JSON)
+                        .addRequestClass(Classes.DEVICE).addFunction(Functions.GET_OUTPUT_VALUE)
+                        .addParameter(ParameterTyps.TOKEN, token).addParameter(ParameterTyps.DSID, getDsidString(dsid))
+                        .addParameter(ParameterTyps.NAME, name)
+                        .addParameter(ParameterTyps.OFFSET, getParameterOffsetString(offset)).buildRequestString());
+
+                JsonObject responseObj = JSONResponseHandler.toJsonObject(response);
+
+                if (JSONResponseHandler.checkResponse(responseObj)) {
+                    JsonObject valueObject = JSONResponseHandler.getResultJsonObject(responseObj);
+
+                    if (valueObject != null
+                            && valueObject.get(JSONApiResponseKeysEnum.DEVICE_GET_OUTPUT_VALUE.getKey()) != null) {
+                        return valueObject.get(JSONApiResponseKeysEnum.DEVICE_GET_OUTPUT_VALUE.getKey()).getAsInt();
+                    }
                 }
-            } else if (name != null) {
-                response = transport.execute(
-                        JSONRequestConstants.JSON_DEVICE_GET_OUTPUT_VALUE + JSONRequestConstants.PARAMETER_TOKEN + token
-                                + JSONRequestConstants.INFIX_PARAMETER_NAME + name
-                                + JSONRequestConstants.INFIX_PARAMETER_OFFSET + offset,
-                        transport.getSensordataConnectionTimeout(), transport.getSensordataReadTimeout());
-            }
-
-            JsonObject responseObj = JSONResponseHandler.toJsonObject(response);
-
-            if (JSONResponseHandler.checkResponse(responseObj)) {
-                JsonObject valueObject = JSONResponseHandler.getResultJsonObject(responseObj);
-
-                if (valueObject != null
-                        && valueObject.get(JSONApiResponseKeysEnum.DEVICE_GET_OUTPUT_VALUE.getKey()) != null) {
-                    int value = -1;
-                    value = valueObject.get(JSONApiResponseKeysEnum.DEVICE_GET_OUTPUT_VALUE.getKey()).getAsInt();
-                    return value;
-                }
+            } catch (Exception e) {
+                logger.debug("An exception occurred", e);
             }
         }
         return -1;
     }
 
-    private boolean withParameterOffset(int offset) {
-        return (offset > -1);
+    private String getParameterOffsetString(Short offset) {
+        return offset != null && offset > -1 ? offset.toString() : null;
     }
 
-    private boolean withParameterValue(int value) {
-        return (value > -1);
+    private String getParameterValueString(Integer value) {
+        return value != null && value > -1 ? value.toString() : null;
     }
 
     @Override
-    public boolean setDeviceOutputValue(String token, DSID dsid, String name, int offset, int value) {
-        if (((dsid != null && dsid.getValue() != null) || name != null) && offset > -1 && withParameterValue(value)) {
-            String response = null;
-
-            if (dsid != null && dsid.getValue() != null) {
-                if (name != null) {
-                    response = transport.execute(JSONRequestConstants.JSON_DEVICE_SET_OUTPUT_VALUE
-                            + JSONRequestConstants.PARAMETER_TOKEN + token + JSONRequestConstants.INFIX_PARAMETER_DSID
-                            + dsid.getValue() + JSONRequestConstants.INFIX_PARAMETER_NAME + name
-                            + JSONRequestConstants.INFIX_PARAMETER_OFFSET + offset
-                            + JSONRequestConstants.INFIX_PARAMETER_VALUE + value);
-                } else {
-                    response = transport.execute(JSONRequestConstants.JSON_DEVICE_SET_OUTPUT_VALUE
-                            + JSONRequestConstants.PARAMETER_TOKEN + token + JSONRequestConstants.INFIX_PARAMETER_DSID
-                            + dsid.getValue() + JSONRequestConstants.INFIX_PARAMETER_OFFSET + offset
-                            + JSONRequestConstants.INFIX_PARAMETER_VALUE + value);
-                }
-            } else if (name != null) {
-                response = transport.execute(JSONRequestConstants.JSON_DEVICE_SET_OUTPUT_VALUE
-                        + JSONRequestConstants.PARAMETER_TOKEN + token + JSONRequestConstants.INFIX_PARAMETER_NAME
-                        + name + JSONRequestConstants.INFIX_PARAMETER_OFFSET + offset
-                        + JSONRequestConstants.INFIX_PARAMETER_VALUE + value);
-            }
-            if (JSONResponseHandler.checkResponse(JSONResponseHandler.toJsonObject(response))) {
-                return true;
+    public boolean setDeviceOutputValue(String token, DSID dsid, String name, Short offset, Integer value) {
+        if (((getDsidString(dsid) != null) || name != null) && getParameterOffsetString(offset) != null
+                && getParameterValueString(value) != null) {
+            try {
+                String response = transport.execute(SimpleRequestBuilder.buildNewRequest(Interfaces.JSON)
+                        .addRequestClass(Classes.DEVICE).addFunction(Functions.SET_OUTPUT_VALUE)
+                        .addParameter(ParameterTyps.TOKEN, token).addParameter(ParameterTyps.DSID, getDsidString(dsid))
+                        .addParameter(ParameterTyps.NAME, name)
+                        .addParameter(ParameterTyps.OFFSET, getParameterOffsetString(offset))
+                        .addParameter(ParameterTyps.VALUE, getParameterValueString(value)).buildRequestString());
+                return JSONResponseHandler.checkResponse(JSONResponseHandler.toJsonObject(response));
+            } catch (Exception e) {
+                logger.debug("An exception occurred", e);
             }
         }
         return false;
     }
 
+    private String getSceneIdSting(Short sceneID) {
+        return sceneID != null && sceneID > -1 ? sceneID.toString() : null;
+    }
+
     @Override
-    public DeviceSceneSpec getDeviceSceneMode(String token, DSID dsid, String name, short sceneID) {
-        if (((dsid != null && dsid.getValue() != null) || name != null) && sceneID > -1) {
-            String response = null;
+    public DeviceSceneSpec getDeviceSceneMode(String token, DSID dsid, String name, Short sceneID) {
+        if (((getDsidString(dsid) != null) || name != null) && getSceneIdSting(sceneID) != null) {
+            try {
+                String response = transport.execute(SimpleRequestBuilder.buildNewRequest(Interfaces.JSON)
+                        .addFunction(Functions.GET_SCENE_MODE).addParameter(ParameterTyps.TOKEN, token)
+                        .addParameter(ParameterTyps.DSID, getDsidString(dsid)).addParameter(ParameterTyps.NAME, name)
+                        .addParameter(ParameterTyps.SCENE_ID, getSceneIdSting(sceneID)).buildRequestString());
+                JsonObject responseObj = JSONResponseHandler.toJsonObject(response);
 
-            if (dsid != null && dsid.getValue() != null) {
-                if (name != null) {
-                    response = transport.execute(
-                            JSONRequestConstants.JSON_DEVICE_GET_SCENE_MODE + JSONRequestConstants.PARAMETER_TOKEN
-                                    + token + JSONRequestConstants.INFIX_PARAMETER_DSID + dsid.getValue()
-                                    + JSONRequestConstants.INFIX_PARAMETER_NAME + name
-                                    + JSONRequestConstants.INFIX_PARAMETER_SCENE_ID + sceneID,
-                            transport.getSensordataConnectionTimeout(), transport.getSensordataReadTimeout());
-                } else {
-                    response = transport.execute(
-                            JSONRequestConstants.JSON_DEVICE_GET_SCENE_MODE + JSONRequestConstants.PARAMETER_TOKEN
-                                    + token + JSONRequestConstants.INFIX_PARAMETER_DSID + dsid.getValue()
-                                    + JSONRequestConstants.INFIX_PARAMETER_SCENE_ID + sceneID,
-                            transport.getSensordataConnectionTimeout(), transport.getSensordataReadTimeout());
+                if (JSONResponseHandler.checkResponse(responseObj)) {
+                    JsonObject sceneSpec = JSONResponseHandler.getResultJsonObject(responseObj);
+
+                    if (sceneSpec != null) {
+                        return new JSONDeviceSceneSpecImpl(sceneSpec);
+                    }
                 }
-            } else if (name != null) {
-                response = transport.execute(
-                        JSONRequestConstants.JSON_DEVICE_GET_SCENE_MODE + JSONRequestConstants.PARAMETER_TOKEN + token
-                                + JSONRequestConstants.INFIX_PARAMETER_NAME + name
-                                + JSONRequestConstants.INFIX_PARAMETER_SCENE_ID + sceneID,
-                        transport.getSensordataConnectionTimeout(), transport.getSensordataReadTimeout());
-            }
-
-            JsonObject responseObj = JSONResponseHandler.toJsonObject(response);
-
-            if (JSONResponseHandler.checkResponse(responseObj)) {
-                JsonObject sceneSpec = JSONResponseHandler.getResultJsonObject(responseObj);
-
-                if (sceneSpec != null) {
-                    return new JSONDeviceSceneSpecImpl(sceneSpec);
-                }
+            } catch (Exception e) {
+                logger.debug("An exception occurred", e);
             }
         }
         return null;
@@ -784,98 +386,45 @@ public class DsAPIImpl implements DsAPI {
 
     @Override
     public short getDeviceSensorValue(String token, DSID dsid, String name, SensorIndexEnum sensorIndex) {
-        if (((dsid != null && dsid.getValue() != null) || name != null) && sensorIndex != null) {
-            String response = null;
+        if (((getDsidString(dsid) != null) || name != null) && sensorIndex != null) {
+            try {
+                String response = transport.execute(SimpleRequestBuilder.buildNewRequest(Interfaces.JSON)
+                        .addRequestClass(Classes.DEVICE).addFunction(Functions.GET_SENSOR_VALUE)
+                        .addParameter(ParameterTyps.TOKEN, token).addParameter(ParameterTyps.DSID, getDsidString(dsid))
+                        .addParameter(ParameterTyps.NAME, name)
+                        .addParameter(ParameterTyps.SENSOR_INDEX, sensorIndex.getIndex().toString())
+                        .buildRequestString());
+                JsonObject responseObj = JSONResponseHandler.toJsonObject(response);
 
-            if (dsid != null && dsid.getValue() != null) {
-                if (name != null) {
-                    response = transport.execute(
-                            JSONRequestConstants.JSON_DEVICE_GET_SENSOR_VALUE + JSONRequestConstants.PARAMETER_TOKEN
-                                    + token + JSONRequestConstants.INFIX_PARAMETER_DSID + dsid.getValue()
-                                    + JSONRequestConstants.INFIX_PARAMETER_NAME + name
-                                    + JSONRequestConstants.INFIX_PARAMETER_SENSOR_INDEX + sensorIndex.getIndex(),
-                            transport.getSensordataConnectionTimeout(), transport.getSensordataReadTimeout());
-                } else {
-                    response = transport.execute(
-                            JSONRequestConstants.JSON_DEVICE_GET_SENSOR_VALUE + JSONRequestConstants.PARAMETER_TOKEN
-                                    + token + JSONRequestConstants.INFIX_PARAMETER_DSID + dsid.getValue()
-                                    + JSONRequestConstants.INFIX_PARAMETER_SENSOR_INDEX + sensorIndex.getIndex(),
-                            transport.getSensordataConnectionTimeout(), transport.getSensordataReadTimeout());
+                if (JSONResponseHandler.checkResponse(responseObj)) {
+                    JsonObject valueObject = JSONResponseHandler.getResultJsonObject(responseObj);
+
+                    if (valueObject != null && valueObject
+                            .get(JSONApiResponseKeysEnum.DEVICE_GET_SENSOR_VALUE_SENSOR_VALUE.getKey()) != null) {
+                        return valueObject.get(JSONApiResponseKeysEnum.DEVICE_GET_SENSOR_VALUE_SENSOR_VALUE.getKey())
+                                .getAsShort();
+                    }
                 }
-            } else if (name != null) {
-                response = transport.execute(
-                        JSONRequestConstants.JSON_DEVICE_GET_SENSOR_VALUE + JSONRequestConstants.PARAMETER_TOKEN + token
-                                + JSONRequestConstants.INFIX_PARAMETER_NAME + name
-                                + JSONRequestConstants.INFIX_PARAMETER_SENSOR_INDEX + sensorIndex.getIndex(),
-                        transport.getSensordataConnectionTimeout(), transport.getSensordataReadTimeout());
-            }
-
-            JsonObject responseObj = JSONResponseHandler.toJsonObject(response);
-
-            if (JSONResponseHandler.checkResponse(responseObj)) {
-                JsonObject valueObject = JSONResponseHandler.getResultJsonObject(responseObj);
-
-                if (valueObject != null && valueObject
-                        .get(JSONApiResponseKeysEnum.DEVICE_GET_SENSOR_VALUE_SENSOR_VALUE.getKey()) != null) {
-                    short value = -1;
-                    value = valueObject.get(JSONApiResponseKeysEnum.DEVICE_GET_SENSOR_VALUE_SENSOR_VALUE.getKey())
-                            .getAsShort();
-                    return value;
-                }
+            } catch (Exception e) {
+                logger.debug("An exception occurred", e);
             }
         }
         return -1;
     }
 
     @Override
-    public boolean callDeviceScene(String token, DSID dsid, String name, Scene sceneNumber, boolean force) {
-        if (((dsid != null && dsid.getValue() != null) || name != null) && sceneNumber != null) {
-            String response = null;
-
-            if (dsid != null && dsid.getValue() != null) {
-                if (name != null) {
-                    if (force) {
-                        response = transport.execute(JSONRequestConstants.JSON_DEVICE_CALLSCENE
-                                + JSONRequestConstants.PARAMETER_TOKEN + token
-                                + JSONRequestConstants.INFIX_PARAMETER_DSID + dsid.getValue()
-                                + JSONRequestConstants.INFIX_PARAMETER_NAME + name
-                                + JSONRequestConstants.INFIX_PARAMETER_SCENE_NUMBER + sceneNumber.getSceneNumber()
-                                + JSONRequestConstants.INFIX_PARAMETER_FORCE_TRUE);
-                    } else {
-                        response = transport.execute(JSONRequestConstants.JSON_DEVICE_CALLSCENE
-                                + JSONRequestConstants.PARAMETER_TOKEN + token
-                                + JSONRequestConstants.INFIX_PARAMETER_DSID + dsid.getValue()
-                                + JSONRequestConstants.INFIX_PARAMETER_NAME + name
-                                + JSONRequestConstants.INFIX_PARAMETER_SCENE_NUMBER + sceneNumber.getSceneNumber());
-                    }
-                } else {
-                    if (force) {
-                        response = transport.execute(JSONRequestConstants.JSON_DEVICE_CALLSCENE
-                                + JSONRequestConstants.PARAMETER_TOKEN + token
-                                + JSONRequestConstants.INFIX_PARAMETER_DSID + dsid.getValue()
-                                + JSONRequestConstants.INFIX_PARAMETER_SCENE_NUMBER + sceneNumber.getSceneNumber()
-                                + JSONRequestConstants.INFIX_PARAMETER_FORCE_TRUE);
-                    } else {
-                        response = transport.execute(JSONRequestConstants.JSON_DEVICE_CALLSCENE
-                                + JSONRequestConstants.PARAMETER_TOKEN + token
-                                + JSONRequestConstants.INFIX_PARAMETER_DSID + dsid.getValue()
-                                + JSONRequestConstants.INFIX_PARAMETER_SCENE_NUMBER + sceneNumber.getSceneNumber());
-                    }
-                }
-            } else if (name != null) {
-                if (force) {
-                    response = transport.execute(JSONRequestConstants.JSON_DEVICE_CALLSCENE
-                            + JSONRequestConstants.PARAMETER_TOKEN + token + JSONRequestConstants.INFIX_PARAMETER_NAME
-                            + name + JSONRequestConstants.INFIX_PARAMETER_SCENE_NUMBER + sceneNumber.getSceneNumber()
-                            + JSONRequestConstants.INFIX_PARAMETER_FORCE_TRUE);
-                } else {
-                    response = transport.execute(JSONRequestConstants.JSON_DEVICE_CALLSCENE
-                            + JSONRequestConstants.PARAMETER_TOKEN + token + JSONRequestConstants.INFIX_PARAMETER_NAME
-                            + name + JSONRequestConstants.INFIX_PARAMETER_SCENE_NUMBER + sceneNumber.getSceneNumber());
-                }
-            }
-            if (JSONResponseHandler.checkResponse(JSONResponseHandler.toJsonObject(response))) {
-                return true;
+    public boolean callDeviceScene(String token, DSID dsid, String name, Scene sceneNumber, Boolean force) {
+        if (((getDsidString(dsid) != null) || name != null) && sceneNumber != null) {
+            try {
+                String response = transport.execute(SimpleRequestBuilder.buildNewRequest(Interfaces.JSON)
+                        .addRequestClass(Classes.DEVICE).addFunction(Functions.CALL_SCENE)
+                        .addParameter(ParameterTyps.TOKEN, token).addParameter(ParameterTyps.DSID, getDsidString(dsid))
+                        .addParameter(ParameterTyps.NAME, name)
+                        .addParameter(ParameterTyps.SCENENUMBER, sceneNumber.getSceneNumber().toString())
+                        .addParameter(ParameterTyps.FORCE, force.toString()).buildRequestString());
+                return JSONResponseHandler.checkResponse(JSONResponseHandler.toJsonObject(response));
+            } catch (Exception e) {
+                logger.debug("An exception occurred", e);
             }
         }
         return false;
@@ -883,133 +432,154 @@ public class DsAPIImpl implements DsAPI {
 
     @Override
     public boolean undoDeviceScene(String token, DSID dsid, Scene sceneNumber) {
-        if (((dsid != null && dsid.getValue() != null)) && sceneNumber != null) {
-            String response = null;
-
-            if (dsid != null && dsid.getValue() != null) {
-                response = transport
-                        .execute(JSONRequestConstants.JSON_DEVICE_UNDOSCENE + JSONRequestConstants.PARAMETER_TOKEN
-                                + token + JSONRequestConstants.INFIX_PARAMETER_DSID + dsid.getValue()
-                                + JSONRequestConstants.INFIX_PARAMETER_SCENE_NUMBER + sceneNumber.getSceneNumber());
-            }
-            if (JSONResponseHandler.checkResponse(JSONResponseHandler.toJsonObject(response))) {
-                return true;
+        if (((getDsidString(dsid) != null)) && sceneNumber != null) {
+            try {
+                String response = transport.execute(SimpleRequestBuilder.buildNewRequest(Interfaces.JSON)
+                        .addRequestClass(Classes.DEVICE).addFunction(Functions.UNDO_SCENE)
+                        .addParameter(ParameterTyps.TOKEN, token).addParameter(ParameterTyps.DSID, getDsidString(dsid))
+                        .addParameter(ParameterTyps.SCENENUMBER, sceneNumber.getSceneNumber().toString())
+                        .buildRequestString());
+                return JSONResponseHandler.checkResponse(JSONResponseHandler.toJsonObject(response));
+            } catch (Exception e) {
+                logger.debug("An exception occurred", e);
             }
         }
         return false;
     }
 
     @Override
-    public boolean subscribeEvent(String token, String name, int subscriptionID, int connectionTimeout,
+    public boolean subscribeEvent(String token, String name, Integer subscriptionID, int connectionTimeout,
             int readTimeout) {
-        if (name != null && !name.trim().equals("") && withParameterSubscriptionID(subscriptionID)) {
-            String response = null;
-
-            response = transport.execute(
-                    JSONRequestConstants.JSON_EVENT_SUBSCRIBE + JSONRequestConstants.PARAMETER_TOKEN + token
-                            + JSONRequestConstants.INFIX_PARAMETER_NAME + name
-                            + JSONRequestConstants.INFIX_PARAMETER_SUBSCRIPTION_ID + subscriptionID,
-                    connectionTimeout, readTimeout);
-            if (JSONResponseHandler.checkResponse(JSONResponseHandler.toJsonObject(response))) {
-                return true;
+        if (StringUtils.isNotBlank(name) && getParameterSubscriptionIdString(subscriptionID) != null) {
+            String response;
+            try {
+                response = transport.execute(
+                        SimpleRequestBuilder.buildNewRequest(Interfaces.JSON).addRequestClass(Classes.EVENT)
+                                .addFunction(Functions.SUBSCRIBE).addParameter(ParameterTyps.TOKEN, token)
+                                .addParameter(ParameterTyps.NAME, name)
+                                .addParameter(ParameterTyps.SUBSCRIPTIONID,
+                                        getParameterSubscriptionIdString(subscriptionID))
+                                .buildRequestString(),
+                        connectionTimeout, readTimeout);
+                return JSONResponseHandler.checkResponse(JSONResponseHandler.toJsonObject(response));
+            } catch (Exception e) {
+                logger.debug("An exception occurred", e);
             }
         }
         return false;
     }
 
     @Override
-    public boolean unsubscribeEvent(String token, String name, int subscriptionID, int connectionTimeout,
+    public boolean unsubscribeEvent(String token, String name, Integer subscriptionID, int connectionTimeout,
             int readTimeout) {
-        if (name != null && !name.trim().equals("") && withParameterSubscriptionID(subscriptionID)) {
-            String response = null;
-
-            response = transport.execute(
-                    JSONRequestConstants.JSON_EVENT_UNSUBSCRIBE + JSONRequestConstants.PARAMETER_TOKEN + token
-                            + JSONRequestConstants.INFIX_PARAMETER_NAME + name
-                            + JSONRequestConstants.INFIX_PARAMETER_SUBSCRIPTION_ID + subscriptionID,
-                    connectionTimeout, readTimeout);
-            if (JSONResponseHandler.checkResponse(JSONResponseHandler.toJsonObject(response))) {
-                return true;
+        if (StringUtils.isNotBlank(name) && getParameterSubscriptionIdString(subscriptionID) != null) {
+            String response;
+            try {
+                response = transport.execute(
+                        SimpleRequestBuilder.buildNewRequest(Interfaces.JSON).addRequestClass(Classes.EVENT)
+                                .addFunction(Functions.UNSUBSCRIBE).addParameter(ParameterTyps.TOKEN, token)
+                                .addParameter(ParameterTyps.NAME, name)
+                                .addParameter(ParameterTyps.SUBSCRIPTIONID,
+                                        getParameterSubscriptionIdString(subscriptionID))
+                                .buildRequestString(),
+                        connectionTimeout, readTimeout);
+                return JSONResponseHandler.checkResponse(JSONResponseHandler.toJsonObject(response));
+            } catch (Exception e) {
+                logger.debug("An exception occurred", e);
             }
         }
         return false;
     }
 
-    private boolean withParameterSubscriptionID(int subscriptionID) {
-        return (subscriptionID > -1);
+    private String getParameterSubscriptionIdString(Integer subscriptionID) {
+        return subscriptionID != null && subscriptionID > -1 ? subscriptionID.toString() : null;
     }
 
     @Override
-    public String getEvent(String token, int subscriptionID, int timeout) {
-        if (withParameterSubscriptionID(subscriptionID) && withParameterTimeout(timeout)) {
-            return transport.execute(JSONRequestConstants.JSON_EVENT_GET + JSONRequestConstants.PARAMETER_TOKEN + token
-                    + JSONRequestConstants.INFIX_PARAMETER_SUBSCRIPTION_ID + subscriptionID
-                    + JSONRequestConstants.INFIX_PARAMETER_TIMEOUT + timeout);
+    public String getEvent(String token, Integer subscriptionID, Integer timeout) {
+        if (getParameterSubscriptionIdString(subscriptionID) != null && getParameterTimeoutString(timeout) != null) {
+            try {
+                return transport
+                        .execute(SimpleRequestBuilder.buildNewRequest(Interfaces.JSON).addRequestClass(Classes.EVENT)
+                                .addFunction(Functions.GET).addParameter(ParameterTyps.TOKEN, token)
+                                .addParameter(ParameterTyps.SUBSCRIPTIONID,
+                                        getParameterSubscriptionIdString(subscriptionID))
+                                .addParameter(ParameterTyps.TIMEOUT, getParameterTimeoutString(timeout))
+                                .buildRequestString());
+            } catch (Exception e) {
+                logger.debug("An exception occurred", e);
+            }
         }
         return null;
     }
 
-    private boolean withParameterTimeout(int timeout) {
-        return (timeout > -1);
+    private String getParameterTimeoutString(Integer timeout) {
+        return timeout != null && timeout > -1 ? timeout.toString() : null;
     }
 
     @Override
     public int getTime(String token) {
-        String response = null;
+        try {
+            String response = transport
+                    .execute(SimpleRequestBuilder.buildNewRequest(Interfaces.JSON).addRequestClass(Classes.SYSTEM)
+                            .addFunction(Functions.TIME).addParameter(ParameterTyps.TOKEN, token).buildRequestString());
+            JsonObject responseObj = JSONResponseHandler.toJsonObject(response);
 
-        response = transport
-                .execute(JSONRequestConstants.JSON_SYSTEM_TIME + JSONRequestConstants.PARAMETER_TOKEN + token);
+            if (JSONResponseHandler.checkResponse(responseObj)) {
+                JsonObject obj = JSONResponseHandler.getResultJsonObject(responseObj);
 
-        JsonObject responseObj = JSONResponseHandler.toJsonObject(response);
-
-        if (JSONResponseHandler.checkResponse(responseObj)) {
-            JsonObject obj = JSONResponseHandler.getResultJsonObject(responseObj);
-
-            if (obj != null && obj.get(JSONApiResponseKeysEnum.SYSTEM_GET_TIME.getKey()) != null) {
-                int time = -1;
-                time = obj.get(JSONApiResponseKeysEnum.SYSTEM_GET_TIME.getKey()).getAsInt();
-
-                return time;
+                if (checkBlankField(obj, JSONApiResponseKeysEnum.SYSTEM_GET_TIME.getKey())) {
+                    return obj.get(JSONApiResponseKeysEnum.SYSTEM_GET_TIME.getKey()).getAsInt();
+                }
             }
+        } catch (Exception e) {
+            logger.debug("An exception occurred", e);
         }
         return -1;
     }
 
-    private boolean valueInRange(int value) {
-        return (value > -1 && value < 256);
+    private boolean checkBlankField(JsonObject obj, String key) {
+        return obj != null && obj.get(key) != null;
+    }
+
+    private boolean valueInRange(Integer value) {
+        return value != null && (value > -1 && value < 256);
     }
 
     @Override
     public List<Integer> getResolutions(String token) {
-        String response = null;
+        try {
+            String response = transport.execute(SimpleRequestBuilder.buildNewRequest(Interfaces.JSON)
+                    .addRequestClass(Classes.METERING).addFunction(Functions.GET_RESOLUTIONS)
+                    .addParameter(ParameterTyps.TOKEN, token).buildRequestString());
 
-        response = transport.execute(
-                JSONRequestConstants.JSON_METERING_GET_RESOLUTIONS + JSONRequestConstants.PARAMETER_TOKEN + token);
+            JsonObject responseObj = JSONResponseHandler.toJsonObject(response);
 
-        JsonObject responseObj = JSONResponseHandler.toJsonObject(response);
+            if (JSONResponseHandler.checkResponse(responseObj)) {
+                JsonObject resObj = JSONResponseHandler.getResultJsonObject(responseObj);
+                if (resObj != null
+                        && resObj.get(JSONApiResponseKeysEnum.METERING_GET_RESOLUTIONS.getKey()) instanceof JsonArray) {
+                    JsonArray array = (JsonArray) resObj.get(JSONApiResponseKeysEnum.METERING_GET_RESOLUTIONS.getKey());
 
-        if (JSONResponseHandler.checkResponse(responseObj)) {
-            JsonObject resObj = JSONResponseHandler.getResultJsonObject(responseObj);
-            if (resObj != null
-                    && resObj.get(JSONApiResponseKeysEnum.METERING_GET_RESOLUTIONS.getKey()) instanceof JsonArray) {
-                JsonArray array = (JsonArray) resObj.get(JSONApiResponseKeysEnum.METERING_GET_RESOLUTIONS.getKey());
+                    List<Integer> resolutionList = new LinkedList<Integer>();
+                    for (int i = 0; i < array.size(); i++) {
+                        if (array.get(i) instanceof JsonObject) {
+                            JsonObject jObject = (JsonObject) array.get(i);
 
-                List<Integer> resolutionList = new LinkedList<Integer>();
-                for (int i = 0; i < array.size(); i++) {
-                    if (array.get(i) instanceof JsonObject) {
-                        JsonObject jObject = (JsonObject) array.get(i);
-
-                        if (jObject.get(JSONApiResponseKeysEnum.METERING_GET_RESOLUTION.getKey()) != null) {
-                            int val = -1;
-                            val = jObject.get(JSONApiResponseKeysEnum.METERING_GET_RESOLUTION.getKey()).getAsInt();
-                            if (val != -1) {
-                                resolutionList.add(val);
+                            if (jObject.get(JSONApiResponseKeysEnum.METERING_GET_RESOLUTION.getKey()) != null) {
+                                int val = jObject.get(JSONApiResponseKeysEnum.METERING_GET_RESOLUTION.getKey())
+                                        .getAsInt();
+                                if (val != -1) {
+                                    resolutionList.add(val);
+                                }
                             }
                         }
                     }
+                    return resolutionList;
                 }
-                return resolutionList;
             }
+        } catch (Exception e) {
+            logger.debug("An exception occurred", e);
         }
         return null;
     }
@@ -1017,7 +587,7 @@ public class DsAPIImpl implements DsAPI {
     @Override
     public List<CachedMeteringValue> getLatest(String token, MeteringTypeEnum type, List<String> meterDSIDs,
             MeteringUnitsEnum unit) {
-        if (type != null && meterDSIDs != null) {
+        if (meterDSIDs != null) {
             String jsonMeterList = ".meters(";
             for (int i = 0; i < meterDSIDs.size(); i++) {
                 if (!meterDSIDs.get(i).isEmpty()) {
@@ -1030,36 +600,7 @@ public class DsAPIImpl implements DsAPI {
                 }
             }
             jsonMeterList += ")";
-            String response = null;
-
-            if (unit != null && type != MeteringTypeEnum.consumption) {
-                response = transport.execute(JSONRequestConstants.JSON_METERING_GET_LATEST
-                        + JSONRequestConstants.PARAMETER_TOKEN + token + JSONRequestConstants.INFIX_PARAMETER_TYPE
-                        + type.name() + JSONRequestConstants.INFIX_PARAMETER_FROM + jsonMeterList
-                        + JSONRequestConstants.INFIX_PARAMETER_UNIT + unit.name());
-            } else {
-                response = transport.execute(JSONRequestConstants.JSON_METERING_GET_LATEST
-                        + JSONRequestConstants.PARAMETER_TOKEN + token + JSONRequestConstants.INFIX_PARAMETER_TYPE
-                        + type.name() + JSONRequestConstants.INFIX_PARAMETER_FROM + jsonMeterList);
-            }
-
-            JsonObject responseObj = JSONResponseHandler.toJsonObject(response);
-            if (JSONResponseHandler.checkResponse(responseObj)) {
-                JsonObject latestObj = JSONResponseHandler.getResultJsonObject(responseObj);
-
-                if (latestObj != null
-                        && latestObj.get(JSONApiResponseKeysEnum.METERING_GET_LATEST.getKey()) instanceof JsonArray) {
-                    JsonArray array = (JsonArray) latestObj.get(JSONApiResponseKeysEnum.METERING_GET_LATEST.getKey());
-                    List<CachedMeteringValue> list = new LinkedList<CachedMeteringValue>();
-
-                    for (int i = 0; i < array.size(); i++) {
-                        if (array.get(i) instanceof JsonObject) {
-                            list.add(new JSONCachedMeteringValueImpl((JsonObject) array.get(i)));
-                        }
-                    }
-                    return list;
-                }
-            }
+            return getLatest(token, type, jsonMeterList, unit);
         }
         return null;
     }
@@ -1068,68 +609,57 @@ public class DsAPIImpl implements DsAPI {
     public List<CachedMeteringValue> getLatest(String token, MeteringTypeEnum type, String meterDSIDs,
             MeteringUnitsEnum unit) {
         if (type != null && meterDSIDs != null) {
+            try {
+                String response = transport.execute(SimpleRequestBuilder.buildNewRequest(Interfaces.JSON)
+                        .addRequestClass(Classes.METERING).addFunction(Functions.GET_LATEST)
+                        .addParameter(ParameterTyps.TOKEN, token).addParameter(ParameterTyps.TYPE, type.name())
+                        .addParameter(ParameterTyps.FROM, meterDSIDs).addParameter(ParameterTyps.UNIT, unit.name())
+                        .buildRequestString());
 
-            String response = null;
-            if (unit != null && type != MeteringTypeEnum.consumption) {
-                response = transport.execute(JSONRequestConstants.JSON_METERING_GET_LATEST
-                        + JSONRequestConstants.PARAMETER_TOKEN + token + JSONRequestConstants.INFIX_PARAMETER_TYPE
-                        + type.name() + JSONRequestConstants.INFIX_PARAMETER_FROM + meterDSIDs
-                        + JSONRequestConstants.INFIX_PARAMETER_UNIT + unit.name());
-            } else {
-                response = transport.execute(JSONRequestConstants.JSON_METERING_GET_LATEST
-                        + JSONRequestConstants.PARAMETER_TOKEN + token + JSONRequestConstants.INFIX_PARAMETER_TYPE
-                        + type.name() + JSONRequestConstants.INFIX_PARAMETER_FROM + meterDSIDs);
-            }
+                JsonObject responseObj = JSONResponseHandler.toJsonObject(response);
+                if (JSONResponseHandler.checkResponse(responseObj)) {
+                    JsonObject latestObj = JSONResponseHandler.getResultJsonObject(responseObj);
+                    if (latestObj != null && latestObj
+                            .get(JSONApiResponseKeysEnum.METERING_GET_LATEST.getKey()) instanceof JsonArray) {
+                        JsonArray array = (JsonArray) latestObj
+                                .get(JSONApiResponseKeysEnum.METERING_GET_LATEST.getKey());
 
-            JsonObject responseObj = JSONResponseHandler.toJsonObject(response);
-            if (JSONResponseHandler.checkResponse(responseObj)) {
-                JsonObject latestObj = JSONResponseHandler.getResultJsonObject(responseObj);
-                if (latestObj != null
-                        && latestObj.get(JSONApiResponseKeysEnum.METERING_GET_LATEST.getKey()) instanceof JsonArray) {
-                    JsonArray array = (JsonArray) latestObj.get(JSONApiResponseKeysEnum.METERING_GET_LATEST.getKey());
-
-                    List<CachedMeteringValue> list = new LinkedList<CachedMeteringValue>();
-                    for (int i = 0; i < array.size(); i++) {
-                        if (array.get(i) instanceof JsonObject) {
-                            list.add(new JSONCachedMeteringValueImpl((JsonObject) array.get(i)));
+                        List<CachedMeteringValue> list = new LinkedList<CachedMeteringValue>();
+                        for (int i = 0; i < array.size(); i++) {
+                            if (array.get(i) instanceof JsonObject) {
+                                list.add(new JSONCachedMeteringValueImpl((JsonObject) array.get(i)));
+                            }
                         }
+                        return list;
                     }
-                    return list;
                 }
+            } catch (Exception e) {
+                logger.debug("An exception occurred", e);
             }
         }
         return null;
     }
 
     @Override
-    public boolean setDeviceValue(String token, DSID dsid, String name, int value) {
-        if (((dsid != null && dsid.getValue() != null) || name != null) && valueInRange(value)) {
-            String response = null;
-
-            if (dsid != null && dsid.getValue() != null) {
-                if (name != null) {
-                    response = transport.execute(JSONRequestConstants.JSON_DEVICE_SET_VALUE
-                            + JSONRequestConstants.PARAMETER_TOKEN + token + JSONRequestConstants.INFIX_PARAMETER_DSID
-                            + dsid.getValue() + JSONRequestConstants.INFIX_PARAMETER_NAME + name
-                            + JSONRequestConstants.INFIX_PARAMETER_VALUE + value);
-                } else {
-                    response = transport.execute(JSONRequestConstants.JSON_DEVICE_SET_VALUE
-                            + JSONRequestConstants.PARAMETER_TOKEN + token + JSONRequestConstants.INFIX_PARAMETER_DSID
-                            + dsid.getValue() + JSONRequestConstants.INFIX_PARAMETER_VALUE + value);
-                }
-            } else if (name != null) {
-                response = transport.execute(JSONRequestConstants.JSON_DEVICE_SET_VALUE
-                        + JSONRequestConstants.PARAMETER_TOKEN + token + JSONRequestConstants.INFIX_PARAMETER_NAME
-                        + name + JSONRequestConstants.INFIX_PARAMETER_VALUE + value);
-            }
-            if (JSONResponseHandler.checkResponse(JSONResponseHandler.toJsonObject(response))) {
-                return true;
+    public boolean setDeviceValue(String token, DSID dsid, String name, Integer value) {
+        if (((getDsidString(dsid) != null) || name != null) && valueInRange(value)) {
+            try {
+                String response = transport.execute(SimpleRequestBuilder.buildNewRequest(Interfaces.JSON)
+                        .addRequestClass(Classes.DEVICE).addFunction(Functions.SET_VALUE)
+                        .addParameter(ParameterTyps.TOKEN, token).addParameter(ParameterTyps.DSID, getDsidString(dsid))
+                        .addParameter(ParameterTyps.NAME, name).addParameter(ParameterTyps.VALUE, value.toString())
+                        .buildRequestString());
+                return JSONResponseHandler.checkResponse(JSONResponseHandler.toJsonObject(response));
+            } catch (Exception e) {
+                logger.debug("An exception occurred", e);
             }
         }
         return false;
+
     }
 
     @Override
+    // TODO: ggf. auf get Circuit ändern
     public List<String> getMeterList(String token) {
         List<String> meterList = new LinkedList<String>();
 
@@ -1157,9 +687,37 @@ public class DsAPIImpl implements DsAPI {
     @Override
     public String loginApplication(String loginToken) {
         if (StringUtils.isNotBlank(loginToken)) {
-            String response = null;
+            try {
+                String response = transport.execute(SimpleRequestBuilder.buildNewRequest(Interfaces.JSON)
+                        .addRequestClass(Classes.SYSTEM).addFunction(Functions.LOGIN_APPLICATION)
+                        .addParameter(ParameterTyps.LOGIN_TOKEN, loginToken).buildRequestString());
+                JsonObject responseObj = JSONResponseHandler.toJsonObject(response);
 
-            response = transport.execute(JSONRequestConstants.JSON_SYSTEM_LOGIN_APPLICATION + loginToken);
+                if (JSONResponseHandler.checkResponse(responseObj)) {
+                    JsonObject obj = JSONResponseHandler.getResultJsonObject(responseObj);
+                    String tokenStr = null;
+
+                    if (checkBlankField(obj, JSONApiResponseKeysEnum.SYSTEM_LOGIN.getKey())) {
+                        tokenStr = obj.get(JSONApiResponseKeysEnum.SYSTEM_LOGIN.getKey()).getAsString();
+                    }
+                    if (tokenStr != null) {
+                        return tokenStr;
+                    }
+                }
+            } catch (Exception e) {
+                logger.debug("An exception occurred", e);
+            }
+
+        }
+        return null;
+    }
+
+    @Override
+    public String login(String user, String password) {
+        try {
+            String response = transport.execute(SimpleRequestBuilder.buildNewRequest(Interfaces.JSON)
+                    .addRequestClass(Classes.SYSTEM).addFunction(Functions.LOGIN).addParameter(ParameterTyps.USER, user)
+                    .addParameter(ParameterTyps.PASSWORD, password).buildRequestString());
             JsonObject responseObj = JSONResponseHandler.toJsonObject(response);
 
             if (JSONResponseHandler.checkResponse(responseObj)) {
@@ -1173,140 +731,180 @@ public class DsAPIImpl implements DsAPI {
                     return tokenStr;
                 }
             }
-        }
-        return null;
-    }
-
-    @Override
-    public String login(String user, String password) {
-        String response = null;
-        response = transport.execute(JSONRequestConstants.JSON_SYSTEM_LOGIN + JSONRequestConstants.PARAMETER_USER + user
-                + JSONRequestConstants.INFIX_PARAMETER_PASSWORD + password);
-        JsonObject responseObj = JSONResponseHandler.toJsonObject(response);
-
-        if (JSONResponseHandler.checkResponse(responseObj)) {
-            JsonObject obj = JSONResponseHandler.getResultJsonObject(responseObj);
-            String tokenStr = null;
-
-            if (obj != null && obj.get(JSONApiResponseKeysEnum.SYSTEM_LOGIN.getKey()) != null) {
-                tokenStr = obj.get(JSONApiResponseKeysEnum.SYSTEM_LOGIN.getKey()).getAsString();
-            }
-            if (tokenStr != null) {
-                return tokenStr;
-            }
+        } catch (Exception e) {
+            logger.debug("An exception occurred", e);
         }
         return null;
     }
 
     @Override
     public boolean logout() {
-        String response = transport.execute(JSONRequestConstants.JSON_SYSTEM_LOGOUT);
-
-        if (JSONResponseHandler.checkResponse(JSONResponseHandler.toJsonObject(response))) {
-            return true;
+        String response;
+        try {
+            response = transport.execute(SimpleRequestBuilder.buildNewRequest(Interfaces.JSON)
+                    .addRequestClass(Classes.SYSTEM).addFunction(Functions.LOGOUT).buildRequestString());
+            return JSONResponseHandler.checkResponse(JSONResponseHandler.toJsonObject(response));
+        } catch (Exception e) {
+            logger.debug("An exception occurred", e);
         }
         return false;
     }
 
     @Override
     public String getDSID(String token) {
-        String response = transport.execute(JSONRequestConstants.JSON_SYSTEM_GET_DSID + token);
-        JsonObject responseObj = JSONResponseHandler.toJsonObject(response);
+        try {
+            String response = transport.execute(SimpleRequestBuilder.buildNewRequest(Interfaces.JSON)
+                    .addRequestClass(Classes.SYSTEM).addFunction(Functions.GET_DSID)
+                    .addParameter(ParameterTyps.TOKEN, token).buildRequestString());
+            JsonObject responseObj = JSONResponseHandler.toJsonObject(response);
 
-        if (JSONResponseHandler.checkResponse(responseObj)) {
-            JsonObject obj = JSONResponseHandler.getResultJsonObject(responseObj);
-            if (obj != null) {
-                String dsID = obj.get(JSONApiResponseKeysEnum.SYSTEM_DSID.getKey()).getAsString();
-                if (dsID != null) {
-                    return dsID;
+            if (JSONResponseHandler.checkResponse(responseObj)) {
+                JsonObject obj = JSONResponseHandler.getResultJsonObject(responseObj);
+                if (obj != null) {
+                    String dsID = obj.get(JSONApiResponseKeysEnum.SYSTEM_DSID.getKey()).getAsString();
+                    if (dsID != null) {
+                        return dsID;
+                    }
                 }
             }
+        } catch (Exception e) {
+            logger.debug("An exception occurred", e);
         }
         return null;
     }
 
     @Override
     public boolean enableApplicationToken(String applicationToken, String sessionToken) {
-        String response = null;
-        response = transport.execute(
-                "/json/system/enableToken?applicationToken=" + applicationToken + "&token=" + sessionToken, 60000,
-                60000);
-        JsonObject responseObj = JSONResponseHandler.toJsonObject(response);
-        return JSONResponseHandler.checkResponse(responseObj);
+        try {
+            String response = transport.execute(
+                    SimpleRequestBuilder.buildNewRequest(Interfaces.JSON).addRequestClass(Classes.SYSTEM)
+                            .addFunction(Functions.ENABLE_APPLICATION_TOKEN)
+                            .addParameter(ParameterTyps.TOKEN, sessionToken)
+                            .addParameter(ParameterTyps.APPLICATION_TOKEN, applicationToken).buildRequestString(),
+                    60000, 60000);
+            return JSONResponseHandler.checkResponse(JSONResponseHandler.toJsonObject(response));
+        } catch (Exception e) {
+            logger.debug("An exception occurred", e);
+        }
+        return false;
     }
 
     @Override
     public String requestAppplicationToken(String applicationName) {
-        String response = transport.execute("/json/system/requestApplicationToken?applicationName=" + applicationName);
-        JsonObject responseObj = JSONResponseHandler.toJsonObject(response);
+        try {
+            String response = transport.execute(SimpleRequestBuilder.buildNewRequest(Interfaces.JSON)
+                    .addRequestClass(Classes.SYSTEM).addFunction(Functions.REQUEST_APPLICATION_TOKEN)
+                    .addParameter(ParameterTyps.APPLICATION_NAME, applicationName).buildRequestString());
 
-        if (JSONResponseHandler.checkResponse(responseObj)) {
-            JsonObject obj = JSONResponseHandler.getResultJsonObject(responseObj);
-            if (obj != null) {
-                String aplicationToken = obj.get(JSONApiResponseKeysEnum.SYSTEM_APPLICATION_TOKEN.getKey())
-                        .getAsString();
-                if (aplicationToken != null) {
-                    return aplicationToken;
+            JsonObject responseObj = JSONResponseHandler.toJsonObject(response);
+            if (JSONResponseHandler.checkResponse(responseObj)) {
+                JsonObject obj = JSONResponseHandler.getResultJsonObject(responseObj);
+                if (obj != null) {
+                    String aplicationToken = obj.get(JSONApiResponseKeysEnum.SYSTEM_APPLICATION_TOKEN.getKey())
+                            .getAsString();
+                    if (aplicationToken != null) {
+                        return aplicationToken;
+                    }
                 }
             }
+        } catch (Exception e) {
+            logger.debug("An exception occurred", e);
         }
         return null;
     }
 
     @Override
     public boolean revokeToken(String applicationToken, String sessionToken) {
-        String response = null;
-        response = transport
-                .execute("/json/system/revokeToken?applicationToken=" + applicationToken + "&token=" + sessionToken);
-        JsonObject responseObj = JSONResponseHandler.toJsonObject(response);
-        return JSONResponseHandler.checkResponse(responseObj);
+        try {
+            String response = transport.execute(SimpleRequestBuilder.buildNewRequest(Interfaces.JSON)
+                    .addRequestClass(Classes.SYSTEM).addFunction(Functions.REVOKE_TOKEN)
+                    .addParameter(ParameterTyps.APPLICATION_TOKEN, applicationToken)
+                    .addParameter(ParameterTyps.TOKEN, sessionToken).buildRequestString());
+            return JSONResponseHandler.checkResponse(JSONResponseHandler.toJsonObject(response));
+        } catch (Exception e) {
+            logger.debug("An exception occurred", e);
+        }
+        return false;
     }
 
     @Override
     public int checkConnection(String token) {
-        return transport.checkConnection("/json/apartment/getName?token=" + token);
+        try {
+            return transport.checkConnection(SimpleRequestBuilder.buildNewRequest(Interfaces.JSON)
+                    .addRequestClass(Classes.APARTMENT).addFunction(Functions.GET_NAME)
+                    .addParameter(ParameterTyps.TOKEN, token).buildRequestString());
+        } catch (Exception e) {
+            logger.debug("An exception occurred", e);
+        }
+        return -1;
     }
 
     @Override
-    public int[] getSceneValue(String token, DSID dsid, short sceneId) {
-        String response = null;
+    public int[] getSceneValue(String token, DSID dsid, Short sceneId) {
         int[] value = { -1, -1 };
-        response = transport.execute(
-                "/json/device/getSceneValue?dsid=" + dsid.toString() + "&sceneID=" + sceneId + "&token=" + token, 4000,
-                20000);
-        JsonObject responseObj = JSONResponseHandler.toJsonObject(response);
+        try {
+            String response = transport.execute(SimpleRequestBuilder.buildNewRequest(Interfaces.JSON)
+                    .addRequestClass(Classes.DEVICE).addFunction(Functions.GET_SCENE_VALUE)
+                    .addParameter(ParameterTyps.SCENE_ID, getSceneIdSting(sceneId))
+                    .addParameter(ParameterTyps.DSID, getDsidString(dsid)).addParameter(ParameterTyps.TOKEN, token)
+                    .buildRequestString(), 4000, 20000);
+            JsonObject responseObj = JSONResponseHandler.toJsonObject(response);
 
-        if (JSONResponseHandler.checkResponse(responseObj)) {
-            JsonObject obj = JSONResponseHandler.getResultJsonObject(responseObj);
-            if (obj != null && obj.get("value") != null) {
-                value[0] = obj.get("value").getAsInt();
-                if (obj.get("angle") != null) {
-                    value[1] = obj.get("angle").getAsInt();
+            if (JSONResponseHandler.checkResponse(responseObj)) {
+                JsonObject obj = JSONResponseHandler.getResultJsonObject(responseObj);
+                if (obj != null && obj.get("value") != null) {
+                    value[0] = obj.get("value").getAsInt();
+                    if (obj.get("angle") != null) {
+                        value[1] = obj.get("angle").getAsInt();
+                    }
+                    return value;
                 }
-                return value;
             }
+        } catch (Exception e) {
+            logger.debug("An exception occurred", e);
         }
         return value;
     }
 
     @Override
     public boolean increaseValue(String sessionToken, DSID dsid) {
-        String response = null;
-        response = transport.execute("/json/device/increaseValue?dsid=" + dsid.toString() + "&token=" + sessionToken);
-        return JSONResponseHandler.checkResponse(JSONResponseHandler.toJsonObject(response));
+        try {
+            String response = transport
+                    .execute(SimpleRequestBuilder.buildNewRequest(Interfaces.JSON).addRequestClass(Classes.DEVICE)
+                            .addFunction(Functions.INCREASE_VALUE).addParameter(ParameterTyps.DSID, getDsidString(dsid))
+                            .addParameter(ParameterTyps.TOKEN, sessionToken).buildRequestString());
+            return JSONResponseHandler.checkResponse(JSONResponseHandler.toJsonObject(response));
+        } catch (Exception e) {
+            logger.debug("An exception occurred", e);
+        }
+        return false;
     }
 
     @Override
     public boolean decreaseValue(String sessionToken, DSID dsid) {
-        String response = null;
-        response = transport.execute("/json/device/decreaseValue?dsid=" + dsid.toString() + "&token=" + sessionToken);
-        return JSONResponseHandler.checkResponse(JSONResponseHandler.toJsonObject(response));
+        try {
+            String response = transport
+                    .execute(SimpleRequestBuilder.buildNewRequest(Interfaces.JSON).addRequestClass(Classes.DEVICE)
+                            .addFunction(Functions.DECREASE_VALUE).addParameter(ParameterTyps.DSID, getDsidString(dsid))
+                            .addParameter(ParameterTyps.TOKEN, sessionToken).buildRequestString());
+            return JSONResponseHandler.checkResponse(JSONResponseHandler.toJsonObject(response));
+        } catch (Exception e) {
+            logger.debug("An exception occurred", e);
+        }
+        return false;
     }
 
     @Override
     public String getInstallationName(String sessionToken) {
         String response = null;
-        response = transport.execute(" /json/apartment/getName?token=" + sessionToken);
+        try {
+            response = transport.execute(SimpleRequestBuilder.buildNewRequest(Interfaces.JSON)
+                    .addRequestClass(Classes.APARTMENT).addFunction(Functions.GET_NAME)
+                    .addParameter(ParameterTyps.TOKEN, sessionToken).buildRequestString());
+        } catch (Exception e) {
+            logger.debug("An exception occurred", e);
+
+        }
         JsonObject responseObj = JSONResponseHandler.toJsonObject(response);
 
         if (JSONResponseHandler.checkResponse(responseObj)) {
@@ -1319,62 +917,87 @@ public class DsAPIImpl implements DsAPI {
     }
 
     @Override
-    public String getZoneName(String sessionToken, int zoneID) {
-        String response = null;
-        response = transport.execute(" /json/zone/getName?id=" + zoneID + "&token=" + sessionToken);
-        JsonObject responseObj = JSONResponseHandler.toJsonObject(response);
+    public String getZoneName(String sessionToken, Integer zoneID) {
+        try {
+            String response = transport.execute(SimpleRequestBuilder.buildNewRequest(Interfaces.JSON)
+                    .addRequestClass(Classes.ZONE).addFunction(Functions.GET_NAME)
+                    .addParameter(ParameterTyps.ID, getParameterZoneIdString(zoneID))
+                    .addParameter(ParameterTyps.TOKEN, sessionToken).buildRequestString());
+            JsonObject responseObj = JSONResponseHandler.toJsonObject(response);
 
-        if (JSONResponseHandler.checkResponse(responseObj)) {
-            JsonObject obj = JSONResponseHandler.getResultJsonObject(responseObj);
-            if (obj != null && obj.get("name") != null) {
-                return obj.get("name").getAsString();
+            if (JSONResponseHandler.checkResponse(responseObj)) {
+                JsonObject obj = JSONResponseHandler.getResultJsonObject(responseObj);
+                if (obj != null && obj.get("name") != null) {
+                    return obj.get("name").getAsString();
+                }
             }
+        } catch (Exception e) {
+            logger.debug("An exception occurred", e);
         }
         return null;
     }
 
     @Override
     public String getDeviceName(String sessionToken, DSID dSID) {
-        String response = null;
-        response = transport.execute(" /json/device/getName?dsid=" + dSID.toString() + "&token=" + sessionToken);
-        JsonObject responseObj = JSONResponseHandler.toJsonObject(response);
+        try {
+            String response = transport
+                    .execute(SimpleRequestBuilder.buildNewRequest(Interfaces.JSON).addRequestClass(Classes.DEVICE)
+                            .addFunction(Functions.GET_NAME).addParameter(ParameterTyps.TOKEN, sessionToken)
+                            .addParameter(ParameterTyps.DSID, getDsidString(dSID)).buildRequestString());
+            JsonObject responseObj = JSONResponseHandler.toJsonObject(response);
 
-        if (JSONResponseHandler.checkResponse(responseObj)) {
-            JsonObject obj = JSONResponseHandler.getResultJsonObject(responseObj);
-            if (obj != null && obj.get("name") != null) {
-                return obj.get("name").getAsString();
+            if (JSONResponseHandler.checkResponse(responseObj)) {
+                JsonObject obj = JSONResponseHandler.getResultJsonObject(responseObj);
+                if (obj != null && obj.get("name") != null) {
+                    return obj.get("name").getAsString();
+                }
             }
+        } catch (Exception e) {
+            logger.debug("An exception occurred", e);
         }
         return null;
     }
 
     @Override
     public String getCircuitName(String sessionToken, DSID dSID) {
-        String response = null;
-        response = transport.execute("/json/circuit/getName?id=" + dSID.toString() + "&token=" + sessionToken);
-        JsonObject responseObj = JSONResponseHandler.toJsonObject(response);
+        try {
+            String response = transport
+                    .execute(SimpleRequestBuilder.buildNewRequest(Interfaces.JSON).addRequestClass(Classes.CIRCUIT)
+                            .addFunction(Functions.GET_NAME).addParameter(ParameterTyps.DSID, getDsidString(dSID))
+                            .addParameter(ParameterTyps.TOKEN, sessionToken).buildRequestString());
+            JsonObject responseObj = JSONResponseHandler.toJsonObject(response);
 
-        if (JSONResponseHandler.checkResponse(responseObj)) {
-            JsonObject obj = JSONResponseHandler.getResultJsonObject(responseObj);
-            if (obj != null && obj.get("name") != null) {
-                return obj.get("name").getAsString();
+            if (JSONResponseHandler.checkResponse(responseObj)) {
+                JsonObject obj = JSONResponseHandler.getResultJsonObject(responseObj);
+                if (obj != null && obj.get("name") != null) {
+                    return obj.get("name").getAsString();
+                }
             }
+        } catch (Exception e) {
+            logger.debug("An exception occurred", e);
         }
         return null;
     }
 
     @Override
-    public String getSceneName(String sessionToken, int zoneID, int groupID, short sceneID) {
-        String response = null;
-        response = transport.execute("/json/zone/sceneGetName?id" + zoneID + "&groupID?" + groupID + "&sceneNumber="
-                + sceneID + "&token=" + sessionToken);
-        JsonObject responseObj = JSONResponseHandler.toJsonObject(response);
+    public String getSceneName(String sessionToken, Integer zoneID, Short groupID, Short sceneID) {
+        try {
+            String response = transport
+                    .execute(SimpleRequestBuilder.buildNewRequest(Interfaces.JSON).addRequestClass(Classes.ZONE)
+                            .addFunction(Functions.SCENE_GET_NAME).addParameter(ParameterTyps.TOKEN, sessionToken)
+                            .addParameter(ParameterTyps.ID, getParameterZoneIdString(zoneID))
+                            .addParameter(ParameterTyps.GROUP_ID, getParameterGroupIdString(groupID))
+                            .addParameter(ParameterTyps.SCENENUMBER, getSceneIdSting(sceneID)).buildRequestString());
+            JsonObject responseObj = JSONResponseHandler.toJsonObject(response);
 
-        if (JSONResponseHandler.checkResponse(responseObj)) {
-            JsonObject obj = JSONResponseHandler.getResultJsonObject(responseObj);
-            if (obj != null && obj.get("name") != null) {
-                return obj.get("name").getAsString();
+            if (JSONResponseHandler.checkResponse(responseObj)) {
+                JsonObject obj = JSONResponseHandler.getResultJsonObject(responseObj);
+                if (obj != null && obj.get("name") != null) {
+                    return obj.get("name").getAsString();
+                }
             }
+        } catch (Exception e) {
+            logger.debug("An exception occurred", e);
         }
         return null;
     }

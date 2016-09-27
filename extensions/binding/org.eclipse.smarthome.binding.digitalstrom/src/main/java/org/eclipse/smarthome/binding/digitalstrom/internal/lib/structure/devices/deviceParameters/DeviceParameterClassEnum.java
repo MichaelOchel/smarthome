@@ -60,7 +60,7 @@ public enum DeviceParameterClassEnum {
      *
      * @return index
      */
-    public int getClassIndex() {
+    public Integer getClassIndex() {
         return this.classIndex;
     }
 }
