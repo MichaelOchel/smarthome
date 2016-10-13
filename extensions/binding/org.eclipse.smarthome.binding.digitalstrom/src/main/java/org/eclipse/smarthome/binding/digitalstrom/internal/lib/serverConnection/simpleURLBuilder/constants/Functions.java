@@ -105,4 +105,13 @@ public class Functions {
     public final static String REQUEST_APPLICATION_TOKEN = "requestApplicationToken";
     public final static String REVOKE_TOKEN = "revokeToken";
     public final static String GET_SCENE_VALUE = "getSceneValue";
+    public final static String GET_TEMPERATURE_CONTROL_STATUS = "getTemperatureControlStatus";
+    public final static String GET_TEMPERATURE_CONTROL_CONFIG = "getTemperatureControlConfig";
+    public final static String GET_TEMPERATURE_CONTROL_VALUES = "getTemperatureControlValues";
+    public final static String GET_ASSIGNED_SENSORS = "getAssignedSensors";
+    public final static String SET_TEMEPERATURE_CONTROL_STATE = "setTemperatureControlState";
+    public final static String SET_TEMEPERATURE_CONTROL_VALUE = "setTemperatureControlValue";
+    public static final String GET_SENSOR_VALUES = "getSensorValues";
+    public static final String SET_SENSOR_SOURCE = "setSensorSource";
+    public static final String GET_TEMPERATURE_CONTROL_INTERNALS = "getTemperatureControlInternals";
 }

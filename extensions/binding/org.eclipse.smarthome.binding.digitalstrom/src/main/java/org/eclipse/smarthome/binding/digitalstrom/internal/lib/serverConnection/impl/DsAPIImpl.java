@@ -140,12 +140,11 @@ public class DsAPIImpl implements DsAPI {
     }
 
     @Override
-    public List<Device> getApartmentDevices(String token, Boolean unassigned) {
+    public List<Device> getApartmentDevices(String token) {
         try {
-            String response = transport
-                    .execute(SimpleRequestBuilder.buildNewRequest(Interfaces.JSON).addRequestClass(Classes.APARTMENT)
-                            .addFunction(Functions.GET_DEVICES).addParameter(ParameterTyps.TOKEN, token)
-                            .addParameter(ParameterTyps.UNASSIGNED, unassigned.toString()).buildRequestString());
+            String response = transport.execute(SimpleRequestBuilder.buildNewRequest(Interfaces.JSON)
+                    .addRequestClass(Classes.APARTMENT).addFunction(Functions.GET_DEVICES)
+                    .addParameter(ParameterTyps.TOKEN, token).buildRequestString());
             JsonObject responseObj = JSONResponseHandler.toJsonObject(response);
             if (JSONResponseHandler.checkResponse(responseObj)
                     && responseObj.get(JSONApiResponseKeysEnum.APARTMENT_GET_DEVICES.getKey()) instanceof JsonArray) {
@@ -348,8 +347,9 @@ public class DsAPIImpl implements DsAPI {
         if (((getDsidString(dsid) != null) || name != null) && getSceneIdSting(sceneID) != null) {
             try {
                 String response = transport.execute(SimpleRequestBuilder.buildNewRequest(Interfaces.JSON)
-                        .addFunction(Functions.GET_SCENE_MODE).addParameter(ParameterTyps.TOKEN, token)
-                        .addParameter(ParameterTyps.DSID, getDsidString(dsid)).addParameter(ParameterTyps.NAME, name)
+                        .addRequestClass(Classes.DEVICE).addFunction(Functions.GET_SCENE_MODE)
+                        .addParameter(ParameterTyps.TOKEN, token).addParameter(ParameterTyps.DSID, getDsidString(dsid))
+                        .addParameter(ParameterTyps.NAME, name)
                         .addParameter(ParameterTyps.SCENE_ID, getSceneIdSting(sceneID)).buildRequestString());
                 JsonObject responseObj = JSONResponseHandler.toJsonObject(response);
 
@@ -995,6 +995,288 @@ public class DsAPIImpl implements DsAPI {
                 if (obj != null && obj.get("name") != null) {
                     return obj.get("name").getAsString();
                 }
+            }
+        } catch (Exception e) {
+            logger.debug("An exception occurred", e);
+        }
+        return null;
+    }
+
+    @Override
+    public String getZoneTemperatureControlStatus(String sessionToken, Integer zoneID) {
+
+        try {
+            String response = transport.execute(SimpleRequestBuilder.buildNewRequest(Interfaces.JSON)
+                    .addRequestClass(Classes.ZONE).addFunction(Functions.GET_TEMPERATURE_CONTROL_STATUS)
+                    .addParameter(ParameterTyps.TOKEN, sessionToken)
+                    .addParameter(ParameterTyps.ID, getParameterZoneIdString(zoneID)).buildRequestString());
+            JsonObject responseObj = JSONResponseHandler.toJsonObject(response);
+
+            if (JSONResponseHandler.checkResponse(responseObj)) {
+                JsonObject obj = JSONResponseHandler.getResultJsonObject(responseObj);
+                // TODO: add logic
+            }
+        } catch (Exception e) {
+            logger.debug("An exception occurred", e);
+        }
+        return null;
+    }
+
+    @Override
+    public String getZoneTemperatureControlConfig(String sessionToken, Integer zoneID) {
+        try {
+            String response = transport.execute(SimpleRequestBuilder.buildNewRequest(Interfaces.JSON)
+                    .addRequestClass(Classes.ZONE).addFunction(Functions.GET_TEMPERATURE_CONTROL_CONFIG)
+                    .addParameter(ParameterTyps.TOKEN, sessionToken)
+                    .addParameter(ParameterTyps.ID, getParameterZoneIdString(zoneID)).buildRequestString());
+            JsonObject responseObj = JSONResponseHandler.toJsonObject(response);
+
+            if (JSONResponseHandler.checkResponse(responseObj)) {
+                JsonObject obj = JSONResponseHandler.getResultJsonObject(responseObj);
+                // TODO: add logic
+            }
+        } catch (Exception e) {
+            logger.debug("An exception occurred", e);
+        }
+        return null;
+    }
+
+    @Override
+    public String getZoneTemperatureControlValues(String sessionToken, Integer zoneID) {
+        try {
+            String response = transport.execute(SimpleRequestBuilder.buildNewRequest(Interfaces.JSON)
+                    .addRequestClass(Classes.ZONE).addFunction(Functions.GET_TEMPERATURE_CONTROL_VALUES)
+                    .addParameter(ParameterTyps.TOKEN, sessionToken)
+                    .addParameter(ParameterTyps.ID, getParameterZoneIdString(zoneID)).buildRequestString());
+            JsonObject responseObj = JSONResponseHandler.toJsonObject(response);
+
+            if (JSONResponseHandler.checkResponse(responseObj)) {
+                JsonObject obj = JSONResponseHandler.getResultJsonObject(responseObj);
+                // TODO: add logic
+            }
+        } catch (Exception e) {
+            logger.debug("An exception occurred", e);
+        }
+        return null;
+    }
+
+    @Override
+    public String getZoneAssignedSensors(String sessionToken, Integer zoneID) {
+        try {
+            String response = transport
+                    .execute(SimpleRequestBuilder.buildNewRequest(Interfaces.JSON).addRequestClass(Classes.ZONE)
+                            .addFunction(Functions.GET_ASSIGNED_SENSORS).addParameter(ParameterTyps.TOKEN, sessionToken)
+                            .addParameter(ParameterTyps.ID, getParameterZoneIdString(zoneID)).buildRequestString());
+            JsonObject responseObj = JSONResponseHandler.toJsonObject(response);
+
+            if (JSONResponseHandler.checkResponse(responseObj)) {
+                JsonObject obj = JSONResponseHandler.getResultJsonObject(responseObj);
+                // TODO: add logic
+            }
+        } catch (Exception e) {
+            logger.debug("An exception occurred", e);
+        }
+        return null;
+    }
+
+    @Override
+    public boolean setZoneTemperatureControlState(String sessionToken, Integer zoneID, String controlState) {
+        try {
+            String response = transport.execute(SimpleRequestBuilder.buildNewRequest(Interfaces.JSON)
+                    .addRequestClass(Classes.ZONE).addFunction(Functions.SET_TEMEPERATURE_CONTROL_STATE)
+                    .addParameter(ParameterTyps.TOKEN, sessionToken)
+                    .addParameter(ParameterTyps.ID, getParameterZoneIdString(zoneID))
+                    .addParameter(ParameterTyps.CONTROL_STATE, controlState).buildRequestString());
+
+            return JSONResponseHandler.checkResponse(JSONResponseHandler.toJsonObject(response));
+
+        } catch (Exception e) {
+            logger.debug("An exception occurred", e);
+        }
+        return false;
+    }
+
+    @Override
+    public boolean setZoneTemperatureControlValue(String sessionToken, Integer zoneID, String controlValue,
+            Float temperature) {
+        try {
+            String response = transport.execute(SimpleRequestBuilder.buildNewRequest(Interfaces.JSON)
+                    .addRequestClass(Classes.ZONE).addFunction(Functions.SET_TEMEPERATURE_CONTROL_VALUE)
+                    .addParameter(ParameterTyps.TOKEN, sessionToken)
+                    .addParameter(ParameterTyps.ID, getParameterZoneIdString(zoneID))
+                    .addParameter(ParameterTyps.CONTROL_VALUE, controlValue).buildRequestString());
+
+            return JSONResponseHandler.checkResponse(JSONResponseHandler.toJsonObject(response));
+
+        } catch (Exception e) {
+            logger.debug("An exception occurred", e);
+        }
+        return false;
+    }
+
+    @Override
+    public String getZoneSensorValues(String sessionToken, Integer zoneID) {
+        try {
+            String response = transport
+                    .execute(SimpleRequestBuilder.buildNewRequest(Interfaces.JSON).addRequestClass(Classes.ZONE)
+                            .addFunction(Functions.GET_SENSOR_VALUES).addParameter(ParameterTyps.TOKEN, sessionToken)
+                            .addParameter(ParameterTyps.ID, getParameterZoneIdString(zoneID)).buildRequestString());
+            JsonObject responseObj = JSONResponseHandler.toJsonObject(response);
+
+            if (JSONResponseHandler.checkResponse(responseObj)) {
+                JsonObject obj = JSONResponseHandler.getResultJsonObject(responseObj);
+                // TODO: add logic
+            }
+        } catch (Exception e) {
+            logger.debug("An exception occurred", e);
+        }
+        return null;
+    }
+
+    @Override
+    public String setZoneTemperatureControlConfig(String sessionToken, Integer zoneID) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public boolean setZoneSensorSource(String sessionToken, Integer zoneID, SensorEnum sensorType, DSID dSID) {
+        try {
+            String response = transport
+                    .execute(SimpleRequestBuilder.buildNewRequest(Interfaces.JSON).addRequestClass(Classes.ZONE)
+                            .addFunction(Functions.SET_SENSOR_SOURCE).addParameter(ParameterTyps.TOKEN, sessionToken)
+                            .addParameter(ParameterTyps.ID, getParameterZoneIdString(zoneID))
+                            .addParameter(ParameterTyps.SENSOR_TYPE, sensorType.getSensorType().toString())
+                            .addParameter(ParameterTyps.DSID, getDsidString(dSID)).buildRequestString());
+
+            return JSONResponseHandler.checkResponse(JSONResponseHandler.toJsonObject(response));
+
+        } catch (Exception e) {
+            logger.debug("An exception occurred", e);
+        }
+        return false;
+    }
+
+    @Override
+    public boolean clearZoneSensorSource(String sessionToken, Integer zoneID, SensorEnum sensorType) {
+        try {
+            String response = transport.execute(SimpleRequestBuilder.buildNewRequest(Interfaces.JSON)
+                    .addRequestClass(Classes.ZONE).addFunction(Functions.SET_TEMEPERATURE_CONTROL_VALUE)
+                    .addParameter(ParameterTyps.TOKEN, sessionToken)
+                    .addParameter(ParameterTyps.ID, getParameterZoneIdString(zoneID))
+                    .addParameter(ParameterTyps.SENSOR_TYPE, sensorType.getSensorType().toString())
+                    .buildRequestString());
+
+            return JSONResponseHandler.checkResponse(JSONResponseHandler.toJsonObject(response));
+
+        } catch (Exception e) {
+            logger.debug("An exception occurred", e);
+        }
+        return false;
+    }
+
+    @Override
+    public String getZoneTemperatureControlInternals(String sessionToken, Integer zoneID) {
+        try {
+            String response = transport.execute(SimpleRequestBuilder.buildNewRequest(Interfaces.JSON)
+                    .addRequestClass(Classes.ZONE).addFunction(Functions.GET_TEMPERATURE_CONTROL_INTERNALS)
+                    .addParameter(ParameterTyps.TOKEN, sessionToken)
+                    .addParameter(ParameterTyps.ID, getParameterZoneIdString(zoneID)).buildRequestString());
+            JsonObject responseObj = JSONResponseHandler.toJsonObject(response);
+
+            if (JSONResponseHandler.checkResponse(responseObj)) {
+                JsonObject obj = JSONResponseHandler.getResultJsonObject(responseObj);
+                // TODO: add logic
+            }
+        } catch (Exception e) {
+            logger.debug("An exception occurred", e);
+        }
+        return null;
+    }
+
+    @Override
+    public String getApartmentTemperatureControlStatus(String sessionToken) {
+        try {
+            String response = transport.execute(SimpleRequestBuilder.buildNewRequest(Interfaces.JSON)
+                    .addRequestClass(Classes.APARTMENT).addFunction(Functions.GET_TEMPERATURE_CONTROL_STATUS)
+                    .addParameter(ParameterTyps.TOKEN, sessionToken).buildRequestString());
+            JsonObject responseObj = JSONResponseHandler.toJsonObject(response);
+
+            if (JSONResponseHandler.checkResponse(responseObj)) {
+                JsonObject obj = JSONResponseHandler.getResultJsonObject(responseObj);
+                // TODO: add logic
+            }
+        } catch (Exception e) {
+            logger.debug("An exception occurred", e);
+        }
+        return null;
+    }
+
+    @Override
+    public String getApartmentTemperatureControlConfig(String sessionToken) {
+        try {
+            String response = transport.execute(SimpleRequestBuilder.buildNewRequest(Interfaces.JSON)
+                    .addRequestClass(Classes.APARTMENT).addFunction(Functions.GET_TEMPERATURE_CONTROL_CONFIG)
+                    .addParameter(ParameterTyps.TOKEN, sessionToken).buildRequestString());
+            JsonObject responseObj = JSONResponseHandler.toJsonObject(response);
+
+            if (JSONResponseHandler.checkResponse(responseObj)) {
+                JsonObject obj = JSONResponseHandler.getResultJsonObject(responseObj);
+                // TODO: add logic
+            }
+        } catch (Exception e) {
+            logger.debug("An exception occurred", e);
+        }
+        return null;
+    }
+
+    @Override
+    public String getApartmentTemperatureControlValues(String sessionToken) {
+        try {
+            String response = transport.execute(SimpleRequestBuilder.buildNewRequest(Interfaces.JSON)
+                    .addRequestClass(Classes.APARTMENT).addFunction(Functions.GET_TEMPERATURE_CONTROL_VALUES)
+                    .addParameter(ParameterTyps.TOKEN, sessionToken).buildRequestString());
+            JsonObject responseObj = JSONResponseHandler.toJsonObject(response);
+
+            if (JSONResponseHandler.checkResponse(responseObj)) {
+                JsonObject obj = JSONResponseHandler.getResultJsonObject(responseObj);
+                // TODO: add logic
+            }
+        } catch (Exception e) {
+            logger.debug("An exception occurred", e);
+        }
+        return null;
+    }
+
+    @Override
+    public String getApartmentAssignedSensors(String sessionToken) {
+        try {
+            String response = transport.execute(SimpleRequestBuilder.buildNewRequest(Interfaces.JSON)
+                    .addRequestClass(Classes.APARTMENT).addFunction(Functions.GET_ASSIGNED_SENSORS)
+                    .addParameter(ParameterTyps.TOKEN, sessionToken).buildRequestString());
+            JsonObject responseObj = JSONResponseHandler.toJsonObject(response);
+
+            if (JSONResponseHandler.checkResponse(responseObj)) {
+                JsonObject obj = JSONResponseHandler.getResultJsonObject(responseObj);
+                // TODO: add logic
+            }
+        } catch (Exception e) {
+            logger.debug("An exception occurred", e);
+        }
+        return null;
+    }
+
+    @Override
+    public String getApartmentSensorValues(String sessionToken) {
+        try {
+            String response = transport.execute(SimpleRequestBuilder.buildNewRequest(Interfaces.JSON)
+                    .addRequestClass(Classes.APARTMENT).addFunction(Functions.GET_SENSOR_VALUES)
+                    .addParameter(ParameterTyps.TOKEN, sessionToken).buildRequestString());
+            JsonObject responseObj = JSONResponseHandler.toJsonObject(response);
+
+            if (JSONResponseHandler.checkResponse(responseObj)) {
+                JsonObject obj = JSONResponseHandler.getResultJsonObject(responseObj);
+                // TODO: add logic
             }
         } catch (Exception e) {
             logger.debug("An exception occurred", e);

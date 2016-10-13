@@ -117,7 +117,7 @@ public enum SensorEnum {
      *
      * @return typeIndex
      */
-    public int getSensorType() {
+    public Integer getSensorType() {
         return this.sensorType;
     }
 

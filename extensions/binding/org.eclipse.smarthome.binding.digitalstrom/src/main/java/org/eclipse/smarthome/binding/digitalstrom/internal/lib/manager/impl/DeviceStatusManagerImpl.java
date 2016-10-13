@@ -149,8 +149,8 @@ public class DeviceStatusManagerImpl implements DeviceStatusManager {
                     tempDeviceMap = new HashMap<DSID, Device>();
                 }
 
-                List<Device> currentDeviceList = digitalSTROMClient.getApartmentDevices(connMan.getSessionToken(),
-                        false);
+                List<Device> currentDeviceList = digitalSTROMClient.getApartmentDevices(connMan.getSessionToken());
+                // logger.debug(currentDeviceList.toString());
 
                 // update the current total power consumption
                 if (totalPowerConsumptionListener != null && nextSensorUpdate <= System.currentTimeMillis()) {
