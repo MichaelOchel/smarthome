@@ -80,4 +80,6 @@ public class ParameterTyps {
     public final static String BUTTON_NUMBER = "buttonNumber";
     public final static String CLICK_TYPE = "clickType";
     public final static String SCENE_DEVICE_MODE = "sceneDeviceMode";
+    public final static String CONTROL_STATE = "ControlState";
+    public final static String CONTROL_VALUE = "ControlValue";
 }

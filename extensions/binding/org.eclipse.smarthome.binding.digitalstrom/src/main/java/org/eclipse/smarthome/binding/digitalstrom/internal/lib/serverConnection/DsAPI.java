@@ -66,7 +66,7 @@ public interface DsAPI {
      * @param unassigned not required
      * @return List of devices
      */
-    public List<Device> getApartmentDevices(String sessionToken, Boolean unassigned);
+    public List<Device> getApartmentDevices(String sessionToken);
 
     /**
      * Returns a list of dSID's of all meters(dSMs)
@@ -437,7 +437,7 @@ public interface DsAPI {
      * @author Michael Ochel
      * @author Matthias Siegele
      */
-    public short getDeviceSensorValue(String sessionToken, DSID dSID, String deviceName, SensorEnum sensortype);
+    public short getDeviceSensorValue(String sessionToken, DSID dSID, String deviceName, SensorEnum sensorType);
 
     /**
      * Returns user defined name of the digitalSTROM installation.
@@ -484,4 +484,206 @@ public interface DsAPI {
      * @return name of the scene otherwise null
      */
     public String getSceneName(String sessionToken, Integer zoneID, Short groupID, Short sceneID);
+
+    /**
+     * Returns the temperature control status to the given zone.
+     *
+     * @param sessionToken required
+     * @param zoneID
+     * @return temperature control status to the given zone
+     *
+     * @author Michael Ochel
+     * @author Matthias Siegele
+     */
+    public String getZoneTemperatureControlStatus(String sessionToken, Integer zoneID);
+
+    /**
+     * Returns the temperature control configuration of the given zone. It's like the temperature control status added
+     * by the following control values.
+     *
+     * CtrlKp = Control proportional factor
+     * CtrlTs = Control sampling time
+     * CtrlTi = Control integrator time constant
+     * CtrlKd = Control differential factor
+     * CtrlImin = Control minimum integrator value
+     * CtrlImax = Control maximum integrator value
+     * CtrlYmin = Control minimum control value
+     * CtrlYmax = Control maximum control value
+     * CtrlAntiWindUp = Control integrator anti wind up: 0=inactive, 1=active
+     * CtrlKeepFloorWarm = Control mode with higher priority on comfort: 0=inactive, 1=active
+     *
+     * @param sessionToken required
+     * @param zoneID required
+     * @return temperature control status with configuration parameters
+     *
+     * @author Michael Ochel
+     * @author Matthias Siegele
+     */
+    public String getZoneTemperatureControlConfig(String sessionToken, Integer zoneID);
+
+    /**
+     * Returns the temperature control values to their control modes of the given zone.
+     * There are following control modes:
+     *
+     * <li>0 Off</li>
+     * <li>1 Comfort</li>
+     * <li>2 Economy</li>
+     * <li>3 Not Used</li>
+     * <li>4 Night</li>
+     * <li>5 Holiday</li>
+     * <li>6 Cooling</li>
+     * <li>7 CollingOff</li>
+     *
+     *
+     * @param sessionToken required
+     * @param zoneID required
+     * @return temperature control values of control modes
+     *
+     * @author Michael Ochel
+     * @author Matthias Siegele
+     */
+    public String getZoneTemperatureControlValues(String sessionToken, Integer zoneID);
+
+    public String setZoneTemperatureControlConfig(String sessionToken, Integer zoneID);
+    // TODO: add parameter
+
+    /**
+     * Returns the assigned Sensor dSUID of a zone.
+     *
+     *
+     * @param sessionToken required
+     * @param zoneID required
+     * @return assigned Sensor dSUID of the given zone.
+     *
+     * @author Michael Ochel
+     * @author Matthias Siegele
+     */
+    public String getZoneAssignedSensors(String sessionToken, Integer zoneID);
+
+    /**
+     * Sets the temperature control state of a given zone.<br>
+     * Control states: 0=internal; 1=external; 2=exbackup; 3=emergency
+     *
+     * @param sessionToken required
+     * @param zoneID required
+     * @return success true otherwise false
+     *
+     * @author Michael Ochel
+     * @author Matthias Siegele
+     */
+    public boolean setZoneTemperatureControlState(String sessionToken, Integer zoneID, String controlState);
+
+    /**
+     * Sets the wished temperature for a controlValue
+     *
+     * @param sessionToken
+     * @param zoneID
+     * @param controlValue
+     * @param temperature
+     * @return success true otherwise false
+     */
+    public boolean setZoneTemperatureControlValue(String sessionToken, Integer zoneID, String controlValue,
+            Float temperature);
+    // TODO: add einzelwert oder Liste
+
+    /**
+     * Returns the value of a Sensor of the given zone.
+     *
+     *
+     * @param sessionToken required
+     * @param zoneID required
+     * @return value of a Sensor of the given zone
+     *
+     * @author Michael Ochel
+     * @author Matthias Siegele
+     */
+    public String getZoneSensorValues(String sessionToken, Integer zoneID);
+
+    /**
+     * Set the source of a sensor in a zone to a given device source address.
+     *
+     * @param sessionToken
+     * @param sensorType
+     * @param dSID
+     * @return success true otherwise false
+     */
+    public boolean setZoneSensorSource(String sessionToken, Integer zoneID, SensorEnum sensorType, DSID dSID);
+
+    /**
+     * Remove all assignments for a particular sensor type in a zone.
+     *
+     * @param sessionToken
+     * @param sensorType
+     * @param zoneID
+     * @return success true otherwise false
+     *
+     */
+    public boolean clearZoneSensorSource(String sessionToken, Integer zoneID, SensorEnum sensorType);
+
+    /**
+     * Returns internal status information of the temperature control of a zone.
+     *
+     * @param sessionToken
+     * @param zoneID
+     * @return internal status information of the temperature control of a zone
+     */
+    public String getZoneTemperatureControlInternals(String sessionToken, Integer zoneID);
+
+    /**
+     * Returns the temperature control status of all zones.
+     *
+     * @param sessionToken required
+     * @return temperature control status of all zones
+     *
+     * @author Michael Ochel
+     * @author Matthias Siegele
+     */
+    public String getApartmentTemperatureControlStatus(String sessionToken);
+
+    /**
+     * Returns the temperature control status of all zones.
+     *
+     * @param sessionToken required
+     * @return temperature control status of all zones
+     *
+     * @author Michael Ochel
+     * @author Matthias Siegele
+     */
+    public String getApartmentTemperatureControlConfig(String sessionToken);
+
+    /**
+     * Returns the temperature control status of all zones.
+     *
+     * @param sessionToken required
+     * @return temperature control status of all zones
+     *
+     * @author Michael Ochel
+     * @author Matthias Siegele
+     */
+    public String getApartmentTemperatureControlValues(String sessionToken);
+
+    /**
+     * Returns the assigned Sensor dSUID of all zones.
+     *
+     *
+     * @param sessionToken required
+     * @return assigned Sensor dSUID of all zones.
+     *
+     * @author Michael Ochel
+     * @author Matthias Siegele
+     */
+    public String getApartmentAssignedSensors(String sessionToken);
+
+    /**
+     * Returns the value of a Sensor of all zones.
+     *
+     *
+     * @param sessionToken required
+     * @return value of a Sensor of all zones
+     *
+     * @author Michael Ochel
+     * @author Matthias Siegele
+     */
+    public String getApartmentSensorValues(String sessionToken);
+
 }

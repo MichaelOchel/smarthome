@@ -7,18 +7,22 @@
  */
 package org.eclipse.smarthome.binding.digitalstrom.internal.lib.serverConnection.simpleURLBuilder;
 
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
+
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.serverConnection.simpleURLBuilder.constants.ExeptionConstants;
 
 public class SimpleRequestBuilder {
 
     // states
-    private static boolean functionIsAdded = false;
-    private static boolean parameterIsAdded = false;
-    private static boolean classIsChose = false;
+    private boolean functionIsAdded = false;
+    private boolean parameterIsAdded = false;
+    private boolean classIsChose = false;
     private boolean interfaceIsChose;
 
     private String request = null;
     private static SimpleRequestBuilder builder = null;
+    private static final Lock lock = new ReentrantLock();
 
     /**
      *
@@ -31,6 +35,7 @@ public class SimpleRequestBuilder {
         if (builder == null) {
             builder = new SimpleRequestBuilder();
         }
+        lock.lock();
         return builder.buildNewRequestInt(interface_);
     }
 
@@ -101,7 +106,9 @@ public class SimpleRequestBuilder {
     }
 
     public String buildRequestString() throws Exception {
-        return builder.buildRequestStringInt();
+        String request = builder.buildRequestStringInt();
+        lock.unlock();
+        return request;
     }
 
     private String buildRequestStringInt() throws Exception {
