@@ -151,11 +151,11 @@ public class BridgeHandler extends BaseBridgeHandler
                 }
             }
             if (configChanged) {
-                updateConfiguration(configuration);
+                // updateConfiguration(configuration);
             }
             if (StringUtils.isBlank(getThing().getProperties().get(DigitalSTROMBindingConstants.SERVER_CERT))
                     && StringUtils.isNotBlank(config.getCert())) {
-                updateProperty(DigitalSTROMBindingConstants.SERVER_CERT, config.getCert());
+                // updateProperty(DigitalSTROMBindingConstants.SERVER_CERT, config.getCert());
             }
         }
     };
@@ -507,7 +507,7 @@ public class BridgeHandler extends BaseBridgeHandler
                         config.remove(USER_NAME);
                         config.remove(PASSWORD);
                         config.put(APPLICATION_TOKEN, connMan.getApplicationToken());
-                        this.updateConfiguration(config);
+                        // this.updateConfiguration(config);
                     }
                 }
                 return;
@@ -646,12 +646,12 @@ public class BridgeHandler extends BaseBridgeHandler
                     logger.info("Building digitalSTROM model");
                     break;
                 case RUNNING:
+                    setStatus(ThingStatus.ONLINE);
                     if (devListener != null) {
                         for (DeviceStatusListener deviceListener : devListener) {
                             devStatMan.registerDeviceListener(deviceListener);
                         }
                     }
-                    setStatus(ThingStatus.ONLINE);
                     break;
                 case STOPPED:
                     if (!getThing().getStatusInfo().equals(ThingStatusDetail.COMMUNICATION_ERROR)

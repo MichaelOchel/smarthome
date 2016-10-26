@@ -15,7 +15,6 @@ import org.eclipse.smarthome.binding.digitalstrom.internal.lib.config.Config;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.manager.ConnectionManager;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.manager.SceneManager;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.serverConnection.constants.JSONApiResponseKeysEnum;
-import org.eclipse.smarthome.binding.digitalstrom.internal.lib.serverConnection.constants.JSONRequestConstants;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.serverConnection.impl.JSONResponseHandler;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.Device;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.scene.InternalScene;
@@ -43,6 +42,7 @@ public class EventListener {
     private final String EVENT_NAME_CALL = "callScene";
     private final String EVENT_NAME_UNDO = "undoScene";
     private final int ID = 11;
+    private final int TIMEOUT = 500;
 
     private final String INVALID_SESSION = "Invalid session!";
     private final String UNKNOWN_TOKEN = "Token " + ID + " not found!";
@@ -110,15 +110,14 @@ public class EventListener {
 
         @Override
         public void run() {
-            String request = getEventAsRequest(ID, 500);
-            if (request != null) {
-                String response = connManager.getHttpTransport().execute(request);
+            if (connManager.checkConnection()) {
+                String response = connManager.getDigitalSTROMAPI().getEvent(connManager.getSessionToken(), ID, TIMEOUT);
                 JsonObject responseObj = JSONResponseHandler.toJsonObject(response);
 
                 if (JSONResponseHandler.checkResponse(responseObj)) {
                     JsonObject obj = JSONResponseHandler.getResultJsonObject(responseObj);
-                    if (obj != null && obj.get(JSONApiResponseKeysEnum.EVENT_GET_EVENT.getKey()) instanceof JsonArray) {
-                        JsonArray array = (JsonArray) obj.get(JSONApiResponseKeysEnum.EVENT_GET_EVENT.getKey());
+                    if (obj != null && obj.get(JSONApiResponseKeysEnum.EVENTS.getKey()) instanceof JsonArray) {
+                        JsonArray array = (JsonArray) obj.get(JSONApiResponseKeysEnum.EVENTS.getKey());
                         try {
                             handleEvent(array);
                         } catch (Exception e) {
@@ -127,10 +126,8 @@ public class EventListener {
                     }
                 } else {
                     String errorStr = null;
-                    if (responseObj != null
-                            && responseObj.get(JSONApiResponseKeysEnum.EVENT_GET_EVENT_ERROR.getKey()) != null) {
-                        errorStr = responseObj.get(JSONApiResponseKeysEnum.EVENT_GET_EVENT_ERROR.getKey())
-                                .getAsString();
+                    if (responseObj != null && responseObj.get(JSONApiResponseKeysEnum.MESSAGE.getKey()) != null) {
+                        errorStr = responseObj.get(JSONApiResponseKeysEnum.MESSAGE.getKey()).getAsString();
                     }
                     if (errorStr != null && (errorStr.equals(INVALID_SESSION) || errorStr.contains(UNKNOWN_TOKEN))) {
                         unsubscribe();
@@ -139,21 +136,14 @@ public class EventListener {
                         pollingScheduler.cancel(true);
                         logger.error("Unknown error message at event response: " + errorStr);
                     }
+
                 }
             }
         }
     };
 
-    private String getEventAsRequest(int subscriptionID, int timeout) {
-        if (connManager.checkConnection()) {
-            return JSONRequestConstants.JSON_EVENT_GET + JSONRequestConstants.PARAMETER_TOKEN
-                    + connManager.getSessionToken() + JSONRequestConstants.INFIX_PARAMETER_SUBSCRIPTION_ID
-                    + subscriptionID + JSONRequestConstants.INFIX_PARAMETER_TIMEOUT + timeout;
-        }
-        return null;
-    }
-
     private boolean unsubscribeEvent(String name, int subscriptionID) {
+        // TODO: sinnvoll?
         if (connManager.checkConnection()) {
             return connManager.getDigitalSTROMAPI().unsubscribeEvent(connManager.getSessionToken(), EVENT_NAME_CALL,
                     this.ID, Config.DEFAULT_CONNECTION_TIMEOUT, Config.DEFAULT_READ_TIMEOUT);

@@ -29,29 +29,25 @@ public class JSONDeviceSceneSpecImpl implements DeviceSceneSpec {
     private boolean flashMode = false;
 
     public JSONDeviceSceneSpecImpl(JsonObject jObject) {
-        if (jObject.get(JSONApiResponseKeysEnum.DEVICE_GET_SCENE_MODE_SCENE_ID.getKey()) != null) {
+        if (jObject.get(JSONApiResponseKeysEnum.SCENE_ID.getKey()) != null) {
             short val = -1;
-            val = jObject.get(JSONApiResponseKeysEnum.DEVICE_GET_SCENE_MODE_SCENE_ID.getKey()).getAsShort();
+            val = jObject.get(JSONApiResponseKeysEnum.SCENE_ID.getKey()).getAsShort();
 
             if (val > -1) {
                 this.scene = SceneEnum.getScene(val);
             }
         }
-        if (jObject.get(JSONApiResponseKeysEnum.DEVICE_GET_SCENE_MODE_DONT_CARE.getKey()) != null) {
-            this.dontcare = jObject.get(JSONApiResponseKeysEnum.DEVICE_GET_SCENE_MODE_DONT_CARE.getKey())
-                    .getAsBoolean();
+        if (jObject.get(JSONApiResponseKeysEnum.DONT_CARE.getKey()) != null) {
+            this.dontcare = jObject.get(JSONApiResponseKeysEnum.DONT_CARE.getKey()).getAsBoolean();
         }
-        if (jObject.get(JSONApiResponseKeysEnum.DEVICE_GET_SCENE_MODE_LOCAL_PRIO.getKey()) != null) {
-            this.localPrio = jObject.get(JSONApiResponseKeysEnum.DEVICE_GET_SCENE_MODE_LOCAL_PRIO.getKey())
-                    .getAsBoolean();
+        if (jObject.get(JSONApiResponseKeysEnum.LOCAL_PRIO.getKey()) != null) {
+            this.localPrio = jObject.get(JSONApiResponseKeysEnum.LOCAL_PRIO.getKey()).getAsBoolean();
         }
-        if (jObject.get(JSONApiResponseKeysEnum.DEVICE_GET_SCENE_MODE_SPECIAL_MODE.getKey()) != null) {
-            this.specialMode = jObject.get(JSONApiResponseKeysEnum.DEVICE_GET_SCENE_MODE_SPECIAL_MODE.getKey())
-                    .getAsBoolean();
+        if (jObject.get(JSONApiResponseKeysEnum.SPECIAL_MODE.getKey()) != null) {
+            this.specialMode = jObject.get(JSONApiResponseKeysEnum.SPECIAL_MODE.getKey()).getAsBoolean();
         }
-        if (jObject.get(JSONApiResponseKeysEnum.DEVICE_GET_SCENE_MODE_FLASH_MODE.getKey()) != null) {
-            this.flashMode = jObject.get(JSONApiResponseKeysEnum.DEVICE_GET_SCENE_MODE_FLASH_MODE.getKey())
-                    .getAsBoolean();
+        if (jObject.get(JSONApiResponseKeysEnum.FLASH_MODE.getKey()) != null) {
+            this.flashMode = jObject.get(JSONApiResponseKeysEnum.FLASH_MODE.getKey()).getAsBoolean();
         }
     }
 

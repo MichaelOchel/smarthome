@@ -151,7 +151,7 @@ public class DeviceHandler extends BaseThingHandler implements DeviceStatusListe
         checkDeviceInfoConfig(configuration, device);
         loadSensorChannels(configuration);
 
-        updateConfiguration(configuration);
+        // updateConfiguration(configuration);
     }
 
     @Override
@@ -451,7 +451,7 @@ public class DeviceHandler extends BaseThingHandler implements DeviceStatusListe
 
             Configuration config = getThing().getConfiguration();
 
-            checkDeviceInfoConfig(config, device);
+            // checkDeviceInfoConfig(config, device);
             // load sensor priorities into the device and load sensor channels of the thing
             if (!device.isShade()) {
                 loadSensorChannels(config);
@@ -544,7 +544,7 @@ public class DeviceHandler extends BaseThingHandler implements DeviceStatusListe
             }
         }
         if (configChanged) {
-            super.updateConfiguration(config);
+            // super.updateConfiguration(config);
             configChanged = false;
         }
     }
@@ -582,7 +582,7 @@ public class DeviceHandler extends BaseThingHandler implements DeviceStatusListe
                 configChanged = true;
             }
             if (configChanged) {
-                super.updateConfiguration(config);
+                // super.updateConfiguration(config);
                 configChanged = false;
             }
 
@@ -959,7 +959,7 @@ public class DeviceHandler extends BaseThingHandler implements DeviceStatusListe
                 checkOutputChannel();
                 break;
         }
-        super.updateConfiguration(config);
+        // super.updateConfiguration(config);
     }
 
     @Override

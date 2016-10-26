@@ -114,4 +114,5 @@ public class Functions {
     public static final String GET_SENSOR_VALUES = "getSensorValues";
     public static final String SET_SENSOR_SOURCE = "setSensorSource";
     public static final String GET_TEMPERATURE_CONTROL_INTERNALS = "getTemperatureControlInternals";
+    public static final String SET_TEMPERATION_CONTROL_CONFIG = "setTemperatureControlConfig";
 }

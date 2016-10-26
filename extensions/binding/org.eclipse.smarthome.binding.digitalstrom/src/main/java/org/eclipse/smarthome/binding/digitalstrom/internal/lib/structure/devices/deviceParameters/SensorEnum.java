@@ -45,30 +45,30 @@ public enum SensorEnum {
      * | 64 | Output current (H) | Ampere (mA) | 0 | 16380 | 4 |
      * | 65 | Power consumption | Volt-Ampere (VA) | 0 | 4095 | 1 |
      */
-    ACTIVE_POWER(4, "watt", "W"),
-    OUTPUT_CURRENT(5, "ampere", "mA"),
-    ELECTRIC_METER(6, "kilowatt hours", "kWh"),
-    TEMPERATURE_INDOORS(9, "kelvin", "K"),
-    TEMPERATURE_OUTDOORS(10, "kelvin", "K"),
-    BRIGHTNESS_INDOORS(11, "lux", "Lx"),
-    BRIGHTNESS_OUTDOORS(12, "lux", "Lx"),
-    RELATIVE_HUMIDITY_INDOORS(13, "percent", "%"),
-    RELATIVE_HUMIDITY_OUTDOORS(14, "percent", "%"),
-    AIR_PRESSURE(15, "pascal", "hPa"),
-    WIND_SPEED(18, "meters per second", "m/s"),
-    PRECIPITATION(20, "millimeter per square meter", "mm/m2"),
-    CARBONE_DIOXIDE(21, "parts per million", "ppm"),
-    SOUND_PRESSURE_LEVEL(25, "decibel", "dB"),
-    ROOM_TEMPERATION_SET_POINT(50, "kelvin", "K"),
-    ROOM_TEMPERATION_CONTROL_VARIABLE(51, "kelvin", "K"),
-    OUTPUT_CURRENT_H(64, "ampere", "mA"),
-    POWER_CONSUMPTION(65, "volt-ampere", "VA");
+    ACTIVE_POWER((short) 4, "watt", "W"),
+    OUTPUT_CURRENT((short) 5, "ampere", "mA"),
+    ELECTRIC_METER((short) 6, "kilowatt hours", "kWh"),
+    TEMPERATURE_INDOORS((short) 9, "kelvin", "K"),
+    TEMPERATURE_OUTDOORS((short) 10, "kelvin", "K"),
+    BRIGHTNESS_INDOORS((short) 11, "lux", "Lx"),
+    BRIGHTNESS_OUTDOORS((short) 12, "lux", "Lx"),
+    RELATIVE_HUMIDITY_INDOORS((short) 13, "percent", "%"),
+    RELATIVE_HUMIDITY_OUTDOORS((short) 14, "percent", "%"),
+    AIR_PRESSURE((short) 15, "pascal", "hPa"),
+    WIND_SPEED((short) 18, "meters per second", "m/s"),
+    PRECIPITATION((short) 20, "millimeter per square meter", "mm/m2"),
+    CARBONE_DIOXIDE((short) 21, "parts per million", "ppm"),
+    SOUND_PRESSURE_LEVEL((short) 25, "decibel", "dB"),
+    ROOM_TEMPERATION_SET_POINT((short) 50, "kelvin", "K"),
+    ROOM_TEMPERATION_CONTROL_VARIABLE((short) 51, "kelvin", "K"),
+    OUTPUT_CURRENT_H((short) 64, "ampere", "mA"),
+    POWER_CONSUMPTION((short) 65, "volt-ampere", "VA");
 
-    private final int sensorType;
+    private final Short sensorType;
     private final String unit;
     private final String unitShortcut;
 
-    static final HashMap<Integer, SensorEnum> sensorEnums = new HashMap<Integer, SensorEnum>();
+    static final HashMap<Short, SensorEnum> sensorEnums = new HashMap<Short, SensorEnum>();
 
     static {
         for (SensorEnum sensor : SensorEnum.values()) {
@@ -82,7 +82,7 @@ public enum SensorEnum {
      * @param typeIndex
      * @return true, if contains otherwise false
      */
-    public static boolean containsSensor(Integer typeIndex) {
+    public static boolean containsSensor(Short typeIndex) {
         return sensorEnums.keySet().contains(typeIndex);
     }
 
@@ -92,21 +92,11 @@ public enum SensorEnum {
      * @param typeIndex
      * @return SensorEnum or null
      */
-    public static SensorEnum getSensor(Integer typeIndex) {
+    public static SensorEnum getSensor(Short typeIndex) {
         return sensorEnums.get(typeIndex);
     }
 
-    /**
-     * Returns true, if the given sensor type index contains in digitalSTROM sensor types, otherwise false.
-     *
-     * @param sceneNumber
-     * @return true, if contains otherwise false
-     */
-    public static boolean containsScene(Integer typeIndex) {
-        return sensorEnums.keySet().contains(typeIndex);
-    }
-
-    SensorEnum(int sensorType, String unit, String unitShortcut) {
+    SensorEnum(Short sensorType, String unit, String unitShortcut) {
         this.sensorType = sensorType;
         this.unit = unit;
         this.unitShortcut = unitShortcut;
@@ -117,7 +107,7 @@ public enum SensorEnum {
      *
      * @return typeIndex
      */
-    public Integer getSensorType() {
+    public Short getSensorType() {
         return this.sensorType;
     }
 
