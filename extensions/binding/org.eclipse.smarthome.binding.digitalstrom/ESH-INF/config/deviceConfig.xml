@@ -60,13 +60,13 @@
         <parameter name="dSUID" type="text" readOnly="true" groupName="devInfo">
             <label>@text/DS_DEVICE_PARM_DSUID_LABEL</label>
             <description>@text/DS_DEVICE_PARM_DSUID_DESC</description>
-            <required>true</required>
+            <required>false</required>
         </parameter>
         <!--deviceID -->
         <parameter name="dSID" type="text" readOnly="true" groupName="devInfo">
             <label>@text/DS_DEVICE_PARM_DSID_LABEL</label>
             <description>@text/DS_DEVICE_PARM_DSID_DESC</description>
-            <required>false</required>
+            <required>true</required>
         </parameter>
         <!--meterID -->
         <parameter name="meterDSID" type="text" groupName="devInfo">
@@ -119,13 +119,13 @@
         <parameter name="dSUID" type="text" readOnly="true" groupName="devInfo">
             <label>@text/DS_DEVICE_PARM_DSUID_LABEL</label>
             <description>@text/DS_DEVICE_PARM_DSUID_DESC</description>
-            <required>true</required>
+            <required>false</required>
         </parameter>
         <!--deviceID -->
         <parameter name="dSID" type="text" readOnly="true" groupName="devInfo">
             <label>@text/DS_DEVICE_PARM_DSID_LABEL</label>
             <description>@text/DS_DEVICE_PARM_DSID_DESC</description>
-            <required>false</required>
+            <required>true</required>
         </parameter>
         <!--meterID -->
         <parameter name="meterDSID" type="text" groupName="devInfo">

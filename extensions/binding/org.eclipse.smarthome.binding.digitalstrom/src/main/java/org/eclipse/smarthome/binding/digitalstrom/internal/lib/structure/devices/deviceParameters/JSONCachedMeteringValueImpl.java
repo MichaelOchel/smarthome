@@ -25,14 +25,14 @@ public class JSONCachedMeteringValueImpl implements CachedMeteringValue {
     private String date = null;
 
     public JSONCachedMeteringValueImpl(JsonObject jObject) {
-        if (jObject.get(JSONApiResponseKeysEnum.METERING_GET_LATEST_DSID.getKey()) != null) {
-            this.dsid = new DSID(jObject.get(JSONApiResponseKeysEnum.METERING_GET_LATEST_DSID.getKey()).getAsString());
+        if (jObject.get(JSONApiResponseKeysEnum.DSID_LOWER_CASE.getKey()) != null) {
+            this.dsid = new DSID(jObject.get(JSONApiResponseKeysEnum.DSID_LOWER_CASE.getKey()).getAsString());
         }
-        if (jObject.get(JSONApiResponseKeysEnum.METERING_GET_LATEST_VALUE.getKey()) != null) {
-            this.value = jObject.get(JSONApiResponseKeysEnum.METERING_GET_LATEST_VALUE.getKey()).getAsDouble();
+        if (jObject.get(JSONApiResponseKeysEnum.VALUE.getKey()) != null) {
+            this.value = jObject.get(JSONApiResponseKeysEnum.VALUE.getKey()).getAsDouble();
         }
-        if (jObject.get(JSONApiResponseKeysEnum.METERING_GET_LATEST_DATE.getKey()) != null) {
-            this.date = jObject.get(JSONApiResponseKeysEnum.METERING_GET_LATEST_DATE.getKey()).getAsString();
+        if (jObject.get(JSONApiResponseKeysEnum.DATE.getKey()) != null) {
+            this.date = jObject.get(JSONApiResponseKeysEnum.DATE.getKey()).getAsString();
         }
     }
 

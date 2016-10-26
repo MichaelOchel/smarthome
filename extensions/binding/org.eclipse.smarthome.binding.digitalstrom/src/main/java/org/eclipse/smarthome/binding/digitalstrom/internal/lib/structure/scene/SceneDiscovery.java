@@ -133,16 +133,14 @@ public class SceneDiscovery {
     }
 
     private void addScenesToList(JsonObject resultJsonObj) {
-        if (resultJsonObj.get(JSONApiResponseKeysEnum.APARTMENT_GET_STRUCTURE_ZONES.getKey()) instanceof JsonArray) {
-            JsonArray zones = (JsonArray) resultJsonObj
-                    .get(JSONApiResponseKeysEnum.APARTMENT_GET_STRUCTURE_ZONES.getKey());
+        if (resultJsonObj.get(JSONApiResponseKeysEnum.ZONES.getKey()) instanceof JsonArray) {
+            JsonArray zones = (JsonArray) resultJsonObj.get(JSONApiResponseKeysEnum.ZONES.getKey());
             for (int i = 0; i < zones.size(); i++) {
 
-                if (((JsonObject) zones.get(i)).get(
-                        JSONApiResponseKeysEnum.APARTMENT_GET_STRUCTURE_ZONES_GROUPS.getKey()) instanceof JsonArray) {
+                if (((JsonObject) zones.get(i)).get(JSONApiResponseKeysEnum.GROUPS.getKey()) instanceof JsonArray) {
 
                     JsonArray groups = (JsonArray) ((JsonObject) zones.get(i))
-                            .get(JSONApiResponseKeysEnum.APARTMENT_GET_STRUCTURE_ZONES_GROUPS.getKey());
+                            .get(JSONApiResponseKeysEnum.GROUPS.getKey());
 
                     for (int j = 0; j < groups.size(); j++) {
 
@@ -286,12 +284,10 @@ public class SceneDiscovery {
                                                     if (JSONResponseHandler.checkResponse(responsJsonObj)) {
                                                         JsonObject resultJsonObj = JSONResponseHandler
                                                                 .getResultJsonObject(responsJsonObj);
-                                                        if (resultJsonObj
-                                                                .get(JSONApiResponseKeysEnum.ZONE_GET_REACHABLE_SCENES
-                                                                        .getKey()) instanceof JsonArray) {
-                                                            JsonArray scenes = (JsonArray) resultJsonObj
-                                                                    .get(JSONApiResponseKeysEnum.ZONE_GET_REACHABLE_SCENES
-                                                                            .getKey());
+                                                        if (resultJsonObj.get(JSONApiResponseKeysEnum.REACHABLE_SCENES
+                                                                .getKey()) instanceof JsonArray) {
+                                                            JsonArray scenes = (JsonArray) resultJsonObj.get(
+                                                                    JSONApiResponseKeysEnum.REACHABLE_SCENES.getKey());
                                                             if (scenes != null) {
                                                                 for (int i = 0; i < scenes.size(); i++) {
                                                                     discoverScene(scenes.get(i).getAsShort(), groupID);
@@ -354,18 +350,15 @@ public class SceneDiscovery {
                 JsonObject responsJsonObj = JSONResponseHandler.toJsonObject(response);
                 if (JSONResponseHandler.checkResponse(responsJsonObj)) {
                     JsonObject resultJsonObj = JSONResponseHandler.getResultJsonObject(responsJsonObj);
-                    if (resultJsonObj
-                            .get(JSONApiResponseKeysEnum.APARTMENT_GET_STRUCTURE_ZONES.getKey()) instanceof JsonArray) {
-                        JsonArray zones = (JsonArray) resultJsonObj
-                                .get(JSONApiResponseKeysEnum.APARTMENT_GET_STRUCTURE_ZONES.getKey());
+                    if (resultJsonObj.get(JSONApiResponseKeysEnum.ZONES.getKey()) instanceof JsonArray) {
+                        JsonArray zones = (JsonArray) resultJsonObj.get(JSONApiResponseKeysEnum.ZONES.getKey());
                         reachableGroupsMap = new HashMap<Integer, List<Short>>(zones.size());
                         List<Short> groupList;
                         for (int i = 0; i < zones.size(); i++) {
                             if (((JsonObject) zones.get(i))
-                                    .get(JSONApiResponseKeysEnum.APARTMENT_GET_STRUCTURE_ZONES_GROUPS
-                                            .getKey()) instanceof JsonArray) {
+                                    .get(JSONApiResponseKeysEnum.GROUPS.getKey()) instanceof JsonArray) {
                                 JsonArray groups = (JsonArray) ((JsonObject) zones.get(i))
-                                        .get(JSONApiResponseKeysEnum.APARTMENT_GET_STRUCTURE_ZONES_GROUPS.getKey());
+                                        .get(JSONApiResponseKeysEnum.GROUPS.getKey());
                                 groupList = new LinkedList<Short>();
                                 for (int k = 0; k < groups.size(); k++) {
                                     groupList.add(groups.get(k).getAsShort());

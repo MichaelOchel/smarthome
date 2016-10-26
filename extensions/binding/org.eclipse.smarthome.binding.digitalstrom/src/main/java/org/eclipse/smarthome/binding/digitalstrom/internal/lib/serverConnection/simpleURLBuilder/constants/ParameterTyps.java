@@ -82,4 +82,21 @@ public class ParameterTyps {
     public final static String SCENE_DEVICE_MODE = "sceneDeviceMode";
     public final static String CONTROL_STATE = "ControlState";
     public final static String CONTROL_VALUE = "ControlValue";
+    public final static String QUERY = "query";
+    public static final String CONTROL_MODE = "ControlMode";
+    public static final String CONTROL_DSUID = "ControlDSUID";
+    public static final String CTRL_OFFSET = "CtrlOffset";
+    public static final String REFERENCE_ZONE = "ReferenceZone";
+    public static final String EMERGENCY_VALUE = "EmergencyValue";
+    public static final String MANUAL_VALUE = "ManualValue";
+    public static final String CTRL_KP = "CtrlKp";
+    public static final String CTRL_TS = "CtrlTs";
+    public static final String CTRL_TI = "CtrlTi";
+    public static final String CTRL_KD = "CtrlKd";
+    public static final String CTRL_I_MIN = "CtrlImin";
+    public static final String CTRL_I_MAX = "CtrlImax";
+    public static final String CTRL_Y_MIN = "CtrlYmin";
+    public static final String CTRL_Y_MAX = "CtrlYmax";
+    public static final String CTRL_ANTI_WIND_UP = "CtrlAntiWindUp";
+    public static final String CTRL_KEEP_FLOOR_WARM = "CtrlKeepFloorWarm";
 }

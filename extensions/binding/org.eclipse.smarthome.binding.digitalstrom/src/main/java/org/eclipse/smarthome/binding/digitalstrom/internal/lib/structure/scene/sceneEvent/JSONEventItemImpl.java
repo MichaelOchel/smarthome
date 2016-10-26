@@ -33,15 +33,15 @@ public class JSONEventItemImpl implements EventItem {
      * @param jsonEventItem
      */
     public JSONEventItemImpl(JsonObject jsonEventItem) {
-        name = jsonEventItem.get(JSONApiResponseKeysEnum.EVENT_NAME.getKey()).getAsString();
+        name = jsonEventItem.get(JSONApiResponseKeysEnum.NAME.getKey()).getAsString();
         addProperty(EventPropertyEnum.EVENT_NAME, name);
 
-        if (jsonEventItem.get(JSONApiResponseKeysEnum.EVENT_PROPERTIES.getKey()) instanceof JsonObject) {
-            JsonObject propObj = (JsonObject) jsonEventItem.get(JSONApiResponseKeysEnum.EVENT_PROPERTIES.getKey());
+        if (jsonEventItem.get(JSONApiResponseKeysEnum.PROPERTIES.getKey()) instanceof JsonObject) {
+            JsonObject propObj = (JsonObject) jsonEventItem.get(JSONApiResponseKeysEnum.PROPERTIES.getKey());
             addProperty(EventPropertyEnum.SCENEID, propObj.get("sceneID").getAsString());
         }
-        if (jsonEventItem.get(JSONApiResponseKeysEnum.EVENT_SOURCE.getKey()) instanceof JsonObject) {
-            JsonObject sourceObj = (JsonObject) jsonEventItem.get(JSONApiResponseKeysEnum.EVENT_SOURCE.getKey());
+        if (jsonEventItem.get(JSONApiResponseKeysEnum.SOURCE.getKey()) instanceof JsonObject) {
+            JsonObject sourceObj = (JsonObject) jsonEventItem.get(JSONApiResponseKeysEnum.SOURCE.getKey());
             for (Entry<String, JsonElement> entry : sourceObj.entrySet()) {
                 if (EventPropertyEnum.containsId(entry.getKey())) {
                     addProperty(EventPropertyEnum.getProperty(entry.getKey()), entry.getValue().getAsString());

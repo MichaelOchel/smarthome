@@ -99,7 +99,7 @@ The parameter group *Server information* only includes informative parameters, w
 | Parameter Label | Parameter ID| Description  | Required | Advanced 
 |-----------------|------------------------|--------------|----------------- |------------- |
 | dSID | dSID | The unique identifier of a digitalSTOM-server. | false| false |
-| digitalSTROM-Installation name | dsName | The user defined name of the digitalSTROM-Installation. | false | false | false |
+| digitalSTROM-Installation name | dsName | The user defined name of the digitalSTROM-Installation. | false | false | 
 
 #### General configuration:
 
@@ -115,7 +115,7 @@ Here you can set general binding configuration parameters, which are shown in fo
 At the thing file, a manual configuration looks e.g. like
 
 ```
-Bridge digitalstrom:dssBridge:dssBridge1 [ ipAddress="dss.local.",  userName="dssadmin", password=“dssadmin", sensorDataUpdateIntervall="180"]
+Bridge digitalstrom:dssBridge:dssBridge1 [ ipAddress="dss.local.",  userName="dssadmin", password="dssadmin", sensorDataUpdateInterval=180]
 ```
 
 ### digitalSTROM-Devices
@@ -212,8 +212,8 @@ All devices support some of the following channels:
 demo.things:
 
 ```
-Bridge digitalstrom:dssBridge:1 [ ipAddress="dss.local.",  userName="dssadmin", password="dssadmin", sensorDataUpdateIntervall=180] {
-    GE GE-KM200 [ dSID="3504175fe0000000000043d4",  ActivePowerRefreshPriority="low", ElectricMeterRefreshPriority="medium", OutputCurrentRefreshPriority="high"]
+Bridge digitalstrom:dssBridge:1 [ ipAddress="dss.local.",  userName="dssadmin", password="dssadmin", sensorDataUpdateInterval=180] {
+    GE GE-KM200 [ dSID="3504175fe0000000000043d4",  activePowerRefreshPriority="low", electricMeterRefreshPriority="medium", outputCurrentRefreshPriority="high"]
     GR GR-KM200 [ dSID="3504175fe0000000000043d5"]
     namedScene scene1 [zoneID="0", groupID="0", sceneID="5"]
 }

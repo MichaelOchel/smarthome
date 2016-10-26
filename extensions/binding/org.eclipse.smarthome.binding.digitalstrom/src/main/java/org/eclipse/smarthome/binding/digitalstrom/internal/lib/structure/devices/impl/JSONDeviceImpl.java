@@ -127,42 +127,42 @@ public class JSONDeviceImpl implements Device {
      * @param group json object
      */
     public JSONDeviceImpl(JsonObject object) {
-        if (object.get(JSONApiResponseKeysEnum.DEVICE_NAME.getKey()) != null) {
-            this.name = object.get(JSONApiResponseKeysEnum.DEVICE_NAME.getKey()).getAsString();
+        if (object.get(JSONApiResponseKeysEnum.NAME.getKey()) != null) {
+            this.name = object.get(JSONApiResponseKeysEnum.NAME.getKey()).getAsString();
         }
-        if (object.get(JSONApiResponseKeysEnum.DEVICE_ID.getKey()) != null) {
-            this.dsid = new DSID(object.get(JSONApiResponseKeysEnum.DEVICE_ID.getKey()).getAsString());
-        } else if (object.get(JSONApiResponseKeysEnum.DEVICE_ID_QUERY.getKey()) != null) {
-            this.dsid = new DSID(object.get(JSONApiResponseKeysEnum.DEVICE_ID_QUERY.getKey()).getAsString());
+        if (object.get(JSONApiResponseKeysEnum.ID.getKey()) != null) {
+            this.dsid = new DSID(object.get(JSONApiResponseKeysEnum.ID.getKey()).getAsString());
+        } else if (object.get(JSONApiResponseKeysEnum.DSID.getKey()) != null) {
+            this.dsid = new DSID(object.get(JSONApiResponseKeysEnum.DSID.getKey()).getAsString());
         }
-        if (object.get(JSONApiResponseKeysEnum.DEVICE_METER_ID.getKey()) != null) {
-            this.meterDSID = new DSID(object.get(JSONApiResponseKeysEnum.DEVICE_METER_ID.getKey()).getAsString());
+        if (object.get(JSONApiResponseKeysEnum.METER_DSID.getKey()) != null) {
+            this.meterDSID = new DSID(object.get(JSONApiResponseKeysEnum.METER_DSID.getKey()).getAsString());
         }
-        if (object.get(JSONApiResponseKeysEnum.DEVICE_DSUID.getKey()) != null) {
-            this.dSUID = object.get(JSONApiResponseKeysEnum.DEVICE_DSUID.getKey()).getAsString();
+        if (object.get(JSONApiResponseKeysEnum.DSUID.getKey()) != null) {
+            this.dSUID = object.get(JSONApiResponseKeysEnum.DSUID.getKey()).getAsString();
         }
-        if (object.get(JSONApiResponseKeysEnum.DEVICE_ID.getKey()) != null) {
-            this.hwInfo = object.get(JSONApiResponseKeysEnum.DEVICE_HW_INFO.getKey()).getAsString();
+        if (object.get(JSONApiResponseKeysEnum.HW_INFO.getKey()) != null) {
+            this.hwInfo = object.get(JSONApiResponseKeysEnum.HW_INFO.getKey()).getAsString();
         }
-        if (object.get(JSONApiResponseKeysEnum.DEVICE_ON.getKey()) != null) {
+        if (object.get(JSONApiResponseKeysEnum.ON.getKey()) != null) {
             if (!isShade()) {
-                this.isOn = object.get(JSONApiResponseKeysEnum.DEVICE_ON.getKey()).getAsBoolean();
+                this.isOn = object.get(JSONApiResponseKeysEnum.ON.getKey()).getAsBoolean();
             } else {
-                this.isOpen = object.get(JSONApiResponseKeysEnum.DEVICE_ON.getKey()).getAsBoolean();
+                this.isOpen = object.get(JSONApiResponseKeysEnum.ON.getKey()).getAsBoolean();
             }
         }
-        if (object.get(JSONApiResponseKeysEnum.DEVICE_IS_PRESENT.getKey()) != null) {
-            this.isPresent = object.get(JSONApiResponseKeysEnum.DEVICE_IS_PRESENT.getKey()).getAsBoolean();
-        } else if (object.get(JSONApiResponseKeysEnum.DEVICE_IS_PRESENT_QUERY.getKey()) != null) {
-            this.isPresent = object.get(JSONApiResponseKeysEnum.DEVICE_IS_PRESENT_QUERY.getKey()).getAsBoolean();
+        if (object.get(JSONApiResponseKeysEnum.IS_PRESENT.getKey()) != null) {
+            this.isPresent = object.get(JSONApiResponseKeysEnum.IS_PRESENT.getKey()).getAsBoolean();
+        } else if (object.get(JSONApiResponseKeysEnum.PRESENT.getKey()) != null) {
+            this.isPresent = object.get(JSONApiResponseKeysEnum.PRESENT.getKey()).getAsBoolean();
         }
-        if (object.get(JSONApiResponseKeysEnum.DEVICE_ZONE_ID.getKey()) != null) {
-            zoneId = object.get(JSONApiResponseKeysEnum.DEVICE_ZONE_ID.getKey()).getAsInt();
-        } else if (object.get(JSONApiResponseKeysEnum.DEVICE_ZONE_ID_QUERY.getKey()) != null) {
-            zoneId = object.get(JSONApiResponseKeysEnum.DEVICE_ZONE_ID_QUERY.getKey()).getAsInt();
+        if (object.get(JSONApiResponseKeysEnum.ZONE_ID.getKey()) != null) {
+            zoneId = object.get(JSONApiResponseKeysEnum.ZONE_ID.getKey()).getAsInt();
+        } else if (object.get(JSONApiResponseKeysEnum.ZONE_ID_UPPER_Z.getKey()) != null) {
+            zoneId = object.get(JSONApiResponseKeysEnum.ZONE_ID_UPPER_Z.getKey()).getAsInt();
         }
-        if (object.get(JSONApiResponseKeysEnum.DEVICE_GROUPS.getKey()) instanceof JsonArray) {
-            JsonArray array = (JsonArray) object.get(JSONApiResponseKeysEnum.DEVICE_GROUPS.getKey());
+        if (object.get(JSONApiResponseKeysEnum.GROUPS.getKey()) instanceof JsonArray) {
+            JsonArray array = (JsonArray) object.get(JSONApiResponseKeysEnum.GROUPS.getKey());
             for (int i = 0; i < array.size(); i++) {
                 if (array.get(i) != null) {
                     short tmp = array.get(i).getAsShort();
@@ -178,8 +178,8 @@ public class JSONDeviceImpl implements Device {
                 }
             }
         }
-        if (object.get(JSONApiResponseKeysEnum.DEVICE_OUTPUT_MODE.getKey()) != null) {
-            int tmp = object.get(JSONApiResponseKeysEnum.DEVICE_OUTPUT_MODE.getKey()).getAsInt();
+        if (object.get(JSONApiResponseKeysEnum.OUTPUT_MODE.getKey()) != null) {
+            int tmp = object.get(JSONApiResponseKeysEnum.OUTPUT_MODE.getKey()).getAsInt();
             if (tmp != -1) {
                 if (OutputModeEnum.containsMode(tmp)) {
                     outputMode = OutputModeEnum.getMode(tmp);

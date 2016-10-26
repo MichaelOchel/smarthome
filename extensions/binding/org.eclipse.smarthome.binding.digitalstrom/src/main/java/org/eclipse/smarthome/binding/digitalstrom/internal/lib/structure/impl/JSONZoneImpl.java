@@ -38,27 +38,25 @@ public class JSONZoneImpl implements Zone {
         this.groupList = new LinkedList<DetailedGroupInfo>();
         this.deviceList = new LinkedList<Device>();
 
-        if (object.get(JSONApiResponseKeysEnum.APARTMENT_GET_STRUCTURE_ZONES_NAME.getKey()) != null) {
-            this.name = object.get(JSONApiResponseKeysEnum.APARTMENT_GET_STRUCTURE_ZONES_NAME.getKey()).getAsString();
+        if (object.get(JSONApiResponseKeysEnum.NAME.getKey()) != null) {
+            this.name = object.get(JSONApiResponseKeysEnum.NAME.getKey()).getAsString();
         }
-        if (object.get(JSONApiResponseKeysEnum.APARTMENT_GET_STRUCTURE_ZONES_ID.getKey()) != null) {
-            zoneId = object.get(JSONApiResponseKeysEnum.APARTMENT_GET_STRUCTURE_ZONES_ID.getKey()).getAsInt();
+        if (object.get(JSONApiResponseKeysEnum.ID.getKey()) != null) {
+            zoneId = object.get(JSONApiResponseKeysEnum.ID.getKey()).getAsInt();
         }
         if (zoneId == -1) {
-            if (object.get(JSONApiResponseKeysEnum.QUERY_ZONE_ID.getKey()) != null) {
-                zoneId = object.get(JSONApiResponseKeysEnum.QUERY_ZONE_ID.getKey()).getAsInt();
+            if (object.get(JSONApiResponseKeysEnum.ZONE_ID.getKey()) != null) {
+                zoneId = object.get(JSONApiResponseKeysEnum.ZONE_ID.getKey()).getAsInt();
             }
         }
-        if (object.get(JSONApiResponseKeysEnum.APARTMENT_GET_STRUCTURE_ZONES_DEVICES.getKey()) instanceof JsonArray) {
-            JsonArray list = (JsonArray) object
-                    .get(JSONApiResponseKeysEnum.APARTMENT_GET_STRUCTURE_ZONES_DEVICES.getKey());
+        if (object.get(JSONApiResponseKeysEnum.DEVICES.getKey()) instanceof JsonArray) {
+            JsonArray list = (JsonArray) object.get(JSONApiResponseKeysEnum.DEVICES.getKey());
             for (int i = 0; i < list.size(); i++) {
                 this.deviceList.add(new JSONDeviceImpl((JsonObject) list.get(i)));
             }
         }
-        if (object.get(JSONApiResponseKeysEnum.APARTMENT_GET_STRUCTURE_ZONES_GROUPS.getKey()) instanceof JsonArray) {
-            JsonArray groupList = (JsonArray) object
-                    .get(JSONApiResponseKeysEnum.APARTMENT_GET_STRUCTURE_ZONES_GROUPS.getKey());
+        if (object.get(JSONApiResponseKeysEnum.GROUPS.getKey()) instanceof JsonArray) {
+            JsonArray groupList = (JsonArray) object.get(JSONApiResponseKeysEnum.GROUPS.getKey());
             for (int i = 0; i < groupList.size(); i++) {
                 this.groupList.add(new JSONDetailedGroupInfoImpl((JsonObject) groupList.get(i)));
             }

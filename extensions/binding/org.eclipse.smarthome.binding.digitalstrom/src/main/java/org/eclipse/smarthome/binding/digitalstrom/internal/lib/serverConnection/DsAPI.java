@@ -7,9 +7,18 @@
  */
 package org.eclipse.smarthome.binding.digitalstrom.internal.lib.serverConnection;
 
+import java.util.HashMap;
 import java.util.List;
 
+import org.eclipse.smarthome.binding.digitalstrom.internal.lib.climate.jsonResponseContainer.BaseSensorValues;
+import org.eclipse.smarthome.binding.digitalstrom.internal.lib.climate.jsonResponseContainer.impl.AssignedSensors;
+import org.eclipse.smarthome.binding.digitalstrom.internal.lib.climate.jsonResponseContainer.impl.SensorValues;
+import org.eclipse.smarthome.binding.digitalstrom.internal.lib.climate.jsonResponseContainer.impl.TemperatureControlConfig;
+import org.eclipse.smarthome.binding.digitalstrom.internal.lib.climate.jsonResponseContainer.impl.TemperatureControlInternals;
+import org.eclipse.smarthome.binding.digitalstrom.internal.lib.climate.jsonResponseContainer.impl.TemperatureControlStatus;
+import org.eclipse.smarthome.binding.digitalstrom.internal.lib.climate.jsonResponseContainer.impl.TemperatureControlValues;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.Apartment;
+import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.Circuit;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.Device;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.CachedMeteringValue;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.DSID;
@@ -67,6 +76,14 @@ public interface DsAPI {
      * @return List of devices
      */
     public List<Device> getApartmentDevices(String sessionToken);
+
+    /**
+     * Returns an array containing all digitalSTROM Meters of the apartment.
+     *
+     * @param sessionToken
+     * @return
+     */
+    public List<Circuit> getApartmentCircuits(String sessionToken);
 
     /**
      * Returns a list of dSID's of all meters(dSMs)
@@ -495,7 +512,8 @@ public interface DsAPI {
      * @author Michael Ochel
      * @author Matthias Siegele
      */
-    public String getZoneTemperatureControlStatus(String sessionToken, Integer zoneID);
+    public TemperatureControlStatus getZoneTemperatureControlStatus(String sessionToken, Integer zoneID,
+            String zoneName);
 
     /**
      * Returns the temperature control configuration of the given zone. It's like the temperature control status added
@@ -519,7 +537,8 @@ public interface DsAPI {
      * @author Michael Ochel
      * @author Matthias Siegele
      */
-    public String getZoneTemperatureControlConfig(String sessionToken, Integer zoneID);
+    public TemperatureControlConfig getZoneTemperatureControlConfig(String sessionToken, Integer zoneID,
+            String zoneName);
 
     /**
      * Returns the temperature control values to their control modes of the given zone.
@@ -542,10 +561,38 @@ public interface DsAPI {
      * @author Michael Ochel
      * @author Matthias Siegele
      */
-    public String getZoneTemperatureControlValues(String sessionToken, Integer zoneID);
+    public TemperatureControlValues getZoneTemperatureControlValues(String sessionToken, Integer zoneID,
+            String zoneName);
 
-    public String setZoneTemperatureControlConfig(String sessionToken, Integer zoneID);
-    // TODO: add parameter
+    /**
+     * Set the configuration of the zone temperature control.
+     *
+     * @param sessionToken (required)
+     * @param zoneID (required alternative zoneName)
+     * @param zoneName (required alternative zoneID)
+     * @param controlDSUID dSUID of the meter or service that runs the control algorithm for this zone (optional)
+     * @param ControlMode Control mode, can be one of: 0=off; 1=pid-control; 2=zone-follower; 3=fixed-value; 4=manual
+     *            (Optional)
+     * @param ReferenceZone Zone number of the reference zone (Optional for ControlMode 2)
+     * @param ctrlOffset Control value offset (Optional for ControlMode 2)
+     * @param emergencyValue Fixed control value in case of malfunction (Optional for ControlMode 1)
+     * @param manualValue Control value for manual mode (Optional for ControlMode 1)
+     * @param ctrlKp Control proportional factor (Optional for ControlMode 1)
+     * @param ctrlTs Control sampling time (Optional for ControlMode 1)
+     * @param ctrlTi Control integrator time constant (Optional for ControlMode 1)
+     * @param ctrlKd Control differential factor (Optional for ControlMode 1)
+     * @param ctrlImin Control minimum integrator value (Optional for ControlMode 1)
+     * @param ctrlImax Control maximum integrator value (Optional for ControlMode 1)
+     * @param ctrlYmin Control minimum control value (Optional for ControlMode 1)
+     * @param ctrlYmay Control maximum control value (Optional for ControlMode 1)
+     * @param ctrlAntiWindUp Control integrator anti wind up (Optional for ControlMode 1)
+     * @param ctrlKeepFloorWarm Control mode with higher priority on comfort (Optional for ControlMode 1)
+     * @return
+     */
+    public boolean setZoneTemperatureControlConfig(String sessionToken, Integer zoneID, String zoneName,
+            String controlDSUID, Short controlMode, Integer referenceZone, Float ctrlOffset, Float emergencyValue,
+            Float manualValue, Float ctrlKp, Float ctrlTs, Float ctrlTi, Float ctrlKd, Float ctrlImin, Float ctrlImax,
+            Float ctrlYmin, Float ctrlYmax, Boolean ctrlAntiWindUp, Boolean ctrlKeepFloorWarm);
 
     /**
      * Returns the assigned Sensor dSUID of a zone.
@@ -558,7 +605,7 @@ public interface DsAPI {
      * @author Michael Ochel
      * @author Matthias Siegele
      */
-    public String getZoneAssignedSensors(String sessionToken, Integer zoneID);
+    public AssignedSensors getZoneAssignedSensors(String sessionToken, Integer zoneID, String zoneName);
 
     /**
      * Sets the temperature control state of a given zone.<br>
@@ -571,7 +618,8 @@ public interface DsAPI {
      * @author Michael Ochel
      * @author Matthias Siegele
      */
-    public boolean setZoneTemperatureControlState(String sessionToken, Integer zoneID, String controlState);
+    public boolean setZoneTemperatureControlState(String sessionToken, Integer zoneID, String zoneName,
+            String controlState);
 
     /**
      * Sets the wished temperature for a controlValue
@@ -582,8 +630,8 @@ public interface DsAPI {
      * @param temperature
      * @return success true otherwise false
      */
-    public boolean setZoneTemperatureControlValue(String sessionToken, Integer zoneID, String controlValue,
-            Float temperature);
+    public boolean setZoneTemperatureControlValue(String sessionToken, Integer zoneID, String zoneName,
+            String controlValue, Float temperature);
     // TODO: add einzelwert oder Liste
 
     /**
@@ -597,7 +645,7 @@ public interface DsAPI {
      * @author Michael Ochel
      * @author Matthias Siegele
      */
-    public String getZoneSensorValues(String sessionToken, Integer zoneID);
+    public SensorValues getZoneSensorValues(String sessionToken, Integer zoneID, String zoneName);
 
     /**
      * Set the source of a sensor in a zone to a given device source address.
@@ -607,7 +655,8 @@ public interface DsAPI {
      * @param dSID
      * @return success true otherwise false
      */
-    public boolean setZoneSensorSource(String sessionToken, Integer zoneID, SensorEnum sensorType, DSID dSID);
+    public boolean setZoneSensorSource(String sessionToken, Integer zoneID, String zoneName, SensorEnum sensorType,
+            DSID dSID);
 
     /**
      * Remove all assignments for a particular sensor type in a zone.
@@ -618,7 +667,7 @@ public interface DsAPI {
      * @return success true otherwise false
      *
      */
-    public boolean clearZoneSensorSource(String sessionToken, Integer zoneID, SensorEnum sensorType);
+    public boolean clearZoneSensorSource(String sessionToken, Integer zoneID, String zoneName, SensorEnum sensorType);
 
     /**
      * Returns internal status information of the temperature control of a zone.
@@ -627,7 +676,8 @@ public interface DsAPI {
      * @param zoneID
      * @return internal status information of the temperature control of a zone
      */
-    public String getZoneTemperatureControlInternals(String sessionToken, Integer zoneID);
+    public TemperatureControlInternals getZoneTemperatureControlInternals(String sessionToken, Integer zoneID,
+            String zoneName);
 
     /**
      * Returns the temperature control status of all zones.
@@ -638,7 +688,7 @@ public interface DsAPI {
      * @author Michael Ochel
      * @author Matthias Siegele
      */
-    public String getApartmentTemperatureControlStatus(String sessionToken);
+    public HashMap<Integer, TemperatureControlStatus> getApartmentTemperatureControlStatus(String sessionToken);
 
     /**
      * Returns the temperature control status of all zones.
@@ -649,7 +699,7 @@ public interface DsAPI {
      * @author Michael Ochel
      * @author Matthias Siegele
      */
-    public String getApartmentTemperatureControlConfig(String sessionToken);
+    public HashMap<Integer, TemperatureControlConfig> getApartmentTemperatureControlConfig(String sessionToken);
 
     /**
      * Returns the temperature control status of all zones.
@@ -660,7 +710,7 @@ public interface DsAPI {
      * @author Michael Ochel
      * @author Matthias Siegele
      */
-    public String getApartmentTemperatureControlValues(String sessionToken);
+    public HashMap<Integer, TemperatureControlValues> getApartmentTemperatureControlValues(String sessionToken);
 
     /**
      * Returns the assigned Sensor dSUID of all zones.
@@ -672,7 +722,7 @@ public interface DsAPI {
      * @author Michael Ochel
      * @author Matthias Siegele
      */
-    public String getApartmentAssignedSensors(String sessionToken);
+    public HashMap<Integer, AssignedSensors> getApartmentAssignedSensors(String sessionToken);
 
     /**
      * Returns the value of a Sensor of all zones.
@@ -684,6 +734,6 @@ public interface DsAPI {
      * @author Michael Ochel
      * @author Matthias Siegele
      */
-    public String getApartmentSensorValues(String sessionToken);
+    public HashMap<Integer, BaseSensorValues> getApartmentSensorValues(String sessionToken);
 
 }

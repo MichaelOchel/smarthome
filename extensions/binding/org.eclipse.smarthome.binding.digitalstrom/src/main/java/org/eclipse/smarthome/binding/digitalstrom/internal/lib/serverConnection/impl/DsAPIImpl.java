@@ -7,20 +7,30 @@
  */
 package org.eclipse.smarthome.binding.digitalstrom.internal.lib.serverConnection.impl;
 
+import java.util.HashMap;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 
 import org.apache.commons.lang.StringUtils;
+import org.eclipse.smarthome.binding.digitalstrom.internal.lib.climate.jsonResponseContainer.BaseSensorValues;
+import org.eclipse.smarthome.binding.digitalstrom.internal.lib.climate.jsonResponseContainer.impl.AssignedSensors;
+import org.eclipse.smarthome.binding.digitalstrom.internal.lib.climate.jsonResponseContainer.impl.SensorValues;
+import org.eclipse.smarthome.binding.digitalstrom.internal.lib.climate.jsonResponseContainer.impl.TemperatureControlConfig;
+import org.eclipse.smarthome.binding.digitalstrom.internal.lib.climate.jsonResponseContainer.impl.TemperatureControlInternals;
+import org.eclipse.smarthome.binding.digitalstrom.internal.lib.climate.jsonResponseContainer.impl.TemperatureControlStatus;
+import org.eclipse.smarthome.binding.digitalstrom.internal.lib.climate.jsonResponseContainer.impl.TemperatureControlValues;
+import org.eclipse.smarthome.binding.digitalstrom.internal.lib.climate.jsonResponseContainer.impl.WeatherSensorData;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.serverConnection.DsAPI;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.serverConnection.HttpTransport;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.serverConnection.constants.JSONApiResponseKeysEnum;
-import org.eclipse.smarthome.binding.digitalstrom.internal.lib.serverConnection.constants.JSONRequestConstants;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.serverConnection.simpleURLBuilder.SimpleRequestBuilder;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.serverConnection.simpleURLBuilder.constants.Classes;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.serverConnection.simpleURLBuilder.constants.Functions;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.serverConnection.simpleURLBuilder.constants.Interfaces;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.serverConnection.simpleURLBuilder.constants.ParameterTyps;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.Apartment;
+import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.Circuit;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.Device;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.CachedMeteringValue;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.DSID;
@@ -35,6 +45,7 @@ import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.SensorEnum;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.SensorIndexEnum;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.impl.JSONDeviceImpl;
+import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.impl.CircuitImpl;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.impl.JSONApartmentImpl;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.scene.constants.Scene;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.scene.constants.SceneEnum;
@@ -42,6 +53,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 
 /**
@@ -59,6 +71,8 @@ public class DsAPIImpl implements DsAPI {
     private Logger logger = LoggerFactory.getLogger(DsAPIImpl.class);
     private HttpTransport transport = null;
 
+    private final String QUERY_GET_METERLIST = "/apartment/dSMeters/*(dSID)";
+
     public DsAPIImpl(HttpTransport transport) {
         this.transport = transport;
     }
@@ -71,8 +85,28 @@ public class DsAPIImpl implements DsAPI {
         this.transport = new HttpTransportImpl(uri, connectTimeout, readTimeout, aceptAllCerts);
     }
 
-    private String getParameterGroupIdString(Short groupID) {
-        return groupID != null && groupID > -1 ? groupID.toString() : null;
+    private String convertShortToString(Short arg) {
+        return arg != null && arg > -1 ? arg.toString() : null;
+    }
+
+    private String convertIntegerToString(Integer arg) {
+        return arg != null && arg > -1 ? arg.toString() : null;
+    }
+
+    private String getDsidString(DSID dsid) {
+        return dsid != null ? dsid.getValue() : null;
+    }
+
+    private String objectToString(Object obj) {
+        return obj != null ? obj.toString() : null;
+    }
+
+    private boolean isValidApartmentSceneNumber(int sceneNumber) {
+        return (sceneNumber > -1 && sceneNumber < 256);
+    }
+
+    private boolean checkBlankField(JsonObject obj, String key) {
+        return obj != null && obj.get(key) != null;
     }
 
     @Override
@@ -82,7 +116,7 @@ public class DsAPIImpl implements DsAPI {
                 String response = transport.execute(
                         SimpleRequestBuilder.buildNewRequest(Interfaces.JSON).addRequestClass(Classes.APARTMENT)
                                 .addFunction(Functions.CALL_SCENE).addParameter(ParameterTyps.TOKEN, token)
-                                .addParameter(ParameterTyps.GROUP_ID, getParameterGroupIdString(groupID))
+                                .addParameter(ParameterTyps.GROUP_ID, convertShortToString(groupID))
                                 .addParameter(ParameterTyps.GROUP_NAME, groupName)
                                 .addParameter(ParameterTyps.SCENENUMBER, sceneNumber.toString())
                                 .addParameter(ParameterTyps.FORCE, force.toString()).buildRequestString());
@@ -101,7 +135,7 @@ public class DsAPIImpl implements DsAPI {
                 String response = transport.execute(
                         SimpleRequestBuilder.buildNewRequest(Interfaces.JSON).addRequestClass(Classes.APARTMENT)
                                 .addFunction(Functions.UNDO_SCENE).addParameter(ParameterTyps.TOKEN, token)
-                                .addParameter(ParameterTyps.GROUP_ID, getParameterGroupIdString(groupID))
+                                .addParameter(ParameterTyps.GROUP_ID, convertShortToString(groupID))
                                 .addParameter(ParameterTyps.GROUP_NAME, groupName)
                                 .addParameter(ParameterTyps.SCENENUMBER, sceneNumber.getSceneNumber().toString())
                                 .buildRequestString());
@@ -111,10 +145,6 @@ public class DsAPIImpl implements DsAPI {
             }
         }
         return false;
-    }
-
-    private boolean isValidApartmentSceneNumber(int sceneNumber) {
-        return (sceneNumber > -1 && sceneNumber < 256);
     }
 
     @Override
@@ -128,9 +158,8 @@ public class DsAPIImpl implements DsAPI {
 
             if (JSONResponseHandler.checkResponse(responseObj)) {
                 JsonObject apartObj = JSONResponseHandler.getResultJsonObject(responseObj);
-                if (checkBlankField(apartObj, JSONApiResponseKeysEnum.APARTMENT_GET_STRUCTURE.getKey())) {
-                    return new JSONApartmentImpl(
-                            (JsonObject) apartObj.get(JSONApiResponseKeysEnum.APARTMENT_GET_STRUCTURE.getKey()));
+                if (checkBlankField(apartObj, JSONApiResponseKeysEnum.APARTMENT.getKey())) {
+                    return new JSONApartmentImpl((JsonObject) apartObj.get(JSONApiResponseKeysEnum.APARTMENT.getKey()));
                 }
             }
         } catch (Exception e) {
@@ -147,8 +176,8 @@ public class DsAPIImpl implements DsAPI {
                     .addParameter(ParameterTyps.TOKEN, token).buildRequestString());
             JsonObject responseObj = JSONResponseHandler.toJsonObject(response);
             if (JSONResponseHandler.checkResponse(responseObj)
-                    && responseObj.get(JSONApiResponseKeysEnum.APARTMENT_GET_DEVICES.getKey()) instanceof JsonArray) {
-                JsonArray array = (JsonArray) responseObj.get(JSONApiResponseKeysEnum.APARTMENT_GET_DEVICES.getKey());
+                    && responseObj.get(JSONApiResponseKeysEnum.RESULT.getKey()) instanceof JsonArray) {
+                JsonArray array = (JsonArray) responseObj.get(JSONApiResponseKeysEnum.RESULT.getKey());
 
                 List<Device> deviceList = new LinkedList<Device>();
                 for (int i = 0; i < array.size(); i++) {
@@ -164,21 +193,44 @@ public class DsAPIImpl implements DsAPI {
         return new LinkedList<Device>();
     }
 
-    private String getParameterZoneIdString(Integer id) {
-        return id > -1 ? null : id.toString();
+    @Override
+    public List<Circuit> getApartmentCircuits(String sessionToken) {
+        try {
+            String response = transport.execute(SimpleRequestBuilder.buildNewRequest(Interfaces.JSON)
+                    .addRequestClass(Classes.APARTMENT).addFunction(Functions.GET_CIRCUITS)
+                    .addParameter(ParameterTyps.TOKEN, sessionToken).buildRequestString());
+
+            JsonObject responseObj = JSONResponseHandler.toJsonObject(response);
+            if (JSONResponseHandler.checkResponse(responseObj)) {
+                if (responseObj.get(JSONApiResponseKeysEnum.CIRCUITS.getKey()).isJsonArray()) {
+                    JsonArray array = responseObj.get(JSONApiResponseKeysEnum.CIRCUITS.getKey()).getAsJsonArray();
+
+                    List<Circuit> circuitList = new LinkedList<Circuit>();
+                    for (int i = 0; i < array.size(); i++) {
+                        if (array.get(i).isJsonObject()) {
+                            circuitList.add(new CircuitImpl(array.get(i).getAsJsonObject()));
+                        }
+                    }
+                    return circuitList;
+                }
+            }
+        } catch (Exception e) {
+            logger.debug("An exception occurred", e);
+        }
+        return new LinkedList<Circuit>();
     }
 
     @Override
     public boolean callZoneScene(String token, Integer id, String name, Short groupID, String groupName,
             SceneEnum sceneNumber, Boolean force) {
-        if (sceneNumber != null && (getParameterZoneIdString(id) != null || name != null)) {
+        if (sceneNumber != null && (convertIntegerToString(id) != null || name != null)) {
             try {
                 String response = transport
                         .execute(SimpleRequestBuilder.buildNewRequest(Interfaces.JSON).addRequestClass(Classes.ZONE)
                                 .addFunction(Functions.CALL_SCENE).addParameter(ParameterTyps.TOKEN, token)
-                                .addParameter(ParameterTyps.ID, getParameterZoneIdString(id))
+                                .addParameter(ParameterTyps.ID, convertIntegerToString(id))
                                 .addParameter(ParameterTyps.NAME, name)
-                                .addParameter(ParameterTyps.GROUP_ID, getParameterGroupIdString(groupID))
+                                .addParameter(ParameterTyps.GROUP_ID, convertShortToString(groupID))
                                 .addParameter(ParameterTyps.GROUP_NAME, groupName)
                                 .addParameter(ParameterTyps.SCENENUMBER, sceneNumber.getSceneNumber().toString())
                                 .addParameter(ParameterTyps.FORCE, force.toString()).buildRequestString());
@@ -194,14 +246,14 @@ public class DsAPIImpl implements DsAPI {
     @Override
     public boolean undoZoneScene(String token, Integer zoneID, String zoneName, Short groupID, String groupName,
             SceneEnum sceneNumber) {
-        if (sceneNumber != null && (getParameterZoneIdString(zoneID) != null || zoneName != null)) {
+        if (sceneNumber != null && (convertIntegerToString(zoneID) != null || zoneName != null)) {
             try {
                 String response = transport
                         .execute(SimpleRequestBuilder.buildNewRequest(Interfaces.JSON).addRequestClass(Classes.ZONE)
                                 .addFunction(Functions.CALL_SCENE).addParameter(ParameterTyps.TOKEN, token)
-                                .addParameter(ParameterTyps.ID, getParameterZoneIdString(zoneID))
+                                .addParameter(ParameterTyps.ID, convertIntegerToString(zoneID))
                                 .addParameter(ParameterTyps.NAME, zoneName)
-                                .addParameter(ParameterTyps.GROUP_ID, getParameterGroupIdString(groupID))
+                                .addParameter(ParameterTyps.GROUP_ID, convertShortToString(groupID))
                                 .addParameter(ParameterTyps.GROUP_NAME, groupName)
                                 .addParameter(ParameterTyps.SCENENUMBER, sceneNumber.getSceneNumber().toString())
                                 .buildRequestString());
@@ -211,10 +263,6 @@ public class DsAPIImpl implements DsAPI {
             }
         }
         return false;
-    }
-
-    private String getDsidString(DSID dsid) {
-        return dsid != null ? dsid.getValue() : null;
     }
 
     @Override
@@ -255,14 +303,14 @@ public class DsAPIImpl implements DsAPI {
     public DeviceConfig getDeviceConfig(String token, DSID dsid, String name, DeviceParameterClassEnum class_,
             Integer index) {
         if (((getDsidString(dsid) != null) || name != null) && class_ != null
-                && getParameterIndexString(index) != null) {
+                && convertIntegerToString(index) != null) {
             try {
                 String response = transport.execute(SimpleRequestBuilder.buildNewRequest(Interfaces.JSON)
                         .addRequestClass(Classes.DEVICE).addFunction(Functions.GET_CONFIG)
                         .addParameter(ParameterTyps.TOKEN, token).addParameter(ParameterTyps.DSID, getDsidString(dsid))
                         .addParameter(ParameterTyps.NAME, name)
                         .addParameter(ParameterTyps.CLASS, class_.getClassIndex().toString())
-                        .addParameter(ParameterTyps.INDEX, getParameterIndexString(index)).buildRequestString());
+                        .addParameter(ParameterTyps.INDEX, convertIntegerToString(index)).buildRequestString());
 
                 JsonObject responseObj = JSONResponseHandler.toJsonObject(response);
 
@@ -280,28 +328,23 @@ public class DsAPIImpl implements DsAPI {
         return null;
     }
 
-    private String getParameterIndexString(Integer index) {
-        return index > -1 ? null : index.toString();
-    }
-
     @Override
     public int getDeviceOutputValue(String token, DSID dsid, String name, Short offset) {
-        if (((getDsidString(dsid) != null) || name != null) && getParameterOffsetString(offset) != null) {
+        if (((getDsidString(dsid) != null) || name != null) && convertShortToString(offset) != null) {
             try {
                 String response = transport.execute(SimpleRequestBuilder.buildNewRequest(Interfaces.JSON)
                         .addRequestClass(Classes.DEVICE).addFunction(Functions.GET_OUTPUT_VALUE)
                         .addParameter(ParameterTyps.TOKEN, token).addParameter(ParameterTyps.DSID, getDsidString(dsid))
                         .addParameter(ParameterTyps.NAME, name)
-                        .addParameter(ParameterTyps.OFFSET, getParameterOffsetString(offset)).buildRequestString());
+                        .addParameter(ParameterTyps.OFFSET, convertShortToString(offset)).buildRequestString());
 
                 JsonObject responseObj = JSONResponseHandler.toJsonObject(response);
 
                 if (JSONResponseHandler.checkResponse(responseObj)) {
                     JsonObject valueObject = JSONResponseHandler.getResultJsonObject(responseObj);
 
-                    if (valueObject != null
-                            && valueObject.get(JSONApiResponseKeysEnum.DEVICE_GET_OUTPUT_VALUE.getKey()) != null) {
-                        return valueObject.get(JSONApiResponseKeysEnum.DEVICE_GET_OUTPUT_VALUE.getKey()).getAsInt();
+                    if (checkBlankField(valueObject, JSONApiResponseKeysEnum.VALUE.getKey())) {
+                        return valueObject.get(JSONApiResponseKeysEnum.VALUE.getKey()).getAsInt();
                     }
                 }
             } catch (Exception e) {
@@ -311,25 +354,17 @@ public class DsAPIImpl implements DsAPI {
         return -1;
     }
 
-    private String getParameterOffsetString(Short offset) {
-        return offset != null && offset > -1 ? offset.toString() : null;
-    }
-
-    private String getParameterValueString(Integer value) {
-        return value != null && value > -1 ? value.toString() : null;
-    }
-
     @Override
     public boolean setDeviceOutputValue(String token, DSID dsid, String name, Short offset, Integer value) {
-        if (((getDsidString(dsid) != null) || name != null) && getParameterOffsetString(offset) != null
-                && getParameterValueString(value) != null) {
+        if (((getDsidString(dsid) != null) || name != null) && convertShortToString(offset) != null
+                && convertIntegerToString(value) != null) {
             try {
                 String response = transport.execute(SimpleRequestBuilder.buildNewRequest(Interfaces.JSON)
                         .addRequestClass(Classes.DEVICE).addFunction(Functions.SET_OUTPUT_VALUE)
                         .addParameter(ParameterTyps.TOKEN, token).addParameter(ParameterTyps.DSID, getDsidString(dsid))
                         .addParameter(ParameterTyps.NAME, name)
-                        .addParameter(ParameterTyps.OFFSET, getParameterOffsetString(offset))
-                        .addParameter(ParameterTyps.VALUE, getParameterValueString(value)).buildRequestString());
+                        .addParameter(ParameterTyps.OFFSET, convertShortToString(offset))
+                        .addParameter(ParameterTyps.VALUE, convertIntegerToString(value)).buildRequestString());
                 return JSONResponseHandler.checkResponse(JSONResponseHandler.toJsonObject(response));
             } catch (Exception e) {
                 logger.debug("An exception occurred", e);
@@ -338,19 +373,15 @@ public class DsAPIImpl implements DsAPI {
         return false;
     }
 
-    private String getSceneIdSting(Short sceneID) {
-        return sceneID != null && sceneID > -1 ? sceneID.toString() : null;
-    }
-
     @Override
     public DeviceSceneSpec getDeviceSceneMode(String token, DSID dsid, String name, Short sceneID) {
-        if (((getDsidString(dsid) != null) || name != null) && getSceneIdSting(sceneID) != null) {
+        if (((getDsidString(dsid) != null) || name != null) && convertShortToString(sceneID) != null) {
             try {
                 String response = transport.execute(SimpleRequestBuilder.buildNewRequest(Interfaces.JSON)
                         .addRequestClass(Classes.DEVICE).addFunction(Functions.GET_SCENE_MODE)
                         .addParameter(ParameterTyps.TOKEN, token).addParameter(ParameterTyps.DSID, getDsidString(dsid))
                         .addParameter(ParameterTyps.NAME, name)
-                        .addParameter(ParameterTyps.SCENE_ID, getSceneIdSting(sceneID)).buildRequestString());
+                        .addParameter(ParameterTyps.SCENE_ID, convertShortToString(sceneID)).buildRequestString());
                 JsonObject responseObj = JSONResponseHandler.toJsonObject(response);
 
                 if (JSONResponseHandler.checkResponse(responseObj)) {
@@ -399,10 +430,8 @@ public class DsAPIImpl implements DsAPI {
                 if (JSONResponseHandler.checkResponse(responseObj)) {
                     JsonObject valueObject = JSONResponseHandler.getResultJsonObject(responseObj);
 
-                    if (valueObject != null && valueObject
-                            .get(JSONApiResponseKeysEnum.DEVICE_GET_SENSOR_VALUE_SENSOR_VALUE.getKey()) != null) {
-                        return valueObject.get(JSONApiResponseKeysEnum.DEVICE_GET_SENSOR_VALUE_SENSOR_VALUE.getKey())
-                                .getAsShort();
+                    if (checkBlankField(valueObject, JSONApiResponseKeysEnum.SENSOR_VALUE.getKey())) {
+                        return valueObject.get(JSONApiResponseKeysEnum.SENSOR_VALUE.getKey()).getAsShort();
                     }
                 }
             } catch (Exception e) {
@@ -450,17 +479,18 @@ public class DsAPIImpl implements DsAPI {
     @Override
     public boolean subscribeEvent(String token, String name, Integer subscriptionID, int connectionTimeout,
             int readTimeout) {
-        if (StringUtils.isNotBlank(name) && getParameterSubscriptionIdString(subscriptionID) != null) {
+        if (StringUtils.isNotBlank(name) && convertIntegerToString(subscriptionID) != null) {
             String response;
             try {
-                response = transport.execute(
-                        SimpleRequestBuilder.buildNewRequest(Interfaces.JSON).addRequestClass(Classes.EVENT)
-                                .addFunction(Functions.SUBSCRIBE).addParameter(ParameterTyps.TOKEN, token)
-                                .addParameter(ParameterTyps.NAME, name)
-                                .addParameter(ParameterTyps.SUBSCRIPTIONID,
-                                        getParameterSubscriptionIdString(subscriptionID))
-                                .buildRequestString(),
-                        connectionTimeout, readTimeout);
+                response = transport
+                        .execute(
+                                SimpleRequestBuilder.buildNewRequest(Interfaces.JSON).addRequestClass(Classes.EVENT)
+                                        .addFunction(Functions.SUBSCRIBE).addParameter(ParameterTyps.TOKEN, token)
+                                        .addParameter(ParameterTyps.NAME, name)
+                                        .addParameter(ParameterTyps.SUBSCRIPTIONID,
+                                                convertIntegerToString(subscriptionID))
+                                        .buildRequestString(),
+                                connectionTimeout, readTimeout);
                 return JSONResponseHandler.checkResponse(JSONResponseHandler.toJsonObject(response));
             } catch (Exception e) {
                 logger.debug("An exception occurred", e);
@@ -472,17 +502,18 @@ public class DsAPIImpl implements DsAPI {
     @Override
     public boolean unsubscribeEvent(String token, String name, Integer subscriptionID, int connectionTimeout,
             int readTimeout) {
-        if (StringUtils.isNotBlank(name) && getParameterSubscriptionIdString(subscriptionID) != null) {
+        if (StringUtils.isNotBlank(name) && convertIntegerToString(subscriptionID) != null) {
             String response;
             try {
-                response = transport.execute(
-                        SimpleRequestBuilder.buildNewRequest(Interfaces.JSON).addRequestClass(Classes.EVENT)
-                                .addFunction(Functions.UNSUBSCRIBE).addParameter(ParameterTyps.TOKEN, token)
-                                .addParameter(ParameterTyps.NAME, name)
-                                .addParameter(ParameterTyps.SUBSCRIPTIONID,
-                                        getParameterSubscriptionIdString(subscriptionID))
-                                .buildRequestString(),
-                        connectionTimeout, readTimeout);
+                response = transport
+                        .execute(
+                                SimpleRequestBuilder.buildNewRequest(Interfaces.JSON).addRequestClass(Classes.EVENT)
+                                        .addFunction(Functions.UNSUBSCRIBE).addParameter(ParameterTyps.TOKEN, token)
+                                        .addParameter(ParameterTyps.NAME, name)
+                                        .addParameter(ParameterTyps.SUBSCRIPTIONID,
+                                                convertIntegerToString(subscriptionID))
+                                        .buildRequestString(),
+                                connectionTimeout, readTimeout);
                 return JSONResponseHandler.checkResponse(JSONResponseHandler.toJsonObject(response));
             } catch (Exception e) {
                 logger.debug("An exception occurred", e);
@@ -491,30 +522,20 @@ public class DsAPIImpl implements DsAPI {
         return false;
     }
 
-    private String getParameterSubscriptionIdString(Integer subscriptionID) {
-        return subscriptionID != null && subscriptionID > -1 ? subscriptionID.toString() : null;
-    }
-
     @Override
     public String getEvent(String token, Integer subscriptionID, Integer timeout) {
-        if (getParameterSubscriptionIdString(subscriptionID) != null && getParameterTimeoutString(timeout) != null) {
+        if (convertIntegerToString(subscriptionID) != null && convertIntegerToString(timeout) != null) {
             try {
-                return transport
-                        .execute(SimpleRequestBuilder.buildNewRequest(Interfaces.JSON).addRequestClass(Classes.EVENT)
-                                .addFunction(Functions.GET).addParameter(ParameterTyps.TOKEN, token)
-                                .addParameter(ParameterTyps.SUBSCRIPTIONID,
-                                        getParameterSubscriptionIdString(subscriptionID))
-                                .addParameter(ParameterTyps.TIMEOUT, getParameterTimeoutString(timeout))
-                                .buildRequestString());
+                return transport.execute(SimpleRequestBuilder.buildNewRequest(Interfaces.JSON)
+                        .addRequestClass(Classes.EVENT).addFunction(Functions.GET)
+                        .addParameter(ParameterTyps.TOKEN, token)
+                        .addParameter(ParameterTyps.SUBSCRIPTIONID, convertIntegerToString(subscriptionID))
+                        .addParameter(ParameterTyps.TIMEOUT, convertIntegerToString(timeout)).buildRequestString());
             } catch (Exception e) {
                 logger.debug("An exception occurred", e);
             }
         }
         return null;
-    }
-
-    private String getParameterTimeoutString(Integer timeout) {
-        return timeout != null && timeout > -1 ? timeout.toString() : null;
     }
 
     @Override
@@ -528,22 +549,14 @@ public class DsAPIImpl implements DsAPI {
             if (JSONResponseHandler.checkResponse(responseObj)) {
                 JsonObject obj = JSONResponseHandler.getResultJsonObject(responseObj);
 
-                if (checkBlankField(obj, JSONApiResponseKeysEnum.SYSTEM_GET_TIME.getKey())) {
-                    return obj.get(JSONApiResponseKeysEnum.SYSTEM_GET_TIME.getKey()).getAsInt();
+                if (checkBlankField(obj, JSONApiResponseKeysEnum.TIME.getKey())) {
+                    return obj.get(JSONApiResponseKeysEnum.TIME.getKey()).getAsInt();
                 }
             }
         } catch (Exception e) {
             logger.debug("An exception occurred", e);
         }
         return -1;
-    }
-
-    private boolean checkBlankField(JsonObject obj, String key) {
-        return obj != null && obj.get(key) != null;
-    }
-
-    private boolean valueInRange(Integer value) {
-        return value != null && (value > -1 && value < 256);
     }
 
     @Override
@@ -557,18 +570,16 @@ public class DsAPIImpl implements DsAPI {
 
             if (JSONResponseHandler.checkResponse(responseObj)) {
                 JsonObject resObj = JSONResponseHandler.getResultJsonObject(responseObj);
-                if (resObj != null
-                        && resObj.get(JSONApiResponseKeysEnum.METERING_GET_RESOLUTIONS.getKey()) instanceof JsonArray) {
-                    JsonArray array = (JsonArray) resObj.get(JSONApiResponseKeysEnum.METERING_GET_RESOLUTIONS.getKey());
+                if (resObj != null && resObj.get(JSONApiResponseKeysEnum.RESOLUTIONS.getKey()) instanceof JsonArray) {
+                    JsonArray array = (JsonArray) resObj.get(JSONApiResponseKeysEnum.RESOLUTIONS.getKey());
 
                     List<Integer> resolutionList = new LinkedList<Integer>();
                     for (int i = 0; i < array.size(); i++) {
                         if (array.get(i) instanceof JsonObject) {
                             JsonObject jObject = (JsonObject) array.get(i);
 
-                            if (jObject.get(JSONApiResponseKeysEnum.METERING_GET_RESOLUTION.getKey()) != null) {
-                                int val = jObject.get(JSONApiResponseKeysEnum.METERING_GET_RESOLUTION.getKey())
-                                        .getAsInt();
+                            if (jObject.get(JSONApiResponseKeysEnum.RESOLUTION.getKey()) != null) {
+                                int val = jObject.get(JSONApiResponseKeysEnum.RESOLUTION.getKey()).getAsInt();
                                 if (val != -1) {
                                     resolutionList.add(val);
                                 }
@@ -619,10 +630,9 @@ public class DsAPIImpl implements DsAPI {
                 JsonObject responseObj = JSONResponseHandler.toJsonObject(response);
                 if (JSONResponseHandler.checkResponse(responseObj)) {
                     JsonObject latestObj = JSONResponseHandler.getResultJsonObject(responseObj);
-                    if (latestObj != null && latestObj
-                            .get(JSONApiResponseKeysEnum.METERING_GET_LATEST.getKey()) instanceof JsonArray) {
-                        JsonArray array = (JsonArray) latestObj
-                                .get(JSONApiResponseKeysEnum.METERING_GET_LATEST.getKey());
+                    if (latestObj != null
+                            && latestObj.get(JSONApiResponseKeysEnum.VALUES.getKey()) instanceof JsonArray) {
+                        JsonArray array = (JsonArray) latestObj.get(JSONApiResponseKeysEnum.VALUES.getKey());
 
                         List<CachedMeteringValue> list = new LinkedList<CachedMeteringValue>();
                         for (int i = 0; i < array.size(); i++) {
@@ -642,7 +652,7 @@ public class DsAPIImpl implements DsAPI {
 
     @Override
     public boolean setDeviceValue(String token, DSID dsid, String name, Integer value) {
-        if (((getDsidString(dsid) != null) || name != null) && valueInRange(value)) {
+        if (((getDsidString(dsid) != null) || name != null)) {
             try {
                 String response = transport.execute(SimpleRequestBuilder.buildNewRequest(Interfaces.JSON)
                         .addRequestClass(Classes.DEVICE).addFunction(Functions.SET_VALUE)
@@ -659,27 +669,32 @@ public class DsAPIImpl implements DsAPI {
     }
 
     @Override
-    // TODO: ggf. auf get Circuit ändern
     public List<String> getMeterList(String token) {
         List<String> meterList = new LinkedList<String>();
 
-        String response = transport
-                .execute(JSONRequestConstants.JSON_PROPERTY_QUERY + JSONRequestConstants.PARAMETER_TOKEN + token
-                        + JSONRequestConstants.INFIX_PARAMETER_QUERY + JSONRequestConstants.QUERY_GET_METERLIST);
+        String response;
+        try {
+            response = transport.execute(
+                    SimpleRequestBuilder.buildNewRequest(Interfaces.JSON).addRequestClass(Classes.PROPERTY_TREE)
+                            .addFunction(Functions.QUERY).addParameter(ParameterTyps.QUERY, QUERY_GET_METERLIST)
+                            .addParameter(ParameterTyps.TOKEN, token).buildRequestString());
 
-        JsonObject responseObj = JSONResponseHandler.toJsonObject(response);
-        if (JSONResponseHandler.checkResponse(responseObj)) {
-            JsonObject obj = JSONResponseHandler.getResultJsonObject(responseObj);
+            JsonObject responseObj = JSONResponseHandler.toJsonObject(response);
+            if (JSONResponseHandler.checkResponse(responseObj)) {
+                JsonObject obj = JSONResponseHandler.getResultJsonObject(responseObj);
 
-            if (obj != null && obj.get(JSONApiResponseKeysEnum.DS_METER_QUERY.getKey()) instanceof JsonArray) {
-                JsonArray array = (JsonArray) obj.get(JSONApiResponseKeysEnum.DS_METER_QUERY.getKey());
+                if (obj != null && obj.get(JSONApiResponseKeysEnum.DS_METERS.getKey()) instanceof JsonArray) {
+                    JsonArray array = (JsonArray) obj.get(JSONApiResponseKeysEnum.DS_METERS.getKey());
 
-                for (int i = 0; i < array.size(); i++) {
-                    if (array.get(i) instanceof JsonObject) {
-                        meterList.add(array.get(i).getAsJsonObject().get("dSID").getAsString());
+                    for (int i = 0; i < array.size(); i++) {
+                        if (array.get(i) instanceof JsonObject) {
+                            meterList.add(array.get(i).getAsJsonObject().get("dSID").getAsString());
+                        }
                     }
                 }
             }
+        } catch (Exception e) {
+            logger.debug("An exception occurred", e);
         }
         return meterList;
     }
@@ -697,8 +712,8 @@ public class DsAPIImpl implements DsAPI {
                     JsonObject obj = JSONResponseHandler.getResultJsonObject(responseObj);
                     String tokenStr = null;
 
-                    if (checkBlankField(obj, JSONApiResponseKeysEnum.SYSTEM_LOGIN.getKey())) {
-                        tokenStr = obj.get(JSONApiResponseKeysEnum.SYSTEM_LOGIN.getKey()).getAsString();
+                    if (checkBlankField(obj, JSONApiResponseKeysEnum.TOKEN.getKey())) {
+                        tokenStr = obj.get(JSONApiResponseKeysEnum.TOKEN.getKey()).getAsString();
                     }
                     if (tokenStr != null) {
                         return tokenStr;
@@ -724,8 +739,8 @@ public class DsAPIImpl implements DsAPI {
                 JsonObject obj = JSONResponseHandler.getResultJsonObject(responseObj);
                 String tokenStr = null;
 
-                if (obj != null && obj.get(JSONApiResponseKeysEnum.SYSTEM_LOGIN.getKey()) != null) {
-                    tokenStr = obj.get(JSONApiResponseKeysEnum.SYSTEM_LOGIN.getKey()).getAsString();
+                if (checkBlankField(obj, JSONApiResponseKeysEnum.TOKEN.getKey())) {
+                    tokenStr = obj.get(JSONApiResponseKeysEnum.TOKEN.getKey()).getAsString();
                 }
                 if (tokenStr != null) {
                     return tokenStr;
@@ -761,7 +776,7 @@ public class DsAPIImpl implements DsAPI {
             if (JSONResponseHandler.checkResponse(responseObj)) {
                 JsonObject obj = JSONResponseHandler.getResultJsonObject(responseObj);
                 if (obj != null) {
-                    String dsID = obj.get(JSONApiResponseKeysEnum.SYSTEM_DSID.getKey()).getAsString();
+                    String dsID = obj.get(JSONApiResponseKeysEnum.DSID.getKey()).getAsString();
                     if (dsID != null) {
                         return dsID;
                     }
@@ -800,8 +815,7 @@ public class DsAPIImpl implements DsAPI {
             if (JSONResponseHandler.checkResponse(responseObj)) {
                 JsonObject obj = JSONResponseHandler.getResultJsonObject(responseObj);
                 if (obj != null) {
-                    String aplicationToken = obj.get(JSONApiResponseKeysEnum.SYSTEM_APPLICATION_TOKEN.getKey())
-                            .getAsString();
+                    String aplicationToken = obj.get(JSONApiResponseKeysEnum.APPLICATION_TOKEN.getKey()).getAsString();
                     if (aplicationToken != null) {
                         return aplicationToken;
                     }
@@ -845,7 +859,7 @@ public class DsAPIImpl implements DsAPI {
         try {
             String response = transport.execute(SimpleRequestBuilder.buildNewRequest(Interfaces.JSON)
                     .addRequestClass(Classes.DEVICE).addFunction(Functions.GET_SCENE_VALUE)
-                    .addParameter(ParameterTyps.SCENE_ID, getSceneIdSting(sceneId))
+                    .addParameter(ParameterTyps.SCENE_ID, convertShortToString(sceneId))
                     .addParameter(ParameterTyps.DSID, getDsidString(dsid)).addParameter(ParameterTyps.TOKEN, token)
                     .buildRequestString(), 4000, 20000);
             JsonObject responseObj = JSONResponseHandler.toJsonObject(response);
@@ -909,8 +923,8 @@ public class DsAPIImpl implements DsAPI {
 
         if (JSONResponseHandler.checkResponse(responseObj)) {
             JsonObject obj = JSONResponseHandler.getResultJsonObject(responseObj);
-            if (obj != null && obj.get("name") != null) {
-                return obj.get("name").getAsString();
+            if (checkBlankField(obj, JSONApiResponseKeysEnum.NAME.getKey())) {
+                return obj.get(JSONApiResponseKeysEnum.NAME.getKey()).getAsString();
             }
         }
         return null;
@@ -921,14 +935,14 @@ public class DsAPIImpl implements DsAPI {
         try {
             String response = transport.execute(SimpleRequestBuilder.buildNewRequest(Interfaces.JSON)
                     .addRequestClass(Classes.ZONE).addFunction(Functions.GET_NAME)
-                    .addParameter(ParameterTyps.ID, getParameterZoneIdString(zoneID))
+                    .addParameter(ParameterTyps.ID, convertIntegerToString(zoneID))
                     .addParameter(ParameterTyps.TOKEN, sessionToken).buildRequestString());
             JsonObject responseObj = JSONResponseHandler.toJsonObject(response);
 
             if (JSONResponseHandler.checkResponse(responseObj)) {
                 JsonObject obj = JSONResponseHandler.getResultJsonObject(responseObj);
-                if (obj != null && obj.get("name") != null) {
-                    return obj.get("name").getAsString();
+                if (checkBlankField(obj, JSONApiResponseKeysEnum.NAME.getKey())) {
+                    return obj.get(JSONApiResponseKeysEnum.NAME.getKey()).getAsString();
                 }
             }
         } catch (Exception e) {
@@ -948,8 +962,8 @@ public class DsAPIImpl implements DsAPI {
 
             if (JSONResponseHandler.checkResponse(responseObj)) {
                 JsonObject obj = JSONResponseHandler.getResultJsonObject(responseObj);
-                if (obj != null && obj.get("name") != null) {
-                    return obj.get("name").getAsString();
+                if (checkBlankField(obj, JSONApiResponseKeysEnum.NAME.getKey())) {
+                    return obj.get(JSONApiResponseKeysEnum.NAME.getKey()).getAsString();
                 }
             }
         } catch (Exception e) {
@@ -969,8 +983,8 @@ public class DsAPIImpl implements DsAPI {
 
             if (JSONResponseHandler.checkResponse(responseObj)) {
                 JsonObject obj = JSONResponseHandler.getResultJsonObject(responseObj);
-                if (obj != null && obj.get("name") != null) {
-                    return obj.get("name").getAsString();
+                if (checkBlankField(obj, JSONApiResponseKeysEnum.NAME.getKey())) {
+                    return obj.get(JSONApiResponseKeysEnum.NAME.getKey()).getAsString();
                 }
             }
         } catch (Exception e) {
@@ -982,18 +996,18 @@ public class DsAPIImpl implements DsAPI {
     @Override
     public String getSceneName(String sessionToken, Integer zoneID, Short groupID, Short sceneID) {
         try {
-            String response = transport
-                    .execute(SimpleRequestBuilder.buildNewRequest(Interfaces.JSON).addRequestClass(Classes.ZONE)
-                            .addFunction(Functions.SCENE_GET_NAME).addParameter(ParameterTyps.TOKEN, sessionToken)
-                            .addParameter(ParameterTyps.ID, getParameterZoneIdString(zoneID))
-                            .addParameter(ParameterTyps.GROUP_ID, getParameterGroupIdString(groupID))
-                            .addParameter(ParameterTyps.SCENENUMBER, getSceneIdSting(sceneID)).buildRequestString());
+            String response = transport.execute(SimpleRequestBuilder.buildNewRequest(Interfaces.JSON)
+                    .addRequestClass(Classes.ZONE).addFunction(Functions.SCENE_GET_NAME)
+                    .addParameter(ParameterTyps.TOKEN, sessionToken)
+                    .addParameter(ParameterTyps.ID, convertIntegerToString(zoneID))
+                    .addParameter(ParameterTyps.GROUP_ID, convertShortToString(groupID))
+                    .addParameter(ParameterTyps.SCENENUMBER, convertShortToString(sceneID)).buildRequestString());
             JsonObject responseObj = JSONResponseHandler.toJsonObject(response);
 
             if (JSONResponseHandler.checkResponse(responseObj)) {
                 JsonObject obj = JSONResponseHandler.getResultJsonObject(responseObj);
-                if (obj != null && obj.get("name") != null) {
-                    return obj.get("name").getAsString();
+                if (checkBlankField(obj, JSONApiResponseKeysEnum.NAME.getKey())) {
+                    return obj.get(JSONApiResponseKeysEnum.NAME.getKey()).getAsString();
                 }
             }
         } catch (Exception e) {
@@ -1003,18 +1017,20 @@ public class DsAPIImpl implements DsAPI {
     }
 
     @Override
-    public String getZoneTemperatureControlStatus(String sessionToken, Integer zoneID) {
+    public TemperatureControlStatus getZoneTemperatureControlStatus(String sessionToken, Integer zoneID,
+            String zoneName) {
 
         try {
             String response = transport.execute(SimpleRequestBuilder.buildNewRequest(Interfaces.JSON)
                     .addRequestClass(Classes.ZONE).addFunction(Functions.GET_TEMPERATURE_CONTROL_STATUS)
                     .addParameter(ParameterTyps.TOKEN, sessionToken)
-                    .addParameter(ParameterTyps.ID, getParameterZoneIdString(zoneID)).buildRequestString());
+                    .addParameter(ParameterTyps.ID, convertIntegerToString(zoneID))
+                    .addParameter(ParameterTyps.NAME, zoneName).buildRequestString());
             JsonObject responseObj = JSONResponseHandler.toJsonObject(response);
 
             if (JSONResponseHandler.checkResponse(responseObj)) {
                 JsonObject obj = JSONResponseHandler.getResultJsonObject(responseObj);
-                // TODO: add logic
+                return new TemperatureControlStatus(obj, zoneID, zoneName);
             }
         } catch (Exception e) {
             logger.debug("An exception occurred", e);
@@ -1023,17 +1039,19 @@ public class DsAPIImpl implements DsAPI {
     }
 
     @Override
-    public String getZoneTemperatureControlConfig(String sessionToken, Integer zoneID) {
+    public TemperatureControlConfig getZoneTemperatureControlConfig(String sessionToken, Integer zoneID,
+            String zoneName) {
         try {
             String response = transport.execute(SimpleRequestBuilder.buildNewRequest(Interfaces.JSON)
                     .addRequestClass(Classes.ZONE).addFunction(Functions.GET_TEMPERATURE_CONTROL_CONFIG)
                     .addParameter(ParameterTyps.TOKEN, sessionToken)
-                    .addParameter(ParameterTyps.ID, getParameterZoneIdString(zoneID)).buildRequestString());
+                    .addParameter(ParameterTyps.ID, convertIntegerToString(zoneID))
+                    .addParameter(ParameterTyps.NAME, zoneName).buildRequestString());
             JsonObject responseObj = JSONResponseHandler.toJsonObject(response);
 
             if (JSONResponseHandler.checkResponse(responseObj)) {
                 JsonObject obj = JSONResponseHandler.getResultJsonObject(responseObj);
-                // TODO: add logic
+                return new TemperatureControlConfig(obj, zoneID, zoneName);
             }
         } catch (Exception e) {
             logger.debug("An exception occurred", e);
@@ -1042,17 +1060,19 @@ public class DsAPIImpl implements DsAPI {
     }
 
     @Override
-    public String getZoneTemperatureControlValues(String sessionToken, Integer zoneID) {
+    public TemperatureControlValues getZoneTemperatureControlValues(String sessionToken, Integer zoneID,
+            String zoneName) {
         try {
             String response = transport.execute(SimpleRequestBuilder.buildNewRequest(Interfaces.JSON)
                     .addRequestClass(Classes.ZONE).addFunction(Functions.GET_TEMPERATURE_CONTROL_VALUES)
                     .addParameter(ParameterTyps.TOKEN, sessionToken)
-                    .addParameter(ParameterTyps.ID, getParameterZoneIdString(zoneID)).buildRequestString());
+                    .addParameter(ParameterTyps.ID, convertIntegerToString(zoneID))
+                    .addParameter(ParameterTyps.NAME, zoneName).buildRequestString());
             JsonObject responseObj = JSONResponseHandler.toJsonObject(response);
 
             if (JSONResponseHandler.checkResponse(responseObj)) {
                 JsonObject obj = JSONResponseHandler.getResultJsonObject(responseObj);
-                // TODO: add logic
+                return new TemperatureControlValues(obj, zoneID, zoneName);
             }
         } catch (Exception e) {
             logger.debug("An exception occurred", e);
@@ -1061,17 +1081,18 @@ public class DsAPIImpl implements DsAPI {
     }
 
     @Override
-    public String getZoneAssignedSensors(String sessionToken, Integer zoneID) {
+    public AssignedSensors getZoneAssignedSensors(String sessionToken, Integer zoneID, String zoneName) {
         try {
             String response = transport
                     .execute(SimpleRequestBuilder.buildNewRequest(Interfaces.JSON).addRequestClass(Classes.ZONE)
                             .addFunction(Functions.GET_ASSIGNED_SENSORS).addParameter(ParameterTyps.TOKEN, sessionToken)
-                            .addParameter(ParameterTyps.ID, getParameterZoneIdString(zoneID)).buildRequestString());
+                            .addParameter(ParameterTyps.ID, convertIntegerToString(zoneID))
+                            .addParameter(ParameterTyps.NAME, zoneName).buildRequestString());
             JsonObject responseObj = JSONResponseHandler.toJsonObject(response);
 
             if (JSONResponseHandler.checkResponse(responseObj)) {
                 JsonObject obj = JSONResponseHandler.getResultJsonObject(responseObj);
-                // TODO: add logic
+                return new AssignedSensors(obj, zoneID, zoneName);
             }
         } catch (Exception e) {
             logger.debug("An exception occurred", e);
@@ -1080,13 +1101,15 @@ public class DsAPIImpl implements DsAPI {
     }
 
     @Override
-    public boolean setZoneTemperatureControlState(String sessionToken, Integer zoneID, String controlState) {
+    public boolean setZoneTemperatureControlState(String sessionToken, Integer zoneID, String controlState,
+            String zoneName) {
         try {
             String response = transport.execute(SimpleRequestBuilder.buildNewRequest(Interfaces.JSON)
                     .addRequestClass(Classes.ZONE).addFunction(Functions.SET_TEMEPERATURE_CONTROL_STATE)
                     .addParameter(ParameterTyps.TOKEN, sessionToken)
-                    .addParameter(ParameterTyps.ID, getParameterZoneIdString(zoneID))
-                    .addParameter(ParameterTyps.CONTROL_STATE, controlState).buildRequestString());
+                    .addParameter(ParameterTyps.ID, convertIntegerToString(zoneID))
+                    .addParameter(ParameterTyps.NAME, zoneName).addParameter(ParameterTyps.CONTROL_STATE, controlState)
+                    .buildRequestString());
 
             return JSONResponseHandler.checkResponse(JSONResponseHandler.toJsonObject(response));
 
@@ -1097,14 +1120,15 @@ public class DsAPIImpl implements DsAPI {
     }
 
     @Override
-    public boolean setZoneTemperatureControlValue(String sessionToken, Integer zoneID, String controlValue,
-            Float temperature) {
+    public boolean setZoneTemperatureControlValue(String sessionToken, Integer zoneID, String zoneName,
+            String controlValue, Float temperature) {
         try {
             String response = transport.execute(SimpleRequestBuilder.buildNewRequest(Interfaces.JSON)
                     .addRequestClass(Classes.ZONE).addFunction(Functions.SET_TEMEPERATURE_CONTROL_VALUE)
                     .addParameter(ParameterTyps.TOKEN, sessionToken)
-                    .addParameter(ParameterTyps.ID, getParameterZoneIdString(zoneID))
-                    .addParameter(ParameterTyps.CONTROL_VALUE, controlValue).buildRequestString());
+                    .addParameter(ParameterTyps.ID, convertIntegerToString(zoneID))
+                    .addParameter(ParameterTyps.NAME, zoneName).addParameter(ParameterTyps.CONTROL_VALUE, controlValue)
+                    .buildRequestString());
 
             return JSONResponseHandler.checkResponse(JSONResponseHandler.toJsonObject(response));
 
@@ -1115,17 +1139,18 @@ public class DsAPIImpl implements DsAPI {
     }
 
     @Override
-    public String getZoneSensorValues(String sessionToken, Integer zoneID) {
+    public SensorValues getZoneSensorValues(String sessionToken, Integer zoneID, String zoneName) {
         try {
             String response = transport
                     .execute(SimpleRequestBuilder.buildNewRequest(Interfaces.JSON).addRequestClass(Classes.ZONE)
                             .addFunction(Functions.GET_SENSOR_VALUES).addParameter(ParameterTyps.TOKEN, sessionToken)
-                            .addParameter(ParameterTyps.ID, getParameterZoneIdString(zoneID)).buildRequestString());
+                            .addParameter(ParameterTyps.ID, convertIntegerToString(zoneID))
+                            .addParameter(ParameterTyps.NAME, zoneName).buildRequestString());
             JsonObject responseObj = JSONResponseHandler.toJsonObject(response);
 
             if (JSONResponseHandler.checkResponse(responseObj)) {
                 JsonObject obj = JSONResponseHandler.getResultJsonObject(responseObj);
-                // TODO: add logic
+                return new SensorValues(obj, zoneID, zoneName);
             }
         } catch (Exception e) {
             logger.debug("An exception occurred", e);
@@ -1134,18 +1159,51 @@ public class DsAPIImpl implements DsAPI {
     }
 
     @Override
-    public String setZoneTemperatureControlConfig(String sessionToken, Integer zoneID) {
-        // TODO Auto-generated method stub
-        return null;
+    public boolean setZoneTemperatureControlConfig(String sessionToken, Integer zoneID, String zoneName,
+            String controlDSUID, Short controlMode, Integer referenceZone, Float ctrlOffset, Float emergencyValue,
+            Float manualValue, Float ctrlKp, Float ctrlTs, Float ctrlTi, Float ctrlKd, Float ctrlImin, Float ctrlImax,
+            Float ctrlYmin, Float ctrlYmax, Boolean ctrlAntiWindUp, Boolean ctrlKeepFloorWarm) {
+        try {
+            String response = transport.execute(SimpleRequestBuilder.buildNewRequest(Interfaces.JSON)
+                    .addRequestClass(Classes.ZONE).addFunction(Functions.SET_TEMPERATION_CONTROL_CONFIG)
+                    .addParameter(ParameterTyps.TOKEN, sessionToken)
+                    .addParameter(ParameterTyps.ID, convertIntegerToString(zoneID))
+                    .addParameter(ParameterTyps.NAME, zoneName)
+                    .addParameter(ParameterTyps.CONTROL_MODE, objectToString(controlMode))
+                    .addParameter(ParameterTyps.CONTROL_DSUID, controlDSUID)
+                    .addParameter(ParameterTyps.REFERENCE_ZONE, objectToString(referenceZone))
+                    .addParameter(ParameterTyps.CTRL_OFFSET, objectToString(ctrlOffset))
+                    .addParameter(ParameterTyps.EMERGENCY_VALUE, objectToString(emergencyValue))
+                    .addParameter(ParameterTyps.MANUAL_VALUE, objectToString(manualValue))
+                    .addParameter(ParameterTyps.CTRL_KP, objectToString(ctrlKp))
+                    .addParameter(ParameterTyps.CTRL_TS, objectToString(ctrlTs))
+                    .addParameter(ParameterTyps.CTRL_TI, objectToString(ctrlTi))
+                    .addParameter(ParameterTyps.CTRL_KD, objectToString(ctrlKd))
+                    .addParameter(ParameterTyps.CTRL_I_MIN, objectToString(ctrlImin))
+                    .addParameter(ParameterTyps.CTRL_I_MAX, objectToString(ctrlImax))
+                    .addParameter(ParameterTyps.CTRL_Y_MIN, objectToString(ctrlYmin))
+                    .addParameter(ParameterTyps.CTRL_Y_MAX, objectToString(ctrlYmax))
+                    .addParameter(ParameterTyps.CTRL_ANTI_WIND_UP, objectToString(ctrlAntiWindUp))
+                    .addParameter(ParameterTyps.CTRL_KEEP_FLOOR_WARM, objectToString(ctrlKeepFloorWarm))
+                    .buildRequestString());
+
+            return JSONResponseHandler.checkResponse(JSONResponseHandler.toJsonObject(response));
+
+        } catch (Exception e) {
+            logger.debug("An exception occurred", e);
+        }
+        return false;
     }
 
     @Override
-    public boolean setZoneSensorSource(String sessionToken, Integer zoneID, SensorEnum sensorType, DSID dSID) {
+    public boolean setZoneSensorSource(String sessionToken, Integer zoneID, String zoneName, SensorEnum sensorType,
+            DSID dSID) {
         try {
             String response = transport
                     .execute(SimpleRequestBuilder.buildNewRequest(Interfaces.JSON).addRequestClass(Classes.ZONE)
                             .addFunction(Functions.SET_SENSOR_SOURCE).addParameter(ParameterTyps.TOKEN, sessionToken)
-                            .addParameter(ParameterTyps.ID, getParameterZoneIdString(zoneID))
+                            .addParameter(ParameterTyps.ID, convertIntegerToString(zoneID))
+                            .addParameter(ParameterTyps.NAME, zoneName)
                             .addParameter(ParameterTyps.SENSOR_TYPE, sensorType.getSensorType().toString())
                             .addParameter(ParameterTyps.DSID, getDsidString(dSID)).buildRequestString());
 
@@ -1158,12 +1216,13 @@ public class DsAPIImpl implements DsAPI {
     }
 
     @Override
-    public boolean clearZoneSensorSource(String sessionToken, Integer zoneID, SensorEnum sensorType) {
+    public boolean clearZoneSensorSource(String sessionToken, Integer zoneID, String zoneName, SensorEnum sensorType) {
         try {
             String response = transport.execute(SimpleRequestBuilder.buildNewRequest(Interfaces.JSON)
                     .addRequestClass(Classes.ZONE).addFunction(Functions.SET_TEMEPERATURE_CONTROL_VALUE)
                     .addParameter(ParameterTyps.TOKEN, sessionToken)
-                    .addParameter(ParameterTyps.ID, getParameterZoneIdString(zoneID))
+                    .addParameter(ParameterTyps.ID, convertIntegerToString(zoneID))
+                    .addParameter(ParameterTyps.NAME, zoneName)
                     .addParameter(ParameterTyps.SENSOR_TYPE, sensorType.getSensorType().toString())
                     .buildRequestString());
 
@@ -1176,17 +1235,18 @@ public class DsAPIImpl implements DsAPI {
     }
 
     @Override
-    public String getZoneTemperatureControlInternals(String sessionToken, Integer zoneID) {
+    public TemperatureControlInternals getZoneTemperatureControlInternals(String sessionToken, Integer zoneID,
+            String zoneName) {
         try {
             String response = transport.execute(SimpleRequestBuilder.buildNewRequest(Interfaces.JSON)
                     .addRequestClass(Classes.ZONE).addFunction(Functions.GET_TEMPERATURE_CONTROL_INTERNALS)
-                    .addParameter(ParameterTyps.TOKEN, sessionToken)
-                    .addParameter(ParameterTyps.ID, getParameterZoneIdString(zoneID)).buildRequestString());
+                    .addParameter(ParameterTyps.TOKEN, sessionToken).addParameter(ParameterTyps.NAME, zoneName)
+                    .addParameter(ParameterTyps.ID, convertIntegerToString(zoneID)).buildRequestString());
             JsonObject responseObj = JSONResponseHandler.toJsonObject(response);
 
             if (JSONResponseHandler.checkResponse(responseObj)) {
                 JsonObject obj = JSONResponseHandler.getResultJsonObject(responseObj);
-                // TODO: add logic
+                return new TemperatureControlInternals(obj, zoneID, zoneName);
             }
         } catch (Exception e) {
             logger.debug("An exception occurred", e);
@@ -1195,7 +1255,7 @@ public class DsAPIImpl implements DsAPI {
     }
 
     @Override
-    public String getApartmentTemperatureControlStatus(String sessionToken) {
+    public HashMap<Integer, TemperatureControlStatus> getApartmentTemperatureControlStatus(String sessionToken) {
         try {
             String response = transport.execute(SimpleRequestBuilder.buildNewRequest(Interfaces.JSON)
                     .addRequestClass(Classes.APARTMENT).addFunction(Functions.GET_TEMPERATURE_CONTROL_STATUS)
@@ -1204,7 +1264,22 @@ public class DsAPIImpl implements DsAPI {
 
             if (JSONResponseHandler.checkResponse(responseObj)) {
                 JsonObject obj = JSONResponseHandler.getResultJsonObject(responseObj);
-                // TODO: add logic
+                if (obj.get(JSONApiResponseKeysEnum.ZONES.getKey()).isJsonArray()) {
+                    JsonArray jArray = obj.get(JSONApiResponseKeysEnum.ZONES.getKey()).getAsJsonArray();
+                    if (jArray.size() != 0) {
+                        HashMap<Integer, TemperatureControlStatus> map = new HashMap<Integer, TemperatureControlStatus>(
+                                jArray.size());
+                        Iterator<JsonElement> iter = jArray.iterator();
+                        while (iter.hasNext()) {
+                            TemperatureControlStatus tContStat = new TemperatureControlStatus(
+                                    iter.next().getAsJsonObject());
+                            if (tContStat != null) {
+                                map.put(tContStat.getZoneID(), tContStat);
+                            }
+                        }
+                        return map;
+                    }
+                }
             }
         } catch (Exception e) {
             logger.debug("An exception occurred", e);
@@ -1213,7 +1288,7 @@ public class DsAPIImpl implements DsAPI {
     }
 
     @Override
-    public String getApartmentTemperatureControlConfig(String sessionToken) {
+    public HashMap<Integer, TemperatureControlConfig> getApartmentTemperatureControlConfig(String sessionToken) {
         try {
             String response = transport.execute(SimpleRequestBuilder.buildNewRequest(Interfaces.JSON)
                     .addRequestClass(Classes.APARTMENT).addFunction(Functions.GET_TEMPERATURE_CONTROL_CONFIG)
@@ -1222,7 +1297,22 @@ public class DsAPIImpl implements DsAPI {
 
             if (JSONResponseHandler.checkResponse(responseObj)) {
                 JsonObject obj = JSONResponseHandler.getResultJsonObject(responseObj);
-                // TODO: add logic
+                if (obj.get(JSONApiResponseKeysEnum.ZONES.getKey()).isJsonArray()) {
+                    JsonArray jArray = obj.get(JSONApiResponseKeysEnum.ZONES.getKey()).getAsJsonArray();
+                    if (jArray.size() != 0) {
+                        HashMap<Integer, TemperatureControlConfig> map = new HashMap<Integer, TemperatureControlConfig>(
+                                jArray.size());
+                        Iterator<JsonElement> iter = jArray.iterator();
+                        while (iter.hasNext()) {
+                            TemperatureControlConfig tContConf = new TemperatureControlConfig(
+                                    iter.next().getAsJsonObject());
+                            if (tContConf != null) {
+                                map.put(tContConf.getZoneID(), tContConf);
+                            }
+                        }
+                        return map;
+                    }
+                }
             }
         } catch (Exception e) {
             logger.debug("An exception occurred", e);
@@ -1231,7 +1321,7 @@ public class DsAPIImpl implements DsAPI {
     }
 
     @Override
-    public String getApartmentTemperatureControlValues(String sessionToken) {
+    public HashMap<Integer, TemperatureControlValues> getApartmentTemperatureControlValues(String sessionToken) {
         try {
             String response = transport.execute(SimpleRequestBuilder.buildNewRequest(Interfaces.JSON)
                     .addRequestClass(Classes.APARTMENT).addFunction(Functions.GET_TEMPERATURE_CONTROL_VALUES)
@@ -1240,7 +1330,22 @@ public class DsAPIImpl implements DsAPI {
 
             if (JSONResponseHandler.checkResponse(responseObj)) {
                 JsonObject obj = JSONResponseHandler.getResultJsonObject(responseObj);
-                // TODO: add logic
+                if (obj.get(JSONApiResponseKeysEnum.ZONES.getKey()).isJsonArray()) {
+                    JsonArray jArray = obj.get(JSONApiResponseKeysEnum.ZONES.getKey()).getAsJsonArray();
+                    if (jArray.size() != 0) {
+                        HashMap<Integer, TemperatureControlValues> map = new HashMap<Integer, TemperatureControlValues>(
+                                jArray.size());
+                        Iterator<JsonElement> iter = jArray.iterator();
+                        while (iter.hasNext()) {
+                            TemperatureControlValues tContVal = new TemperatureControlValues(
+                                    iter.next().getAsJsonObject());
+                            if (tContVal != null) {
+                                map.put(tContVal.getZoneID(), tContVal);
+                            }
+                        }
+                        return map;
+                    }
+                }
             }
         } catch (Exception e) {
             logger.debug("An exception occurred", e);
@@ -1249,7 +1354,7 @@ public class DsAPIImpl implements DsAPI {
     }
 
     @Override
-    public String getApartmentAssignedSensors(String sessionToken) {
+    public HashMap<Integer, AssignedSensors> getApartmentAssignedSensors(String sessionToken) {
         try {
             String response = transport.execute(SimpleRequestBuilder.buildNewRequest(Interfaces.JSON)
                     .addRequestClass(Classes.APARTMENT).addFunction(Functions.GET_ASSIGNED_SENSORS)
@@ -1258,7 +1363,20 @@ public class DsAPIImpl implements DsAPI {
 
             if (JSONResponseHandler.checkResponse(responseObj)) {
                 JsonObject obj = JSONResponseHandler.getResultJsonObject(responseObj);
-                // TODO: add logic
+                if (obj.get(JSONApiResponseKeysEnum.ZONES.getKey()).isJsonArray()) {
+                    JsonArray jArray = obj.get(JSONApiResponseKeysEnum.ZONES.getKey()).getAsJsonArray();
+                    if (jArray.size() != 0) {
+                        HashMap<Integer, AssignedSensors> map = new HashMap<Integer, AssignedSensors>(jArray.size());
+                        Iterator<JsonElement> iter = jArray.iterator();
+                        while (iter.hasNext()) {
+                            AssignedSensors assignedSensors = new AssignedSensors(iter.next().getAsJsonObject());
+                            if (assignedSensors != null) {
+                                map.put(assignedSensors.getZoneID(), assignedSensors);
+                            }
+                        }
+                        return map;
+                    }
+                }
             }
         } catch (Exception e) {
             logger.debug("An exception occurred", e);
@@ -1267,7 +1385,7 @@ public class DsAPIImpl implements DsAPI {
     }
 
     @Override
-    public String getApartmentSensorValues(String sessionToken) {
+    public HashMap<Integer, BaseSensorValues> getApartmentSensorValues(String sessionToken) {
         try {
             String response = transport.execute(SimpleRequestBuilder.buildNewRequest(Interfaces.JSON)
                     .addRequestClass(Classes.APARTMENT).addFunction(Functions.GET_SENSOR_VALUES)
@@ -1276,7 +1394,23 @@ public class DsAPIImpl implements DsAPI {
 
             if (JSONResponseHandler.checkResponse(responseObj)) {
                 JsonObject obj = JSONResponseHandler.getResultJsonObject(responseObj);
-                // TODO: add logic
+                if (obj.get(JSONApiResponseKeysEnum.ZONES.getKey()).isJsonArray()) {
+                    JsonArray jArray = obj.get(JSONApiResponseKeysEnum.ZONES.getKey()).getAsJsonArray();
+                    WeatherSensorData weather = new WeatherSensorData(obj);
+                    if (jArray.size() != 0) {
+                        HashMap<Integer, BaseSensorValues> map = new HashMap<Integer, BaseSensorValues>(
+                                jArray.size() + 1);
+                        Iterator<JsonElement> iter = jArray.iterator();
+                        while (iter.hasNext()) {
+                            SensorValues sensorValues = new SensorValues(iter.next().getAsJsonObject());
+                            if (sensorValues != null) {
+                                map.put(sensorValues.getZoneID(), sensorValues);
+                            }
+                        }
+                        map.put(0, weather);
+                        return map;
+                    }
+                }
             }
         } catch (Exception e) {
             logger.debug("An exception occurred", e);

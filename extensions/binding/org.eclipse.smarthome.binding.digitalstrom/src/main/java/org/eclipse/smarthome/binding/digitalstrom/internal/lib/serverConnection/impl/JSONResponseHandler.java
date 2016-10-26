@@ -36,12 +36,11 @@ public class JSONResponseHandler {
     public static boolean checkResponse(JsonObject jsonResponse) {
         if (jsonResponse == null) {
             return false;
-        } else if (jsonResponse.get(JSONApiResponseKeysEnum.RESPONSE_OK.getKey()) != null) {
-            return jsonResponse.get(JSONApiResponseKeysEnum.RESPONSE_OK.getKey()).toString()
-                    .equals(JSONApiResponseKeysEnum.RESPONSE_SUCCESSFUL.getKey());
+        } else if (jsonResponse.get(JSONApiResponseKeysEnum.OK.getKey()) != null) {
+            return jsonResponse.get(JSONApiResponseKeysEnum.OK.getKey()).getAsBoolean();
         } else {
             logger.error("JSONResponseHandler: error in json request. Error message : "
-                    + jsonResponse.get(JSONApiResponseKeysEnum.RESPONSE_MESSAGE.getKey()).toString());
+                    + jsonResponse.get(JSONApiResponseKeysEnum.MESSAGE.getKey()).toString());
         }
         return false;
     }

@@ -25,14 +25,14 @@ public class JSONDeviceConfigImpl implements DeviceConfig {
     private int value = -1;
 
     public JSONDeviceConfigImpl(JsonObject object) {
-        if (object.get(JSONApiResponseKeysEnum.DEVICE_GET_CONFIG_CLASS.getKey()) != null) {
-            class_ = object.get(JSONApiResponseKeysEnum.DEVICE_GET_CONFIG_CLASS.getKey()).getAsInt();
+        if (object.get(JSONApiResponseKeysEnum.CLASS.getKey()) != null) {
+            class_ = object.get(JSONApiResponseKeysEnum.CLASS.getKey()).getAsInt();
         }
-        if (object.get(JSONApiResponseKeysEnum.DEVICE_GET_CONFIG_INDEX.getKey()) != null) {
-            index = object.get(JSONApiResponseKeysEnum.DEVICE_GET_CONFIG_INDEX.getKey()).getAsInt();
+        if (object.get(JSONApiResponseKeysEnum.INDEX.getKey()) != null) {
+            index = object.get(JSONApiResponseKeysEnum.INDEX.getKey()).getAsInt();
         }
-        if (object.get(JSONApiResponseKeysEnum.DEVICE_GET_CONFIG_VALUE.getKey()) != null) {
-            value = object.get(JSONApiResponseKeysEnum.DEVICE_GET_CONFIG_VALUE.getKey()).getAsInt();
+        if (object.get(JSONApiResponseKeysEnum.VALUE.getKey()) != null) {
+            value = object.get(JSONApiResponseKeysEnum.VALUE.getKey()).getAsInt();
         }
     }
 
