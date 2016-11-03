@@ -1,10 +1,19 @@
 package org.eclipse.smarthome.binding.digitalstrom.internal.lib.climate.jsonResponseContainer.impl;
 
+import org.eclipse.smarthome.binding.digitalstrom.internal.lib.climate.constants.ControlModes;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.climate.jsonResponseContainer.TemperatureControl;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.serverConnection.constants.JSONApiResponseKeysEnum;
 
 import com.google.gson.JsonObject;
 
+/**
+ * The {@link TemperatureControlConfig} acts as container for the digitalSTROM json-method
+ * <i>getTemperatureControlConfig</i>. So the {@link TemperatureControlConfig} contains all heating control
+ * configurations of a zone.
+ *
+ * @author Michael Ochel - Initial contribution
+ * @author Matthias Siegele - Initial contribution
+ */
 public class TemperatureControlConfig extends TemperatureControl {
 
     private Integer referenceZone;
@@ -22,33 +31,34 @@ public class TemperatureControlConfig extends TemperatureControl {
     private Boolean ctrlAntiWindUp;
     private Boolean ctrlKeepFloorWarm;
 
+    /**
+     * Creates a new {@link TemperatureControlConfig} through the {@link JsonObject} which will be returned by an
+     * apartment call.
+     *
+     * @param jObject must not be null
+     */
     public TemperatureControlConfig(JsonObject jObject) {
-        if (jObject.get(JSONApiResponseKeysEnum.ID.getKey()) != null) {
-            this.zoneID = jObject.get(JSONApiResponseKeysEnum.ID.getKey()).getAsInt();
-        }
-        if (jObject.get(JSONApiResponseKeysEnum.NAME.getKey()) != null) {
-            this.zoneName = jObject.get(JSONApiResponseKeysEnum.NAME.getKey()).getAsString();
-        }
+        super(jObject);
         init(jObject);
     }
 
+    /**
+     * Creates a new {@link TemperatureControlConfig} through the {@link JsonObject} which will be returned by an zone
+     * call.<br>
+     * Because of zone calls does not include a zoneID or zoneName in the json response, the zoneID and zoneName have to
+     * be handed over the constructor.
+     *
+     * @param jObject must not be null
+     * @param zoneID must not be null
+     * @param zoneName can be null
+     */
     public TemperatureControlConfig(JsonObject jObject, Integer zoneID, String zoneName) {
-        this.zoneID = zoneID;
-        this.zoneName = zoneName;
+        super(jObject, zoneID, zoneName);
         init(jObject);
     }
 
     private void init(JsonObject jObject) {
-        if (jObject.get(JSONApiResponseKeysEnum.IS_CONFIGURED.getKey()) != null) {
-            this.isConfigured = jObject.get(JSONApiResponseKeysEnum.IS_CONFIGURED.getKey()).getAsBoolean();
-        }
         if (isConfigured) {
-            if (jObject.get(JSONApiResponseKeysEnum.CONTROL_MODE.getKey()) != null) {
-                this.controlMode = jObject.get(JSONApiResponseKeysEnum.CONTROL_MODE.getKey()).getAsShort();
-            }
-            if (jObject.get(JSONApiResponseKeysEnum.CONTROL_DSUID.getKey()) != null) {
-                this.controlDSUID = jObject.get(JSONApiResponseKeysEnum.CONTROL_DSUID.getKey()).getAsString();
-            }
             if (controlMode == 1) {
                 if (jObject.get(JSONApiResponseKeysEnum.EMERGENCY_VALUE.getKey()) != null) {
                     this.emergencyValue = jObject.get(JSONApiResponseKeysEnum.EMERGENCY_VALUE.getKey()).getAsFloat();
@@ -99,6 +109,8 @@ public class TemperatureControlConfig extends TemperatureControl {
     }
 
     /**
+     * Returns the refenceZone, if control-mode is {@link ControlModes#ZONE_FOLLOWER}, otherwise null.
+     *
      * @return the referenceZone
      */
     public Integer getReferenceZone() {
@@ -106,6 +118,8 @@ public class TemperatureControlConfig extends TemperatureControl {
     }
 
     /**
+     * Returns the ctrlOffset, if control-mode is {@link ControlModes#PID_CONTROL}, otherwise null.
+     *
      * @return the ctrlOffset
      */
     public Float getCtrlOffset() {
@@ -113,6 +127,8 @@ public class TemperatureControlConfig extends TemperatureControl {
     }
 
     /**
+     * Returns the manualValue, if control-mode is {@link ControlModes#MANUAL}, otherwise null.
+     *
      * @return the manualValue
      */
     public Float getManualValue() {
@@ -120,6 +136,8 @@ public class TemperatureControlConfig extends TemperatureControl {
     }
 
     /**
+     * Returns the emergencyValue, if control-mode is {@link ControlModes#PID_CONTROL}, otherwise null.
+     *
      * @return the emergencyValue
      */
     public Float getEmergencyValue() {
@@ -127,6 +145,8 @@ public class TemperatureControlConfig extends TemperatureControl {
     }
 
     /**
+     * Returns the ctrlKp, if control-mode is {@link ControlModes#PID_CONTROL}, otherwise null.
+     *
      * @return the ctrlKp
      */
     public Float getCtrlKp() {
@@ -134,6 +154,8 @@ public class TemperatureControlConfig extends TemperatureControl {
     }
 
     /**
+     * Returns the ctrlTs, if control-mode is {@link ControlModes#PID_CONTROL}, otherwise null.
+     *
      * @return the ctrlTs
      */
     public Float getCtrlTs() {
@@ -141,6 +163,8 @@ public class TemperatureControlConfig extends TemperatureControl {
     }
 
     /**
+     * Returns the ctrlTi, if control-mode is {@link ControlModes#PID_CONTROL}, otherwise null.
+     *
      * @return the ctrlTi
      */
     public Float getCtrlTi() {
@@ -148,6 +172,8 @@ public class TemperatureControlConfig extends TemperatureControl {
     }
 
     /**
+     * Returns the ctrlKd, if control-mode is {@link ControlModes#PID_CONTROL}, otherwise null.
+     *
      * @return the ctrlKd
      */
     public Float getCtrlKd() {
@@ -155,6 +181,8 @@ public class TemperatureControlConfig extends TemperatureControl {
     }
 
     /**
+     * Returns the ctrlImin, if control-mode is {@link ControlModes#PID_CONTROL}, otherwise null.
+     *
      * @return the ctrlImin
      */
     public Float getCtrlImin() {
@@ -162,6 +190,8 @@ public class TemperatureControlConfig extends TemperatureControl {
     }
 
     /**
+     * Returns the ctrlImax, if control-mode is {@link ControlModes#PID_CONTROL}, otherwise null.
+     *
      * @return the ctrlImax
      */
     public Float getCtrlImax() {
@@ -169,6 +199,8 @@ public class TemperatureControlConfig extends TemperatureControl {
     }
 
     /**
+     * Returns the ctrlYmin, if control-mode is {@link ControlModes#PID_CONTROL}, otherwise null.
+     *
      * @return the ctrlYmin
      */
     public Float getCtrlYmin() {
@@ -176,6 +208,8 @@ public class TemperatureControlConfig extends TemperatureControl {
     }
 
     /**
+     * Returns the ctrlYmax, if control-mode is {@link ControlModes#PID_CONTROL}, otherwise null.
+     *
      * @return the ctrlYmax
      */
     public Float getCtrlYmax() {
@@ -183,6 +217,8 @@ public class TemperatureControlConfig extends TemperatureControl {
     }
 
     /**
+     * Returns the ctrlAntiWindUp, if control-mode is {@link ControlModes#PID_CONTROL}, otherwise null.
+     *
      * @return the ctrlAntiWindUp
      */
     public Boolean getCtrlAntiWindUp() {
@@ -190,6 +226,8 @@ public class TemperatureControlConfig extends TemperatureControl {
     }
 
     /**
+     * Returns the ctrlKeepFloorWarm, if control-mode is {@link ControlModes#PID_CONTROL}, otherwise null.
+     *
      * @return the ctrlKeepFloorWarm
      */
     public Boolean getCtrlKeepFloorWarm() {
@@ -198,7 +236,7 @@ public class TemperatureControlConfig extends TemperatureControl {
 
     /*
      * (non-Javadoc)
-     * 
+     *
      * @see java.lang.Object#toString()
      */
     @Override

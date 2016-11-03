@@ -7,12 +7,12 @@
  */
 package org.eclipse.smarthome.binding.digitalstrom.internal.lib.config;
 
+import org.eclipse.smarthome.binding.digitalstrom.internal.lib.event.types.Event;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.sensorJobExecutor.SensorJobExecutor;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.sensorJobExecutor.sensorJob.SensorJob;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.serverConnection.impl.HttpTransportImpl;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.Device;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.OutputModeEnum;
-import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.scene.sceneEvent.Event;
 
 /**
  * The {@link Config} contains all configurations for the digitalSTROM-Library.

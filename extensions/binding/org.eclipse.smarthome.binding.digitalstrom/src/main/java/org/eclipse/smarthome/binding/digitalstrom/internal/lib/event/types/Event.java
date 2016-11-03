@@ -5,7 +5,7 @@
  * which accompanies this distribution, and is available at
  * http://www.eclipse.org/legal/epl-v10.html
  */
-package org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.scene.sceneEvent;
+package org.eclipse.smarthome.binding.digitalstrom.internal.lib.event.types;
 
 import java.util.List;
 

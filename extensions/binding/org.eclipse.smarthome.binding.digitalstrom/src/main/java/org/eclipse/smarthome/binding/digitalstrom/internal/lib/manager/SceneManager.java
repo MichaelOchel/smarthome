@@ -9,6 +9,7 @@ package org.eclipse.smarthome.binding.digitalstrom.internal.lib.manager;
 
 import java.util.List;
 
+import org.eclipse.smarthome.binding.digitalstrom.internal.lib.event.types.EventItem;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.listener.ManagerStatusListener;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.listener.SceneStatusListener;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.listener.stateEnums.ManagerStates;
@@ -16,7 +17,6 @@ import org.eclipse.smarthome.binding.digitalstrom.internal.lib.listener.stateEnu
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.Device;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.scene.InternalScene;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.scene.SceneDiscovery;
-import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.scene.sceneEvent.EventItem;
 
 /**
  * The {@link SceneManager} manages all functions concerning scenes without sending the commands itself.
@@ -41,13 +41,6 @@ import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.scene.s
  *
  */
 public interface SceneManager {
-
-    /**
-     * Handles a {@link EventItem} e.g. which was detected by the {@link EventListener}.
-     *
-     * @param eventItem
-     */
-    public void handleEvent(EventItem eventItem);
 
     /**
      * Activates the given {@link InternalScene}, if it exists. Otherwise it will be added to the scene list and

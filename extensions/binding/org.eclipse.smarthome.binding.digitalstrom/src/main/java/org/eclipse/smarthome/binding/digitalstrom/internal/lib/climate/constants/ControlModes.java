@@ -1,5 +1,11 @@
 package org.eclipse.smarthome.binding.digitalstrom.internal.lib.climate.constants;
 
+/**
+ * The {@link ControlModes} contains all digitalSTROM heating control modes.
+ *
+ * @author Michael Ochel - Initial contribution
+ * @author Matthias Siegele - Initial contribution
+ */
 public enum ControlModes {
 
     OFF((short) 0, "off"),

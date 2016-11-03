@@ -2,6 +2,7 @@ package org.eclipse.smarthome.binding.digitalstrom.internal.lib.climate.jsonResp
 
 import java.util.Iterator;
 
+import org.eclipse.smarthome.binding.digitalstrom.internal.lib.climate.dataTypes.CachedSensorValue;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.climate.jsonResponseContainer.BaseSensorValues;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.climate.jsonResponseContainer.ZoneIdentifier;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.serverConnection.constants.JSONApiResponseKeysEnum;
@@ -10,11 +11,24 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 
+/**
+ * The {@link SensorValues} acts as container for the digitalSTROM json-method <i>getSensorValues</i>. So the
+ * {@link SensorValues} contains all {@link CachedSensorValue}s of a zone.
+ *
+ * @author Michael Ochel - Initial contribution
+ * @author Matthias Siegele - Initial contribution
+ *
+ */
 public class SensorValues extends BaseSensorValues implements ZoneIdentifier {
 
     private Integer zoneID;
     private String zoneName;
 
+    /**
+     * Creates a new {@link SensorValues} through the {@link JsonObject} that will be returned by an apartment call.
+     *
+     * @param jObject must not be null
+     */
     public SensorValues(JsonObject jObject) {
         if (jObject.get(JSONApiResponseKeysEnum.ID.getKey()) != null) {
             this.zoneID = jObject.get(JSONApiResponseKeysEnum.ID.getKey()).getAsInt();
@@ -25,6 +39,15 @@ public class SensorValues extends BaseSensorValues implements ZoneIdentifier {
         init(jObject);
     }
 
+    /**
+     * Creates a new {@link SensorValues} through the {@link JsonObject} which will be returned by an zone call.
+     * Because of zone calls does not include a zoneID or zoneName in the json response, the zoneID and zoneName have to
+     * be handed over the constructor.
+     *
+     * @param jObject must not be null
+     * @param zoneID must not be null
+     * @param zoneName can be null
+     */
     public SensorValues(JsonObject jObject, Integer zoneID, String zoneName) {
         this.zoneID = zoneID;
         this.zoneName = zoneName;

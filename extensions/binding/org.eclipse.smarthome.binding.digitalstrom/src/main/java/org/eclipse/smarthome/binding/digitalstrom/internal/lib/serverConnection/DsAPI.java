@@ -78,7 +78,7 @@ public interface DsAPI {
     public List<Device> getApartmentDevices(String sessionToken);
 
     /**
-     * Returns an array containing all digitalSTROM Meters of the apartment.
+     * Returns an array containing all digitalSTROM-Meters of the apartment.
      *
      * @param sessionToken
      * @return

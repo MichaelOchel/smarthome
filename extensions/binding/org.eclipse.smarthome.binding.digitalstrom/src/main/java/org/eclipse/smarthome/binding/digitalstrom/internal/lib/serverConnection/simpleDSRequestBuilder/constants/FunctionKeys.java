@@ -5,9 +5,15 @@
  * which accompanies this distribution, and is available at
  * http://www.eclipse.org/legal/epl-v10.html
  */
-package org.eclipse.smarthome.binding.digitalstrom.internal.lib.serverConnection.simpleURLBuilder.constants;
+package org.eclipse.smarthome.binding.digitalstrom.internal.lib.serverConnection.simpleDSRequestBuilder.constants;
 
-public class Functions {
+/**
+ * The {@link FunctionKeys} contains digitalSTROM-JSON function keys.
+ *
+ * @author Michael Ochel
+ * @author Matthias Siegele
+ */
+public class FunctionKeys {
 
     public static final String CALL_SCENE = "callScene";
     public static final String SAVE_SCENE = "saveScene";

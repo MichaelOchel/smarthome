@@ -5,9 +5,15 @@
  * which accompanies this distribution, and is available at
  * http://www.eclipse.org/legal/epl-v10.html
  */
-package org.eclipse.smarthome.binding.digitalstrom.internal.lib.serverConnection.simpleURLBuilder.constants;
+package org.eclipse.smarthome.binding.digitalstrom.internal.lib.serverConnection.simpleDSRequestBuilder.constants;
 
-public class ParameterTyps {
+/**
+ * The {@link ParameterKeys} contains digitalSTROM-JSON parameter keys.
+ *
+ * @author Michael Ochel
+ * @author Matthias Siegele
+ */
+public class ParameterKeys {
     public final static String TOKEN = "token";
     public final static String APPLICATION_TOKEN = "applicationToken";
     public final static String APPLICATION_NAME = "applicationName";

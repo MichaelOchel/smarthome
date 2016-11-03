@@ -13,23 +13,38 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 
+/**
+ * The {@link AssignedSensors} acts as container for the digitalSTROM json-method <i>getAssignedSensors</i>. So the
+ * {@link AssignedSensors} contains all {@link AssignSensorType}s of a zone.
+ *
+ * @author Michael Ochel - Initial contribution
+ * @author Matthias Siegele - Initial contribution
+ */
 public class AssignedSensors extends BaseZoneIdentifier {
 
     private List<AssignSensorType> sensors = null;
 
+    /**
+     * Creates a new {@link AssignedSensors} through the {@link JsonObject} that will be returned by an apartment call.
+     *
+     * @param jObject must not be null
+     */
     public AssignedSensors(JsonObject jObject) {
-        if (jObject.get(JSONApiResponseKeysEnum.ID.getKey()) != null) {
-            this.zoneID = jObject.get(JSONApiResponseKeysEnum.ID.getKey()).getAsInt();
-        }
-        if (jObject.get(JSONApiResponseKeysEnum.NAME.getKey()) != null) {
-            this.zoneName = jObject.get(JSONApiResponseKeysEnum.NAME.getKey()).getAsString();
-        }
+        super(jObject);
         init(jObject);
     }
 
+    /**
+     * Creates a new {@link AssignedSensors} through the {@link JsonObject} which will be returned by an zone call.
+     * Because of zone calls does not include a zoneID or zoneName in the json response, the zoneID and zoneName have to
+     * be handed over the constructor.
+     *
+     * @param jObject must not be null
+     * @param zoneID must not be null
+     * @param zoneName can be null
+     */
     public AssignedSensors(JsonObject jObject, Integer zoneID, String zoneName) {
-        this.zoneID = zoneID;
-        this.zoneName = zoneName;
+        super(zoneID, zoneName);
         init(jObject);
     }
 
@@ -58,8 +73,9 @@ public class AssignedSensors extends BaseZoneIdentifier {
     }
 
     /**
+     * Returns a {@link List} of all assigned sensor types as {@link SensorEnum} of a zone.
      *
-     * @return
+     * @return list of all assigned sensor types
      */
     public List<SensorEnum> getAssignedZoneSensorTypes() {
         List<SensorEnum> sensorTypes = new LinkedList<SensorEnum>();
@@ -72,17 +88,19 @@ public class AssignedSensors extends BaseZoneIdentifier {
     }
 
     /**
+     * Returns a {@link List} of all {@link AssignSensorType} of a zone.
      *
-     * @return
+     * @return list of {@link AssignSensorType}s
      */
     public List<AssignSensorType> getAssignedSensorTypes() {
         return sensors;
     }
 
     /**
+     * Returns the {@link AssignSensorType} of the given sensorType or null, if the given sensorType does not exist.
      *
      * @param sensorType
-     * @return
+     * @return the {@link AssignSensorType} of the given sensorType or null
      */
     public AssignSensorType getAssignedSensorType(SensorEnum sensorType) {
         if (sensorType != null && sensors != null) {
@@ -96,17 +114,19 @@ public class AssignedSensors extends BaseZoneIdentifier {
     }
 
     /**
+     * Returns true, if the given sensorType exists at the zone, otherwise false.
      *
      * @param sensorType
-     * @return
+     * @return true, if sensorType exists, otherwise false
      */
     public boolean existSensorType(SensorEnum sensorType) {
         return getAssignedSensorType(sensorType) != null;
     }
 
     /**
+     * Returns true, if sensors exists at the zone, otherwise false.
      *
-     * @return
+     * @return true, if sensors exists, otherwise false
      */
     public boolean existsAssignedSensors() {
         return sensors != null;

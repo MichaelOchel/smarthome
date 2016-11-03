@@ -1,5 +1,11 @@
 package org.eclipse.smarthome.binding.digitalstrom.internal.lib.climate.constants;
 
+/**
+ * The {@link ControlStates} contains all digitalSTROM heating control states.
+ *
+ * @author Michael Ochel - Initial contribution
+ * @author Matthias Siegele - Initial contribution
+ */
 public enum ControlStates {
 
     INTERNAL((short) 0, "internal"),

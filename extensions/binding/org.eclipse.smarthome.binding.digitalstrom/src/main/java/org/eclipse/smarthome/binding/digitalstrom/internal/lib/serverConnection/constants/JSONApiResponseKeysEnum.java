@@ -8,39 +8,100 @@
 package org.eclipse.smarthome.binding.digitalstrom.internal.lib.serverConnection.constants;
 
 /**
- * The {@link JSONApiResponseKeysEnum} contains all digitalSTROM-JSON response keys.
+ * The {@link JSONApiResponseKeysEnum} contains digitalSTROM-JSON response keys.
  *
  * @author Alexander Betker
- * @version digitalSTROM-API 1.14.5
+ * @author Michael Ochel completely changed and updated only methods remained
+ * @author Matthias Siegele completely changed and updated only methods remained
  */
 public enum JSONApiResponseKeysEnum {
 
+    // GENERAL
     OK("ok"),
     MESSAGE("message"),
-
     RESULT("result"),
 
-    NAME("name"),
-    ID("id"),
-
-    CONSUMPTION("consumption"),
+    // STRUCTURE
     APARTMENT("apartment"),
+    DS_METERS("dSMeters"),
     ZONES("zones"),
-    IS_PRESENT("isPresent"),
+    CIRCUITS("circuits"),
     DEVICES("devices"),
     GROUPS("groups"),
-
-    CIRCUITS("circuits"),
-
     REACHABLE_SCENES("reachableScenes"),
 
+    // SENSORS
+    // device
+    CONSUMPTION("consumption"),
+    SENSOR_VALUE("sensorValue"),
+    TYPE_TYPE("sensorType"),
+    SENSOR_INDEX("sensorIndex"),
+    METER_VALUE("meterValue"),
+    TYPE("type"),
+
+    // meter sensors
+    POWER_CONSUMPTION("powerConsumption"),
+    ENERGY_METER_VALUE("energyMeterValue"),
+    ENERGY_METER_VALUE_WS("energyMeterValueWs"),
+    RESOLUTIONS("resolutions"),
+    RESOLUTION("resolution"),
+    SERIES("series"),
+    UNIT("unit"),
+    VALUES("values"),
+    DATE("date"),
+
+    // zone/apartment sensors
+    SENSOR_TYPE("sensorType"),
+    TEMPERATION_VALUE("TemperatureValue"),
+    TEMPERATION_VALUE_TIME("TemperatureValueTime"),
+    HUMIDITY_VALUE("HumidityValue"),
+    HUMIDITY_VALUE_TIME("HumidityValueTime"),
+    BRIGHTNESS_VALUE("BrightnessValue"),
+    BRIGHTNESS_VALUE_TIME("BrightnessValueTime"),
+    CO2_CONCENTRATION_VALUE("CO2ConcentrationValue"),
+    CO2_CONCENTRATION_VALUE_TIME("CO2ConcentrationValueTime"),
+    SENSORS("sensors"),
+    WEATHER_ICON_ID("WeatherIconId"),
+    WEATHER_CONDITION_ID("WeatherConditionId"),
+    WEATHER_SERVICE_ID("WeatherServiceId"),
+    WEATHER_SERVICE_TIME("WeatherServiceTime"),
+
+    // IDs
+    DSID("dSID"),
+    DSUID("dSUID"),
+    DSID_LOWER_CASE("dsid"),
+    METER_DSID("meterDSID"),
+    ZONE_ID("ZoneID"),
+    ZONE_ID_UPPER_Z("zoneID"),
+    DSUID_LOWER_CASE("dsuid"),
+    GROUP_ID("groupID"),
+    METER_ID("meterID"),
+    ID("id"),
+    SCENE_ID("sceneID"),
+    NAME("name"),
+
+    // DEVICE
+    // status
+    IS_PRESENT("isPresent"),
     IS_ON("isOn"),
+    PRESENT("present"),
+    ON("on"),
+    // descriptions
+    FUNCTION_ID("functionID"),
+    PRODUCT_REVISION("productRevision"),
+    PRODUCT_ID("productID"),
+    HW_INFO("hwInfo"),
+    OUTPUT_MODE("outputMode"),
+    BUTTON_ID("buttonID"),
     HAS_TAG("hasTag"),
     TAGS("tags"),
+    REVISION_ID("revisionID"),
+
+    // config
     CLASS("class"),
     INDEX("index"),
     VALUE("value"),
-    SCENE_ID("sceneID"),
+
     DONT_CARE("dontCare"),
     LOCAL_PRIO("localPrio"),
     SPECIAL_MODE("specialMode"),
@@ -50,59 +111,19 @@ public enum JSONApiResponseKeysEnum {
     UP("up"),
     DOWN("down"),
 
-    COLOR_SELECT("colorSelect"),
-    MODE_SELECT("modeSelect"),
-    DIM_MODE("dimMode"),
-    RGB_MODE("rgbMode"),
-    GROUP_COLOR_MODE("groupColorMode"),
-
-    SENSOR_VALUE("sensorValue"),
-    TYPE_TYPE("sensorType"),
-    SENSOR_INDEX("sensorIndex"),
-
-    EVENT_INDEX("eventIndex"),
-    EVENT_NAME("eventName"),
-    IS_SCENE_DEVICE("isSceneDevice"),
+    // event table
     TEST("test"),
     ACTION("action"),
     HYSTERSIS("hysteresis"),
     VALIDITY("validity"),
 
-    // IDs
-    DSID("dSID"),
-    DSUID("dSUID"),
-    DSID_LOWER_CASE("dsid"),
-    METER_DSID("meterDSID"),
-    ZONE_ID("ZoneID"),
-    ZONE_ID_UPPER_Z("zoneID"),
-
-    FUNCTION_ID("functionID"),
-    PRODUCT_REVISION("productRevision"),
-    PRODUCT_ID("productID"),
-    HW_INFO("hwInfo"),
-    ON("on"),
-    OUTPUT_MODE("outputMode"),
-    BUTTON_ID("buttonID"),
-
-    // DeviceSpec
-    REVISION_ID("revisionID"),
-
+    // EVENTS
     EVENTS("events"),
     PROPERTIES("properties"),
-    SOURCE("source"),
+    EVENT_INDEX("eventIndex"),
+    EVENT_NAME("eventName"),
 
-    DS_METERS("dSMeters"),
-
-    PRESENT("present"),
-
-    POWER_CONSUMPTION("powerConsumption"),
-    ENERGY_METER_VALUE("energyMeterValue"),
-    ENERGY_METER_VALUE_WS("energyMeterValueWs"),
-
-    // Group
-    METER_VALUE("meterValue"),
-    TYPE("type"),
-
+    // SYSTEM & LOGIN
     VERSION("version"),
     TIME("time"),
     TOKEN("token"),
@@ -110,17 +131,7 @@ public enum JSONApiResponseKeysEnum {
 
     SELF("self"),
 
-    GROUP_ID("groupID"),
-
-    RESOLUTIONS("resolutions"),
-    RESOLUTION("resolution"),
-    SERIES("series"),
-    METER_ID("meterID"),
-    UNIT("unit"),
-    VALUES("values"),
-
-    DATE("date"),
-
+    // CLIMATE
     IS_CONFIGURED("IsConfigured"),
     CONTROL_MODE("ControlMode"),
     CONTROL_STATE("ControlState"),
@@ -154,21 +165,15 @@ public enum JSONApiResponseKeysEnum {
     CTRL_Y_MIN("CtrlYmin"),
     CTRL_Y_MAX("CtrlYmax"),
     CTRL_KEEP_FLOOR_WARM("CtrlKeepFloorWarm"),
-    SENSOR_TYPE("sensorType"),
-    DSUID_LOWER_CASE("dsuid"),
-    TEMPERATION_VALUE("TemperatureValue"),
-    TEMPERATION_VALUE_TIME("TemperatureValueTime"),
-    HUMIDITY_VALUE("HumidityValue"),
-    HUMIDITY_VALUE_TIME("HumidityValueTime"),
-    BRIGHTNESS_VALUE("BrightnessValue"),
-    BRIGHTNESS_VALUE_TIME("BrightnessValueTime"),
-    CO2_CONCENTRATION_VALUE("CO2ConcentrationValue"),
-    CO2_CONCENTRATION_VALUE_TIME("CO2ConcentrationValueTime"),
-    SENSORS("sensors"),
-    WEATHER_ICON_ID("WeatherIconId"),
-    WEATHER_CONDITION_ID("WeatherConditionId"),
-    WEATHER_SERVICE_ID("WeatherServiceId"),
-    WEATHER_SERVICE_TIME("WeatherServiceTime");
+
+    // UNDEF
+    COLOR_SELECT("colorSelect"),
+    MODE_SELECT("modeSelect"),
+    DIM_MODE("dimMode"),
+    RGB_MODE("rgbMode"),
+    GROUP_COLOR_MODE("groupColorMode"),
+    SOURCE("source"),
+    IS_SCENE_DEVICE("isSceneDevice");
 
     private final String key;
 

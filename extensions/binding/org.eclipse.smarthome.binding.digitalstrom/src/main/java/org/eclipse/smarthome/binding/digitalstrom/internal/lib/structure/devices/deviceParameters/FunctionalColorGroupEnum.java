@@ -40,23 +40,23 @@ public enum FunctionalColorGroupEnum {
      * | n/a | Access | Green | Access related functions, door bell |
      *
      */
-    YELLOW(Lists.newArrayList(1)),
-    GREY(Lists.newArrayList(2, 12)),
-    BLUE(Lists.newArrayList(3, 9, 10, 11, 48)),
-    CYAN(Lists.newArrayList(4)),
-    MAGENTA(Lists.newArrayList(5)),
-    BLACK(Lists.newArrayList(8)),
-    WHITE(Lists.newArrayList(-1)),
-    RED(Lists.newArrayList(-2)),
-    GREEN(Lists.newArrayList(-3));
+    YELLOW(Lists.newArrayList((short) 1)),
+    GREY(Lists.newArrayList((short) 2, (short) 12)),
+    BLUE(Lists.newArrayList((short) 3, (short) 9, (short) 10, (short) 11, (short) 48)),
+    CYAN(Lists.newArrayList((short) 4)),
+    MAGENTA(Lists.newArrayList((short) 5)),
+    BLACK(Lists.newArrayList((short) 8)),
+    WHITE(Lists.newArrayList((short) -1)),
+    RED(Lists.newArrayList((short) -2)),
+    GREEN(Lists.newArrayList((short) -3));
 
-    private final List<Integer> colorGroup;
+    private final List<Short> colorGroup;
 
-    static final HashMap<Integer, FunctionalColorGroupEnum> colorGroups = new HashMap<Integer, FunctionalColorGroupEnum>();
+    static final HashMap<Short, FunctionalColorGroupEnum> colorGroups = new HashMap<Short, FunctionalColorGroupEnum>();
 
     static {
         for (FunctionalColorGroupEnum colorGroup : FunctionalColorGroupEnum.values()) {
-            for (Integer colorGroupID : colorGroup.getFunctionalColorGroup()) {
+            for (Short colorGroupID : colorGroup.getFunctionalColorGroup()) {
                 colorGroups.put(colorGroupID, colorGroup);
             }
         }
@@ -68,7 +68,7 @@ public enum FunctionalColorGroupEnum {
      * @param functionalColorGroupID
      * @return true, if contains
      */
-    public static boolean containsColorGroup(Integer functionalColorGroupID) {
+    public static boolean containsColorGroup(Short functionalColorGroupID) {
         return colorGroups.keySet().contains(functionalColorGroupID);
     }
 
@@ -78,11 +78,11 @@ public enum FunctionalColorGroupEnum {
      * @param modeID
      * @return mode
      */
-    public static FunctionalColorGroupEnum getColorGroup(Integer functionalColorGroupID) {
+    public static FunctionalColorGroupEnum getColorGroup(Short functionalColorGroupID) {
         return colorGroups.get(functionalColorGroupID);
     }
 
-    private FunctionalColorGroupEnum(List<Integer> functionalColorGroupID) {
+    private FunctionalColorGroupEnum(List<Short> functionalColorGroupID) {
         this.colorGroup = Lists.newArrayList(functionalColorGroupID);
     }
 
@@ -91,7 +91,7 @@ public enum FunctionalColorGroupEnum {
      *
      * @return functional color group id
      */
-    public List<Integer> getFunctionalColorGroup() {
+    public List<Short> getFunctionalColorGroup() {
         return colorGroup;
     }
 

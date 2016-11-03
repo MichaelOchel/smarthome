@@ -267,7 +267,7 @@ public class SceneDiscovery {
                                                 groupIdInter = null;
                                             }
                                             if (groupID != null) {
-                                                if (FunctionalColorGroupEnum.getColorGroup((int) groupID)
+                                                if (FunctionalColorGroupEnum.getColorGroup(groupID)
                                                         .equals(FunctionalColorGroupEnum.YELLOW)) {
                                                     discoverScene(SceneEnum.AUTO_OFF.getSceneNumber(), groupID);
                                                 }

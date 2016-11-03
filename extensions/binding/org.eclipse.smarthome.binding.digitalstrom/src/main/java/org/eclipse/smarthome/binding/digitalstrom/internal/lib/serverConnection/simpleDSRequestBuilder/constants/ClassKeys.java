@@ -5,9 +5,15 @@
  * which accompanies this distribution, and is available at
  * http://www.eclipse.org/legal/epl-v10.html
  */
-package org.eclipse.smarthome.binding.digitalstrom.internal.lib.serverConnection.simpleURLBuilder.constants;
+package org.eclipse.smarthome.binding.digitalstrom.internal.lib.serverConnection.simpleDSRequestBuilder.constants;
 
-public class Classes {
+/**
+ * The {@link ClassKeys} contains digitalSTROM-JSON class keys.
+ *
+ * @author Michael Ochel
+ * @author Matthias Siegele
+ */
+public class ClassKeys {
 
     public static final String APARTMENT = "apartment";
     public static final String ZONE = "zone";

@@ -5,7 +5,7 @@
  * which accompanies this distribution, and is available at
  * http://www.eclipse.org/legal/epl-v10.html
  */
-package org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.scene.sceneEvent;
+package org.eclipse.smarthome.binding.digitalstrom.internal.lib.event.types;
 
 import java.util.HashMap;
 
@@ -20,12 +20,14 @@ import java.util.HashMap;
 
 import java.util.Map;
 
-import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.scene.constants.EventPropertyEnum;
+import org.eclipse.smarthome.binding.digitalstrom.internal.lib.event.constants.EventResponseEnum;
 
 /**
  * The {@link EventItem} represents a event item of an digitalSTROM-Event.
  *
  * @author Alexander Betker
+ * @author Michael Ochel - add getSource()
+ * @author Matthias Siegele - add getSource()
  */
 public interface EventItem {
 
@@ -37,11 +39,20 @@ public interface EventItem {
     public String getName();
 
     /**
-     * Returns {@link HashMap} with the properties of this {@link EventItem}.
-     * The key is a {@link EventPropertyEnum} and represents the property name
+     * Returns {@link HashMap} with the properties fiels of this {@link EventItem}.
+     * The key is a {@link EventResponseEnum} and represents the property name
      * and the value is the property value.
      *
      * @return the properties of this {@link EventItem}
      */
-    public Map<EventPropertyEnum, String> getProperties();
+    public Map<EventResponseEnum, String> getProperties();
+
+    /**
+     * Returns {@link HashMap} with the source fields of this {@link EventItem}.
+     * The key is a {@link EventResponseEnum} and represents the property name
+     * and the value is the property value.
+     *
+     * @return the properties of this {@link EventItem}
+     */
+    public Map<EventResponseEnum, String> getSource();
 }
