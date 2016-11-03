@@ -9,6 +9,13 @@ import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/**
+ * The {@link CachedSensorValue} holds a read sensor value. For that the {@link CachedSensorValue} includes the sensor
+ * type, sensor value and a the timestamp.
+ *
+ * @author Michael Ochel - Initial contribution
+ * @author Matthias Siegele - Initial contribution
+ */
 public class CachedSensorValue {
 
     private Logger logger = LoggerFactory.getLogger(CachedSensorValue.class);
@@ -17,13 +24,22 @@ public class CachedSensorValue {
     private final Float SENSOR_VALUE;
     private final String TIMESTAMP;
 
-    public CachedSensorValue(SensorEnum sensorType, Float sensorValue, String timeStamp) {
+    /**
+     * Create a new {@link CachedSensorValue}.
+     *
+     * @param sensorType must not be null
+     * @param sensorValue must not be null
+     * @param timestamp must not be null
+     */
+    public CachedSensorValue(SensorEnum sensorType, Float sensorValue, String timestamp) {
         SENSOR_TYPE = sensorType;
         SENSOR_VALUE = sensorValue;
-        TIMESTAMP = timeStamp;
+        TIMESTAMP = timestamp;
     }
 
     /**
+     * Returns the sensor type as {@link SensorEnum}.
+     *
      * @return the sensorType
      */
     public SensorEnum getSensorType() {
@@ -31,6 +47,8 @@ public class CachedSensorValue {
     }
 
     /**
+     * Returns the sensor value.
+     *
      * @return the sensorValue
      */
     public Float getSensorValue() {
@@ -38,16 +56,20 @@ public class CachedSensorValue {
     }
 
     /**
-     * @return the timeStamp
+     * Returns the timestamp as {@link String}.
+     *
+     * @return the timestamp
      */
-    public String getTimeStamp() {
+    public String getTimestamp() {
         return TIMESTAMP;
     }
 
     /**
+     * Returns the time stamp as {@link Date}.
+     *
      * @return the timeStamp
      */
-    public Date getTimeStampAsDate() {
+    public Date getTimestampAsDate() {
         DateFormat formatter = new SimpleDateFormat("yyyy-MM-dd'T'hh:mm:ss.SS");
         try {
             return formatter.parse(TIMESTAMP);
@@ -71,56 +93,13 @@ public class CachedSensorValue {
     /*
      * (non-Javadoc)
      *
-     * @see java.lang.Object#hashCode()
-     */
-    @Override
-    public int hashCode() {
-        final int prime = 31;
-        int result = 1;
-        result = prime * result + ((SENSOR_TYPE == null) ? 0 : SENSOR_TYPE.hashCode());
-        result = prime * result + ((SENSOR_VALUE == null) ? 0 : SENSOR_VALUE.hashCode());
-        result = prime * result + ((TIMESTAMP == null) ? 0 : TIMESTAMP.hashCode());
-        return result;
-    }
-
-    /*
-     * (non-Javadoc)
-     *
      * @see java.lang.Object#equals(java.lang.Object)
      */
     @Override
     public boolean equals(Object obj) {
-        if (this == obj) {
-            return true;
+        if (obj != null && obj instanceof CachedSensorValue) {
+            return this.toString().equals(obj.toString());
         }
-        if (obj == null) {
-            return false;
-        }
-        if (getClass() != obj.getClass()) {
-            return false;
-        }
-        CachedSensorValue other = (CachedSensorValue) obj;
-        if (SENSOR_TYPE == null) {
-            if (other.SENSOR_TYPE != null) {
-                return false;
-            }
-        } else if (!SENSOR_TYPE.equals(other.SENSOR_TYPE)) {
-            return false;
-        }
-        if (SENSOR_VALUE == null) {
-            if (other.SENSOR_VALUE != null) {
-                return false;
-            }
-        } else if (!SENSOR_VALUE.equals(other.SENSOR_VALUE)) {
-            return false;
-        }
-        if (TIMESTAMP == null) {
-            if (other.TIMESTAMP != null) {
-                return false;
-            }
-        } else if (!TIMESTAMP.equals(other.TIMESTAMP)) {
-            return false;
-        }
-        return true;
+        return false;
     }
 }

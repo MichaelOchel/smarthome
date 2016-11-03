@@ -38,25 +38,25 @@ public enum FunctionalNameAndColorGroupEnum {
      * | n/a | Access | Green | Access related functions, door bell |
      *
      */
-    LIGHTS(1, FunctionalColorGroupEnum.getColorGroup(1)),
-    BLINDS(2, FunctionalColorGroupEnum.getColorGroup(2)),
-    CURTAINS(12, FunctionalColorGroupEnum.getColorGroup(12)),
-    HEATING(3, FunctionalColorGroupEnum.getColorGroup(3)),
-    COOLING(9, FunctionalColorGroupEnum.getColorGroup(9)),
-    VENTILATION(10, FunctionalColorGroupEnum.getColorGroup(10)),
-    WINDOW(11, FunctionalColorGroupEnum.getColorGroup(11)),
-    TEMPERATION_CONTROL(48, FunctionalColorGroupEnum.getColorGroup(48)),
-    AUDIO(4, FunctionalColorGroupEnum.getColorGroup(4)),
-    VIDEO(5, FunctionalColorGroupEnum.getColorGroup(5)),
-    JOKER(8, FunctionalColorGroupEnum.getColorGroup(8)),
-    SINGLE_DEVICE(-1, FunctionalColorGroupEnum.getColorGroup(-1)),
-    SECURITY(-2, FunctionalColorGroupEnum.getColorGroup(-2)),
-    ACCESS(-3, FunctionalColorGroupEnum.getColorGroup(-3));
+    LIGHTS((short) 1, FunctionalColorGroupEnum.getColorGroup((short) 1)),
+    BLINDS((short) 2, FunctionalColorGroupEnum.getColorGroup((short) 2)),
+    CURTAINS((short) 12, FunctionalColorGroupEnum.getColorGroup((short) 12)),
+    HEATING((short) 3, FunctionalColorGroupEnum.getColorGroup((short) 3)),
+    COOLING((short) 9, FunctionalColorGroupEnum.getColorGroup((short) 9)),
+    VENTILATION((short) 10, FunctionalColorGroupEnum.getColorGroup((short) 10)),
+    WINDOW((short) 11, FunctionalColorGroupEnum.getColorGroup((short) 11)),
+    TEMPERATION_CONTROL((short) 48, FunctionalColorGroupEnum.getColorGroup((short) 48)),
+    AUDIO((short) 4, FunctionalColorGroupEnum.getColorGroup((short) 4)),
+    VIDEO((short) 5, FunctionalColorGroupEnum.getColorGroup((short) 5)),
+    JOKER((short) 8, FunctionalColorGroupEnum.getColorGroup((short) 8)),
+    SINGLE_DEVICE((short) -1, FunctionalColorGroupEnum.getColorGroup((short) -1)),
+    SECURITY((short) -2, FunctionalColorGroupEnum.getColorGroup((short) -2)),
+    ACCESS((short) -3, FunctionalColorGroupEnum.getColorGroup((short) -3));
 
-    private final int colorGroup;
+    private final short colorGroup;
     private final FunctionalColorGroupEnum color;
 
-    static final HashMap<Integer, FunctionalNameAndColorGroupEnum> colorGroups = new HashMap<Integer, FunctionalNameAndColorGroupEnum>();
+    static final HashMap<Short, FunctionalNameAndColorGroupEnum> colorGroups = new HashMap<Short, FunctionalNameAndColorGroupEnum>();
 
     static {
         for (FunctionalNameAndColorGroupEnum colorGroup : FunctionalNameAndColorGroupEnum.values()) {
@@ -70,7 +70,7 @@ public enum FunctionalNameAndColorGroupEnum {
      * @param functionalNameGroupID
      * @return true, if contains
      */
-    public static boolean containsColorGroup(Integer functionalNameGroupID) {
+    public static boolean containsColorGroup(Short functionalNameGroupID) {
         return colorGroups.keySet().contains(functionalNameGroupID);
     }
 
@@ -80,11 +80,12 @@ public enum FunctionalNameAndColorGroupEnum {
      * @param functionalNameGroupID
      * @return FunctionalNameAndColorGroupEnum
      */
-    public static FunctionalNameAndColorGroupEnum getMode(Integer functionalNameGroupID) {
+    public static FunctionalNameAndColorGroupEnum getMode(Short functionalNameGroupID) {
         return colorGroups.get(functionalNameGroupID);
     }
 
-    private FunctionalNameAndColorGroupEnum(int functionalColorGroupID, FunctionalColorGroupEnum functionalColorGroup) {
+    private FunctionalNameAndColorGroupEnum(short functionalColorGroupID,
+            FunctionalColorGroupEnum functionalColorGroup) {
         this.colorGroup = functionalColorGroupID;
         this.color = functionalColorGroup;
     }
@@ -94,7 +95,7 @@ public enum FunctionalNameAndColorGroupEnum {
      *
      * @return functional name group id
      */
-    public int getFunctionalColorGroup() {
+    public Short getFunctionalColorGroup() {
         return colorGroup;
     }
 

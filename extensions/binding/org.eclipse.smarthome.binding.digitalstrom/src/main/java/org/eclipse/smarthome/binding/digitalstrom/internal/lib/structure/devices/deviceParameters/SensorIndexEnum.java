@@ -10,8 +10,8 @@ package org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.device
 /**
  * The {@link SensorIndexEnum} lists all available digitalSTROM sensor index.
  *
- * @author Michael Ochel - - Initial contribution
- * @author Matthias Siegele - - Initial contribution
+ * @author Michael Ochel - Initial contribution
+ * @author Matthias Siegele - Initial contribution
  */
 public enum SensorIndexEnum {
 

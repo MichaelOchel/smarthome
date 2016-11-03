@@ -1,5 +1,11 @@
 package org.eclipse.smarthome.binding.digitalstrom.internal.lib.climate.constants;
 
+/**
+ * The {@link OperationModes} contains all digitalSTROM heating operation states.
+ *
+ * @author Michael Ochel - Initial contribution
+ * @author Matthias Siegele - Initial contribution
+ */
 public enum OperationModes {
 
     OFF((short) 0, "Off"),

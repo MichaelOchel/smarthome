@@ -5,29 +5,48 @@ import java.util.Set;
 
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.climate.constants.OperationModes;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.climate.jsonResponseContainer.BaseZoneIdentifier;
+import org.eclipse.smarthome.binding.digitalstrom.internal.lib.climate.jsonResponseContainer.TemperatureControl;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.serverConnection.constants.JSONApiResponseKeysEnum;
 
 import com.google.gson.JsonObject;
 
+/**
+ * The {@link TemperatureControlValues} acts as container for the digitalSTROM json-method
+ * <i>getTemperatureControlValues</i>. So the {@link TemperatureControlValues} contains all temperature
+ * control values information of a zone.
+ *
+ * @author Michael Ochel - Initial contribution
+ * @author Matthias Siegele - Initial contribution
+ */
 public class TemperatureControlValues extends BaseZoneIdentifier {
 
     private HashMap<OperationModes, Float> temperatureControlValues;
     private String controlDSUID;
     private Boolean isConfigured;
 
+    /**
+     * Creates a new {@link TemperatureControlValues} through the {@link JsonObject} which will be returned by an
+     * apartment call.
+     *
+     * @param jObject must not be null
+     */
     public TemperatureControlValues(JsonObject jObject) {
-        if (jObject.get(JSONApiResponseKeysEnum.ID.getKey()) != null) {
-            this.zoneID = jObject.get(JSONApiResponseKeysEnum.ID.getKey()).getAsInt();
-        }
-        if (jObject.get(JSONApiResponseKeysEnum.NAME.getKey()) != null) {
-            this.zoneName = jObject.get(JSONApiResponseKeysEnum.NAME.getKey()).getAsString();
-        }
+        super(jObject);
         init(jObject);
     }
 
+    /**
+     * Creates a new {@link TemperatureControlValues} through the {@link JsonObject} which will be returned by an zone
+     * call.<br>
+     * Because of zone calls does not include a zoneID or zoneName in the json response, the zoneID and zoneName have to
+     * be handed over the constructor.
+     *
+     * @param jObject must not be null
+     * @param zoneID must not be null
+     * @param zoneName can be null
+     */
     public TemperatureControlValues(JsonObject jObject, Integer zoneID, String zoneName) {
-        this.zoneID = zoneID;
-        this.zoneName = zoneName;
+        super(zoneID, zoneName);
         init(jObject);
     }
 
@@ -49,6 +68,7 @@ public class TemperatureControlValues extends BaseZoneIdentifier {
     }
 
     /**
+     * @see TemperatureControl#getControlDSUID()
      * @return the controlDSUID
      */
     public String getControlDSUID() {
@@ -56,6 +76,7 @@ public class TemperatureControlValues extends BaseZoneIdentifier {
     }
 
     /**
+     * @see TemperatureControl#getIsConfigured()
      * @return the isConfigured
      */
     public Boolean getIsConfigured() {

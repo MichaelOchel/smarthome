@@ -13,6 +13,11 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
+import org.eclipse.smarthome.binding.digitalstrom.internal.lib.event.EventHandler;
+import org.eclipse.smarthome.binding.digitalstrom.internal.lib.event.EventListener;
+import org.eclipse.smarthome.binding.digitalstrom.internal.lib.event.constants.EventNames;
+import org.eclipse.smarthome.binding.digitalstrom.internal.lib.event.constants.EventResponseEnum;
+import org.eclipse.smarthome.binding.digitalstrom.internal.lib.event.types.EventItem;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.listener.ManagerStatusListener;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.listener.SceneStatusListener;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.listener.stateEnums.ManagerStates;
@@ -24,12 +29,11 @@ import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.DSID;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.scene.InternalScene;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.scene.SceneDiscovery;
-import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.scene.constants.EventPropertyEnum;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.scene.constants.SceneEnum;
-import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.scene.sceneEvent.EventItem;
-import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.scene.sceneEvent.EventListener;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import com.google.common.collect.Lists;
 
 /**
  * The {@link SceneManagerImpl} is the implementation of the {@link SceneManager}.
@@ -38,7 +42,7 @@ import org.slf4j.LoggerFactory;
  * @author Matthias Siegele - Initial contribution
  *
  */
-public class SceneManagerImpl implements SceneManager {
+public class SceneManagerImpl implements SceneManager, EventHandler {
 
     private Logger logger = LoggerFactory.getLogger(SceneManagerImpl.class);
 
@@ -72,7 +76,8 @@ public class SceneManagerImpl implements SceneManager {
     @Override
     public void start() {
         if (eventListener == null) {
-            eventListener = new EventListener(connectionManager, this);
+            eventListener = new EventListener(connectionManager, this,
+                    Lists.newArrayList(EventNames.CALL_SCENE, EventNames.UNDO_SCENE));
         }
         this.eventListener.start();
         stateChanged(ManagerStates.RUNNING);
@@ -92,22 +97,22 @@ public class SceneManagerImpl implements SceneManager {
     public void handleEvent(EventItem eventItem) {
         if (eventItem != null) {
             boolean isCallScene = true;
-            String isCallStr = eventItem.getProperties().get(EventPropertyEnum.EVENT_NAME);
+            String isCallStr = eventItem.getName();
             if (isCallStr != null) {
-                isCallScene = isCallStr.equals("callScene");
+                isCallScene = isCallStr.equals(EventNames.CALL_SCENE);
             }
 
             boolean isDeviceCall = false;
-            String deviceCallStr = eventItem.getProperties().get(EventPropertyEnum.IS_DEVICE_CALL);
+            String deviceCallStr = eventItem.getSource().get(EventResponseEnum.IS_DEVICE);
             if (deviceCallStr != null) {
-                isDeviceCall = deviceCallStr.equals("true");
+                isDeviceCall = Boolean.parseBoolean(deviceCallStr);
             }
 
             if (isDeviceCall) {
                 String dsidStr = null;
-                dsidStr = eventItem.getProperties().get(EventPropertyEnum.DSID);
+                dsidStr = eventItem.getSource().get(EventResponseEnum.DSID);
                 short sceneId = -1;
-                String sceneStr = eventItem.getProperties().get(EventPropertyEnum.SCENEID);
+                String sceneStr = eventItem.getProperties().get(EventResponseEnum.SCENEID);
                 if (sceneStr != null) {
                     try {
                         sceneId = Short.parseShort(sceneStr);
@@ -125,9 +130,9 @@ public class SceneManagerImpl implements SceneManager {
                 }
             } else {
                 String intSceneID = null;
-                String zoneIDStr = eventItem.getProperties().get(EventPropertyEnum.ZONEID);
-                String sceneIDStr = eventItem.getProperties().get(EventPropertyEnum.SCENEID);
-                String groupIDStr = eventItem.getProperties().get(EventPropertyEnum.GROUPID);
+                String zoneIDStr = eventItem.getSource().get(EventResponseEnum.ZONEID);
+                String sceneIDStr = eventItem.getSource().get(EventResponseEnum.SCENEID);
+                String groupIDStr = eventItem.getSource().get(EventResponseEnum.GROUPID);
 
                 if (zoneIDStr != null && sceneIDStr != null && groupIDStr != null) {
                     intSceneID = zoneIDStr + "-" + groupIDStr + "-" + sceneIDStr;

@@ -5,6 +5,15 @@ import org.eclipse.smarthome.binding.digitalstrom.internal.lib.serverConnection.
 
 import com.google.gson.JsonObject;
 
+/**
+ * The {@link TemperatureControlInternals} acts as container for the digitalSTROM json-method
+ * <i>getTemperatureControlInternals</i>. So the {@link TemperatureControlInternals} contains all internal heating
+ * control
+ * configurations of a zone.
+ *
+ * @author Michael Ochel - Initial contribution
+ * @author Matthias Siegele - Initial contribution
+ */
 public class TemperatureControlInternals extends TemperatureControl {
 
     private Short controlState;
@@ -19,21 +28,22 @@ public class TemperatureControlInternals extends TemperatureControl {
     private Float ctrlY;
     private Short ctrlAntiWindUp;
 
+    /**
+     * Creates a new {@link TemperatureControlInternals} through the {@link JsonObject} which will be returned by an
+     * zone
+     * call.<br>
+     * Because of zone calls does not include a zoneID or zoneName in the json response, the zoneID and zoneName have to
+     * be handed over the constructor.
+     *
+     * @param jObject must not be null
+     * @param zoneID must not be null
+     * @param zoneName can be null
+     */
     public TemperatureControlInternals(JsonObject jObject, Integer zoneID, String zoneName) {
-        this.zoneID = zoneID;
-        this.zoneName = zoneName;
-        if (jObject.get(JSONApiResponseKeysEnum.IS_CONFIGURED.getKey()) != null) {
-            this.isConfigured = jObject.get(JSONApiResponseKeysEnum.IS_CONFIGURED.getKey()).getAsBoolean();
-        }
+        super(jObject, zoneID, zoneName);
         if (isConfigured) {
-            if (jObject.get(JSONApiResponseKeysEnum.CONTROL_MODE.getKey()) != null) {
-                this.controlMode = jObject.get(JSONApiResponseKeysEnum.CONTROL_MODE.getKey()).getAsShort();
-            }
             if (jObject.get(JSONApiResponseKeysEnum.CONTROL_STATE.getKey()) != null) {
                 this.controlState = jObject.get(JSONApiResponseKeysEnum.CONTROL_STATE.getKey()).getAsShort();
-            }
-            if (jObject.get(JSONApiResponseKeysEnum.CONTROL_DSUID.getKey()) != null) {
-                this.controlDSUID = jObject.get(JSONApiResponseKeysEnum.CONTROL_DSUID.getKey()).getAsString();
             }
             if (jObject.get(JSONApiResponseKeysEnum.CTRL_T_RECENT.getKey()) != null) {
                 this.ctrlTRecent = jObject.get(JSONApiResponseKeysEnum.CTRL_T_RECENT.getKey()).getAsFloat();
@@ -69,6 +79,8 @@ public class TemperatureControlInternals extends TemperatureControl {
     }
 
     /**
+     * Returns the controleState for heating of the zone.
+     * 
      * @return the controlState
      */
     public Short getControlState() {
@@ -76,6 +88,8 @@ public class TemperatureControlInternals extends TemperatureControl {
     }
 
     /**
+     * Returns the ctrlTRecent for heating of the zone.
+     *
      * @return the ctrlTRecent
      */
     public Float getCtrlTRecent() {
@@ -83,6 +97,8 @@ public class TemperatureControlInternals extends TemperatureControl {
     }
 
     /**
+     * Returns the ctrlTReference for heating of the zone.
+     *
      * @return the ctrlTReference
      */
     public Float getCtrlTReference() {
@@ -90,6 +106,8 @@ public class TemperatureControlInternals extends TemperatureControl {
     }
 
     /**
+     * Returns the ctrlTError for heating of the zone.
+     *
      * @return the ctrlTError
      */
     public Float getCtrlTError() {
@@ -97,6 +115,8 @@ public class TemperatureControlInternals extends TemperatureControl {
     }
 
     /**
+     * Returns the ctrlTErrorPrev for heating of the zone.
+     *
      * @return the ctrlTErrorPrev
      */
     public Float getCtrlTErrorPrev() {
@@ -104,6 +124,8 @@ public class TemperatureControlInternals extends TemperatureControl {
     }
 
     /**
+     * Returns the ctrlIntegral for heating of the zone.
+     *
      * @return the ctrlIntegral
      */
     public Float getCtrlIntegral() {
@@ -111,6 +133,8 @@ public class TemperatureControlInternals extends TemperatureControl {
     }
 
     /**
+     * Returns the ctrlYp for heating of the zone.
+     *
      * @return the ctrlYp
      */
     public Float getCtrlYp() {
@@ -118,6 +142,8 @@ public class TemperatureControlInternals extends TemperatureControl {
     }
 
     /**
+     * Returns the ctrlYi for heating of the zone.
+     *
      * @return the ctrlYi
      */
     public Float getCtrlYi() {
@@ -125,6 +151,8 @@ public class TemperatureControlInternals extends TemperatureControl {
     }
 
     /**
+     * Returns the ctrlYd for heating of the zone.
+     *
      * @return the ctrlYd
      */
     public Float getCtrlYd() {
@@ -132,6 +160,8 @@ public class TemperatureControlInternals extends TemperatureControl {
     }
 
     /**
+     * Returns the ctrlY for heating of the zone.
+     *
      * @return the ctrlY
      */
     public Float getCtrlY() {
@@ -139,6 +169,8 @@ public class TemperatureControlInternals extends TemperatureControl {
     }
 
     /**
+     * Returns the ctrlAntiWindUp for heating of the zone.
+     *
      * @return the ctrlAntiWindUp
      */
     public Short getCtrlAntiWindUp() {

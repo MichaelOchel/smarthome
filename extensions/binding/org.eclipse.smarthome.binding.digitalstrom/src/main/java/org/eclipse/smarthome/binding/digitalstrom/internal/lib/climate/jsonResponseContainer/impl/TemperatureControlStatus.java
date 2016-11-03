@@ -10,6 +10,14 @@ import org.eclipse.smarthome.binding.digitalstrom.internal.lib.serverConnection.
 
 import com.google.gson.JsonObject;
 
+/**
+ * The {@link TemperatureControlStatus} acts as container for the digitalSTROM json-method
+ * <i>getTemperatureControlStatus</i>. So the {@link TemperatureControlStatus} contains all heating
+ * control status information of a zone.
+ *
+ * @author Michael Ochel - Initial contribution
+ * @author Matthias Siegele - Initial contribution
+ */
 public class TemperatureControlStatus extends TemperatureControl {
 
     DateFormat formatter = new SimpleDateFormat("yyyy-MM-dd'T'hh:mm:ss");
@@ -23,35 +31,36 @@ public class TemperatureControlStatus extends TemperatureControl {
     private Float controlValue;
     private String controlValueTime;
 
+    /**
+     * Creates a new {@link TemperatureControlStatus} through the {@link JsonObject} which will be returned by an
+     * apartment call.
+     *
+     * @param jObject must not be null
+     */
     public TemperatureControlStatus(JsonObject jObject) {
-        if (jObject.get(JSONApiResponseKeysEnum.ID.getKey()) != null) {
-            this.zoneID = jObject.get(JSONApiResponseKeysEnum.ID.getKey()).getAsInt();
-        }
-        if (jObject.get(JSONApiResponseKeysEnum.NAME.getKey()) != null) {
-            this.zoneName = jObject.get(JSONApiResponseKeysEnum.NAME.getKey()).getAsString();
-        }
+        super(jObject);
         init(jObject);
     }
 
+    /**
+     * Creates a new {@link TemperatureControlStatus} through the {@link JsonObject} which will be returned by an zone
+     * call.<br>
+     * Because of zone calls does not include a zoneID or zoneName in the json response, the zoneID and zoneName have to
+     * be handed over the constructor.
+     *
+     * @param jObject must not be null
+     * @param zoneID must not be null
+     * @param zoneName can be null
+     */
     public TemperatureControlStatus(JsonObject jObject, Integer zoneID, String zoneName) {
-        this.zoneID = zoneID;
-        this.zoneName = zoneName;
+        super(jObject, zoneID, zoneName);
         init(jObject);
     }
 
     private void init(JsonObject jObject) {
-        if (jObject.get(JSONApiResponseKeysEnum.IS_CONFIGURED.getKey()) != null) {
-            this.isConfigured = jObject.get(JSONApiResponseKeysEnum.IS_CONFIGURED.getKey()).getAsBoolean();
-        }
         if (isConfigured) {
-            if (jObject.get(JSONApiResponseKeysEnum.CONTROL_MODE.getKey()) != null) {
-                this.controlMode = jObject.get(JSONApiResponseKeysEnum.CONTROL_MODE.getKey()).getAsShort();
-            }
             if (jObject.get(JSONApiResponseKeysEnum.CONTROL_STATE.getKey()) != null) {
                 this.controlState = jObject.get(JSONApiResponseKeysEnum.CONTROL_STATE.getKey()).getAsShort();
-            }
-            if (jObject.get(JSONApiResponseKeysEnum.CONTROL_DSUID.getKey()) != null) {
-                this.controlDSUID = jObject.get(JSONApiResponseKeysEnum.CONTROL_DSUID.getKey()).getAsString();
             }
             if (jObject.get(JSONApiResponseKeysEnum.OPERATION_MODE.getKey()) != null) {
                 this.operationMode = jObject.get(JSONApiResponseKeysEnum.OPERATION_MODE.getKey()).getAsShort();
@@ -79,6 +88,8 @@ public class TemperatureControlStatus extends TemperatureControl {
     }
 
     /**
+     * Returns the controleState for heating of the zone.
+     *
      * @return the controlState
      */
     public Short getControlState() {
@@ -86,6 +97,8 @@ public class TemperatureControlStatus extends TemperatureControl {
     }
 
     /**
+     * Returns the operationMode for heating of the zone.
+     *
      * @return the operationMode
      */
     public Short getOperationMode() {
@@ -93,6 +106,8 @@ public class TemperatureControlStatus extends TemperatureControl {
     }
 
     /**
+     * Returns the current temperature of the zone.
+     *
      * @return the temperature
      */
     public Float getTemperature() {
@@ -100,6 +115,8 @@ public class TemperatureControlStatus extends TemperatureControl {
     }
 
     /**
+     * Returns the timestamp when the temperature was read out as {@link Date}.
+     *
      * @return the temperatureTime
      * @throws ParseException
      */
@@ -108,6 +125,8 @@ public class TemperatureControlStatus extends TemperatureControl {
     }
 
     /**
+     * Returns the timestamp when the temperature was read out as {@link String}.
+     *
      * @return the temperatureTime
      * @throws ParseException
      */
@@ -116,6 +135,8 @@ public class TemperatureControlStatus extends TemperatureControl {
     }
 
     /**
+     * Returns the nominal value for heating of the zone.
+     *
      * @return the nominalValue
      */
     public Float getNominalValue() {
@@ -123,6 +144,8 @@ public class TemperatureControlStatus extends TemperatureControl {
     }
 
     /**
+     * Returns the timestamp as {@link Date} for the nominal value of the zone.
+     *
      * @return the nominalValueTime
      * @throws ParseException
      */
@@ -131,6 +154,8 @@ public class TemperatureControlStatus extends TemperatureControl {
     }
 
     /**
+     * Returns the timestamp as {@link String} for the nominal value of the zone.
+     *
      * @return the nominalValueTime
      */
     public String getNominalValueTimeAsString() {
@@ -138,6 +163,8 @@ public class TemperatureControlStatus extends TemperatureControl {
     }
 
     /**
+     * Returns the control value for heating of the zone.
+     *
      * @return the controlValue
      */
     public Float getControlValue() {
@@ -145,6 +172,8 @@ public class TemperatureControlStatus extends TemperatureControl {
     }
 
     /**
+     * Returns timestamp as {@link Date} for the control value for heating of the zone.
+     *
      * @return the controlValueTime
      * @throws ParseException
      */
@@ -153,6 +182,8 @@ public class TemperatureControlStatus extends TemperatureControl {
     }
 
     /**
+     * Returns timestamp as {@link String} for the control value for heating of the zone.
+     *
      * @return the controlValueTime
      */
     public String getControlValueTimeAsString() {

@@ -28,6 +28,7 @@ import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.DeviceStateUpdate;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.DeviceStateUpdateImpl;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.FunctionalColorGroupEnum;
+import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.FunctionalNameAndColorGroupEnum;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.JSONDeviceSceneSpecImpl;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.OutputModeEnum;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.scene.InternalScene;
@@ -59,6 +60,7 @@ public class JSONDeviceImpl implements Device {
     private List<Short> groupList = new LinkedList<Short>();
 
     private FunctionalColorGroupEnum functionalGroup = null;
+    private FunctionalNameAndColorGroupEnum functionalName = null;
     private String hwInfo;
 
     private boolean isPresent = false;
@@ -168,10 +170,11 @@ public class JSONDeviceImpl implements Device {
                     short tmp = array.get(i).getAsShort();
                     if (tmp != -1) {
                         this.groupList.add(tmp);
-                        if (FunctionalColorGroupEnum.containsColorGroup((int) tmp)) {
-                            if (this.functionalGroup == null || !FunctionalColorGroupEnum.getColorGroup((int) tmp)
-                                    .equals(FunctionalColorGroupEnum.BLACK)) {
-                                this.functionalGroup = FunctionalColorGroupEnum.getColorGroup((int) tmp);
+                        if (FunctionalNameAndColorGroupEnum.containsColorGroup(tmp)) {
+                            if (this.functionalName == null || !FunctionalNameAndColorGroupEnum.getMode(tmp)
+                                    .equals(FunctionalNameAndColorGroupEnum.JOKER)) {
+                                this.functionalName = FunctionalNameAndColorGroupEnum.getMode(tmp);
+                                this.functionalGroup = functionalName.getFunctionalColor();
                             }
                         }
                     }

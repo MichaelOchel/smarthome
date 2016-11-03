@@ -5,7 +5,7 @@
  * which accompanies this distribution, and is available at
  * http://www.eclipse.org/legal/epl-v10.html
  */
-package org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.scene.sceneEvent;
+package org.eclipse.smarthome.binding.digitalstrom.internal.lib.event.types;
 
 import java.util.LinkedList;
 import java.util.List;
@@ -31,7 +31,7 @@ public class JSONEventImpl implements Event {
         this.eventItemList = new LinkedList<EventItem>();
         for (int i = 0; i < jsonEventArray.size(); i++) {
             if (jsonEventArray.get(i) instanceof JsonObject) {
-                this.eventItemList.add(new JSONEventItemImpl((JsonObject) jsonEventArray.get(i)));
+                this.eventItemList.add(new EventItemImpl((JsonObject) jsonEventArray.get(i)));
             }
         }
     }
