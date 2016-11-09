@@ -18,7 +18,7 @@ import org.eclipse.smarthome.binding.digitalstrom.internal.lib.climate.jsonRespo
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.climate.jsonResponseContainer.impl.TemperatureControlStatus;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.climate.jsonResponseContainer.impl.TemperatureControlValues;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.Apartment;
-import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.Circuit;
+import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.Circuit;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.Device;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.CachedMeteringValue;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.DSID;
@@ -31,6 +31,8 @@ import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.SensorIndexEnum;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.scene.constants.Scene;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.scene.constants.SceneEnum;
+
+import com.google.gson.JsonObject;
 
 /**
  * digitalSTROM-API based on dSS-Version higher then 1.14.5
@@ -727,7 +729,6 @@ public interface DsAPI {
     /**
      * Returns the value of a Sensor of all zones.
      *
-     *
      * @param sessionToken required
      * @return value of a Sensor of all zones
      *
@@ -735,5 +736,18 @@ public interface DsAPI {
      * @author Matthias Siegele
      */
     public HashMap<Integer, BaseSensorValues> getApartmentSensorValues(String sessionToken);
+
+    /**
+     * <b>Description taken form digitalSTROM JSON-API:</b><br>
+     * Returns a part of the tree specified by query. All queries start from the root.
+     * The properties to be included have to be put in parentheses. A query to get
+     * all device from zone4 would look like this: ’/apartment/zones/zone4/*(ZoneID,name)’.
+     * More complex combinations (see example below) are also possible.
+     *
+     * @param token
+     * @param query
+     * @return response as {@link JsonObject}
+     */
+    public JsonObject query(String token, String query);
 
 }

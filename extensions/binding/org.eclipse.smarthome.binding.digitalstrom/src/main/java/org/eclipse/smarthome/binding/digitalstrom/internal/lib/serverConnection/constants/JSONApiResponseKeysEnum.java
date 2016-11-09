@@ -79,10 +79,12 @@ public enum JSONApiResponseKeysEnum {
     ID("id"),
     SCENE_ID("sceneID"),
     NAME("name"),
+    DISPLAY_ID("DisplayID"),
 
     // DEVICE
     // status
     IS_PRESENT("isPresent"),
+    IS_VALIDE("isValid"),
     IS_ON("isOn"),
     PRESENT("present"),
     ON("on"),
@@ -173,7 +175,26 @@ public enum JSONApiResponseKeysEnum {
     RGB_MODE("rgbMode"),
     GROUP_COLOR_MODE("groupColorMode"),
     SOURCE("source"),
-    IS_SCENE_DEVICE("isSceneDevice");
+    IS_SCENE_DEVICE("isSceneDevice"),
+
+    // Circuit
+    HW_VERSION("hwVersion"),
+    HW_VERSION_STRING("hwVersionString"),
+    SW_VERSION("swVersion"),
+    ARM_SW_VERSION("armSwVersion"),
+    DSP_SW_VERSION("dspSwVersion"),
+    API_VERSION("apiVersion"),
+    HW_NAME("hwName"),
+    BUS_MEMBER_TYPE("busMemberType"),
+    HAS_DEVICES("hasDevices"),
+    HAS_METERING("hasMetering"),
+    VDC_CONFIG_URL("VdcConfigURL"),
+    VDC_MODEL_UID("VdcModelUID"),
+    VDC_HARDWARE_GUID("VdcHardwareGuid"),
+    VDC_HARDWARE_MODEL_GUID("VdcHardwareModelGuid"),
+    VDC_VENDOR_GUID("VdcVendorGuid"),
+    VDC_OEM_GUID("VdcOemGuid"),
+    IGNORE_ACTIONS_FROM_NEW_DEVICES("ignoreActionsFromNewDevices");
 
     private final String key;
 

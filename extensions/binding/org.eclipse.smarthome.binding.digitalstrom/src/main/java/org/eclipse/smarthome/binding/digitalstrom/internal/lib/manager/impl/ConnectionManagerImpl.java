@@ -17,6 +17,11 @@ import org.eclipse.smarthome.binding.digitalstrom.internal.lib.serverConnection.
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.serverConnection.HttpTransport;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.serverConnection.impl.DsAPIImpl;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.serverConnection.impl.HttpTransportImpl;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import com.google.gson.JsonArray;
+import com.google.gson.JsonObject;
 
 /**
  * The {@link ConnectionManagerImpl} is the implementation of the {@link ConnectionManager}.
@@ -25,6 +30,9 @@ import org.eclipse.smarthome.binding.digitalstrom.internal.lib.serverConnection.
  * @author Matthias Siegele - Initial contribution
  */
 public class ConnectionManagerImpl implements ConnectionManager {
+
+    private final String QUERY_GET_ENABLED_APPLICATION_TOKENS = "/system/security/applicationTokens/enabled/*(*)";
+    private static final Logger logger = LoggerFactory.getLogger(ConnectionManagerImpl.class);
 
     private Config config;
     private ConnectionListener connListener = null;
@@ -209,7 +217,7 @@ public class ConnectionManagerImpl implements ConnectionManager {
      * but requests are not allowed due to a missing or invalid authentication.
      */
     private void onNotAuthenticated() {
-        String applicationToken;
+        String applicationToken = null;
         boolean isAuthenticated = false;
         if (StringUtils.isNotBlank(config.getAppToken())) {
             sessionToken = digitalSTROMClient.loginApplication(config.getAppToken());
@@ -227,20 +235,52 @@ public class ConnectionManagerImpl implements ConnectionManager {
         }
         if (checkUserPassword()) {
             if (!isAuthenticated) {
-                // generate applicationToken and test host is reachable
-                applicationToken = this.digitalSTROMClient.requestAppplicationToken(config.getApplicationName());
-                if (StringUtils.isNotBlank(applicationToken)) {
-                    // enable applicationToken
-                    if (this.digitalSTROMClient.enableApplicationToken(applicationToken,
-                            this.digitalSTROMClient.login(config.getUserName(), config.getPassword()))) {
-                        config.setAppToken(applicationToken);
-                        // this.applicationToken = applicationToken;
-                        isAuthenticated = true;
-                    } else {
-                        if (connListener != null) {
-                            connListener.onConnectionStateChange(ConnectionListener.NOT_AUTHENTICATED,
-                                    ConnectionListener.WRONG_USER_OR_PASSWORD);
+                // if an application-token for the application exists, use this application-token and test host is
+                // reachable
+                logger.info("check existing application-tokens");
+                JsonObject jObj = digitalSTROMClient.query(
+                        digitalSTROMClient.login(config.getUserName(), config.getPassword()),
+                        QUERY_GET_ENABLED_APPLICATION_TOKENS);
+                if (jObj != null) {
+                    if (jObj.get("enabled") != null && jObj.get("enabled").isJsonArray()) {
+                        JsonArray jArray = jObj.get("enabled").getAsJsonArray();
+                        // application-token check
+                        for (int i = 0; i < jArray.size(); i++) {
+                            JsonObject appToken = jArray.get(i).getAsJsonObject();
+                            if (appToken.get("applicationName") != null && appToken.get("applicationName").getAsString()
+                                    .equals(config.getApplicationName())) {
+                                // found application-token, set as application-token
+                                applicationToken = appToken.get("token").getAsString();
+                                logger.info("found application-token" + applicationToken + " for application"
+                                        + config.getApplicationName());
+                                break;
+                            }
                         }
+                    }
+                    if (applicationToken == null) {
+                        // no token found, generate applicationToken
+                        applicationToken = this.digitalSTROMClient
+                                .requestAppplicationToken(config.getApplicationName());
+                        logger.info("no application-token for application" + config.getApplicationName()
+                                + " found, generate a application-token " + applicationToken);
+                        if (StringUtils.isNotBlank(applicationToken)) {
+                            // enable applicationToken
+                            if (!digitalSTROMClient.enableApplicationToken(applicationToken,
+                                    digitalSTROMClient.login(config.getUserName(), config.getPassword()))) {
+                                // if enable failed set application-token = null so thats not will be set
+                                applicationToken = null;
+                            }
+                        }
+                    }
+                    if (applicationToken != null) {
+                        logger.info("application-token can be used");
+                        config.setAppToken(applicationToken);
+                        isAuthenticated = true;
+                    }
+                } else {
+                    if (connListener != null) {
+                        connListener.onConnectionStateChange(ConnectionListener.NOT_AUTHENTICATED,
+                                ConnectionListener.WRONG_USER_OR_PASSWORD);
                     }
                 }
             }

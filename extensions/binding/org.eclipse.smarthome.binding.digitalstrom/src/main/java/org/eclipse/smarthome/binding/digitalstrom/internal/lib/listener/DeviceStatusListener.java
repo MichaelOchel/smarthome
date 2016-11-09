@@ -44,21 +44,21 @@ public interface DeviceStatusListener {
     public void onDeviceStateChanged(DeviceStateUpdate deviceStateUpdate);
 
     /**
-     * This method is called whenever a {@link Device} is removed.
+     * This method is called whenever a device is removed.
      *
      * @param device
      */
-    public void onDeviceRemoved(Device device);
+    public void onDeviceRemoved(Object device);
 
     /**
-     * This method is called whenever a {@link Device} is added.
+     * This method is called whenever a device is added.
      *
      * @param device
      */
-    public void onDeviceAdded(Device device);
+    public void onDeviceAdded(Object device);
 
     /**
-     * This method is called whenever a configuration of an {@link Device} has changed. What configuration has changed
+     * This method is called whenever a configuration of an device has changed. What configuration has changed
      * can be see by the given parameter whatConfig to handle the change.<br>
      * Please have a look at {@link ChangeableDeviceConfigEnum} to see what configuration are changeable.
      *

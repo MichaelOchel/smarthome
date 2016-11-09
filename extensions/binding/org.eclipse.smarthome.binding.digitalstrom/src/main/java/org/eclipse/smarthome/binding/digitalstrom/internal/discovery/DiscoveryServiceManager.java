@@ -141,18 +141,22 @@ public class DiscoveryServiceManager implements SceneStatusListener, DeviceStatu
     }
 
     @Override
-    public void onDeviceRemoved(Device device) {
-        String id = device.getHWinfo().substring(0, 2);
-        if (discoveryServices.get(id) != null) {
-            ((DeviceDiscoveryService) discoveryServices.get(id)).onDeviceRemoved(device);
+    public void onDeviceRemoved(Object device) {
+        if (device instanceof Device) {
+            String id = ((Device) device).getHWinfo().substring(0, 2);
+            if (discoveryServices.get(id) != null) {
+                ((DeviceDiscoveryService) discoveryServices.get(id)).onDeviceRemoved((Device) device);
+            }
         }
     }
 
     @Override
-    public void onDeviceAdded(Device device) {
-        String id = device.getHWinfo().substring(0, 2);
-        if (discoveryServices.get(id) != null) {
-            ((DeviceDiscoveryService) discoveryServices.get(id)).onDeviceAdded(device);
+    public void onDeviceAdded(Object device) {
+        if (device instanceof Device) {
+            String id = ((Device) device).getHWinfo().substring(0, 2);
+            if (discoveryServices.get(id) != null) {
+                ((DeviceDiscoveryService) discoveryServices.get(id)).onDeviceAdded((Device) device);
+            }
         }
     }
 

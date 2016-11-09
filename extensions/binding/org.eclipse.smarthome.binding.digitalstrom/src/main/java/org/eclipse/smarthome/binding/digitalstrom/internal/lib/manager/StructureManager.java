@@ -12,6 +12,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.Circuit;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.Device;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.DSID;
 
@@ -188,4 +189,20 @@ public interface StructureManager {
      * @return true = zoneID or groupID exists | false = zoneID or groupID not exists
      */
     public boolean checkZoneGroupID(int zoneID, short groupID);
+
+    void addCircuitList(List<Circuit> referenceCircuitList);
+
+    Circuit addCircuit(Circuit circuit);
+
+    Circuit getCircuit(DSID dSID);
+
+    Circuit getCircuit(String dSUID);
+
+    Circuit updateCircuitConfig(Circuit newCircuit);
+
+    Circuit deleteCircuit(DSID dSID);
+
+    Circuit deleteCircuit(String dSUID);
+
+    Map<DSID, Circuit> getCircuitMap();
 }

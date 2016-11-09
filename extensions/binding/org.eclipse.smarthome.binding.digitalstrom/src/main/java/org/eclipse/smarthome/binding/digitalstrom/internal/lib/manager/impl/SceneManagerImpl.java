@@ -44,6 +44,9 @@ import com.google.common.collect.Lists;
  */
 public class SceneManagerImpl implements SceneManager, EventHandler {
 
+    public static final List<String> SUPPORTED_EVENTS = Lists.newArrayList(EventNames.CALL_SCENE,
+            EventNames.UNDO_SCENE);
+
     private Logger logger = LoggerFactory.getLogger(SceneManagerImpl.class);
 
     private List<String> echoBox = Collections.synchronizedList(new LinkedList<String>());
@@ -76,8 +79,7 @@ public class SceneManagerImpl implements SceneManager, EventHandler {
     @Override
     public void start() {
         if (eventListener == null) {
-            eventListener = new EventListener(connectionManager, this,
-                    Lists.newArrayList(EventNames.CALL_SCENE, EventNames.UNDO_SCENE));
+            eventListener = new EventListener(connectionManager, this);
         }
         this.eventListener.start();
         stateChanged(ManagerStates.RUNNING);
@@ -432,5 +434,20 @@ public class SceneManagerImpl implements SceneManager, EventHandler {
     @Override
     public void unregisterStatusListener() {
         this.statusListener = null;
+    }
+
+    @Override
+    public List<String> getSupportetEvents() {
+        return SUPPORTED_EVENTS;
+    }
+
+    @Override
+    public boolean supportsEvent(String eventName) {
+        return SUPPORTED_EVENTS.contains(eventName);
+    }
+
+    @Override
+    public String getUID() {
+        return this.getClass().getSimpleName() + "-" + SUPPORTED_EVENTS.toString();
     }
 }

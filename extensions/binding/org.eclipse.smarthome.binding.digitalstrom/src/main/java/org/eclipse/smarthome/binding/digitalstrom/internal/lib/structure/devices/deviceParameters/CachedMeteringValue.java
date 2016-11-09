@@ -7,12 +7,14 @@
  */
 package org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters;
 
+import java.util.Date;
+
 /**
  * The {@link CachedMeteringValue} saves the metering value of an digitalSTROM-Circuit.
  *
  * @author Alexander Betker - Initial contribution
- * @author Michael Ochel - add missing java-doc
- * @author Matthias Siegele - add missing java-doc
+ * @author Michael Ochel - add methods getDateAsDate(), getMeteringType() and getMeteringUnit(); add missing java-doc
+ * @author Matthias Siegele - add methods getDateAsDate(), getMeteringType() and getMeteringUnit(); add missing java-doc
  */
 public interface CachedMeteringValue {
 
@@ -37,4 +39,9 @@ public interface CachedMeteringValue {
      */
     public String getDate();
 
+    public Date getDateAsDate();
+
+    public MeteringTypeEnum getMeteringType();
+
+    public MeteringUnitsEnum getMeteringUnit();
 }

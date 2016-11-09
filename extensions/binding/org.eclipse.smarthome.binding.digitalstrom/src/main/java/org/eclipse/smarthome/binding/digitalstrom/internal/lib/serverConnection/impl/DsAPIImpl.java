@@ -30,7 +30,7 @@ import org.eclipse.smarthome.binding.digitalstrom.internal.lib.serverConnection.
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.serverConnection.simpleDSRequestBuilder.constants.InterfaceKeys;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.serverConnection.simpleDSRequestBuilder.constants.ParameterKeys;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.Apartment;
-import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.Circuit;
+import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.Circuit;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.Device;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.CachedMeteringValue;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.DSID;
@@ -44,8 +44,8 @@ import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.MeteringUnitsEnum;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.SensorEnum;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.SensorIndexEnum;
-import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.impl.JSONDeviceImpl;
-import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.impl.CircuitImpl;
+import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.impl.CircuitImpl;
+import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.impl.DeviceImpl;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.impl.JSONApartmentImpl;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.scene.constants.Scene;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.scene.constants.SceneEnum;
@@ -184,7 +184,7 @@ public class DsAPIImpl implements DsAPI {
                 List<Device> deviceList = new LinkedList<Device>();
                 for (int i = 0; i < array.size(); i++) {
                     if (array.get(i) instanceof JsonObject) {
-                        deviceList.add(new JSONDeviceImpl((JsonObject) array.get(i)));
+                        deviceList.add(new DeviceImpl((JsonObject) array.get(i)));
                     }
                 }
                 return deviceList;
@@ -254,7 +254,7 @@ public class DsAPIImpl implements DsAPI {
             try {
                 String response = transport.execute(
                         SimpleRequestBuilder.buildNewRequest(InterfaceKeys.JSON).addRequestClass(ClassKeys.ZONE)
-                                .addFunction(FunctionKeys.CALL_SCENE).addParameter(ParameterKeys.TOKEN, token)
+                                .addFunction(FunctionKeys.UNDO_SCENE).addParameter(ParameterKeys.TOKEN, token)
                                 .addParameter(ParameterKeys.ID, convertIntegerToString(zoneID))
                                 .addParameter(ParameterKeys.NAME, zoneName)
                                 .addParameter(ParameterKeys.GROUP_ID, convertShortToString(groupID))
@@ -627,9 +627,9 @@ public class DsAPIImpl implements DsAPI {
             try {
                 String response = transport.execute(SimpleRequestBuilder.buildNewRequest(InterfaceKeys.JSON)
                         .addRequestClass(ClassKeys.METERING).addFunction(FunctionKeys.GET_LATEST)
-                        .addParameter(ParameterKeys.TOKEN, token).addParameter(ParameterKeys.TYPE, type.name())
-                        .addParameter(ParameterKeys.FROM, meterDSIDs).addParameter(ParameterKeys.UNIT, unit.name())
-                        .buildRequestString());
+                        .addParameter(ParameterKeys.TOKEN, token).addParameter(ParameterKeys.TYPE, objectToString(type))
+                        .addParameter(ParameterKeys.FROM, meterDSIDs)
+                        .addParameter(ParameterKeys.UNIT, objectToString(unit)).buildRequestString());
 
                 JsonObject responseObj = JSONResponseHandler.toJsonObject(response);
                 if (JSONResponseHandler.checkResponse(responseObj)) {
@@ -641,7 +641,7 @@ public class DsAPIImpl implements DsAPI {
                         List<CachedMeteringValue> list = new LinkedList<CachedMeteringValue>();
                         for (int i = 0; i < array.size(); i++) {
                             if (array.get(i) instanceof JsonObject) {
-                                list.add(new JSONCachedMeteringValueImpl((JsonObject) array.get(i)));
+                                list.add(new JSONCachedMeteringValueImpl((JsonObject) array.get(i), type, unit));
                             }
                         }
                         return list;
@@ -675,30 +675,14 @@ public class DsAPIImpl implements DsAPI {
     @Override
     public List<String> getMeterList(String token) {
         List<String> meterList = new LinkedList<String>();
-
-        String response;
-        try {
-            response = transport.execute(
-                    SimpleRequestBuilder.buildNewRequest(InterfaceKeys.JSON).addRequestClass(ClassKeys.PROPERTY_TREE)
-                            .addFunction(FunctionKeys.QUERY).addParameter(ParameterKeys.QUERY, QUERY_GET_METERLIST)
-                            .addParameter(ParameterKeys.TOKEN, token).buildRequestString());
-
-            JsonObject responseObj = JSONResponseHandler.toJsonObject(response);
-            if (JSONResponseHandler.checkResponse(responseObj)) {
-                JsonObject obj = JSONResponseHandler.getResultJsonObject(responseObj);
-
-                if (obj != null && obj.get(JSONApiResponseKeysEnum.DS_METERS.getKey()) instanceof JsonArray) {
-                    JsonArray array = (JsonArray) obj.get(JSONApiResponseKeysEnum.DS_METERS.getKey());
-
-                    for (int i = 0; i < array.size(); i++) {
-                        if (array.get(i) instanceof JsonObject) {
-                            meterList.add(array.get(i).getAsJsonObject().get("dSID").getAsString());
-                        }
-                    }
+        JsonObject responseObj = query(token, QUERY_GET_METERLIST);
+        if (responseObj != null && responseObj.get(JSONApiResponseKeysEnum.DS_METERS.getKey()).isJsonArray()) {
+            JsonArray array = responseObj.get(JSONApiResponseKeysEnum.DS_METERS.getKey()).getAsJsonArray();
+            for (int i = 0; i < array.size(); i++) {
+                if (array.get(i) instanceof JsonObject) {
+                    meterList.add(array.get(i).getAsJsonObject().get("dSID").getAsString());
                 }
             }
-        } catch (Exception e) {
-            logger.debug("An exception occurred", e);
         }
         return meterList;
     }
@@ -1416,6 +1400,24 @@ public class DsAPIImpl implements DsAPI {
                         return map;
                     }
                 }
+            }
+        } catch (Exception e) {
+            logger.debug("An exception occurred", e);
+        }
+        return null;
+    }
+
+    @Override
+    public JsonObject query(String token, String query) {
+        try {
+            String response = transport.execute(
+                    SimpleRequestBuilder.buildNewRequest(InterfaceKeys.JSON).addRequestClass(ClassKeys.PROPERTY_TREE)
+                            .addFunction(FunctionKeys.QUERY).addParameter(ParameterKeys.QUERY, query)
+                            .addParameter(ParameterKeys.TOKEN, token).buildRequestString());
+
+            JsonObject responseObj = JSONResponseHandler.toJsonObject(response);
+            if (JSONResponseHandler.checkResponse(responseObj)) {
+                return JSONResponseHandler.getResultJsonObject(responseObj);
             }
         } catch (Exception e) {
             logger.debug("An exception occurred", e);

@@ -20,6 +20,7 @@ import org.eclipse.smarthome.binding.digitalstrom.DigitalSTROMBindingConstants;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.config.Config;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.listener.DeviceStatusListener;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.serverConnection.constants.JSONApiResponseKeysEnum;
+import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.AbstractGeneralDeviceInformations;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.Device;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.ChangeableDeviceConfigEnum;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.DSID;
@@ -40,22 +41,18 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 
 /**
- * The {@link JSONDeviceImpl} is the implementation of the {@link Device}.
+ * The {@link DeviceImpl} is the implementation of the {@link Device}.
  *
  * @author Michael Ochel - Initial contribution
  * @author Matthias Siegele - Initial contribution
  */
-public class JSONDeviceImpl implements Device {
+public class DeviceImpl extends AbstractGeneralDeviceInformations implements Device {
 
-    private static final Logger logger = LoggerFactory.getLogger(JSONDeviceImpl.class);
+    private static final Logger logger = LoggerFactory.getLogger(DeviceImpl.class);
 
     private Config config;
-    private DeviceStatusListener listener = null;
 
-    private DSID dsid = null;
     private DSID meterDSID = null;
-    private String dSUID = null;
-    private String name = null;
     private int zoneId = 0;
     private List<Short> groupList = new LinkedList<Short>();
 
@@ -63,7 +60,6 @@ public class JSONDeviceImpl implements Device {
     private FunctionalNameAndColorGroupEnum functionalName = null;
     private String hwInfo;
 
-    private boolean isPresent = false;
     private OutputModeEnum outputMode = null;
 
     private boolean isOn = false;
@@ -124,24 +120,14 @@ public class JSONDeviceImpl implements Device {
     private Map<Short, Integer[]> cachedSensorMeterData = Collections.synchronizedMap(new HashMap<Short, Integer[]>());
 
     /**
-     * Creates a new {@link JSONDeviceImpl} from the given DigitalSTROM-Device {@link JsonObject}.
+     * Creates a new {@link DeviceImpl} from the given DigitalSTROM-Device {@link JsonObject}.
      *
      * @param group json object
      */
-    public JSONDeviceImpl(JsonObject object) {
-        if (object.get(JSONApiResponseKeysEnum.NAME.getKey()) != null) {
-            this.name = object.get(JSONApiResponseKeysEnum.NAME.getKey()).getAsString();
-        }
-        if (object.get(JSONApiResponseKeysEnum.ID.getKey()) != null) {
-            this.dsid = new DSID(object.get(JSONApiResponseKeysEnum.ID.getKey()).getAsString());
-        } else if (object.get(JSONApiResponseKeysEnum.DSID.getKey()) != null) {
-            this.dsid = new DSID(object.get(JSONApiResponseKeysEnum.DSID.getKey()).getAsString());
-        }
+    public DeviceImpl(JsonObject object) {
+        super(object);
         if (object.get(JSONApiResponseKeysEnum.METER_DSID.getKey()) != null) {
             this.meterDSID = new DSID(object.get(JSONApiResponseKeysEnum.METER_DSID.getKey()).getAsString());
-        }
-        if (object.get(JSONApiResponseKeysEnum.DSUID.getKey()) != null) {
-            this.dSUID = object.get(JSONApiResponseKeysEnum.DSUID.getKey()).getAsString();
         }
         if (object.get(JSONApiResponseKeysEnum.HW_INFO.getKey()) != null) {
             this.hwInfo = object.get(JSONApiResponseKeysEnum.HW_INFO.getKey()).getAsString();
@@ -152,11 +138,6 @@ public class JSONDeviceImpl implements Device {
             } else {
                 this.isOpen = object.get(JSONApiResponseKeysEnum.ON.getKey()).getAsBoolean();
             }
-        }
-        if (object.get(JSONApiResponseKeysEnum.IS_PRESENT.getKey()) != null) {
-            this.isPresent = object.get(JSONApiResponseKeysEnum.IS_PRESENT.getKey()).getAsBoolean();
-        } else if (object.get(JSONApiResponseKeysEnum.PRESENT.getKey()) != null) {
-            this.isPresent = object.get(JSONApiResponseKeysEnum.PRESENT.getKey()).getAsBoolean();
         }
         if (object.get(JSONApiResponseKeysEnum.ZONE_ID.getKey()) != null) {
             zoneId = object.get(JSONApiResponseKeysEnum.ZONE_ID.getKey()).getAsInt();
@@ -208,16 +189,6 @@ public class JSONDeviceImpl implements Device {
     }
 
     @Override
-    public DSID getDSID() {
-        return dsid;
-    }
-
-    @Override
-    public String getDSUID() {
-        return this.dSUID;
-    }
-
-    @Override
     public synchronized DSID getMeterDSID() {
         return this.meterDSID;
     }
@@ -233,19 +204,6 @@ public class JSONDeviceImpl implements Device {
     @Override
     public String getHWinfo() {
         return hwInfo;
-    }
-
-    @Override
-    public synchronized String getName() {
-        return this.name;
-    }
-
-    @Override
-    public synchronized void setName(String name) {
-        this.name = name;
-        if (listener != null) {
-            listener.onDeviceConfigChanged(ChangeableDeviceConfigEnum.DEVICE_NAME);
-        }
     }
 
     @Override
@@ -283,23 +241,6 @@ public class JSONDeviceImpl implements Device {
         this.zoneId = zoneID;
         if (listener != null) {
             listener.onDeviceConfigChanged(ChangeableDeviceConfigEnum.ZONE_ID);
-        }
-    }
-
-    @Override
-    public synchronized boolean isPresent() {
-        return isPresent;
-    }
-
-    @Override
-    public synchronized void setIsPresent(boolean isPresent) {
-        this.isPresent = isPresent;
-        if (listener != null) {
-            if (!isPresent) {
-                listener.onDeviceRemoved(this);
-            } else {
-                listener.onDeviceAdded(this);
-            }
         }
     }
 
@@ -1273,26 +1214,11 @@ public class JSONDeviceImpl implements Device {
     }
 
     @Override
-    public void registerDeviceStateListener(DeviceStatusListener listener) {
-        if (listener != null) {
-            this.listener = listener;
-            listener.onDeviceAdded(this);
-        }
-    }
-
-    @Override
     public DeviceStatusListener unregisterDeviceStateListener() {
         activePowerRefreshPriority = Config.REFRESH_PRIORITY_NEVER;
         electricMeterRefreshPriority = Config.REFRESH_PRIORITY_NEVER;
         outputCurrentRefreshPriority = Config.REFRESH_PRIORITY_NEVER;
-        DeviceStatusListener listener = this.listener;
-        this.listener = null;
-        return listener;
-    }
-
-    @Override
-    public boolean isListenerRegisterd() {
-        return (listener != null);
+        return super.unregisterDeviceStateListener();
     }
 
     private void setCachedMeterData() {

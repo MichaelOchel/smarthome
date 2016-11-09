@@ -7,6 +7,7 @@
  */
 package org.eclipse.smarthome.binding.digitalstrom.internal.lib.event;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
@@ -53,7 +54,7 @@ public class EventListener {
     private final String UNKNOWN_TOKEN = "Token " + subscriptionID + " not found!";
 
     private final ConnectionManager connManager;
-    private EventHandler sceneManager;
+    private List<EventHandler> eventHandlers = null;
     private Config config;
 
     /**
@@ -63,11 +64,16 @@ public class EventListener {
      * @param connectionManager must not be null
      * @param eventHandler must not be null
      */
-    public EventListener(ConnectionManager connectionManager, EventHandler eventHandler, List<String> subscribeEvents) {
+    public EventListener(ConnectionManager connectionManager, EventHandler eventHandler) {
         this.connManager = connectionManager;
-        this.subscribeEvents = subscribeEvents;
         this.config = connectionManager.getConfig();
-        this.sceneManager = eventHandler;
+        addEventHandler(eventHandler);
+    }
+
+    public EventListener(ConnectionManager connectionManager, List<EventHandler> eventHandlers) {
+        this.connManager = connectionManager;
+        this.config = connectionManager.getConfig();
+        addEventHandlers(eventHandlers);
     }
 
     /**
@@ -93,23 +99,92 @@ public class EventListener {
         }
     }
 
+    public void addEventHandlers(List<EventHandler> eventHandlers) {
+        if (eventHandlers != null) {
+            for (EventHandler eventHandler : eventHandlers) {
+                addEventHandler(eventHandler);
+            }
+        }
+    }
+
+    public void removeEventHandler(EventHandler eventHandler) {
+        if (eventHandler != null && eventHandlers.contains(eventHandler)) {
+            List<String> tempSubsList = new ArrayList<String>();
+            int index = -1;
+            EventHandler intEventHandler = null;
+            boolean subscibedEventsChanged = false;
+            for (int i = 0; i < eventHandlers.size(); i++) {
+                intEventHandler = eventHandlers.get(i);
+                if (intEventHandler.getUID().equals(eventHandler.getUID())) {
+                    index = i;
+                } else {
+                    tempSubsList.addAll(intEventHandler.getSupportetEvents());
+                }
+            }
+            if (index != -1) {
+                intEventHandler = eventHandlers.remove(index);
+                for (String eventName : intEventHandler.getSupportetEvents()) {
+                    if (!tempSubsList.contains(eventName)) {
+                        subscribeEvents.remove(eventName);
+                        subscibedEventsChanged = true;
+                    }
+                }
+            }
+            if (subscibedEventsChanged) {
+                logger.debug("Min one subscribed events was deleted, EventListener will be restarted");
+                // Because of the json-call unsubscribe?eventName=XY&subscriptionID=Z doesn't work like it is explained
+                // in the dS-JSON-API, the whole EventListener will be restarted. The problem is, that not only the
+                // given eventName, rather all events of the subscitionID will be deleted.
+                this.stop();
+                this.start();
+            }
+        }
+    }
+
+    public void addEventHandler(EventHandler eventHandler) {
+        if (eventHandler != null) {
+            if (eventHandlers == null) {
+                eventHandlers = new ArrayList<EventHandler>();
+            }
+            eventHandlers.add(eventHandler);
+            if (addSubscibeEvents(eventHandler.getSupportetEvents()) && subscribed) {
+                subscribe();
+            }
+        }
+    }
+
+    private boolean addSubscibeEvents(List<String> subscibeEvents) {
+        boolean eventsAdded = false;
+        if (subscribeEvents == null) {
+            subscribeEvents = new ArrayList<String>();
+        }
+        for (String eventName : subscibeEvents) {
+            if (!subscribeEvents.contains(eventName)) {
+                eventsAdded = subscibeEvents.add(eventName);
+            }
+        }
+        return eventsAdded;
+    }
+
     private void subscribe() {
         if (connManager.checkConnection()) {
-            boolean subscriptionIDavailable = false;
-            while (!subscriptionIDavailable) {
-                String response = connManager.getDigitalSTROMAPI().getEvent(connManager.getSessionToken(),
-                        subscriptionID, timeout);
-                JsonObject responseObj = JSONResponseHandler.toJsonObject(response);
+            if (!subscribed) {
+                boolean subscriptionIDavailable = false;
+                while (!subscriptionIDavailable) {
+                    String response = connManager.getDigitalSTROMAPI().getEvent(connManager.getSessionToken(),
+                            subscriptionID, timeout);
+                    JsonObject responseObj = JSONResponseHandler.toJsonObject(response);
 
-                if (JSONResponseHandler.checkResponse(responseObj)) {
-                    subscriptionID++;
-                } else {
-                    String errorStr = null;
-                    if (responseObj != null && responseObj.get(JSONApiResponseKeysEnum.MESSAGE.getKey()) != null) {
-                        errorStr = responseObj.get(JSONApiResponseKeysEnum.MESSAGE.getKey()).getAsString();
-                    }
-                    if (errorStr != null && errorStr.contains(UNKNOWN_TOKEN)) {
-                        subscriptionIDavailable = true;
+                    if (JSONResponseHandler.checkResponse(responseObj)) {
+                        subscriptionID++;
+                    } else {
+                        String errorStr = null;
+                        if (responseObj != null && responseObj.get(JSONApiResponseKeysEnum.MESSAGE.getKey()) != null) {
+                            errorStr = responseObj.get(JSONApiResponseKeysEnum.MESSAGE.getKey()).getAsString();
+                        }
+                        if (errorStr != null && errorStr.contains(UNKNOWN_TOKEN)) {
+                            subscriptionIDavailable = true;
+                        }
                     }
                 }
             }
@@ -183,8 +258,12 @@ public class EventListener {
         if (array.size() > 0) {
             Event event = new JSONEventImpl(array);
             for (EventItem item : event.getEventItems()) {
-                logger.info(item.getProperties().toString());
-                this.sceneManager.handleEvent(item);
+                logger.debug("Detect Event: " + item.getName() + " " + item.getProperties().toString());
+                for (EventHandler handler : eventHandlers) {
+                    if (handler.supportsEvent(item.getName())) {
+                        handler.handleEvent(item);
+                    }
+                }
             }
         }
     }
