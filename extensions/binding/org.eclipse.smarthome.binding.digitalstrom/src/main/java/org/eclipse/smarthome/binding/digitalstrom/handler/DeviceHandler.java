@@ -21,6 +21,7 @@ import org.apache.commons.lang.StringUtils;
 import org.eclipse.smarthome.binding.digitalstrom.DigitalSTROMBindingConstants;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.listener.DeviceStatusListener;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.Device;
+import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.GeneralDeviceInformations;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.ChangeableDeviceConfigEnum;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.DeviceSceneSpec;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.DeviceStateUpdate;
@@ -426,54 +427,58 @@ public class DeviceHandler extends BaseThingHandler implements DeviceStatusListe
     }
 
     @Override
-    public synchronized void onDeviceRemoved(Device device) {
-        this.device = null;
-        if (this.getThing().getStatus().equals(ThingStatus.ONLINE)) {
-            if (device != null && !device.isPresent()) {
-                updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.NONE,
-                        "Device is not present in the digitalSTROM-System.");
-            } else {
-                updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.NONE,
-                        "Device is not avaible in the digitalSTROM-System.");
-            }
+    public synchronized void onDeviceRemoved(Object device) {
+        if (device instanceof Device) {
+            this.device = null;
+            if (this.getThing().getStatus().equals(ThingStatus.ONLINE)) {
+                if (device != null && !((Device) device).isPresent()) {
+                    updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.NONE,
+                            "Device is not present in the digitalSTROM-System.");
+                } else {
+                    updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.NONE,
+                            "Device is not avaible in the digitalSTROM-System.");
+                }
 
+            }
+            logger.debug("Set status to {}", getThing().getStatus());
         }
-        logger.debug("Set status to {}", getThing().getStatus());
     }
 
     @Override
-    public synchronized void onDeviceAdded(Device device) {
-        if (device.isPresent()) {
-            this.device = device;
-            ThingStatusInfo statusInfo = this.dssBridgeHandler.getThing().getStatusInfo();
-            updateStatus(statusInfo.getStatus(), statusInfo.getStatusDetail(), statusInfo.getDescription());
-            logger.debug("Set status to {}", getThing().getStatus());
+    public synchronized void onDeviceAdded(Object device) {
+        if (device instanceof Device) {
+            if (((GeneralDeviceInformations) device).isPresent()) {
+                this.device = (Device) device;
+                ThingStatusInfo statusInfo = this.dssBridgeHandler.getThing().getStatusInfo();
+                updateStatus(statusInfo.getStatus(), statusInfo.getStatusDetail(), statusInfo.getDescription());
+                logger.debug("Set status to {}", getThing().getStatus());
 
-            Configuration config = getThing().getConfiguration();
+                Configuration config = getThing().getConfiguration();
 
-            // checkDeviceInfoConfig(config, device);
-            // load sensor priorities into the device and load sensor channels of the thing
-            if (!device.isShade()) {
-                loadSensorChannels(config);
-                // check and load output channel of the thing
-                checkOutputChannel();
-            } else if (device.isBlind()) {
-                // load channel for set the angle of jalousie devices
-                loadOutputChannel(CHANNEL_TYPE_SHADE_ANGLE, "Dimmer");
+                // checkDeviceInfoConfig(config, device);
+                // load sensor priorities into the device and load sensor channels of the thing
+                if (!this.device.isShade()) {
+                    loadSensorChannels(config);
+                    // check and load output channel of the thing
+                    checkOutputChannel();
+                } else if (this.device.isBlind()) {
+                    // load channel for set the angle of jalousie devices
+                    loadOutputChannel(CHANNEL_TYPE_SHADE_ANGLE, "Dimmer");
+                }
+
+                // load first channel values
+                onDeviceStateInitial(this.device);
+
+                // load scene configurations persistently into the thing
+                for (Short i : this.device.getSavedScenes()) {
+                    onSceneConfigAdded(i);
+                }
+
+                this.device.saveConfigSceneSpecificationIntoDevice(this.getThing().getProperties());
+                logger.debug("Load saved scene specification into device");
+            } else {
+                onDeviceRemoved(device);
             }
-
-            // load first channel values
-            onDeviceStateInitial(device);
-
-            // load scene configurations persistently into the thing
-            for (Short i : device.getSavedScenes()) {
-                onSceneConfigAdded(i);
-            }
-
-            device.saveConfigSceneSpecificationIntoDevice(this.getThing().getProperties());
-            logger.debug("Load saved scene specification into device");
-        } else {
-            onDeviceRemoved(device);
         }
     }
 

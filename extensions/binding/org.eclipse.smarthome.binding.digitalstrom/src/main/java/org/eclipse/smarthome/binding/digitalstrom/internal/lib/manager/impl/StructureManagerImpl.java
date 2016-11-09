@@ -17,7 +17,9 @@ import java.util.Set;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.manager.ConnectionManager;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.manager.StructureManager;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.serverConnection.impl.JSONResponseHandler;
+import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.Circuit;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.Device;
+import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.CachedMeteringValue;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.DSID;
 
 import com.google.gson.JsonArray;
@@ -34,6 +36,7 @@ public class StructureManagerImpl implements StructureManager {
 
     private Map<Integer, HashMap<Short, List<Device>>> zoneGroupDeviceMap;
     private Map<DSID, Device> deviceMap;
+    private Map<DSID, Circuit> circuitMap = null;
     private Map<String, DSID> dSUIDToDSIDMap;
 
     private Map<Integer, Object[]> zoneGroupIdNameMap = null;
@@ -46,6 +49,16 @@ public class StructureManagerImpl implements StructureManager {
      */
     public StructureManagerImpl(List<Device> referenceDeviceList) {
         handleStructure(referenceDeviceList);
+    }
+
+    /**
+     * Creates a new {@link StructureManagerImpl} with the {@link Device}s of the given referenceDeviceList.
+     *
+     * @param referenceDeviceList
+     */
+    public StructureManagerImpl(List<Device> referenceDeviceList, List<Circuit> referenceCircuitList) {
+        handleStructure(referenceDeviceList);
+        addCircuitList(referenceCircuitList);
     }
 
     /**
@@ -350,5 +363,59 @@ public class StructureManagerImpl implements StructureManager {
     @Override
     public Set<Integer> getZoneIDs() {
         return this.zoneGroupDeviceMap != null ? this.zoneGroupDeviceMap.keySet() : null;
+    }
+
+    @Override
+    public void addCircuitList(List<Circuit> referenceCircuitList) {
+        for (Circuit circuit : referenceCircuitList) {
+            addCircuit(circuit);
+        }
+    }
+
+    @Override
+    public Circuit addCircuit(Circuit circuit) {
+        if (circuitMap == null) {
+            circuitMap = new HashMap<DSID, Circuit>();
+        }
+        dSUIDToDSIDMap.put(circuit.getDSUID(), circuit.getDSID());
+        return circuitMap.put(circuit.getDSID(), circuit);
+    }
+
+    @Override
+    public Circuit getCircuit(DSID dSID) {
+        return circuitMap.get(dSID);
+    }
+
+    @Override
+    public Circuit getCircuit(String dSUID) {
+        return dSUIDToDSIDMap.get(dSUID) != null ? getCircuit(dSUIDToDSIDMap.get(dSUID)) : null;
+    }
+
+    @Override
+    public Circuit updateCircuitConfig(Circuit newCircuit) {
+        if (circuitMap != null) {
+            Circuit intCircuit = circuitMap.get(newCircuit.getDSID());
+            if (intCircuit != null) {
+                for (CachedMeteringValue meteringValue : intCircuit.getAllCachedMeteringValues()) {
+                    newCircuit.addMeteringValue(meteringValue);
+                }
+            }
+        }
+        return addCircuit(newCircuit);
+    }
+
+    @Override
+    public Circuit deleteCircuit(DSID dSID) {
+        return circuitMap.remove(dSID);
+    }
+
+    @Override
+    public Circuit deleteCircuit(String dSUID) {
+        return dSUIDToDSIDMap.get(dSUID) != null ? deleteCircuit(dSUIDToDSIDMap.get(dSUID)) : null;
+    }
+
+    @Override
+    public Map<DSID, Circuit> getCircuitMap() {
+        return circuitMap;
     }
 }

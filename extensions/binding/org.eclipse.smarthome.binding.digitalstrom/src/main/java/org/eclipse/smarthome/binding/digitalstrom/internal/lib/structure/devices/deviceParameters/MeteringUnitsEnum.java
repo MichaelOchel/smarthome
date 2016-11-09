@@ -13,7 +13,6 @@ package org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.device
  * @author Alexander Betker
  */
 public enum MeteringUnitsEnum {
-    W,
     Wh,
     Ws;
 }

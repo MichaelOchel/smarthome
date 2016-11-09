@@ -151,11 +151,11 @@ public class BridgeHandler extends BaseBridgeHandler
                 }
             }
             if (configChanged) {
-                // updateConfiguration(configuration);
+                updateConfiguration(configuration);
             }
             if (StringUtils.isBlank(getThing().getProperties().get(DigitalSTROMBindingConstants.SERVER_CERT))
                     && StringUtils.isNotBlank(config.getCert())) {
-                // updateProperty(DigitalSTROMBindingConstants.SERVER_CERT, config.getCert());
+                updateProperty(DigitalSTROMBindingConstants.SERVER_CERT, config.getCert());
             }
         }
     };

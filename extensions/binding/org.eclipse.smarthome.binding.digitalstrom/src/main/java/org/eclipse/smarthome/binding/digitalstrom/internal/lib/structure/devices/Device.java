@@ -11,7 +11,6 @@ import java.util.List;
 import java.util.Map;
 
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.config.Config;
-import org.eclipse.smarthome.binding.digitalstrom.internal.lib.listener.DeviceStatusListener;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.DSID;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.DeviceSceneSpec;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.DeviceStateUpdate;
@@ -26,31 +25,17 @@ import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.scene.I
  * @author Michael Ochel - add methods for ESH, new functionalities and JavaDoc
  * @author Mathias Siegele - add methods for ESH, new functionalities and JavaDoc
  */
-public interface Device {
+public interface Device extends GeneralDeviceInformations {
 
     /**
-     * Returns the dSID of this device.
-     *
-     * @return {@link DSID} dSID
-     */
-    public DSID getDSID();
-
-    /**
-     * Returns the dSUID of this device.
-     *
-     * @return dSID
-     */
-    public String getDSUID();
-
-    /**
-     * Returns the id of the DS-Meter in which the device is registered.
+     * Returns the id of the dS-Meter in which the device is registered.
      *
      * @return meterDSID
      */
     public DSID getMeterDSID();
 
     /**
-     * Sets the id of the DS-Meter in which the device is registered.
+     * Sets the id of the dS-Meter in which the device is registered.
      *
      * @param meterDSID
      */
@@ -67,20 +52,6 @@ public interface Device {
     public String getHWinfo();
 
     /**
-     * Returns the user defined name of this device.
-     *
-     * @return name of this device
-     */
-    public String getName();
-
-    /**
-     * Sets the name of this device;
-     *
-     * @param name
-     */
-    public void setName(String name);
-
-    /**
      * Returns the zone id in which this device is in.
      *
      * @return zoneID
@@ -93,22 +64,6 @@ public interface Device {
      * @parm zoneID
      */
     public void setZoneId(int zoneID);
-
-    /**
-     * This device is available in his zone or not.
-     * Every 24h the dSM (meter) checks, if the devices are
-     * plugged in
-     *
-     * @return true, if device is available otherwise false
-     */
-    public boolean isPresent();
-
-    /**
-     * Sets this device is available in his zone or not.
-     *
-     * @param isPresent (true = available | false = not available)
-     */
-    public void setIsPresent(boolean isPresent);
 
     /**
      * Returns true, if this device is on, otherwise false.
@@ -492,27 +447,6 @@ public interface Device {
      * @param prio
      */
     public void checkSceneConfig(Short sceneNumber, int prio);
-
-    /**
-     * Register a {@link DeviceStatusListener} to this {@link Device}.
-     *
-     * @param deviceStatuslistener
-     */
-    public void registerDeviceStateListener(DeviceStatusListener deviceStatuslistener);
-
-    /**
-     * Unregister the {@link DeviceStatusListener} to this {@link Device} if it exists.
-     *
-     * @return the unregistered {@link DeviceStatusListener} or null if no one was registered
-     */
-    public DeviceStatusListener unregisterDeviceStateListener();
-
-    /**
-     * Returns true, if a {@link DeviceStatusListener} is registered to this {@link Device}, otherwise false.
-     *
-     * @return return true, if a lister is registered, otherwise false
-     */
-    public boolean isListenerRegisterd();
 
     /**
      * Sets the given output mode as new output mode of this {@link Device}.

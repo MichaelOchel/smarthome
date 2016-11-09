@@ -150,7 +150,6 @@ public class DeviceStatusManagerImpl implements DeviceStatusManager {
                 }
 
                 List<Device> currentDeviceList = digitalSTROMClient.getApartmentDevices(connMan.getSessionToken());
-                // logger.debug(currentDeviceList.toString());
 
                 // update the current total power consumption
                 if (totalPowerConsumptionListener != null && nextSensorUpdate <= System.currentTimeMillis()) {
@@ -1007,7 +1006,7 @@ public class DeviceStatusManagerImpl implements DeviceStatusManager {
     @Override
     public int getTotalPowerConsumption() {
         List<CachedMeteringValue> cachedConsumptionMeteringValues = digitalSTROMClient
-                .getLatest(connMan.getSessionToken(), MeteringTypeEnum.consumption, meters, MeteringUnitsEnum.W);
+                .getLatest(connMan.getSessionToken(), MeteringTypeEnum.consumption, meters, null);
         if (cachedConsumptionMeteringValues != null) {
             tempConsumption = 0;
             for (CachedMeteringValue value : cachedConsumptionMeteringValues) {

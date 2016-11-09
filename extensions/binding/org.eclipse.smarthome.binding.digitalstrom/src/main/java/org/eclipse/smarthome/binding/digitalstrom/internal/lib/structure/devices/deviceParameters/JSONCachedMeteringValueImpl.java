@@ -7,7 +7,15 @@
  */
 package org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters;
 
+import java.text.DateFormat;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+
+import org.eclipse.smarthome.binding.digitalstrom.internal.lib.climate.dataTypes.CachedSensorValue;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.serverConnection.constants.JSONApiResponseKeysEnum;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.gson.JsonObject;
 
@@ -23,8 +31,14 @@ public class JSONCachedMeteringValueImpl implements CachedMeteringValue {
     private DSID dsid = null;
     private double value = 0;
     private String date = null;
+    private MeteringTypeEnum meteringType = null;
+    private MeteringUnitsEnum meteringUnit = null;
+    private Logger logger = LoggerFactory.getLogger(CachedSensorValue.class);
 
-    public JSONCachedMeteringValueImpl(JsonObject jObject) {
+    public JSONCachedMeteringValueImpl(JsonObject jObject, MeteringTypeEnum meteringType,
+            MeteringUnitsEnum meteringUnit) {
+        this.meteringType = meteringType;
+        this.meteringUnit = meteringUnit;
         if (jObject.get(JSONApiResponseKeysEnum.DSID_LOWER_CASE.getKey()) != null) {
             this.dsid = new DSID(jObject.get(JSONApiResponseKeysEnum.DSID_LOWER_CASE.getKey()).getAsString());
         }
@@ -52,7 +66,29 @@ public class JSONCachedMeteringValueImpl implements CachedMeteringValue {
     }
 
     @Override
+    public Date getDateAsDate() {
+        DateFormat formatter = new SimpleDateFormat("yyyy-MM-dd hh:mm:ss");
+        try {
+            return formatter.parse(date);
+        } catch (ParseException e) {
+            logger.error("A ParseException occurred by parsing date string: " + date, e);
+        }
+        return null;
+    }
+
+    @Override
+    public MeteringTypeEnum getMeteringType() {
+        return meteringType;
+    }
+
+    @Override
+    public MeteringUnitsEnum getMeteringUnit() {
+        return meteringUnit;
+    }
+
+    @Override
     public String toString() {
-        return "dSID: " + this.getDsid() + ", date: " + this.getDate() + ", value: " + this.getValue();
+        return "dSID: " + this.getDsid() + ", metering-type " + meteringType.toString() + ", metering-unit "
+                + meteringUnit + ", date: " + this.getDate() + ", value: " + this.getValue();
     }
 }

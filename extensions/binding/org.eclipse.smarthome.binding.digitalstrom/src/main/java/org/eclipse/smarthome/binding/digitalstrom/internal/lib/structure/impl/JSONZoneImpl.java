@@ -14,7 +14,7 @@ import org.eclipse.smarthome.binding.digitalstrom.internal.lib.serverConnection.
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.DetailedGroupInfo;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.Zone;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.Device;
-import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.impl.JSONDeviceImpl;
+import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.impl.DeviceImpl;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
@@ -52,7 +52,7 @@ public class JSONZoneImpl implements Zone {
         if (object.get(JSONApiResponseKeysEnum.DEVICES.getKey()) instanceof JsonArray) {
             JsonArray list = (JsonArray) object.get(JSONApiResponseKeysEnum.DEVICES.getKey());
             for (int i = 0; i < list.size(); i++) {
-                this.deviceList.add(new JSONDeviceImpl((JsonObject) list.get(i)));
+                this.deviceList.add(new DeviceImpl((JsonObject) list.get(i)));
             }
         }
         if (object.get(JSONApiResponseKeysEnum.GROUPS.getKey()) instanceof JsonArray) {
