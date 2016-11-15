@@ -2,8 +2,8 @@ package org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.device
 
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.listener.DeviceStatusListener;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.serverConnection.constants.JSONApiResponseKeysEnum;
-import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.ChangeableDeviceConfigEnum;
-import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.DSID;
+import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.constants.ChangeableDeviceConfigEnum;
+import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.impl.DSID;
 
 import com.google.gson.JsonObject;
 
@@ -11,8 +11,8 @@ public abstract class AbstractGeneralDeviceInformations implements GeneralDevice
 
     protected DSID dsid = null;
     protected String dSUID = null;
-    protected boolean isPresent = false;
-    protected boolean isValide = false;
+    protected Boolean isPresent = null;
+    protected Boolean isValide = null;
     protected String name = null;
     protected String displayID = null;
     protected DeviceStatusListener listener = null;
@@ -37,8 +37,8 @@ public abstract class AbstractGeneralDeviceInformations implements GeneralDevice
         } else if (jsonDeviceObject.get(JSONApiResponseKeysEnum.PRESENT.getKey()) != null) {
             isPresent = jsonDeviceObject.get(JSONApiResponseKeysEnum.PRESENT.getKey()).getAsBoolean();
         }
-        if (jsonDeviceObject.get(JSONApiResponseKeysEnum.IS_VALIDE.getKey()) != null) {
-            isValide = jsonDeviceObject.get(JSONApiResponseKeysEnum.IS_VALIDE.getKey()).getAsBoolean();
+        if (jsonDeviceObject.get(JSONApiResponseKeysEnum.IS_VALID.getKey()) != null) {
+            isValide = jsonDeviceObject.get(JSONApiResponseKeysEnum.IS_VALID.getKey()).getAsBoolean();
         }
     }
 
@@ -66,12 +66,12 @@ public abstract class AbstractGeneralDeviceInformations implements GeneralDevice
     }
 
     @Override
-    public synchronized boolean isPresent() {
+    public Boolean isPresent() {
         return isPresent;
     }
 
     @Override
-    public synchronized void setIsPresent(boolean isPresent) {
+    public void setIsPresent(boolean isPresent) {
         this.isPresent = isPresent;
         if (listener != null) {
             if (!isPresent) {
@@ -83,7 +83,7 @@ public abstract class AbstractGeneralDeviceInformations implements GeneralDevice
     }
 
     @Override
-    public boolean isValide() {
+    public Boolean isValide() {
         return isValide;
     }
 

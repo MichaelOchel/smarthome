@@ -7,7 +7,7 @@
  */
 package org.eclipse.smarthome.binding.digitalstrom.internal.discovery;
 
-import static org.eclipse.smarthome.binding.digitalstrom.DigitalSTROMBindingConstants.*;
+import static org.eclipse.smarthome.binding.digitalstrom.DigitalSTROMBindingConstants.BINDING_ID;
 
 import java.util.Date;
 import java.util.HashMap;
@@ -19,7 +19,7 @@ import org.eclipse.smarthome.binding.digitalstrom.DigitalSTROMBindingConstants;
 import org.eclipse.smarthome.binding.digitalstrom.handler.BridgeHandler;
 import org.eclipse.smarthome.binding.digitalstrom.handler.DeviceHandler;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.Device;
-import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.OutputModeEnum;
+import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.constants.OutputModeEnum;
 import org.eclipse.smarthome.config.discovery.AbstractDiscoveryService;
 import org.eclipse.smarthome.config.discovery.DiscoveryResult;
 import org.eclipse.smarthome.config.discovery.DiscoveryResultBuilder;
@@ -94,16 +94,8 @@ public class DeviceDiscoveryService extends AbstractDiscoveryService {
             ThingUID thingUID = getThingUID(device);
             if (thingUID != null) {
                 ThingUID bridgeUID = bridgeHandler.getThing().getUID();
-                Map<String, Object> properties = new HashMap<>(9);
-                properties.put(DigitalSTROMBindingConstants.DEVICE_UID, device.getDSUID());
+                Map<String, Object> properties = new HashMap<>(1);
                 properties.put(DigitalSTROMBindingConstants.DEVICE_DSID, device.getDSID().getValue());
-                properties.put(DigitalSTROMBindingConstants.DEVICE_HW_INFO, device.getHWinfo());
-                properties.put(DigitalSTROMBindingConstants.DEVICE_GROUPS, device.getGroups().toString());
-                properties.put(DigitalSTROMBindingConstants.DEVICE_OUTPUT_MODE, device.getOutputMode());
-                properties.put(DigitalSTROMBindingConstants.DEVICE_ZONE_ID, device.getZoneId());
-                properties.put(DigitalSTROMBindingConstants.DEVICE_FUNCTIONAL_COLOR_GROUP,
-                        device.getFunctionalColorGroup());
-                properties.put(DigitalSTROMBindingConstants.DEVICE_METER_ID, device.getMeterDSID().getValue());
                 String deviceName = null;
                 if (StringUtils.isNotBlank(device.getName())) {
                     deviceName = device.getName();
@@ -111,7 +103,6 @@ public class DeviceDiscoveryService extends AbstractDiscoveryService {
                     // if no name is set, the dSID will be used as name
                     deviceName = device.getDSID().getValue();
                 }
-                properties.put(DEVICE_NAME, deviceName);
                 DiscoveryResult discoveryResult = DiscoveryResultBuilder.create(thingUID).withProperties(properties)
                         .withBridge(bridgeUID).withLabel(deviceName).build();
 

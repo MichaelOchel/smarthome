@@ -21,14 +21,13 @@ import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.Apartme
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.Circuit;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.Device;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.CachedMeteringValue;
-import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.DSID;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.DeviceConfig;
-import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.DeviceParameterClassEnum;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.DeviceSceneSpec;
-import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.MeteringTypeEnum;
-import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.MeteringUnitsEnum;
-import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.SensorEnum;
-import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.SensorIndexEnum;
+import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.constants.DeviceParameterClassEnum;
+import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.constants.MeteringTypeEnum;
+import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.constants.MeteringUnitsEnum;
+import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.constants.SensorEnum;
+import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.impl.DSID;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.scene.constants.Scene;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.scene.constants.SceneEnum;
 
@@ -191,7 +190,7 @@ public interface DsAPI {
      * @param sensorIndex required
      * @return sensor value
      */
-    public short getDeviceSensorValue(String sessionToken, DSID dSID, String deviceName, SensorIndexEnum sensorIndex);
+    public short getDeviceSensorValue(String sessionToken, DSID dSID, String deviceName, Short sensorIndex);
 
     /**
      * Calls scene sceneNumber on the device.
@@ -456,7 +455,7 @@ public interface DsAPI {
      * @author Michael Ochel
      * @author Matthias Siegele
      */
-    public short getDeviceSensorValue(String sessionToken, DSID dSID, String deviceName, SensorEnum sensorType);
+    // public short getDeviceSensorValue(String sessionToken, DSID dSID, String deviceName, SensorEnum sensorType);
 
     /**
      * Returns user defined name of the digitalSTROM installation.
@@ -749,5 +748,7 @@ public interface DsAPI {
      * @return response as {@link JsonObject}
      */
     public JsonObject query(String token, String query);
+
+    public JsonObject query2(String token, String query);
 
 }

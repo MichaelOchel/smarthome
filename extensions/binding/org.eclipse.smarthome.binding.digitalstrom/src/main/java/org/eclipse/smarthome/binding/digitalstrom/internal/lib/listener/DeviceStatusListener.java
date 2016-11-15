@@ -9,8 +9,8 @@ package org.eclipse.smarthome.binding.digitalstrom.internal.lib.listener;
 
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.manager.DeviceStatusManager;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.Device;
-import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.ChangeableDeviceConfigEnum;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.DeviceStateUpdate;
+import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.constants.ChangeableDeviceConfigEnum;
 
 /**
  * The {@link DeviceStatusListener} is notified, if a {@link Device} status has changed, if a scene configuration is

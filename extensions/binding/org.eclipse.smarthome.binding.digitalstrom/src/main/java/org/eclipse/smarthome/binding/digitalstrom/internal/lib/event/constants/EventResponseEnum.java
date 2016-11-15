@@ -35,7 +35,13 @@ public enum EventResponseEnum {
     CALL_ORIGEN("callOrigin"),
     ORIGEN_DSUID("originDSUID"),
     SCENEID("sceneID"),
-    ORIGIN_DEVICEID("originDeviceID");
+    ORIGIN_DEVICEID("originDeviceID"),
+
+    // device/zone sensor value
+    SENSOR_VALUE_FLOAT("sensorValueFloat"),
+    SENSOR_TYPE("sensorType"),
+    SENSOR_VALUE("sensorValue"),
+    SENSOR_INDEX("sensorIndex");
 
     private final String ID;
     static final HashMap<String, EventResponseEnum> eventResponseFields = new HashMap<String, EventResponseEnum>();

@@ -5,16 +5,29 @@ import org.eclipse.smarthome.binding.digitalstrom.internal.lib.serverConnection.
 import com.google.gson.JsonObject;
 
 /**
- * @author Michael
+ * The {@link BaseTemperatureControl} is a base implementation for temperature controls status and configurations. For
+ * that it extends the {@link BaseZoneIdentifier}.
  *
+ * @author Michael Ochel - Initial contribution
+ * @author Matthias Siegele - Initial contribution
  */
-public abstract class TemperatureControl extends BaseZoneIdentifier {
+public abstract class BaseTemperatureControl extends BaseZoneIdentifier {
 
     protected String controlDSUID;
     protected Short controlMode;
     protected Boolean isConfigured;
 
-    public TemperatureControl(JsonObject jObject, Integer zoneID, String zoneName) {
+    /**
+     * Creates a new {@link BaseTemperatureControl} through the {@link JsonObject} which will be returned by an zone
+     * call.<br>
+     * Because of zone calls does not include a zoneID or zoneName in the json response, the zoneID and zoneName have to
+     * be handed over the constructor.
+     *
+     * @param jObject must not be null
+     * @param zoneID must not be null
+     * @param zoneName can be null
+     */
+    public BaseTemperatureControl(JsonObject jObject, Integer zoneID, String zoneName) {
         super(zoneID, zoneName);
         if (jObject.get(JSONApiResponseKeysEnum.IS_CONFIGURED.getKey()) != null) {
             this.isConfigured = jObject.get(JSONApiResponseKeysEnum.IS_CONFIGURED.getKey()).getAsBoolean();
@@ -29,7 +42,13 @@ public abstract class TemperatureControl extends BaseZoneIdentifier {
         }
     }
 
-    public TemperatureControl(JsonObject jObject) {
+    /**
+     * Creates a new {@link BaseTemperatureControl} through the {@link JsonObject} which will be returned by an
+     * apartment call.
+     *
+     * @param jObject must not be null
+     */
+    public BaseTemperatureControl(JsonObject jObject) {
         super(jObject);
         if (jObject.get(JSONApiResponseKeysEnum.IS_CONFIGURED.getKey()) != null) {
             this.isConfigured = jObject.get(JSONApiResponseKeysEnum.IS_CONFIGURED.getKey()).getAsBoolean();

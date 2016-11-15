@@ -11,6 +11,7 @@ import java.util.Calendar;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map.Entry;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
@@ -35,21 +36,26 @@ import org.eclipse.smarthome.binding.digitalstrom.internal.lib.sensorJobExecutor
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.sensorJobExecutor.sensorJob.impl.SceneConfigReadingJob;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.sensorJobExecutor.sensorJob.impl.SceneOutputValueReadingJob;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.serverConnection.DsAPI;
+import org.eclipse.smarthome.binding.digitalstrom.internal.lib.serverConnection.constants.JSONApiResponseKeysEnum;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.Device;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.CachedMeteringValue;
-import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.DSID;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.DeviceConstants;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.DeviceStateUpdate;
-import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.DeviceStateUpdateImpl;
-import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.MeteringTypeEnum;
-import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.MeteringUnitsEnum;
-import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.SensorEnum;
+import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.constants.MeteringTypeEnum;
+import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.constants.MeteringUnitsEnum;
+import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.constants.SensorEnum;
+import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.impl.DSID;
+import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.impl.DeviceStateUpdateImpl;
+import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.impl.DeviceImpl;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.scene.InternalScene;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.scene.constants.ApartmentSceneEnum;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.scene.constants.SceneEnum;
 import org.eclipse.smarthome.core.common.ThreadPoolManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
 
 /**
  * The {@link DeviceStatusManagerImpl} is the implementation of the the {@link DeviceStatusManager}.
@@ -63,6 +69,8 @@ public class DeviceStatusManagerImpl implements DeviceStatusManager {
 
     private final ScheduledExecutorService scheduler = ThreadPoolManager.getScheduledPool(Config.THREADPOOL_NAME);
     private ScheduledFuture<?> pollingScheduler = null;
+
+    public static final String GET_DETAILD_DEVICES = "/apartment/zones/zone0(*)/devices/*(*)/*(*)/*(*)";
 
     private ConnectionManager connMan;
     private StructureManager strucMan;
@@ -148,8 +156,23 @@ public class DeviceStatusManagerImpl implements DeviceStatusManager {
                 } else {
                     tempDeviceMap = new HashMap<DSID, Device>();
                 }
+                List<Device> currentDeviceList = new LinkedList<Device>();
+                // TODO: umstellen auf DeviceQurey
+                JsonObject result = connMan.getDigitalSTROMAPI().query2(connMan.getSessionToken(), GET_DETAILD_DEVICES);
+                if (result.isJsonObject()) {
+                    if (result.getAsJsonObject().get("zone0").isJsonObject()) {
+                        result = result.getAsJsonObject().get("zone0").getAsJsonObject();
+                        for (Entry<String, JsonElement> entry : result.entrySet()) {
+                            if (!(entry.getKey().equals(JSONApiResponseKeysEnum.ZONE_ID.getKey())
+                                    && entry.getKey().equals(JSONApiResponseKeysEnum.NAME.getKey()))
+                                    && entry.getValue().isJsonObject()) {
+                                currentDeviceList.add(new DeviceImpl(entry.getValue().getAsJsonObject()));
+                            }
+                        }
+                    }
+                }
 
-                List<Device> currentDeviceList = digitalSTROMClient.getApartmentDevices(connMan.getSessionToken());
+                // List<Device> currentDeviceList = digitalSTROMClient.getApartmentDevices(connMan.getSessionToken());
 
                 // update the current total power consumption
                 if (totalPowerConsumptionListener != null && nextSensorUpdate <= System.currentTimeMillis()) {
@@ -298,12 +321,12 @@ public class DeviceStatusManagerImpl implements DeviceStatusManager {
                         nextDeviceStateUpdate = device.getNextDeviceUpdateState();
                         break;
                     case DeviceStateUpdate.UPDATE_SLAT_ANGLE_INCREASE:
-                        if (deviceStateUpdate.getValue() == 1) {
+                        if (deviceStateUpdate.getValueAsInteger() == 1) {
                             newAngle = (short) (newAngle + DeviceConstants.ANGLE_STEP_SLAT);
                         }
                         break;
                     case DeviceStateUpdate.UPDATE_SLAT_ANGLE_DECREASE:
-                        if (deviceStateUpdate.getValue() == 1) {
+                        if (deviceStateUpdate.getValueAsInteger() == 1) {
                             newAngle = (short) (newAngle - DeviceConstants.ANGLE_STEP_SLAT);
                         }
                         break;
@@ -657,53 +680,159 @@ public class DeviceStatusManagerImpl implements DeviceStatusManager {
             boolean requestSuccsessful = false;
             boolean commandHaveNoEffect = false;
             if (deviceStateUpdate != null) {
-                switch (deviceStateUpdate.getType()) {
-                    case DeviceStateUpdate.UPDATE_BRIGHTNESS_DECREASE:
-                    case DeviceStateUpdate.UPDATE_SLAT_DECREASE:
-                        if (checkIsAllreadyMinMax(device) != 0) {
-                            requestSuccsessful = digitalSTROMClient.decreaseValue(connMan.getSessionToken(),
-                                    device.getDSID());
-                            if (requestSuccsessful) {
-                                sceneMan.addEcho(device.getDSID().getValue(), SceneEnum.DECREMENT.getSceneNumber());
+                if (deviceStateUpdate.isSensorUpdateType()) {
+                    SensorEnum sensorType = deviceStateUpdate.getTypeAsSensorEnum();
+                    if (deviceStateUpdate.getValueAsInteger() == 0) {
+                        logger.debug("Device need " + sensorType + " SensorData update");
+                        updateSensorData(new DeviceConsumptionSensorJob(device, sensorType),
+                                device.getPowerSensorRefreshPriority(sensorType));
+                        return;
+                    } else {
+                        int consumption = this.digitalSTROMClient.getDeviceSensorValue(connMan.getSessionToken(),
+                                device.getDSID(), null, device.getSensorIndex(sensorType));
+                        if (consumption >= 0) {
+                            device.updateInternalDeviceState(new DeviceStateUpdateImpl(sensorType, consumption));
+                            requestSuccsessful = true;
+                        }
+                    }
+
+                    /*
+                     * switch (deviceStateUpdate.getTypeAsSensorEnum()) {
+                     * case ACTIVE_POWER:
+                     * if (deviceStateUpdate.getValueAsInteger() == 0) {
+                     * logger.debug("Device need active power SensorData update");
+                     * updateSensorData(new DeviceConsumptionSensorJob(device, SensorEnum.ACTIVE_POWER),
+                     * device.getPowerSensorRefreshPriority(ACTIVE_POWER));
+                     * return;
+                     * } else {
+                     * int consumption = this.digitalSTROMClient.getDeviceSensorValue(
+                     * connMan.getSessionToken(), device.getDSID(), null, SensorEnum.ACTIVE_POWER);
+                     * if (consumption >= 0) {
+                     * device.updateInternalDeviceState(new DeviceStateUpdateImpl(
+                     * DeviceStateUpdate.UPDATE_ACTIVE_POWER, consumption));
+                     * requestSuccsessful = true;
+                     * }
+                     * }
+                     * break;
+                     * case OUTPUT_CURRENT:
+                     * if (deviceStateUpdate.getValueAsInteger() == 0) {
+                     * logger.debug("Device need output current SensorData update");
+                     * updateSensorData(new DeviceConsumptionSensorJob(device, SensorEnum.OUTPUT_CURRENT),
+                     * device.getOutputCurrentRefreshPriority());
+                     * return;
+                     * } else {
+                     * int consumption = this.digitalSTROMClient.getDeviceSensorValue(
+                     * connMan.getSessionToken(), device.getDSID(), null, SensorEnum.OUTPUT_CURRENT);
+                     * if (consumption >= 0) {
+                     * device.updateInternalDeviceState(new DeviceStateUpdateImpl(
+                     * DeviceStateUpdate.UPDATE_OUTPUT_CURRENT, consumption));
+                     * requestSuccsessful = true;
+                     * }
+                     * }
+                     * break;
+                     * case ELECTRIC_METER:
+                     * if (deviceStateUpdate.getValueAsInteger() == 0) {
+                     * logger.debug("Device need electric meter SensorData update");
+                     * updateSensorData(new DeviceConsumptionSensorJob(device, SensorEnum.ELECTRIC_METER),
+                     * device.getElectricMeterRefreshPriority());
+                     * return;
+                     * } else {
+                     * int consumption = this.digitalSTROMClient.getDeviceSensorValue(
+                     * connMan.getSessionToken(), device.getDSID(), null, SensorEnum.ELECTRIC_METER);
+                     * if (consumption >= 0) {
+                     * device.updateInternalDeviceState(new DeviceStateUpdateImpl(
+                     * DeviceStateUpdate.UPDATE_ELECTRIC_METER, consumption));
+                     * requestSuccsessful = true;
+                     * }
+                     * }
+                     * break;
+                     * default:
+                     * break;
+                     * }
+                     */
+                } else {
+                    switch (deviceStateUpdate.getType()) {
+                        case DeviceStateUpdate.UPDATE_BRIGHTNESS_DECREASE:
+                        case DeviceStateUpdate.UPDATE_SLAT_DECREASE:
+                            if (checkIsAllreadyMinMax(device) != 0) {
+                                requestSuccsessful = digitalSTROMClient.decreaseValue(connMan.getSessionToken(),
+                                        device.getDSID());
+                                if (requestSuccsessful) {
+                                    sceneMan.addEcho(device.getDSID().getValue(), SceneEnum.DECREMENT.getSceneNumber());
+                                }
+                            } else {
+                                commandHaveNoEffect = true;
                             }
-                        } else {
-                            commandHaveNoEffect = true;
-                        }
-                        break;
-                    case DeviceStateUpdate.UPDATE_BRIGHTNESS_INCREASE:
-                    case DeviceStateUpdate.UPDATE_SLAT_INCREASE:
-                        if (checkIsAllreadyMinMax(device) != 1) {
-                            requestSuccsessful = digitalSTROMClient.increaseValue(connMan.getSessionToken(),
-                                    device.getDSID());
-                            if (requestSuccsessful) {
-                                sceneMan.addEcho(device.getDSID().getValue(), SceneEnum.INCREMENT.getSceneNumber());
-                            }
-                        } else {
-                            commandHaveNoEffect = true;
-                        }
-                        break;
-                    case DeviceStateUpdate.UPDATE_BRIGHTNESS:
-                        if (device.getOutputValue() != deviceStateUpdate.getValue()) {
-                            requestSuccsessful = digitalSTROMClient.setDeviceValue(connMan.getSessionToken(),
-                                    device.getDSID(), null, deviceStateUpdate.getValue());
-                        } else {
-                            commandHaveNoEffect = true;
-                        }
-                        break;
-                    case DeviceStateUpdate.UPDATE_OPEN_CLOSE:
-                    case DeviceStateUpdate.UPDATE_ON_OFF:
-                        if (deviceStateUpdate.getValue() > 0) {
+                            break;
+                        case DeviceStateUpdate.UPDATE_BRIGHTNESS_INCREASE:
+                        case DeviceStateUpdate.UPDATE_SLAT_INCREASE:
                             if (checkIsAllreadyMinMax(device) != 1) {
+                                requestSuccsessful = digitalSTROMClient.increaseValue(connMan.getSessionToken(),
+                                        device.getDSID());
+                                if (requestSuccsessful) {
+                                    sceneMan.addEcho(device.getDSID().getValue(), SceneEnum.INCREMENT.getSceneNumber());
+                                }
+                            } else {
+                                commandHaveNoEffect = true;
+                            }
+                            break;
+                        case DeviceStateUpdate.UPDATE_BRIGHTNESS:
+                            if (device.getOutputValue() != deviceStateUpdate.getValueAsInteger()) {
+                                requestSuccsessful = digitalSTROMClient.setDeviceValue(connMan.getSessionToken(),
+                                        device.getDSID(), null, deviceStateUpdate.getValueAsInteger());
+                            } else {
+                                commandHaveNoEffect = true;
+                            }
+                            break;
+                        case DeviceStateUpdate.UPDATE_OPEN_CLOSE:
+                        case DeviceStateUpdate.UPDATE_ON_OFF:
+                            if (deviceStateUpdate.getValueAsInteger() > 0) {
+                                if (checkIsAllreadyMinMax(device) != 1) {
+                                    requestSuccsessful = digitalSTROMClient.turnDeviceOn(connMan.getSessionToken(),
+                                            device.getDSID(), null);
+                                    if (requestSuccsessful) {
+                                        sceneMan.addEcho(device.getDSID().getValue(),
+                                                SceneEnum.MAXIMUM.getSceneNumber());
+                                    }
+                                } else {
+                                    commandHaveNoEffect = true;
+                                }
+                            } else {
+                                if (checkIsAllreadyMinMax(device) != 0) {
+                                    requestSuccsessful = digitalSTROMClient.turnDeviceOff(connMan.getSessionToken(),
+                                            device.getDSID(), null);
+                                    if (requestSuccsessful) {
+                                        sceneMan.addEcho(device.getDSID().getValue(),
+                                                SceneEnum.MINIMUM.getSceneNumber());
+                                    }
+                                    if (sensorJobExecutor != null) {
+                                        sensorJobExecutor.removeSensorJobs(device);
+                                    }
+                                } else {
+                                    commandHaveNoEffect = true;
+                                }
+                            }
+                            break;
+                        case DeviceStateUpdate.UPDATE_SLATPOSITION:
+                            if (device.getSlatPosition() != deviceStateUpdate.getValueAsInteger()) {
+                                requestSuccsessful = digitalSTROMClient.setDeviceOutputValue(connMan.getSessionToken(),
+                                        device.getDSID(), null, DeviceConstants.DEVICE_SENSOR_SLAT_POSITION_OUTPUT,
+                                        deviceStateUpdate.getValueAsInteger());
+                            } else {
+                                commandHaveNoEffect = true;
+                            }
+                            break;
+                        case DeviceStateUpdate.UPDATE_SLAT_STOP:
+                            this.sendStopComandsToDSS(device);
+                            break;
+                        case DeviceStateUpdate.UPDATE_SLAT_MOVE:
+                            if (deviceStateUpdate.getValueAsInteger() > 0) {
                                 requestSuccsessful = digitalSTROMClient.turnDeviceOn(connMan.getSessionToken(),
                                         device.getDSID(), null);
                                 if (requestSuccsessful) {
                                     sceneMan.addEcho(device.getDSID().getValue(), SceneEnum.MAXIMUM.getSceneNumber());
                                 }
                             } else {
-                                commandHaveNoEffect = true;
-                            }
-                        } else {
-                            if (checkIsAllreadyMinMax(device) != 0) {
                                 requestSuccsessful = digitalSTROMClient.turnDeviceOff(connMan.getSessionToken(),
                                         device.getDSID(), null);
                                 if (requestSuccsessful) {
@@ -712,127 +841,50 @@ public class DeviceStatusManagerImpl implements DeviceStatusManager {
                                 if (sensorJobExecutor != null) {
                                     sensorJobExecutor.removeSensorJobs(device);
                                 }
+                            }
+                            break;
+                        case DeviceStateUpdate.UPDATE_CALL_SCENE:
+                            if (SceneEnum.getScene((short) deviceStateUpdate.getValue()) != null) {
+                                requestSuccsessful = digitalSTROMClient.callDeviceScene(connMan.getSessionToken(),
+                                        device.getDSID(), null,
+                                        SceneEnum.getScene((short) deviceStateUpdate.getValue()), true);
+                            }
+                            break;
+                        case DeviceStateUpdate.UPDATE_UNDO_SCENE:
+                            if (SceneEnum.getScene((short) deviceStateUpdate.getValue()) != null) {
+                                requestSuccsessful = digitalSTROMClient.undoDeviceScene(connMan.getSessionToken(),
+                                        device.getDSID(), SceneEnum.getScene((short) deviceStateUpdate.getValue()));
+                            }
+                            break;
+                        case DeviceStateUpdate.UPDATE_SLAT_ANGLE_DECREASE:
+                            // By UPDATE_SLAT_ANGLE_DECREASE, UPDATE_SLAT_ANGLE_INCREASE with value unequal 1 which will
+                            // handle in the pollingRunnable and UPDATE_OPEN_CLOSE_ANGLE the value will be set without
+                            // checking, because it was triggered by setting the slat position.
+                            requestSuccsessful = true;
+                            break;
+                        case DeviceStateUpdate.UPDATE_SLAT_ANGLE_INCREASE:
+                            requestSuccsessful = true;
+                            break;
+                        case DeviceStateUpdate.UPDATE_OPEN_CLOSE_ANGLE:
+                            requestSuccsessful = true;
+                            break;
+                        case DeviceStateUpdate.UPDATE_SLAT_ANGLE:
+                            if (device.getAnglePosition() != deviceStateUpdate.getValueAsInteger()) {
+                                requestSuccsessful = digitalSTROMClient.setDeviceOutputValue(connMan.getSessionToken(),
+                                        device.getDSID(), null, DeviceConstants.DEVICE_SENSOR_SLAT_ANGLE_OUTPUT,
+                                        deviceStateUpdate.getValueAsInteger());
                             } else {
                                 commandHaveNoEffect = true;
                             }
-                        }
-                        break;
-                    case DeviceStateUpdate.UPDATE_SLATPOSITION:
-                        if (device.getSlatPosition() != deviceStateUpdate.getValue()) {
-                            requestSuccsessful = digitalSTROMClient.setDeviceOutputValue(connMan.getSessionToken(),
-                                    device.getDSID(), null, DeviceConstants.DEVICE_SENSOR_SLAT_POSITION_OUTPUT,
-                                    deviceStateUpdate.getValue());
-                        } else {
-                            commandHaveNoEffect = true;
-                        }
-                        break;
-                    case DeviceStateUpdate.UPDATE_SLAT_STOP:
-                        this.sendStopComandsToDSS(device);
-                        break;
-                    case DeviceStateUpdate.UPDATE_SLAT_MOVE:
-                        if (deviceStateUpdate.getValue() > 0) {
-                            requestSuccsessful = digitalSTROMClient.turnDeviceOn(connMan.getSessionToken(),
-                                    device.getDSID(), null);
-                            if (requestSuccsessful) {
-                                sceneMan.addEcho(device.getDSID().getValue(), SceneEnum.MAXIMUM.getSceneNumber());
-                            }
-                        } else {
-                            requestSuccsessful = digitalSTROMClient.turnDeviceOff(connMan.getSessionToken(),
-                                    device.getDSID(), null);
-                            if (requestSuccsessful) {
-                                sceneMan.addEcho(device.getDSID().getValue(), SceneEnum.MINIMUM.getSceneNumber());
-                            }
-                            if (sensorJobExecutor != null) {
-                                sensorJobExecutor.removeSensorJobs(device);
-                            }
-                        }
-                        break;
-                    case DeviceStateUpdate.UPDATE_CALL_SCENE:
-                        if (SceneEnum.getScene((short) deviceStateUpdate.getValue()) != null) {
-                            requestSuccsessful = digitalSTROMClient.callDeviceScene(connMan.getSessionToken(),
-                                    device.getDSID(), null, SceneEnum.getScene((short) deviceStateUpdate.getValue()),
-                                    true);
-                        }
-                        break;
-                    case DeviceStateUpdate.UPDATE_UNDO_SCENE:
-                        if (SceneEnum.getScene((short) deviceStateUpdate.getValue()) != null) {
-                            requestSuccsessful = digitalSTROMClient.undoDeviceScene(connMan.getSessionToken(),
-                                    device.getDSID(), SceneEnum.getScene((short) deviceStateUpdate.getValue()));
-                        }
-                        break;
-                    case DeviceStateUpdate.UPDATE_ACTIVE_POWER:
-                        if (deviceStateUpdate.getValue() == 0) {
-                            logger.debug("Device need active power SensorData update");
-                            updateSensorData(new DeviceConsumptionSensorJob(device, SensorEnum.ACTIVE_POWER),
-                                    device.getActivePowerRefreshPriority());
+                            break;
+                        case DeviceStateUpdate.REFRESH_OUTPUT:
+                            readOutputValue(device);
+                            logger.debug("Inizalize output value reading for device with dSID {}.",
+                                    device.getDSID().getValue());
                             return;
-                        } else {
-                            int consumption = this.digitalSTROMClient.getDeviceSensorValue(connMan.getSessionToken(),
-                                    device.getDSID(), null, SensorEnum.ACTIVE_POWER);
-                            if (consumption >= 0) {
-                                device.updateInternalDeviceState(
-                                        new DeviceStateUpdateImpl(DeviceStateUpdate.UPDATE_ACTIVE_POWER, consumption));
-                                requestSuccsessful = true;
-                            }
-                        }
-                    case DeviceStateUpdate.UPDATE_OUTPUT_CURRENT:
-                        if (deviceStateUpdate.getValue() == 0) {
-                            logger.debug("Device need output current SensorData update");
-                            updateSensorData(new DeviceConsumptionSensorJob(device, SensorEnum.OUTPUT_CURRENT),
-                                    device.getOutputCurrentRefreshPriority());
+                        default:
                             return;
-                        } else {
-                            int consumption = this.digitalSTROMClient.getDeviceSensorValue(connMan.getSessionToken(),
-                                    device.getDSID(), null, SensorEnum.OUTPUT_CURRENT);
-                            if (consumption >= 0) {
-                                device.updateInternalDeviceState(new DeviceStateUpdateImpl(
-                                        DeviceStateUpdate.UPDATE_OUTPUT_CURRENT, consumption));
-                                requestSuccsessful = true;
-                            }
-                        }
-                    case DeviceStateUpdate.UPDATE_ELECTRIC_METER:
-                        if (deviceStateUpdate.getValue() == 0) {
-                            logger.debug("Device need electric meter SensorData update");
-                            updateSensorData(new DeviceConsumptionSensorJob(device, SensorEnum.ELECTRIC_METER),
-                                    device.getElectricMeterRefreshPriority());
-                            return;
-                        } else {
-                            int consumption = this.digitalSTROMClient.getDeviceSensorValue(connMan.getSessionToken(),
-                                    device.getDSID(), null, SensorEnum.ELECTRIC_METER);
-                            if (consumption >= 0) {
-                                device.updateInternalDeviceState(new DeviceStateUpdateImpl(
-                                        DeviceStateUpdate.UPDATE_ELECTRIC_METER, consumption));
-                                requestSuccsessful = true;
-                            }
-                        }
-                    case DeviceStateUpdate.UPDATE_SLAT_ANGLE_DECREASE:
-                        // By UPDATE_SLAT_ANGLE_DECREASE, UPDATE_SLAT_ANGLE_INCREASE with value unequal 1 which will
-                        // handle in the pollingRunnable and UPDATE_OPEN_CLOSE_ANGLE the value will be set without
-                        // checking, because it was triggered by setting the slat position.
-                        requestSuccsessful = true;
-                        break;
-                    case DeviceStateUpdate.UPDATE_SLAT_ANGLE_INCREASE:
-                        requestSuccsessful = true;
-                        break;
-                    case DeviceStateUpdate.UPDATE_OPEN_CLOSE_ANGLE:
-                        requestSuccsessful = true;
-                        break;
-                    case DeviceStateUpdate.UPDATE_SLAT_ANGLE:
-                        if (device.getAnglePosition() != deviceStateUpdate.getValue()) {
-                            requestSuccsessful = digitalSTROMClient.setDeviceOutputValue(connMan.getSessionToken(),
-                                    device.getDSID(), null, DeviceConstants.DEVICE_SENSOR_SLAT_ANGLE_OUTPUT,
-                                    deviceStateUpdate.getValue());
-                        } else {
-                            commandHaveNoEffect = true;
-                        }
-                        break;
-                    case DeviceStateUpdate.REFRESH_OUTPUT:
-                        readOutputValue(device);
-                        logger.debug("Inizalize output value reading for device with dSID {}.",
-                                device.getDSID().getValue());
-                        return;
-                    default:
-                        return;
+                    }
                 }
                 if (commandHaveNoEffect) {
                     logger.debug("Command {} for device with dSID {} not send to dSS, because it has no effect!",
@@ -879,8 +931,9 @@ public class DeviceStatusManagerImpl implements DeviceStatusManager {
             this.sceneJobExecutor.startExecutor();
         }
 
+        // TODO: auf Short[] umstellen
         if (deviceStateUpdate != null) {
-            if (deviceStateUpdate.getValue() < 1000) {
+            if (deviceStateUpdate.getValueAsInteger() < 1000) {
                 if (deviceStateUpdate.getType().equals(DeviceStateUpdate.UPDATE_SCENE_OUTPUT)) {
                     sceneJobExecutor.addHighPriorityJob(
                             new SceneOutputValueReadingJob(device, (short) deviceStateUpdate.getValue()));
@@ -891,28 +944,28 @@ public class DeviceStatusManagerImpl implements DeviceStatusManager {
                     sceneJobExecutor.addHighPriorityJob(
                             new SceneConfigReadingJob(device, (short) deviceStateUpdate.getValue()));
                 }
-            } else if (deviceStateUpdate.getValue() < 2000) {
+            } else if (deviceStateUpdate.getValueAsInteger() < 2000) {
                 if (deviceStateUpdate.getType().equals(DeviceStateUpdate.UPDATE_SCENE_OUTPUT)) {
-                    sceneJobExecutor.addMediumPriorityJob(
-                            new SceneOutputValueReadingJob(device, (short) (deviceStateUpdate.getValue() - 1000)));
+                    sceneJobExecutor.addMediumPriorityJob(new SceneOutputValueReadingJob(device,
+                            (short) (deviceStateUpdate.getValueAsInteger() - 1000)));
                 } else {
                     sceneJobExecutor.addMediumPriorityJob(
-                            new SceneConfigReadingJob(device, (short) (deviceStateUpdate.getValue() - 1000)));
+                            new SceneConfigReadingJob(device, (short) (deviceStateUpdate.getValueAsInteger() - 1000)));
                 }
-            } else if (deviceStateUpdate.getValue() >= 2000 && deviceStateUpdate.getValue() < 3000) {
+            } else if (deviceStateUpdate.getValueAsInteger() >= 2000 && deviceStateUpdate.getValueAsInteger() < 3000) {
                 if (deviceStateUpdate.getType().equals(DeviceStateUpdate.UPDATE_SCENE_OUTPUT)) {
-                    sceneJobExecutor.addLowPriorityJob(
-                            new SceneOutputValueReadingJob(device, (short) (deviceStateUpdate.getValue() - 2000)));
+                    sceneJobExecutor.addLowPriorityJob(new SceneOutputValueReadingJob(device,
+                            (short) (deviceStateUpdate.getValueAsInteger() - 2000)));
                 } else {
                     sceneJobExecutor.addLowPriorityJob(
-                            new SceneConfigReadingJob(device, (short) (deviceStateUpdate.getValue() - 2000)));
+                            new SceneConfigReadingJob(device, (short) (deviceStateUpdate.getValueAsInteger() - 2000)));
                 }
             } else {
                 System.err.println("Sensor data update priority do not exist! Please check the input!");
                 return;
             }
             logger.debug("Add new sceneReadingJob with priority: {} to SceneReadingJobExecuter",
-                    new Integer(deviceStateUpdate.getValue()).toString().charAt(0));
+                    new Integer(deviceStateUpdate.getValueAsInteger()).toString().charAt(0));
         }
     }
 

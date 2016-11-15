@@ -34,7 +34,6 @@ public enum JSONApiResponseKeysEnum {
     // device
     CONSUMPTION("consumption"),
     SENSOR_VALUE("sensorValue"),
-    TYPE_TYPE("sensorType"),
     SENSOR_INDEX("sensorIndex"),
     METER_VALUE("meterValue"),
     TYPE("type"),
@@ -72,7 +71,7 @@ public enum JSONApiResponseKeysEnum {
     DSID_LOWER_CASE("dsid"),
     METER_DSID("meterDSID"),
     ZONE_ID("ZoneID"),
-    ZONE_ID_UPPER_Z("zoneID"),
+    ZONE_ID_Lower_Z("zoneID"),
     DSUID_LOWER_CASE("dsuid"),
     GROUP_ID("groupID"),
     METER_ID("meterID"),
@@ -84,7 +83,7 @@ public enum JSONApiResponseKeysEnum {
     // DEVICE
     // status
     IS_PRESENT("isPresent"),
-    IS_VALIDE("isValid"),
+    IS_VALID("isValid"),
     IS_ON("isOn"),
     PRESENT("present"),
     ON("on"),
@@ -194,7 +193,14 @@ public enum JSONApiResponseKeysEnum {
     VDC_HARDWARE_MODEL_GUID("VdcHardwareModelGuid"),
     VDC_VENDOR_GUID("VdcVendorGuid"),
     VDC_OEM_GUID("VdcOemGuid"),
-    IGNORE_ACTIONS_FROM_NEW_DEVICES("ignoreActionsFromNewDevices");
+    IGNORE_ACTIONS_FROM_NEW_DEVICES("ignoreActionsFromNewDevices"),
+
+    DS_METER_DSID("DSMeterDSID"),
+    HW_INFO_UPPER_HW("HWInfo"),
+    VALID("valid"),
+    VALUE_DS("valueDS"),
+    TIMESTAMP("timestamp"),
+    SENSOR_INPUTS("sensorInputs");
 
     private final String key;
 

@@ -1,6 +1,6 @@
 package org.eclipse.smarthome.binding.digitalstrom.internal.lib.climate.jsonResponseContainer.impl;
 
-import org.eclipse.smarthome.binding.digitalstrom.internal.lib.climate.jsonResponseContainer.TemperatureControl;
+import org.eclipse.smarthome.binding.digitalstrom.internal.lib.climate.jsonResponseContainer.BaseTemperatureControl;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.serverConnection.constants.JSONApiResponseKeysEnum;
 
 import com.google.gson.JsonObject;
@@ -14,7 +14,7 @@ import com.google.gson.JsonObject;
  * @author Michael Ochel - Initial contribution
  * @author Matthias Siegele - Initial contribution
  */
-public class TemperatureControlInternals extends TemperatureControl {
+public class TemperatureControlInternals extends BaseTemperatureControl {
 
     private Short controlState;
     private Float ctrlTRecent;
@@ -80,7 +80,7 @@ public class TemperatureControlInternals extends TemperatureControl {
 
     /**
      * Returns the controleState for heating of the zone.
-     * 
+     *
      * @return the controlState
      */
     public Short getControlState() {

@@ -5,6 +5,7 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
+import org.eclipse.smarthome.binding.digitalstrom.internal.lib.climate.dataTypes.CachedSensorValue;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.climate.jsonResponseContainer.BaseSensorValues;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.serverConnection.constants.JSONApiResponseKeysEnum;
 import org.slf4j.Logger;
@@ -12,6 +13,14 @@ import org.slf4j.LoggerFactory;
 
 import com.google.gson.JsonObject;
 
+/**
+ * The {@link WeatherSensorData} acts as container for the digitalSTROM json-method <i>getSensorValues</i>. The
+ * {@link WeatherSensorData} contains all {@link CachedSensorValue}s and weather service information of the
+ * digitalSTROM-server, if a weather service is set.
+ *
+ * @author Michael Ochel - Initial contribution
+ * @author Matthias Siegele - Initial contribution
+ */
 public class WeatherSensorData extends BaseSensorValues {
 
     private Logger logger = LoggerFactory.getLogger(WeatherSensorData.class);
@@ -21,6 +30,11 @@ public class WeatherSensorData extends BaseSensorValues {
     private String weatherServiceId = null;
     private String weatherServiceTime = null;
 
+    /**
+     * Creates a new {@link SensorValues} through the {@link JsonObject} that will be returned by an apartment call.
+     *
+     * @param jObject must not be null
+     */
     public WeatherSensorData(JsonObject jObject) {
         super.addSensorValue(jObject, true);
         if (jObject.get(JSONApiResponseKeysEnum.WEATHER_ICON_ID.getKey()) != null) {
@@ -38,6 +52,8 @@ public class WeatherSensorData extends BaseSensorValues {
     }
 
     /**
+     * Returns the weather icon id of the set weather service.
+     *
      * @return the weatherIconId
      */
     public String getWeatherIconId() {
@@ -45,6 +61,8 @@ public class WeatherSensorData extends BaseSensorValues {
     }
 
     /**
+     * Returns the weather condition id of the set weather service.
+     *
      * @return the weatherConditionId
      */
     public String getWeatherConditionId() {
@@ -52,6 +70,8 @@ public class WeatherSensorData extends BaseSensorValues {
     }
 
     /**
+     * Returns the weather service id of the set weather service.
+     *
      * @return the weatherServiceId
      */
     public String getWeatherServiceId() {
@@ -59,6 +79,8 @@ public class WeatherSensorData extends BaseSensorValues {
     }
 
     /**
+     * Returns the weather service time as {@link String} of the set weather service.
+     *
      * @return the weatherServiceTime as {@link String}
      */
     public String getWeatherServiceTimeAsSting() {
@@ -66,6 +88,8 @@ public class WeatherSensorData extends BaseSensorValues {
     }
 
     /**
+     * Returns the weather service time as {@link Date} of the set weather service.
+     *
      * @return the weatherServiceTime as {@link Date}
      */
     public Date getWeatherServiceTimeAsDate() {

@@ -9,6 +9,7 @@ package org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.device
 
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.sensorJobExecutor.SensorJobExecutor;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.sensorJobExecutor.sensorJob.SensorJob;
+import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.constants.SensorEnum;
 
 /**
  * Represents a device state update for lights, joker, shades and sensor data.
@@ -41,10 +42,11 @@ public interface DeviceStateUpdate {
     public final static String UPDATE_SLAT_STOP = "slatStop";
 
     // sensor data
-    public final static String UPDATE_ACTIVE_POWER = "activePower";
-    public final static String UPDATE_OUTPUT_CURRENT = "outputCurrent";
-    public final static String UPDATE_ELECTRIC_METER = "electricMeter";
+    // public final static String UPDATE_ACTIVE_POWER = "activePower";
+    // public final static String UPDATE_OUTPUT_CURRENT = "outputCurrent";
+    // public final static String UPDATE_ELECTRIC_METER = "electricMeter";
     public final static String UPDATE_OUTPUT_VALUE = "outputValue";
+    public final static String UPDATE_DEVICE_SENSOR = "deviceSensor-";
 
     // scene
     /** A scene call can have the value between 0 and 127. */
@@ -56,6 +58,10 @@ public interface DeviceStateUpdate {
     // general
     /** command to refresh the output value of an device. */
     public static final String REFRESH_OUTPUT = "refreshOutput";
+
+    // standard values
+    public static final int ON_VALUE = 1;
+    public static final int OFF_VALUE = -1;
 
     /**
      * Returns the state update value.
@@ -73,7 +79,17 @@ public interface DeviceStateUpdate {
      *
      * @return new state value
      */
-    public int getValue();
+    public Object getValue();
+
+    public Integer getValueAsInteger();
+
+    public String getValueAsString();
+
+    public Short getValueAsShort();
+
+    public Float getValueAsFloat();
+
+    public Short[] getValueAsShortArray();
 
     /**
      * Returns the state update type.
@@ -81,4 +97,8 @@ public interface DeviceStateUpdate {
      * @return state update type
      */
     public String getType();
+
+    SensorEnum getTypeAsSensorEnum();
+
+    boolean isSensorUpdateType();
 }

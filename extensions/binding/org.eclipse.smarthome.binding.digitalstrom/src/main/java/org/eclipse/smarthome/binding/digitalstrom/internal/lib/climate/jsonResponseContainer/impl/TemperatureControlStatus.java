@@ -5,7 +5,7 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
-import org.eclipse.smarthome.binding.digitalstrom.internal.lib.climate.jsonResponseContainer.TemperatureControl;
+import org.eclipse.smarthome.binding.digitalstrom.internal.lib.climate.jsonResponseContainer.BaseTemperatureControl;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.serverConnection.constants.JSONApiResponseKeysEnum;
 
 import com.google.gson.JsonObject;
@@ -18,7 +18,7 @@ import com.google.gson.JsonObject;
  * @author Michael Ochel - Initial contribution
  * @author Matthias Siegele - Initial contribution
  */
-public class TemperatureControlStatus extends TemperatureControl {
+public class TemperatureControlStatus extends BaseTemperatureControl {
 
     DateFormat formatter = new SimpleDateFormat("yyyy-MM-dd'T'hh:mm:ss");
 

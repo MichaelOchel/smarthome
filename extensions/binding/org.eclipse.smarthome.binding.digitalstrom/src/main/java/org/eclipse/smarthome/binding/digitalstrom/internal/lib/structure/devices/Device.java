@@ -11,11 +11,13 @@ import java.util.List;
 import java.util.Map;
 
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.config.Config;
-import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.DSID;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.DeviceSceneSpec;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.DeviceStateUpdate;
-import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.FunctionalColorGroupEnum;
-import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.OutputModeEnum;
+import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.constants.FunctionalColorGroupEnum;
+import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.constants.OutputModeEnum;
+import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.constants.SensorEnum;
+import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.impl.DSID;
+import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.impl.DeviceSensorValue;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.scene.InternalScene;
 
 /**
@@ -209,42 +211,42 @@ public interface Device extends GeneralDeviceInformations {
      *
      * @return current power consumption in watt
      */
-    public int getActivePower();
+    // public int getActivePower();
 
     /**
      * Sets the current power consumption in watt to the given power consumption.
      *
      * @param powerConsumption in watt
      */
-    public void setActivePower(int powerConsumption);
+    // public void setActivePower(int powerConsumption);
 
     /**
      * Returns the energy meter value in watt per hour of this device.
      *
      * @return energy meter value in watt per hour
      */
-    public int getOutputCurrent();
+    // public int getOutputCurrent();
 
     /**
      * Sets the last recorded energy meter value in watt per hour of this device.
      *
      * @param energy meter value in watt per hour
      */
-    public void setOutputCurrent(int value);
+    // public void setOutputCurrent(int value);
 
     /**
      * Returns the last recorded electric meter value in ampere of this device.
      *
      * @return electric meter value in ampere
      */
-    public int getElectricMeter();
+    // public int getElectricMeter();
 
     /**
      * Sets the last recorded electric meter value in ampere of this device.
      *
      * @param electric meter value in mA
      */
-    public void setElectricMeter(int electricMeterValue);
+    // public void setElectricMeter(int electricMeterValue);
 
     /**
      * Returns a list with group id's in which the device is part of.
@@ -330,21 +332,21 @@ public interface Device extends GeneralDeviceInformations {
      *
      * @return is up to date (true = yes | false = no)
      */
-    public boolean isActivePowerUpToDate();
+    // public boolean isActivePowerUpToDate();
 
     /**
      * Returns true, if the electric meter is up to date or false if it has to be updated.
      *
      * @return is up to date (true = yes | false = no)
      */
-    public boolean isElectricMeterUpToDate();
+    // public boolean isElectricMeterUpToDate();
 
     /**
      * Returns true, if the energy meter is up to date or false if it has to be updated.
      *
      * @return is up to date (true = yes | false = no)
      */
-    public boolean isOutputCurrentUpToDate();
+    // public boolean isOutputCurrentUpToDate();
 
     /**
      * Returns true, if all sensor data are up to date or false if some have to be updated.
@@ -369,21 +371,21 @@ public interface Device extends GeneralDeviceInformations {
      *
      * @return power consumption refresh priority
      */
-    public String getActivePowerRefreshPriority();
+    // public String getActivePowerRefreshPriority();
 
     /**
      * Returns the priority of the electric meter refresh.
      *
      * @return electric meter refresh priority
      */
-    public String getElectricMeterRefreshPriority();
+    // public String getElectricMeterRefreshPriority();
 
     /**
      * Returns the priority of the energy meter refresh.
      *
      * @return energy meter refresh priority
      */
-    public String getOutputCurrentRefreshPriority();
+    // public String getOutputCurrentRefreshPriority();
 
     /**
      * Returns true, if the device is up to date.
@@ -564,4 +566,56 @@ public interface Device extends GeneralDeviceInformations {
      * Adds a slat decrease command as {@link DeviceStateUpdate} to the list of outstanding commands.
      */
     public void decreaseSlatAngle();
+
+    void saveConfigSceneSpecificationIntoDevice(String propertries);
+
+    boolean isSensorDevice();
+
+    boolean isHeatingDevice();
+
+    void setSensorDataRefreshPriority(SensorEnum powerSensorType, String refreshPriority);
+
+    String getPowerSensorRefreshPriority(SensorEnum powerSensorType);
+
+    List<SensorEnum> getPowerSensorTypes();
+
+    List<SensorEnum> getClimateSensorTypesTypes();
+
+    List<DeviceSensorValue> getDeviceSensorValues();
+
+    void setDeviceSensorValue(DeviceSensorValue deviceSensorValue);
+
+    DeviceSensorValue getDeviceSensorValue(SensorEnum sensorType);
+
+    DeviceSensorValue getDeviceSensorValue(Short sensorIndex);
+
+    Short getSensorIndex(SensorEnum sensorType);
+
+    SensorEnum getSensorType(Short sensorIndex);
+
+    Integer getDsSensorValue(SensorEnum sensorType);
+
+    Integer getDsSensorValue(Short sensorIndex);
+
+    Float getFloatSensorValue(SensorEnum sensorType);
+
+    Float getFloatSensorValue(Short sensorIndex);
+
+    boolean setFloatSensorValue(SensorEnum sensorType, Float floatSensorValue);
+
+    boolean setFloatSensorValue(Short sensorIndex, Float floatSensorValue);
+
+    boolean setDsSensorValue(Short sensorIndex, Integer dSSensorValue);
+
+    boolean setDsSensorValue(SensorEnum sensorType, Integer dSSensorValue);
+
+    boolean setDsSensorValue(Short sensorIndex, Integer dSSensorValue, Float floatSensorValue);
+
+    boolean setDsSensorValue(SensorEnum sensorType, Integer dSSensorValue, Float floatSensorValue);
+
+    boolean hasSensors();
+
+    boolean hasClimateSensors();
+
+    boolean hasPowerSensors();
 }

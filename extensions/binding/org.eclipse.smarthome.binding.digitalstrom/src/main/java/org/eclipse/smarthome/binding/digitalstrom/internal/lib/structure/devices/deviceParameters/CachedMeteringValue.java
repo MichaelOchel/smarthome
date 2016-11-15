@@ -9,6 +9,10 @@ package org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.device
 
 import java.util.Date;
 
+import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.constants.MeteringTypeEnum;
+import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.constants.MeteringUnitsEnum;
+import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.impl.DSID;
+
 /**
  * The {@link CachedMeteringValue} saves the metering value of an digitalSTROM-Circuit.
  *

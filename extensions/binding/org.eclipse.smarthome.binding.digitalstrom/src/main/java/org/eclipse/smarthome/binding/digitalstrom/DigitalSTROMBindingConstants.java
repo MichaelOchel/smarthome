@@ -114,7 +114,7 @@ public class DigitalSTROMBindingConstants {
     public static final String PASSWORD = "password";
     public static final String APPLICATION_TOKEN = "applicationToken";
     public static final String DS_ID = "dSID";
-    public static final String DS_NAME = "dsName";
+    public static final String DS_NAME = "dS-Installation-Name";
     public static final String SENSOR_DATA_UPDATE_INTERVAL = "sensorDataUpdateInterval";
     public static final String TOTAL_POWER_UPDATE_INTERVAL = "totalPowerUpdateInterval";
     public static final String DEFAULT_TRASH_DEVICE_DELETE_TIME_KEY = "defaultTrashBinDeleteTime";
@@ -122,7 +122,7 @@ public class DigitalSTROMBindingConstants {
 
     public static final String SERVER_CERT = "serverCert";
 
-    /* Device config properties */
+    /* Device info properties */
 
     public static final String DEVICE_UID = "dSUID";
     public static final String DEVICE_NAME = "deviceName";

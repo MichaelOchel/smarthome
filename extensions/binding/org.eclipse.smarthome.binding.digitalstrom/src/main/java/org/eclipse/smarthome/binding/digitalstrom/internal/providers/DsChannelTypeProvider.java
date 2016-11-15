@@ -13,7 +13,7 @@ import java.util.List;
 import java.util.Locale;
 
 import org.eclipse.smarthome.binding.digitalstrom.DigitalSTROMBindingConstants;
-import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.SensorEnum;
+import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.constants.SensorEnum;
 import org.eclipse.smarthome.core.i18n.I18nProvider;
 import org.eclipse.smarthome.core.thing.type.ChannelGroupType;
 import org.eclipse.smarthome.core.thing.type.ChannelGroupTypeUID;

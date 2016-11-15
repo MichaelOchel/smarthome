@@ -33,17 +33,16 @@ import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.Apartme
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.Circuit;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.Device;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.CachedMeteringValue;
-import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.DSID;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.DeviceConfig;
-import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.DeviceParameterClassEnum;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.DeviceSceneSpec;
-import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.JSONCachedMeteringValueImpl;
-import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.JSONDeviceConfigImpl;
-import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.JSONDeviceSceneSpecImpl;
-import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.MeteringTypeEnum;
-import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.MeteringUnitsEnum;
-import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.SensorEnum;
-import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.SensorIndexEnum;
+import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.constants.DeviceParameterClassEnum;
+import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.constants.MeteringTypeEnum;
+import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.constants.MeteringUnitsEnum;
+import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.constants.SensorEnum;
+import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.impl.DSID;
+import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.impl.JSONCachedMeteringValueImpl;
+import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.impl.JSONDeviceConfigImpl;
+import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.impl.JSONDeviceSceneSpecImpl;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.impl.CircuitImpl;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.impl.DeviceImpl;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.impl.JSONApartmentImpl;
@@ -402,32 +401,34 @@ public class DsAPIImpl implements DsAPI {
         return null;
     }
 
-    @Override
-    public short getDeviceSensorValue(String token, DSID dsid, String name, SensorEnum sensorType) {
-        if (((dsid != null && dsid.getValue() != null) || name != null) && sensorType != null) {
-            switch (sensorType) {
-                case ACTIVE_POWER:
-                    return getDeviceSensorValue(token, dsid, name, SensorIndexEnum.ACTIVE_POWER);
-                case ELECTRIC_METER:
-                    return getDeviceSensorValue(token, dsid, name, SensorIndexEnum.ELECTRIC_METER);
-                case OUTPUT_CURRENT:
-                    return getDeviceSensorValue(token, dsid, name, SensorIndexEnum.OUTPUT_CURRENT);
-                default:
-                    return -1;
-            }
-        }
-        return -1;
-    }
+    // @Override
+    /*
+     * public short getDeviceSensorValue(String token, DSID dsid, String name, SensorEnum sensorType) {
+     * if (((dsid != null && dsid.getValue() != null) || name != null) && sensorType != null) {
+     * switch (sensorType) {
+     * case ACTIVE_POWER:
+     * return getDeviceSensorValue(token, dsid, name, SensorIndexEnum.ACTIVE_POWER);
+     * case ELECTRIC_METER:
+     * return getDeviceSensorValue(token, dsid, name, SensorIndexEnum.ELECTRIC_METER);
+     * case OUTPUT_CURRENT:
+     * return getDeviceSensorValue(token, dsid, name, SensorIndexEnum.OUTPUT_CURRENT);
+     * default:
+     * return -1;
+     * }
+     * }
+     * return -1;
+     * }
+     */
 
     @Override
-    public short getDeviceSensorValue(String token, DSID dsid, String name, SensorIndexEnum sensorIndex) {
+    public short getDeviceSensorValue(String token, DSID dsid, String name, Short sensorIndex) {
         if (((getDsidString(dsid) != null) || name != null) && sensorIndex != null) {
             try {
                 String response = transport.execute(SimpleRequestBuilder.buildNewRequest(InterfaceKeys.JSON)
                         .addRequestClass(ClassKeys.DEVICE).addFunction(FunctionKeys.GET_SENSOR_VALUE)
                         .addParameter(ParameterKeys.TOKEN, token).addParameter(ParameterKeys.DSID, getDsidString(dsid))
                         .addParameter(ParameterKeys.NAME, name)
-                        .addParameter(ParameterKeys.SENSOR_INDEX, sensorIndex.getIndex().toString())
+                        .addParameter(ParameterKeys.SENSOR_INDEX, convertShortToString(sensorIndex))
                         .buildRequestString());
                 JsonObject responseObj = JSONResponseHandler.toJsonObject(response);
 
@@ -1413,6 +1414,24 @@ public class DsAPIImpl implements DsAPI {
             String response = transport.execute(
                     SimpleRequestBuilder.buildNewRequest(InterfaceKeys.JSON).addRequestClass(ClassKeys.PROPERTY_TREE)
                             .addFunction(FunctionKeys.QUERY).addParameter(ParameterKeys.QUERY, query)
+                            .addParameter(ParameterKeys.TOKEN, token).buildRequestString());
+
+            JsonObject responseObj = JSONResponseHandler.toJsonObject(response);
+            if (JSONResponseHandler.checkResponse(responseObj)) {
+                return JSONResponseHandler.getResultJsonObject(responseObj);
+            }
+        } catch (Exception e) {
+            logger.debug("An exception occurred", e);
+        }
+        return null;
+    }
+
+    @Override
+    public JsonObject query2(String token, String query) {
+        try {
+            String response = transport.execute(
+                    SimpleRequestBuilder.buildNewRequest(InterfaceKeys.JSON).addRequestClass(ClassKeys.PROPERTY_TREE)
+                            .addFunction(FunctionKeys.QUERY2).addParameter(ParameterKeys.QUERY, query)
                             .addParameter(ParameterKeys.TOKEN, token).buildRequestString());
 
             JsonObject responseObj = JSONResponseHandler.toJsonObject(response);

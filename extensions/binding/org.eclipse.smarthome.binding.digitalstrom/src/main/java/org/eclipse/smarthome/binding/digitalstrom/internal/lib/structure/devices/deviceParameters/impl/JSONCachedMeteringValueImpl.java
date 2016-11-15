@@ -5,7 +5,7 @@
  * which accompanies this distribution, and is available at
  * http://www.eclipse.org/legal/epl-v10.html
  */
-package org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters;
+package org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.impl;
 
 import java.text.DateFormat;
 import java.text.ParseException;
@@ -14,6 +14,9 @@ import java.util.Date;
 
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.climate.dataTypes.CachedSensorValue;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.serverConnection.constants.JSONApiResponseKeysEnum;
+import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.CachedMeteringValue;
+import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.constants.MeteringTypeEnum;
+import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.constants.MeteringUnitsEnum;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -23,8 +26,8 @@ import com.google.gson.JsonObject;
  * The {@link JSONCachedMeteringValueImpl} is the implementation of the {@link CachedMeteringValue}.
  *
  * @author Alexander Betker - Initial contribution
- * @author Michael Ochel - change from SimpleJSON to GSON
- * @author Matthias Siegele - change from SimpleJSON to GSON
+ * @author Michael Ochel - change from SimpleJSON to GSON, add getDateAsDate()
+ * @author Matthias Siegele - change from SimpleJSON to GSON, add getDateAsDate()
  */
 public class JSONCachedMeteringValueImpl implements CachedMeteringValue {
 
