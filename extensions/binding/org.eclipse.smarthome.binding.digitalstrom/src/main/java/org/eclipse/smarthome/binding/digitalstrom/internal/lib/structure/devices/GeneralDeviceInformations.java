@@ -1,7 +1,7 @@
 package org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices;
 
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.listener.DeviceStatusListener;
-import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.DSID;
+import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.impl.DSID;
 
 public interface GeneralDeviceInformations {
 
@@ -40,7 +40,7 @@ public interface GeneralDeviceInformations {
      *
      * @return true, if device is available otherwise false
      */
-    public boolean isPresent();
+    public Boolean isPresent();
 
     /**
      * Sets this device is available in his zone or not.
@@ -70,7 +70,7 @@ public interface GeneralDeviceInformations {
      */
     public boolean isListenerRegisterd();
 
-    public boolean isValide();
+    public Boolean isValide();
 
     public void setIsValide(boolean isPresent);
 

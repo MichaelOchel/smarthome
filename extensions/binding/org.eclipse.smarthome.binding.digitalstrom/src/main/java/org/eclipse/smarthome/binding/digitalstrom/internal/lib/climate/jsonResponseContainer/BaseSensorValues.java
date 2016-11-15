@@ -5,14 +5,27 @@ import java.util.List;
 
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.climate.dataTypes.CachedSensorValue;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.serverConnection.constants.JSONApiResponseKeysEnum;
-import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.SensorEnum;
+import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.constants.SensorEnum;
 
 import com.google.gson.JsonObject;
 
+/**
+ * The {@link BaseSensorValues} is a base implementation of sensor response of the digitalSTROM-json-API.
+ *
+ * @author Michael Ochel - Initial contribution
+ * @author Matthias Siegele - Initial contribution
+ */
 public abstract class BaseSensorValues {
 
     private List<CachedSensorValue> sensorValues = null;
 
+    /**
+     * Adds a sensor value through the digitalSTROM-API response as {@link JsonObject}. The boolean outdoor has to be
+     * set to indicate that it is an outdoor or indoor value (needed to choose the right sensor type).
+     *
+     * @param jObject must not be null
+     * @param outdoor (true = outdoor; false = indoor)
+     */
     protected void addSensorValue(JsonObject jObject, boolean outdoor) {
         if (jObject.get(JSONApiResponseKeysEnum.TEMPERATION_VALUE.getKey()) != null) {
             SensorEnum sensorType = SensorEnum.TEMPERATURE_INDOORS;
@@ -57,6 +70,11 @@ public abstract class BaseSensorValues {
         }
     }
 
+    /**
+     * Returns the available sensor types.
+     *
+     * @return available sensor types
+     */
     public List<SensorEnum> getAvailableSensorTypes() {
         List<SensorEnum> sensorTypes = new LinkedList<SensorEnum>();
         if (sensorValues != null) {
@@ -67,10 +85,22 @@ public abstract class BaseSensorValues {
         return sensorTypes;
     }
 
+    /**
+     * Returns the {@link CachedSensorValue}'s as {@link List}.
+     *
+     * @return list of {@link CachedSensorValue}'s
+     */
     public List<CachedSensorValue> getCachedSensorValues() {
         return sensorValues;
     }
 
+    /**
+     * Returns the {@link CachedSensorValue} of the given sensor type or null, if no {@link CachedSensorValue} for the
+     * given sensor type exists.
+     *
+     * @param sensorType
+     * @return the {@link CachedSensorValue} of the given sensorType or null
+     */
     public CachedSensorValue getCachedSensorValue(SensorEnum sensorType) {
         if (sensorType != null && sensorValues != null) {
             for (CachedSensorValue cSensorValue : sensorValues) {
@@ -82,6 +112,12 @@ public abstract class BaseSensorValues {
         return null;
     }
 
+    /**
+     * Returns true, if the given sensor type exist, otherwise false.
+     * 
+     * @param sensorType
+     * @return true, if the given sensor type exist, otherwise false
+     */
     public boolean existSensorValue(SensorEnum sensorType) {
         return getCachedSensorValue(sensorType) != null;
     }

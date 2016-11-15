@@ -17,7 +17,6 @@ import com.google.gson.JsonObject;
  *
  * @author Michael Ochel - Initial contribution
  * @author Matthias Siegele - Initial contribution
- *
  */
 public class SensorValues extends BaseSensorValues implements ZoneIdentifier {
 

@@ -26,7 +26,7 @@ import org.eclipse.smarthome.binding.digitalstrom.internal.lib.manager.Connectio
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.manager.SceneManager;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.manager.StructureManager;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.Device;
-import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.DSID;
+import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.impl.DSID;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.scene.InternalScene;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.scene.SceneDiscovery;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.scene.constants.SceneEnum;
@@ -78,10 +78,12 @@ public class SceneManagerImpl implements SceneManager, EventHandler {
 
     @Override
     public void start() {
+        logger.debug("start SceneManager");
         if (eventListener == null) {
             eventListener = new EventListener(connectionManager, this);
         }
         this.eventListener.start();
+        logger.debug("start SceneManager");
         stateChanged(ManagerStates.RUNNING);
     }
 
@@ -133,8 +135,9 @@ public class SceneManagerImpl implements SceneManager, EventHandler {
             } else {
                 String intSceneID = null;
                 String zoneIDStr = eventItem.getSource().get(EventResponseEnum.ZONEID);
-                String sceneIDStr = eventItem.getSource().get(EventResponseEnum.SCENEID);
                 String groupIDStr = eventItem.getSource().get(EventResponseEnum.GROUPID);
+                String sceneIDStr = eventItem.getProperties().get(EventResponseEnum.SCENEID);
+                logger.debug("event for scene: " + zoneIDStr + "-" + groupIDStr + "-" + sceneIDStr);
 
                 if (zoneIDStr != null && sceneIDStr != null && groupIDStr != null) {
                     intSceneID = zoneIDStr + "-" + groupIDStr + "-" + sceneIDStr;
@@ -443,6 +446,8 @@ public class SceneManagerImpl implements SceneManager, EventHandler {
 
     @Override
     public boolean supportsEvent(String eventName) {
+        logger.debug("supports event? " + SUPPORTED_EVENTS.toString() + " contains " + eventName + " = "
+                + SUPPORTED_EVENTS.contains(eventName));
         return SUPPORTED_EVENTS.contains(eventName);
     }
 

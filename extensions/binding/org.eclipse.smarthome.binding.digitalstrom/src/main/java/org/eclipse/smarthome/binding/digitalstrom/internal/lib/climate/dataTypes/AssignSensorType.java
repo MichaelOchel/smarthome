@@ -1,6 +1,6 @@
 package org.eclipse.smarthome.binding.digitalstrom.internal.lib.climate.dataTypes;
 
-import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.SensorEnum;
+import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.constants.SensorEnum;
 
 /**
  * The {@link AssignSensorType} assigns a sensor type of a zone to the dSUID of the sensor-device.

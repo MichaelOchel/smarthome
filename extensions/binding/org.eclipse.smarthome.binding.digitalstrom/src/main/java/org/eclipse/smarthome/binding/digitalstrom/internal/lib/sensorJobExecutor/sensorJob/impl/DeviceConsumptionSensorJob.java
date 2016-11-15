@@ -10,10 +10,8 @@ package org.eclipse.smarthome.binding.digitalstrom.internal.lib.sensorJobExecuto
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.sensorJobExecutor.sensorJob.SensorJob;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.serverConnection.DsAPI;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.Device;
-import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.DSID;
-import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.DeviceStateUpdate;
-import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.DeviceStateUpdateImpl;
-import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.SensorEnum;
+import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.constants.SensorEnum;
+import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.impl.DSID;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -47,24 +45,10 @@ public class DeviceConsumptionSensorJob implements SensorJob {
 
     @Override
     public void execute(DsAPI digitalSTROM, String token) {
-        int consumption = digitalSTROM.getDeviceSensorValue(token, this.device.getDSID(), null, this.sensorType);
+        int consumption = digitalSTROM.getDeviceSensorValue(token, this.device.getDSID(), null,
+                device.getSensorIndex(sensorType));
         logger.debug("Executes {} new device consumption is {}", this.toString(), consumption);
-        switch (this.sensorType) {
-            case ACTIVE_POWER:
-                this.device.updateInternalDeviceState(
-                        new DeviceStateUpdateImpl(DeviceStateUpdate.UPDATE_ACTIVE_POWER, consumption));
-                break;
-            case OUTPUT_CURRENT:
-                this.device.updateInternalDeviceState(
-                        new DeviceStateUpdateImpl(DeviceStateUpdate.UPDATE_OUTPUT_CURRENT, consumption));
-                break;
-            case ELECTRIC_METER:
-                this.device.updateInternalDeviceState(
-                        new DeviceStateUpdateImpl(DeviceStateUpdate.UPDATE_ELECTRIC_METER, consumption));
-                break;
-            default:
-                break;
-        }
+        device.setDsSensorValue(sensorType, consumption);
     }
 
     @Override

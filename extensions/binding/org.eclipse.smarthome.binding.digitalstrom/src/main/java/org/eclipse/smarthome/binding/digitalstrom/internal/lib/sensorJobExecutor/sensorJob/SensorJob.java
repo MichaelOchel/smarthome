@@ -12,7 +12,7 @@ import org.eclipse.smarthome.binding.digitalstrom.internal.lib.sensorJobExecutor
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.sensorJobExecutor.SensorJobExecutor;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.serverConnection.DsAPI;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.Device;
-import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.DSID;
+import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.impl.DSID;
 
 /**
  * The {@link SensorJob} represents an executable job to read out digitalSTROM-Sensors or device configurations like

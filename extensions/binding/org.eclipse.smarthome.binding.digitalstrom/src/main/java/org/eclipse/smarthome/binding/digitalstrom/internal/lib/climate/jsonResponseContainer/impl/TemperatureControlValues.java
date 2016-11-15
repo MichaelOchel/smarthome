@@ -5,7 +5,6 @@ import java.util.Set;
 
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.climate.constants.OperationModes;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.climate.jsonResponseContainer.BaseZoneIdentifier;
-import org.eclipse.smarthome.binding.digitalstrom.internal.lib.climate.jsonResponseContainer.TemperatureControl;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.serverConnection.constants.JSONApiResponseKeysEnum;
 
 import com.google.gson.JsonObject;
@@ -84,25 +83,28 @@ public class TemperatureControlValues extends BaseZoneIdentifier {
     }
 
     /**
+     * Returns the set temperature of the given operation mode.
      *
      * @param operationMode
-     * @return
+     * @return temperature of the operation mode
      */
     public Float getTemperation(OperationModes operationMode) {
         return temperatureControlValues.get(operationMode);
     }
 
     /**
+     * Returns the available operation modes as {@link Set}.
      *
-     * @return
+     * @return available operation modes
      */
     public Set<OperationModes> getOperationModes() {
         return temperatureControlValues.keySet();
     }
 
     /**
+     * Returns a {@link HashMap} that maps the available operation modes to the set values.
      *
-     * @return
+     * @return HashMap with operation modes and their values
      */
     public HashMap<OperationModes, Float> getTemperatureControlValues() {
         return temperatureControlValues;

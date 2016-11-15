@@ -7,7 +7,7 @@ import java.util.List;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.climate.dataTypes.AssignSensorType;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.climate.jsonResponseContainer.BaseZoneIdentifier;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.serverConnection.constants.JSONApiResponseKeysEnum;
-import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.SensorEnum;
+import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.constants.SensorEnum;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;

@@ -18,11 +18,8 @@ import org.eclipse.smarthome.binding.digitalstrom.internal.lib.event.types.Event
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.event.types.EventItem;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.event.types.JSONEventImpl;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.manager.ConnectionManager;
-import org.eclipse.smarthome.binding.digitalstrom.internal.lib.manager.SceneManager;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.serverConnection.constants.JSONApiResponseKeysEnum;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.serverConnection.impl.JSONResponseHandler;
-import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.Device;
-import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.scene.InternalScene;
 import org.eclipse.smarthome.core.common.ThreadPoolManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -31,9 +28,16 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 
 /**
- * If someone call or undo a scene, the {@link SceneManager} will get a notification
- * to update the state of the internal saved {@link InternalScene} or directly the {@link Device}, if it was a
- * device scene.
+ * The {@link EventListener} listens for events which will be thrown by the digitalSTROM-Server and notifies the added
+ * {@link EventHandler} about the detected events, if they supports the event-type.<br>
+ * You can add {@link EventHandler}'s though the constructors or the methods {@link #addEventHandler(EventHandler)} and
+ * {@link #addEventHandlers(List)}.<br>
+ * You can also delete a {@link EventHandler} though the method {@link #removeEventHandler(EventHandler)}.<br>
+ * If the {@link EventListener} is started, both methods subscribe and unsubscribe the event-types of the
+ * {@link EventHandler}/s automatically.<br>
+ * <br>
+ * To start and stop the listening you have to call the methods {@link #start()} and {@link #stop()}. The methods
+ * subscribe and unsubscribe the supported event-types of the added {@link EventHandler}'s automatically.
  *
  * @author Michael Ochel - Initial contribution
  * @author Matthias Siegele - Initial contribution
@@ -46,7 +50,7 @@ public class EventListener {
 
     private int subscriptionID = 15;
     private int timeout = 500;
-    List<String> subscribeEvents;
+    private List<String> subscribedEvents = null;
     private boolean subscribed = false;
 
     // error message
@@ -58,8 +62,10 @@ public class EventListener {
     private Config config;
 
     /**
-     * Creates a new {@link EventListener}. To get notified by call and undo scene events you have to call
-     * {@link #start()}.
+     * Creates a new {@link EventListener} to listen to the supported event-types of the given eventHandler and notify
+     * about a detected event.<br>
+     * <br>
+     * To get notified by events you have to call {@link #start()}.
      *
      * @param connectionManager must not be null
      * @param eventHandler must not be null
@@ -70,6 +76,13 @@ public class EventListener {
         addEventHandler(eventHandler);
     }
 
+    /**
+     * This constructor can add more than one {@link EventHandler} as a list of {@link EventHandler}'s.
+     *
+     * @param connectionManager must not be null
+     * @param list of eventHandlers must not be null
+     * @see #EventListener(ConnectionManager, EventHandler)
+     */
     public EventListener(ConnectionManager connectionManager, List<EventHandler> eventHandlers) {
         this.connManager = connectionManager;
         this.config = connectionManager.getConfig();
@@ -77,21 +90,21 @@ public class EventListener {
     }
 
     /**
-     * Stops this {@link EventListener}.
+     * Stops this {@link EventListener} and unsubscribe events.
      */
-    public synchronized void stop() {
+    public void stop() {
         if (pollingScheduler != null || !pollingScheduler.isCancelled()) {
             pollingScheduler.cancel(true);
             pollingScheduler = null;
             unsubscribe();
-            logger.debug("Stop EventListener");
         }
+        logger.debug("Stop EventListener");
     }
 
     /**
-     * Starts this {@link EventListener}.
+     * Starts this {@link EventListener} and subscribe events.
      */
-    public synchronized void start() {
+    public void start() {
         if ((pollingScheduler == null || pollingScheduler.isCancelled())) {
             pollingScheduler = scheduler.scheduleAtFixedRate(runableListener, 0,
                     config.getEventListenerRefreshinterval(), TimeUnit.MILLISECONDS);
@@ -99,6 +112,12 @@ public class EventListener {
         }
     }
 
+    /**
+     * Adds a {@link List} of {@link EventHandler}'s and subscribe the supported event-types, if the
+     * {@link EventListener} is started and the event-types are not already subscribed.
+     *
+     * @param eventHandlers
+     */
     public void addEventHandlers(List<EventHandler> eventHandlers) {
         if (eventHandlers != null) {
             for (EventHandler eventHandler : eventHandlers) {
@@ -107,12 +126,18 @@ public class EventListener {
         }
     }
 
+    /**
+     * Remove a {@link EventHandler} and unsubscribes the supported event-types, if the
+     * {@link EventListener} is started and no other {@link EventHandler} needed the event-types.
+     *
+     * @param eventHandler
+     */
     public void removeEventHandler(EventHandler eventHandler) {
         if (eventHandler != null && eventHandlers.contains(eventHandler)) {
             List<String> tempSubsList = new ArrayList<String>();
             int index = -1;
             EventHandler intEventHandler = null;
-            boolean subscibedEventsChanged = false;
+            boolean subscribedEventsChanged = false;
             for (int i = 0; i < eventHandlers.size(); i++) {
                 intEventHandler = eventHandlers.get(i);
                 if (intEventHandler.getUID().equals(eventHandler.getUID())) {
@@ -125,12 +150,12 @@ public class EventListener {
                 intEventHandler = eventHandlers.remove(index);
                 for (String eventName : intEventHandler.getSupportetEvents()) {
                     if (!tempSubsList.contains(eventName)) {
-                        subscribeEvents.remove(eventName);
-                        subscibedEventsChanged = true;
+                        subscribedEvents.remove(eventName);
+                        subscribedEventsChanged = true;
                     }
                 }
             }
-            if (subscibedEventsChanged) {
+            if (subscribedEventsChanged) {
                 logger.debug("Min one subscribed events was deleted, EventListener will be restarted");
                 // Because of the json-call unsubscribe?eventName=XY&subscriptionID=Z doesn't work like it is explained
                 // in the dS-JSON-API, the whole EventListener will be restarted. The problem is, that not only the
@@ -141,26 +166,35 @@ public class EventListener {
         }
     }
 
+    /**
+     * Adds a {@link EventHandler}'s and subscribe the supported event-types, if the
+     * {@link EventListener} is started and the event-types are not already subscribed.
+     *
+     * @param eventHandler
+     */
     public void addEventHandler(EventHandler eventHandler) {
         if (eventHandler != null) {
             if (eventHandlers == null) {
                 eventHandlers = new ArrayList<EventHandler>();
             }
             eventHandlers.add(eventHandler);
-            if (addSubscibeEvents(eventHandler.getSupportetEvents()) && subscribed) {
+            if (addSubscribeEvents(eventHandler.getSupportetEvents()) && subscribed) {
                 subscribe();
             }
+            logger.debug("eventHandler: " + eventHandler.toString() + " added");
         }
     }
 
-    private boolean addSubscibeEvents(List<String> subscibeEvents) {
+    private boolean addSubscribeEvents(List<String> subscribeEvents) {
         boolean eventsAdded = false;
-        if (subscribeEvents == null) {
-            subscribeEvents = new ArrayList<String>();
+        if (subscribedEvents == null) {
+            subscribedEvents = new ArrayList<String>();
         }
-        for (String eventName : subscibeEvents) {
-            if (!subscribeEvents.contains(eventName)) {
-                eventsAdded = subscibeEvents.add(eventName);
+        for (String eventName : subscribeEvents) {
+            if (!subscribedEvents.contains(eventName)) {
+                subscribedEvents.add(eventName);
+                logger.debug("subscibeEvent: " + eventName + " added");
+                eventsAdded = true;
             }
         }
         return eventsAdded;
@@ -188,7 +222,7 @@ public class EventListener {
                     }
                 }
             }
-            for (String eventName : this.subscribeEvents) {
+            for (String eventName : this.subscribedEvents) {
                 subscribed = connManager.getDigitalSTROMAPI().subscribeEvent(this.connManager.getSessionToken(),
                         eventName, this.subscriptionID, config.getConnectionTimeout(), config.getReadTimeout());
             }
@@ -197,7 +231,7 @@ public class EventListener {
                 logger.error("Couldn't subscribe EventListener ... maybe timeout because system is to busy ...");
             } else {
                 logger.debug("subscribe successfull, subscription id is " + subscriptionID + " subscribed events are: "
-                        + subscribeEvents.toString());
+                        + subscribedEvents.toString());
             }
         } else {
             logger.error("Couldn't subscribe eventListener, because there is no token (no connection)");
@@ -247,7 +281,7 @@ public class EventListener {
 
     private void unsubscribe() {
         if (connManager.checkConnection()) {
-            for (String eventName : this.subscribeEvents) {
+            for (String eventName : this.subscribedEvents) {
                 connManager.getDigitalSTROMAPI().unsubscribeEvent(this.connManager.getSessionToken(), eventName,
                         this.subscriptionID, config.getConnectionTimeout(), config.getReadTimeout());
             }
@@ -258,7 +292,8 @@ public class EventListener {
         if (array.size() > 0) {
             Event event = new JSONEventImpl(array);
             for (EventItem item : event.getEventItems()) {
-                logger.debug("Detect Event: " + item.getName() + " " + item.getProperties().toString());
+                logger.debug("Detect Event: " + item.getName() + " properties: " + item.getProperties().toString()
+                        + ", source: " + item.getSource().toString());
                 for (EventHandler handler : eventHandlers) {
                     if (handler.supportsEvent(item.getName())) {
                         handler.handleEvent(item);

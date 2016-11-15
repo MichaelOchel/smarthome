@@ -147,7 +147,7 @@ public class BridgeHandler extends BaseBridgeHandler
                 String dSSname = connMan.getDigitalSTROMAPI().getInstallationName(connMan.getSessionToken());
 
                 if (dSSname != null) {
-                    configuration.put(DS_NAME, dSSname);
+                    updateProperty(DS_NAME, dSSname);
                 }
             }
             if (configChanged) {

@@ -14,7 +14,7 @@ import java.util.PriorityQueue;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.config.Config;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.sensorJobExecutor.sensorJob.SensorJob;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.Device;
-import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.DSID;
+import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.impl.DSID;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
