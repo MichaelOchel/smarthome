@@ -141,169 +141,177 @@ public class DeviceStatusManagerImpl implements DeviceStatusManager {
 
         @Override
         public void run() {
-            if (connMan.checkConnection()) {
-                if (!getManagerState().equals(ManagerStates.RUNNING)) {
-                    logger.debug("Thread started");
-                    if (devicesLoaded) {
-                        stateChanged(ManagerStates.RUNNING);
-                    } else {
-                        stateChanged(ManagerStates.INITIALIZING);
-                    }
-                }
-                HashMap<DSID, Device> tempDeviceMap;
-                if (strucMan.getDeviceMap() != null) {
-                    tempDeviceMap = (HashMap<DSID, Device>) strucMan.getDeviceMap();
-                } else {
-                    tempDeviceMap = new HashMap<DSID, Device>();
-                }
-                List<Device> currentDeviceList = new LinkedList<Device>();
-                // TODO: umstellen auf DeviceQurey
-                JsonObject result = connMan.getDigitalSTROMAPI().query2(connMan.getSessionToken(), GET_DETAILD_DEVICES);
-                if (result.isJsonObject()) {
-                    if (result.getAsJsonObject().get("zone0").isJsonObject()) {
-                        result = result.getAsJsonObject().get("zone0").getAsJsonObject();
-                        for (Entry<String, JsonElement> entry : result.entrySet()) {
-                            if (!(entry.getKey().equals(JSONApiResponseKeysEnum.ZONE_ID.getKey())
-                                    && entry.getKey().equals(JSONApiResponseKeysEnum.NAME.getKey()))
-                                    && entry.getValue().isJsonObject()) {
-                                currentDeviceList.add(new DeviceImpl(entry.getValue().getAsJsonObject()));
-                            }
-                        }
-                    }
-                }
-
-                // List<Device> currentDeviceList = digitalSTROMClient.getApartmentDevices(connMan.getSessionToken());
-
-                // update the current total power consumption
-                if (totalPowerConsumptionListener != null && nextSensorUpdate <= System.currentTimeMillis()) {
-                    meters = digitalSTROMClient.getMeterList(connMan.getSessionToken());
-                    totalPowerConsumptionListener.onTotalPowerConsumptionChanged(getTotalPowerConsumption());
-                    totalPowerConsumptionListener.onEnergyMeterValueChanged(getTotalEnergyMeterValue());
-                    nextSensorUpdate = System.currentTimeMillis() + config.getTotalPowerUpdateInterval();
-                }
-
-                while (!currentDeviceList.isEmpty()) {
-                    Device currentDevice = currentDeviceList.remove(0);
-                    DSID currentDeviceDSID = currentDevice.getDSID();
-                    Device eshDevice = tempDeviceMap.remove(currentDeviceDSID);
-
-                    if (eshDevice != null) {
-                        checkDeviceConfig(currentDevice, eshDevice);
-
-                        if (eshDevice.isPresent()) {
-                            // check device state updates
-                            while (!eshDevice.isDeviceUpToDate()) {
-                                DeviceStateUpdate deviceStateUpdate = eshDevice.getNextDeviceUpdateState();
-                                if (deviceStateUpdate != null) {
-                                    switch (deviceStateUpdate.getType()) {
-                                        case DeviceStateUpdate.UPDATE_BRIGHTNESS:
-                                        case DeviceStateUpdate.UPDATE_SLAT_ANGLE_INCREASE:
-                                        case DeviceStateUpdate.UPDATE_SLAT_ANGLE_DECREASE:
-                                            filterCommand(deviceStateUpdate, eshDevice);
-                                            break;
-                                        case DeviceStateUpdate.UPDATE_SCENE_CONFIG:
-                                        case DeviceStateUpdate.UPDATE_SCENE_OUTPUT:
-                                            updateSceneData(eshDevice, deviceStateUpdate);
-                                            break;
-                                        case DeviceStateUpdate.UPDATE_OUTPUT_VALUE:
-                                            readOutputValue(eshDevice);
-                                            break;
-                                        default:
-                                            sendComandsToDSS(eshDevice, deviceStateUpdate);
-                                    }
-                                }
-                            }
-                        }
-
-                    } else {
-                        logger.debug("Found new device!");
-                        if (trashDevices.isEmpty()) {
-                            currentDevice.setConfig(config);
-                            strucMan.addDeviceToStructure(currentDevice);
-                            logger.debug("trashDevices are empty, add Device with dSID "
-                                    + currentDevice.getDSID().toString() + " to the deviceMap!");
+            try {
+                if (connMan.checkConnection()) {
+                    if (!getManagerState().equals(ManagerStates.RUNNING)) {
+                        logger.debug("Thread started");
+                        if (devicesLoaded) {
+                            stateChanged(ManagerStates.RUNNING);
                         } else {
-                            logger.debug("Search device in trashDevices.");
-                            TrashDevice foundTrashDevice = null;
-                            for (TrashDevice trashDevice : trashDevices) {
-                                if (trashDevice != null) {
-                                    if (trashDevice.getDevice().equals(currentDevice)) {
-                                        foundTrashDevice = trashDevice;
-                                        logger.debug(
-                                                "Found device in trashDevices, add TrashDevice with dSID {} to the StructureManager!",
-                                                currentDeviceDSID);
+                            stateChanged(ManagerStates.INITIALIZING);
+                        }
+                    }
+                    HashMap<DSID, Device> tempDeviceMap;
+                    if (strucMan.getDeviceMap() != null) {
+                        tempDeviceMap = (HashMap<DSID, Device>) strucMan.getDeviceMap();
+                    } else {
+                        tempDeviceMap = new HashMap<DSID, Device>();
+                    }
+
+                    List<Device> currentDeviceList = getDetailedDevices();
+
+                    // update the current total power consumption
+                    if (totalPowerConsumptionListener != null && nextSensorUpdate <= System.currentTimeMillis()) {
+                        meters = digitalSTROMClient.getMeterList(connMan.getSessionToken());
+                        totalPowerConsumptionListener.onTotalPowerConsumptionChanged(getTotalPowerConsumption());
+                        totalPowerConsumptionListener.onEnergyMeterValueChanged(getTotalEnergyMeterValue());
+                        nextSensorUpdate = System.currentTimeMillis() + config.getTotalPowerUpdateInterval();
+                    }
+
+                    while (!currentDeviceList.isEmpty()) {
+                        Device currentDevice = currentDeviceList.remove(0);
+                        DSID currentDeviceDSID = currentDevice.getDSID();
+                        Device eshDevice = tempDeviceMap.remove(currentDeviceDSID);
+
+                        if (eshDevice != null) {
+                            checkDeviceConfig(currentDevice, eshDevice);
+
+                            if (eshDevice.isPresent()) {
+                                // check device state updates
+                                while (!eshDevice.isDeviceUpToDate()) {
+                                    DeviceStateUpdate deviceStateUpdate = eshDevice.getNextDeviceUpdateState();
+                                    if (deviceStateUpdate != null) {
+                                        switch (deviceStateUpdate.getType()) {
+                                            case DeviceStateUpdate.UPDATE_BRIGHTNESS:
+                                            case DeviceStateUpdate.UPDATE_SLAT_ANGLE_INCREASE:
+                                            case DeviceStateUpdate.UPDATE_SLAT_ANGLE_DECREASE:
+                                                filterCommand(deviceStateUpdate, eshDevice);
+                                                break;
+                                            case DeviceStateUpdate.UPDATE_SCENE_CONFIG:
+                                            case DeviceStateUpdate.UPDATE_SCENE_OUTPUT:
+                                                updateSceneData(eshDevice, deviceStateUpdate);
+                                                break;
+                                            case DeviceStateUpdate.UPDATE_OUTPUT_VALUE:
+                                                readOutputValue(eshDevice);
+                                                break;
+                                            default:
+                                                sendComandsToDSS(eshDevice, deviceStateUpdate);
+                                        }
                                     }
                                 }
                             }
-                            if (foundTrashDevice != null) {
-                                trashDevices.remove(foundTrashDevice);
-                                strucMan.addDeviceToStructure(foundTrashDevice.getDevice());
-                            } else {
+
+                        } else {
+                            logger.debug("Found new device!");
+                            if (trashDevices.isEmpty()) {
+                                currentDevice.setConfig(config);
                                 strucMan.addDeviceToStructure(currentDevice);
+                                logger.debug("trashDevices are empty, add Device with dSID "
+                                        + currentDevice.getDSID().toString() + " to the deviceMap!");
+                            } else {
+                                logger.debug("Search device in trashDevices.");
+                                TrashDevice foundTrashDevice = null;
+                                for (TrashDevice trashDevice : trashDevices) {
+                                    if (trashDevice != null) {
+                                        if (trashDevice.getDevice().equals(currentDevice)) {
+                                            foundTrashDevice = trashDevice;
+                                            logger.debug(
+                                                    "Found device in trashDevices, add TrashDevice with dSID {} to the StructureManager!",
+                                                    currentDeviceDSID);
+                                        }
+                                    }
+                                }
+                                if (foundTrashDevice != null) {
+                                    trashDevices.remove(foundTrashDevice);
+                                    strucMan.addDeviceToStructure(foundTrashDevice.getDevice());
+                                } else {
+                                    strucMan.addDeviceToStructure(currentDevice);
+                                    logger.debug(
+                                            "Can't find device in trashDevices, add Device with dSID: {} to the StructureManager!",
+                                            currentDeviceDSID);
+                                }
+                            }
+                            if (deviceDiscovery != null) {
+                                if (currentDevice.isDeviceWithOutput()) {
+                                    deviceDiscovery.onDeviceAdded(currentDevice);
+                                    logger.debug("inform DeviceStatusListener: {} about removed device with dSID {}",
+                                            DeviceStatusListener.DEVICE_DISCOVERY, currentDevice.getDSID().getValue());
+                                }
+                            } else {
                                 logger.debug(
-                                        "Can't find device in trashDevices, add Device with dSID: {} to the StructureManager!",
-                                        currentDeviceDSID);
+                                        "The device discovery is not registrated, can't inform device discovery about found device.");
                             }
                         }
+                    }
+
+                    if (!devicesLoaded && strucMan.getDeviceMap() != null) {
+                        if (!strucMan.getDeviceMap().values().isEmpty()) {
+                            logger.debug("Devices loaded");
+                            devicesLoaded = true;
+                            stateChanged(ManagerStates.RUNNING);
+                        }
+                    }
+
+                    if (!sceneMan.scenesGenerated()
+                            && !sceneMan.getManagerState().equals(ManagerStates.GENERATING_SCENES)) {
+                        logger.debug(sceneMan.getManagerState().toString());
+                        sceneMan.generateScenes();
+                    }
+
+                    for (Device device : tempDeviceMap.values()) {
+                        logger.debug("Found removed devices.");
+
+                        trashDevices.add(new TrashDevice(device));
+                        DeviceStatusListener listener = device.unregisterDeviceStateListener();
+                        if (listener != null) {
+                            listener.onDeviceRemoved(null);
+                        }
+                        strucMan.deleteDevice(device);
+                        logger.debug("Add device with dSID {} to trashDevices", device.getDSID().getValue());
+
                         if (deviceDiscovery != null) {
-                            if (currentDevice.isDeviceWithOutput()) {
-                                deviceDiscovery.onDeviceAdded(currentDevice);
-                                logger.debug("inform DeviceStatusListener: {} about removed device with dSID {}",
-                                        DeviceStatusListener.DEVICE_DISCOVERY, currentDevice.getDSID().getValue());
-                            }
+                            deviceDiscovery.onDeviceRemoved(device);
+                            logger.debug("inform DeviceStatusListener: {} about removed device with dSID {}",
+                                    DeviceStatusListener.DEVICE_DISCOVERY, device.getDSID().getValue());
                         } else {
                             logger.debug(
-                                    "The device discovery is not registrated, can't inform device discovery about found device.");
+                                    "The device-Discovery is not registrated, can't inform device discovery about removed device.");
                         }
                     }
-                }
 
-                if (!devicesLoaded && strucMan.getDeviceMap() != null) {
-                    if (!strucMan.getDeviceMap().values().isEmpty()) {
-                        logger.debug("Devices loaded");
-                        devicesLoaded = true;
-                        stateChanged(ManagerStates.RUNNING);
+                    if (!trashDevices.isEmpty()
+                            && (lastBinCheck + config.getBinCheckTime() < System.currentTimeMillis())) {
+                        for (TrashDevice trashDevice : trashDevices) {
+                            if (trashDevice.isTimeToDelete(Calendar.getInstance().get(Calendar.DAY_OF_YEAR))) {
+                                logger.debug("Found trashDevice that have to delete!");
+                                trashDevices.remove(trashDevice);
+                                logger.debug("Delete trashDevice: " + trashDevice.getDevice().getDSID().getValue());
+                            }
+                        }
+                        lastBinCheck = System.currentTimeMillis();
                     }
                 }
+            } catch (Exception e) {
+                logger.error("An exception occurred", e);
+            }
+        }
 
-                if (!sceneMan.scenesGenerated()
-                        && !sceneMan.getManagerState().equals(ManagerStates.GENERATING_SCENES)) {
-                    logger.debug(sceneMan.getManagerState().toString());
-                    sceneMan.generateScenes();
-                }
-
-                for (Device device : tempDeviceMap.values()) {
-                    logger.debug("Found removed devices.");
-
-                    trashDevices.add(new TrashDevice(device));
-                    DeviceStatusListener listener = device.unregisterDeviceStateListener();
-                    if (listener != null) {
-                        listener.onDeviceRemoved(null);
-                    }
-                    strucMan.deleteDevice(device);
-                    logger.debug("Add device with dSID {} to trashDevices", device.getDSID().getValue());
-
-                    if (deviceDiscovery != null) {
-                        deviceDiscovery.onDeviceRemoved(device);
-                        logger.debug("inform DeviceStatusListener: {} about removed device with dSID {}",
-                                DeviceStatusListener.DEVICE_DISCOVERY, device.getDSID().getValue());
-                    } else {
-                        logger.debug(
-                                "The device-Discovery is not registrated, can't inform device discovery about removed device.");
-                    }
-                }
-
-                if (!trashDevices.isEmpty() && (lastBinCheck + config.getBinCheckTime() < System.currentTimeMillis())) {
-                    for (TrashDevice trashDevice : trashDevices) {
-                        if (trashDevice.isTimeToDelete(Calendar.getInstance().get(Calendar.DAY_OF_YEAR))) {
-                            logger.debug("Found trashDevice that have to delete!");
-                            trashDevices.remove(trashDevice);
-                            logger.debug("Delete trashDevice: " + trashDevice.getDevice().getDSID().getValue());
+        private List<Device> getDetailedDevices() {
+            List<Device> deviceList = new LinkedList<Device>();
+            JsonObject result = connMan.getDigitalSTROMAPI().query2(connMan.getSessionToken(), GET_DETAILD_DEVICES);
+            if (result.isJsonObject()) {
+                if (result.getAsJsonObject().get("zone0").isJsonObject()) {
+                    result = result.getAsJsonObject().get("zone0").getAsJsonObject();
+                    for (Entry<String, JsonElement> entry : result.entrySet()) {
+                        if (!(entry.getKey().equals(JSONApiResponseKeysEnum.ZONE_ID.getKey())
+                                && entry.getKey().equals(JSONApiResponseKeysEnum.NAME.getKey()))
+                                && entry.getValue().isJsonObject()) {
+                            deviceList.add(new DeviceImpl(entry.getValue().getAsJsonObject()));
                         }
                     }
-                    lastBinCheck = System.currentTimeMillis();
                 }
             }
+            return deviceList;
         }
 
         private void filterCommand(DeviceStateUpdate deviceStateUpdate, Device device) {
@@ -695,61 +703,6 @@ public class DeviceStatusManagerImpl implements DeviceStatusManager {
                             requestSuccsessful = true;
                         }
                     }
-
-                    /*
-                     * switch (deviceStateUpdate.getTypeAsSensorEnum()) {
-                     * case ACTIVE_POWER:
-                     * if (deviceStateUpdate.getValueAsInteger() == 0) {
-                     * logger.debug("Device need active power SensorData update");
-                     * updateSensorData(new DeviceConsumptionSensorJob(device, SensorEnum.ACTIVE_POWER),
-                     * device.getPowerSensorRefreshPriority(ACTIVE_POWER));
-                     * return;
-                     * } else {
-                     * int consumption = this.digitalSTROMClient.getDeviceSensorValue(
-                     * connMan.getSessionToken(), device.getDSID(), null, SensorEnum.ACTIVE_POWER);
-                     * if (consumption >= 0) {
-                     * device.updateInternalDeviceState(new DeviceStateUpdateImpl(
-                     * DeviceStateUpdate.UPDATE_ACTIVE_POWER, consumption));
-                     * requestSuccsessful = true;
-                     * }
-                     * }
-                     * break;
-                     * case OUTPUT_CURRENT:
-                     * if (deviceStateUpdate.getValueAsInteger() == 0) {
-                     * logger.debug("Device need output current SensorData update");
-                     * updateSensorData(new DeviceConsumptionSensorJob(device, SensorEnum.OUTPUT_CURRENT),
-                     * device.getOutputCurrentRefreshPriority());
-                     * return;
-                     * } else {
-                     * int consumption = this.digitalSTROMClient.getDeviceSensorValue(
-                     * connMan.getSessionToken(), device.getDSID(), null, SensorEnum.OUTPUT_CURRENT);
-                     * if (consumption >= 0) {
-                     * device.updateInternalDeviceState(new DeviceStateUpdateImpl(
-                     * DeviceStateUpdate.UPDATE_OUTPUT_CURRENT, consumption));
-                     * requestSuccsessful = true;
-                     * }
-                     * }
-                     * break;
-                     * case ELECTRIC_METER:
-                     * if (deviceStateUpdate.getValueAsInteger() == 0) {
-                     * logger.debug("Device need electric meter SensorData update");
-                     * updateSensorData(new DeviceConsumptionSensorJob(device, SensorEnum.ELECTRIC_METER),
-                     * device.getElectricMeterRefreshPriority());
-                     * return;
-                     * } else {
-                     * int consumption = this.digitalSTROMClient.getDeviceSensorValue(
-                     * connMan.getSessionToken(), device.getDSID(), null, SensorEnum.ELECTRIC_METER);
-                     * if (consumption >= 0) {
-                     * device.updateInternalDeviceState(new DeviceStateUpdateImpl(
-                     * DeviceStateUpdate.UPDATE_ELECTRIC_METER, consumption));
-                     * requestSuccsessful = true;
-                     * }
-                     * }
-                     * break;
-                     * default:
-                     * break;
-                     * }
-                     */
                 } else {
                     switch (deviceStateUpdate.getType()) {
                         case DeviceStateUpdate.UPDATE_BRIGHTNESS_DECREASE:

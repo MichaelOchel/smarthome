@@ -82,10 +82,6 @@ public class DeviceImpl extends AbstractGeneralDeviceInformations implements Dev
     private int maxSlatPosition = DeviceConstants.MAX_ROLLERSHUTTER;
     private int minSlatPosition = DeviceConstants.MIN_ROLLERSHUTTER;
 
-    // private int activePower = 0;
-    // private int outputCurrent = 0;
-    // private int electricMeter = 0;
-
     private List<DeviceSensorValue> deviceSensorValues = Collections
             .synchronizedList(new ArrayList<DeviceSensorValue>());
     private List<SensorEnum> devicePowerSensorTypes = new ArrayList<SensorEnum>();
@@ -108,17 +104,6 @@ public class DeviceImpl extends AbstractGeneralDeviceInformations implements Dev
     private List<DeviceStateUpdate> deviceStateUpdates = Collections
             .synchronizedList(new LinkedList<DeviceStateUpdate>());
 
-    // save the last update time of the sensor data
-    // private long lastElectricMeterUpdate = System.currentTimeMillis();
-    // private long lastOutputCurrentUpdate = System.currentTimeMillis();
-    // private long lastActivePowerUpdate = System.currentTimeMillis();
-
-    // this flags are true, if a sensorJob is initiated to add it to the sensorJobExecuter by the deviceStateUpdates
-    // list.
-    // private boolean electricMeterUpdateInitiated = false;
-    // private boolean outputCurrentUpdateInitiated = false;
-    // private boolean activePowerUpdateInitiated = false;
-
     /*
      * Saves the refresh priorities and reading initialized flag of power sensors as an matrix.
      * The first array fields are 0 = active power, 1 = output current, 2 = electric meter, 3 = power consumption and in
@@ -130,11 +115,6 @@ public class DeviceImpl extends AbstractGeneralDeviceInformations implements Dev
             new String[] { Config.REFRESH_PRIORITY_NEVER, "false" },
             new String[] { Config.REFRESH_PRIORITY_NEVER, "false" },
             new String[] { Config.REFRESH_PRIORITY_NEVER, "false" } };
-    // sensor data refresh priorities
-    // private String activePowerRefreshPriority = Config.REFRESH_PRIORITY_NEVER;
-    // private String electricMeterRefreshPriority = Config.REFRESH_PRIORITY_NEVER;
-    // private String outputCurrentRefreshPriority = Config.REFRESH_PRIORITY_NEVER;
-
     /*
      * Cache the last power sensor value to get power sensor value directly
      * the key is the output value and the value is an Integer array for the sensor values (0 = active power, 1 =
@@ -951,8 +931,9 @@ public class DeviceImpl extends AbstractGeneralDeviceInformations implements Dev
             isUpToDate = isOn && !isShade() && !checkPowerSensorRefreshPriorityNever(powerSensorType)
                     ? checkSensorRefreshTime(powerSensorType) : true;
             if (!isUpToDate) {
-                if (getSensorDataReadingInitialized(powerSensorType)) {
+                if (!getSensorDataReadingInitialized(powerSensorType)) {
                     deviceStateUpdates.add(new DeviceStateUpdateImpl(powerSensorType, 0));
+                    setSensorDataReadingInitialized(powerSensorType, true);
                 }
                 return false;
             }
@@ -1021,7 +1002,10 @@ public class DeviceImpl extends AbstractGeneralDeviceInformations implements Dev
     }
 
     private boolean checkPowerSensorRefreshPriorityNever(SensorEnum powerSensorType) {
-        return getPowerSensorRefreshPriority(powerSensorType).equals(Config.REFRESH_PRIORITY_NEVER);
+        if (getPowerSensorRefreshPriority(powerSensorType) != null) {
+            return getPowerSensorRefreshPriority(powerSensorType).equals(Config.REFRESH_PRIORITY_NEVER);
+        }
+        return true;
     }
 
     private void setAllSensorDataRefreshPrioritiesToNever() {
@@ -1194,7 +1178,7 @@ public class DeviceImpl extends AbstractGeneralDeviceInformations implements Dev
     public Short getSensorIndex(SensorEnum sensorType) {
         if (sensorType != null) {
             DeviceSensorValue devSenVal = getDeviceSensorValue(sensorType);
-            return devSenVal != null && devSenVal.getValid() ? devSenVal.getSensorIndex() : null;
+            return devSenVal != null /* && devSenVal.getValid() */ ? devSenVal.getSensorIndex() : null;
         }
         return null;
     }
@@ -1203,7 +1187,7 @@ public class DeviceImpl extends AbstractGeneralDeviceInformations implements Dev
     public SensorEnum getSensorType(Short sensorIndex) {
         if (sensorIndex != null) {
             DeviceSensorValue devSenVal = getDeviceSensorValue(sensorIndex);
-            return devSenVal != null && devSenVal.getValid() ? devSenVal.getSensorType() : null;
+            return devSenVal != null /* && devSenVal.getValid() */ ? devSenVal.getSensorType() : null;
         }
         return null;
     }
@@ -1230,32 +1214,40 @@ public class DeviceImpl extends AbstractGeneralDeviceInformations implements Dev
 
     @Override
     public boolean setFloatSensorValue(SensorEnum sensorType, Float floatSensorValue) {
-        return setFloatSensorValue((Object) sensorType, floatSensorValue);
+        return checkAndSetSensorValue(sensorType, null, floatSensorValue);// return setFloatSensorValue((Object)
+                                                                          // sensorType, floatSensorValue);
     }
 
     @Override
     public boolean setFloatSensorValue(Short sensorIndex, Float floatSensorValue) {
-        return setFloatSensorValue((Object) sensorIndex, floatSensorValue);
+        return checkAndSetSensorValue(sensorIndex, null, floatSensorValue);// return setFloatSensorValue((Object)
+                                                                           // sensorIndex, floatSensorValue);
     }
 
     @Override
     public boolean setDsSensorValue(Short sensorIndex, Integer dSSensorValue) {
-        return setDsSensorValue((Object) sensorIndex, dSSensorValue);
+        return checkAndSetSensorValue(sensorIndex, dSSensorValue, null);// return setDsSensorValue((Object) sensorIndex,
+                                                                        // dSSensorValue);
     }
 
     @Override
     public boolean setDsSensorValue(SensorEnum sensorType, Integer dSSensorValue) {
-        return setDsSensorValue((Object) sensorType, dSSensorValue);
+        return checkAndSetSensorValue(sensorType, dSSensorValue, null);// return setDsSensorValue((Object) sensorType,
+                                                                       // dSSensorValue);
     }
 
     @Override
     public boolean setDsSensorValue(Short sensorIndex, Integer dSSensorValue, Float floatSensorValue) {
-        return setDsSensorValue((Object) sensorIndex, dSSensorValue, floatSensorValue);
+        return checkAndSetSensorValue(sensorIndex, dSSensorValue, floatSensorValue);// return setDsSensorValue((Object)
+                                                                                    // sensorIndex, dSSensorValue,
+                                                                                    // floatSensorValue);
     }
 
     @Override
     public boolean setDsSensorValue(SensorEnum sensorType, Integer dSSensorValue, Float floatSensorValue) {
-        return setDsSensorValue((Object) sensorType, dSSensorValue, floatSensorValue);
+        return checkAndSetSensorValue(sensorType, dSSensorValue, floatSensorValue);// return setDsSensorValue((Object)
+                                                                                   // sensorType, dSSensorValue,
+                                                                                   // floatSensorValue);
     }
 
     @Override
@@ -1286,42 +1278,10 @@ public class DeviceImpl extends AbstractGeneralDeviceInformations implements Dev
         }
     }
 
-    private boolean setFloatSensorValue(Object obj, Float floatSensorValue) {
-        DeviceSensorValue devSenVal = getDeviceSensorValueForSet(obj);
-        if (devSenVal != null) {
-            devSenVal.setFloatValue(floatSensorValue);
-            checkSensorValueSet(devSenVal);
-            return true;
-        }
-        return false;
-    }
-
-    private boolean setDsSensorValue(Object obj, Integer dsSensorValue) {
-        DeviceSensorValue devSenVal = getDeviceSensorValueForSet(obj);
-        if (devSenVal != null) {
-            devSenVal.setDsValue(dsSensorValue);
-            checkSensorValueSet(devSenVal);
-            return true;
-        }
-        return false;
-    }
-
-    private boolean setDsSensorValue(Object obj, Integer dSSensorValue, Float floatSensorValue) {
-        if (obj != null) {
-            DeviceSensorValue devSenVal = getDeviceSensorValueForSet(obj);
-            if (devSenVal != null) {
-                devSenVal.setValues(floatSensorValue, dSSensorValue);
-                checkSensorValueSet(devSenVal);
-                return true;
-            }
-        }
-        return false;
-    }
-
     private Integer getDsSensorValue(Object obj) {
         if (obj != null) {
             DeviceSensorValue devSenVal = getDeviceSensorValueForGet(obj);
-            return devSenVal != null ? devSenVal.getDsValue() : null;
+            return devSenVal != null && devSenVal.getValid() ? devSenVal.getDsValue() : null;
         }
         return null;
     }
@@ -1329,7 +1289,7 @@ public class DeviceImpl extends AbstractGeneralDeviceInformations implements Dev
     private Float getFloatSensorValue(Object obj) {
         if (obj != null) {
             DeviceSensorValue devSenVal = getDeviceSensorValueForGet(obj);
-            return devSenVal != null ? devSenVal.getFloatValue() : null;
+            return devSenVal != null && devSenVal.getValid() ? devSenVal.getFloatValue() : null;
         }
         return null;
     }
@@ -1349,25 +1309,41 @@ public class DeviceImpl extends AbstractGeneralDeviceInformations implements Dev
         return devSenVal;
     }
 
-    private void checkSensorValueSet(DeviceSensorValue newDevSenVal) {
-        if (newDevSenVal != null) {
-            if (outputMode.equals(OutputModeEnum.WIPE) && !isOn
-                    && newDevSenVal.getSensorType().equals(SensorEnum.ACTIVE_POWER)) {
-                int standby = Config.DEFAULT_STANDBY_ACTIVE_POWER;
-                if (config != null) {
-                    standby = config.getStandbyActivePower();
+    private boolean checkAndSetSensorValue(Object obj, Integer dsValue, Float floatValue) {
+        boolean isSet = false;
+        if (obj != null) {
+            DeviceSensorValue devSenVal = getDeviceSensorValueForSet(obj);
+            if (devSenVal != null) {
+                if (dsValue != null && floatValue != null) {
+                    isSet = devSenVal.setValues(floatValue, dsValue);
+                } else if (dsValue != null) {
+                    isSet = devSenVal.setDsValue(dsValue);
+                } else if (floatValue != null) {
+                    isSet = devSenVal.setFloatValue(floatValue);
                 }
-                if (newDevSenVal.getDsValue() > standby) {
-                    this.updateInternalDeviceState(new DeviceStateUpdateImpl(DeviceStateUpdate.UPDATE_ON_OFF, 1));
+
+                if (isSet) {
+                    if (outputMode.equals(OutputModeEnum.WIPE) && !isOn
+                            && devSenVal.getSensorType().equals(SensorEnum.ACTIVE_POWER)) {
+                        int standby = Config.DEFAULT_STANDBY_ACTIVE_POWER;
+                        if (config != null) {
+                            standby = config.getStandbyActivePower();
+                        }
+                        if (devSenVal.getDsValue() > standby) {
+                            this.updateInternalDeviceState(
+                                    new DeviceStateUpdateImpl(DeviceStateUpdate.UPDATE_ON_OFF, 1));
+                        }
+                    }
+                    if (SensorEnum.isPowerSensor(devSenVal.getSensorType())) {
+                        addPowerSensorCache(devSenVal);
+                    }
+                    informListenerAboutStateUpdate(
+                            new DeviceStateUpdateImpl(devSenVal.getSensorType(), devSenVal.getFloatValue()));
                 }
+                setSensorDataReadingInitialized(devSenVal.getSensorType(), false);
             }
-            if (SensorEnum.isPowerSensor(newDevSenVal.getSensorType())) {
-                addPowerSensorCache(newDevSenVal);
-                setSensorDataReadingInitialized(newDevSenVal.getSensorType(), false);
-            }
-            informListenerAboutStateUpdate(
-                    new DeviceStateUpdateImpl(newDevSenVal.getSensorType(), newDevSenVal.getFloatValue()));
         }
+        return isSet;
     }
 
     private void addPowerSensorCache(DeviceSensorValue newDevSenVal) {
@@ -1518,21 +1494,23 @@ public class DeviceImpl extends AbstractGeneralDeviceInformations implements Dev
         Integer[] cachedSensorData = this.cachedSensorPowerValues.get(this.getOutputValue());
         if (cachedSensorData != null) {
             if (cachedSensorData[0] != null && !checkPowerSensorRefreshPriorityNever(SensorEnum.ACTIVE_POWER)) {
-                informListenerAboutStateUpdate(new DeviceStateUpdateImpl(SensorEnum.ACTIVE_POWER, cachedSensorData[0]));
+                informListenerAboutStateUpdate(
+                        new DeviceStateUpdateImpl(SensorEnum.ACTIVE_POWER, (float) cachedSensorData[0]));
 
             }
             if (cachedSensorData[1] != null && !checkPowerSensorRefreshPriorityNever(SensorEnum.OUTPUT_CURRENT)) {
                 if (cachedSensorData[1] == SensorEnum.OUTPUT_CURRENT.getMax().intValue()
                         && devicePowerSensorTypes.contains(SensorEnum.OUTPUT_CURRENT_H)) {
                     informListenerAboutStateUpdate(
-                            new DeviceStateUpdateImpl(SensorEnum.OUTPUT_CURRENT, cachedSensorData[3]));
+                            new DeviceStateUpdateImpl(SensorEnum.OUTPUT_CURRENT, (float) cachedSensorData[3]));
                 } else {
                     informListenerAboutStateUpdate(
-                            new DeviceStateUpdateImpl(SensorEnum.OUTPUT_CURRENT, cachedSensorData[1]));
+                            new DeviceStateUpdateImpl(SensorEnum.OUTPUT_CURRENT, (float) cachedSensorData[1]));
                 }
             }
             if (cachedSensorData[2] != null && !checkPowerSensorRefreshPriorityNever(SensorEnum.POWER_CONSUMPTION)) {
-                informListenerAboutStateUpdate(new DeviceStateUpdateImpl(SensorEnum.ACTIVE_POWER, cachedSensorData[2]));
+                informListenerAboutStateUpdate(
+                        new DeviceStateUpdateImpl(SensorEnum.ACTIVE_POWER, (float) cachedSensorData[2]));
             }
         }
     }
@@ -1676,12 +1654,22 @@ public class DeviceImpl extends AbstractGeneralDeviceInformations implements Dev
         this.config = config;
     }
 
+    private String powerSensorRefreshToString() {
+        String powSenRef = "";
+        for (int i = 0; i < powerSensorRefresh.length; i++) {
+            powSenRef = powSenRef + " [" + i + "]=Prio: " + ((String[]) powerSensorRefresh[i])[0] + ", Initialized: "
+                    + ((String[]) powerSensorRefresh[i])[1] + " ";
+        }
+        return powSenRef;
+    }
+
     @Override
     public String toString() {
         return "DeviceImpl [meterDSID=" + meterDSID + ", zoneId=" + zoneId + ", groupList=" + groupList
                 + ", functionalGroup=" + functionalGroup + ", functionalName=" + functionalName + ", hwInfo=" + hwInfo
                 + ", getName()=" + getName() + ", getDSID()=" + getDSID() + ", getDSUID()=" + getDSUID()
                 + ", isPresent()=" + isPresent() + ", isValide()=" + isValide() + ", getDisplayID()=" + getDisplayID()
-                + ", getDeviceSensorValues()=" + getDeviceSensorValues() + "]";
+                + ", getSensorTypes()=" + getSensorTypes() + ", getDeviceSensorValues()=" + getDeviceSensorValues()
+                + ", powerSensorRefresh=" + powerSensorRefreshToString() + "]";
     }
 }

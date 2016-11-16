@@ -14,6 +14,7 @@ import org.eclipse.smarthome.binding.digitalstrom.internal.lib.climate.jsonRespo
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.climate.jsonResponseContainer.impl.TemperatureControlConfig;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.climate.jsonResponseContainer.impl.TemperatureControlStatus;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.climate.jsonResponseContainer.impl.TemperatureControlValues;
+import org.eclipse.smarthome.binding.digitalstrom.internal.lib.config.Config;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.event.EventHandler;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.event.EventListener;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.event.constants.EventNames;
@@ -105,6 +106,8 @@ public class TestApi {
                                     && entry.getKey().equals(JSONApiResponseKeysEnum.NAME.getKey()))
                                     && entry.getValue().isJsonObject()) {
                                 Device dev = new DeviceImpl(entry.getValue().getAsJsonObject());
+                                dev.setSensorDataRefreshPriority(Config.REFRESH_PRIORITY_HIGH,
+                                        Config.REFRESH_PRIORITY_LOW, Config.REFRESH_PRIORITY_MEDIUM);
                                 System.out.println(dev.toString());
                             }
                         }

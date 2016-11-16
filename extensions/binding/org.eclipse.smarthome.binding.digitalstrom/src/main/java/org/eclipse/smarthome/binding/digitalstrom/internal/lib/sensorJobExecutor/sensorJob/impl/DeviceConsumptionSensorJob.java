@@ -93,7 +93,8 @@ public class DeviceConsumptionSensorJob implements SensorJob {
      */
     @Override
     public String toString() {
-        return "DeviceConsumptionSensorJob [sensorType=" + sensorType + ", deviceDSID : " + device.getDSID().getValue()
-                + ", meterDSID=" + meterDSID + ", initalisationTime=" + initalisationTime + "]";
+        return "DeviceConsumptionSensorJob [sensorType=" + sensorType + ", sensorIndex="
+                + device.getSensorIndex(sensorType) + ", deviceDSID : " + device.getDSID().getValue() + ", meterDSID="
+                + meterDSID + ", initalisationTime=" + initalisationTime + "]";
     }
 }
