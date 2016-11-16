@@ -87,15 +87,19 @@ public class DeviceSensorValue {
     /**
      * @param floatValue the floatValue to set
      */
-    public void setFloatValue(Float floatValue) {
-        this.floatValue = floatValue;
-        if (sensorType.getResolution() != 800) {
-            this.dsValue = (int) (floatValue / sensorType.getResolution());
-        } else {
-            this.dsValue = (int) (800 * Math.log10(floatValue));
+    public boolean setFloatValue(Float floatValue) {
+        if (floatValue > -1) {
+            this.floatValue = floatValue;
+            if (sensorType.getResolution() != 800) {
+                this.dsValue = (int) (floatValue / sensorType.getResolution());
+            } else {
+                this.dsValue = (int) (800 * Math.log10(floatValue));
+            }
+            timestamp = Date.from(Instant.ofEpochMilli(System.currentTimeMillis()));
+            this.valid = true;
+            return true;
         }
-        timestamp = Date.from(Instant.ofEpochMilli(System.currentTimeMillis()));
-        this.valid = true;
+        return false;
     }
 
     /**
@@ -108,8 +112,8 @@ public class DeviceSensorValue {
     /**
      * @param dsValue the dsValue to set
      */
-    public void setDsValue(Integer dsValue) {
-        if (dsValue >= 0) {
+    public boolean setDsValue(Integer dsValue) {
+        if (dsValue > -1) {
             this.dsValue = dsValue;
             if (sensorType.getResolution() != 800) {
                 this.floatValue = dsValue * sensorType.getResolution();
@@ -118,14 +122,20 @@ public class DeviceSensorValue {
             }
             timestamp = Date.from(Instant.ofEpochMilli(System.currentTimeMillis()));
             this.valid = true;
+            return true;
         }
+        return false;
     }
 
-    public void setValues(Float floatValue, Integer dSvalue) {
-        this.floatValue = floatValue;
-        this.dsValue = dSvalue;
-        timestamp = Date.from(Instant.ofEpochMilli(System.currentTimeMillis()));
-        this.valid = true;
+    public boolean setValues(Float floatValue, Integer dSvalue) {
+        if (dsValue > -1 && floatValue > -1) {
+            this.floatValue = floatValue;
+            this.dsValue = dSvalue;
+            timestamp = Date.from(Instant.ofEpochMilli(System.currentTimeMillis()));
+            this.valid = true;
+            return true;
+        }
+        return false;
     }
 
     /**

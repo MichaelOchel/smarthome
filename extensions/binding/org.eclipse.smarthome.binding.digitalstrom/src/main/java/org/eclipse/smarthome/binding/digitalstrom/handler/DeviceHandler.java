@@ -804,16 +804,25 @@ public class DeviceHandler extends BaseThingHandler implements DeviceStatusListe
                             new PercentType(fromValueToPercent(device.getAnglePosition(), device.getMaxSlatAngle())));
                     break;
                 case CHANNEL_ID_ELECTRIC_METER:
-                    updateState(new ChannelUID(getThing().getUID(), CHANNEL_ID_ELECTRIC_METER),
-                            new DecimalType(device.getFloatSensorValue(SensorEnum.ELECTRIC_METER)));
+                    Float val = device.getFloatSensorValue(SensorEnum.ELECTRIC_METER);
+                    if (val != null) {
+                        updateState(new ChannelUID(getThing().getUID(), CHANNEL_ID_ELECTRIC_METER),
+                                new DecimalType(val));
+                    }
                     break;
                 case CHANNEL_ID_OUTPUT_CURRENT:
-                    updateState(new ChannelUID(getThing().getUID(), CHANNEL_ID_OUTPUT_CURRENT),
-                            new DecimalType(device.getDsSensorValue(SensorEnum.OUTPUT_CURRENT)));
+                    val = device.getFloatSensorValue(SensorEnum.OUTPUT_CURRENT);
+                    if (val != null) {
+                        updateState(new ChannelUID(getThing().getUID(), CHANNEL_ID_OUTPUT_CURRENT),
+                                new DecimalType(val.intValue()));
+                    }
                     break;
                 case CHANNEL_ID_ACTIVE_POWER:
-                    updateState(new ChannelUID(getThing().getUID(), CHANNEL_ID_ACTIVE_POWER),
-                            new DecimalType(device.getDsSensorValue(SensorEnum.ACTIVE_POWER)));
+                    val = device.getFloatSensorValue(SensorEnum.ACTIVE_POWER);
+                    if (val != null) {
+                        updateState(new ChannelUID(getThing().getUID(), CHANNEL_ID_ACTIVE_POWER),
+                                new DecimalType(val.intValue()));
+                    }
                     break;
                 case CHANNEL_ID_GENERAL_COMBINED_2_STAGE_SWITCH:
                     updateState(new ChannelUID(getThing().getUID(), CHANNEL_ID_GENERAL_COMBINED_2_STAGE_SWITCH),
