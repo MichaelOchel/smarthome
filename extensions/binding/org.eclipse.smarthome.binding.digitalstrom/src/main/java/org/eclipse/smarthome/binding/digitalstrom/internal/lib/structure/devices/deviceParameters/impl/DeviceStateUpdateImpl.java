@@ -106,4 +106,25 @@ public class DeviceStateUpdateImpl implements DeviceStateUpdate {
     public boolean isSensorUpdateType() {
         return UPDATE_TYPE.startsWith(UPDATE_DEVICE_SENSOR);
     }
+
+    @Override
+    public Short getSceneId() {
+        if (isSceneUpdateType()) {
+            return ((Short[]) VALUE)[0];
+        }
+        return -1;
+    }
+
+    @Override
+    public Short getScenePriority() {
+        if (isSceneUpdateType()) {
+            return ((Short[]) VALUE)[1];
+        }
+        return -1;
+    }
+
+    @Override
+    public boolean isSceneUpdateType() {
+        return UPDATE_TYPE.equals(UPDATE_SCENE_CONFIG) || UPDATE_TYPE.equals(UPDATE_SCENE_OUTPUT);
+    }
 }

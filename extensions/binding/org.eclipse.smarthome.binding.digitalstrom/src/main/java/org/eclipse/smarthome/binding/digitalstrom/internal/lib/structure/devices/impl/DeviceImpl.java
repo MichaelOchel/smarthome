@@ -530,16 +530,16 @@ public class DeviceImpl extends AbstractGeneralDeviceInformations implements Dev
     }
 
     @Override
-    public void checkSceneConfig(Short sceneNumber, int prio) {
+    public void checkSceneConfig(Short sceneNumber, short prio) {
         if (isDeviceWithOutput()) {
             if (!containsSceneConfig(sceneNumber)) {
-                deviceStateUpdates
-                        .add(new DeviceStateUpdateImpl(DeviceStateUpdate.UPDATE_SCENE_CONFIG, prio + sceneNumber));
+                deviceStateUpdates.add(new DeviceStateUpdateImpl(DeviceStateUpdate.UPDATE_SCENE_CONFIG,
+                        new Short[] { sceneNumber, prio }));
 
             }
             if (sceneOutputMap.get(sceneNumber) == null) {
-                deviceStateUpdates
-                        .add(new DeviceStateUpdateImpl(DeviceStateUpdate.UPDATE_SCENE_OUTPUT, prio + sceneNumber));
+                deviceStateUpdates.add(new DeviceStateUpdateImpl(DeviceStateUpdate.UPDATE_SCENE_OUTPUT,
+                        new Short[] { sceneNumber, prio }));
             }
         }
     }
@@ -590,8 +590,8 @@ public class DeviceImpl extends AbstractGeneralDeviceInformations implements Dev
                         return;
                     }
                 } else {
-                    this.deviceStateUpdates
-                            .add(new DeviceStateUpdateImpl(DeviceStateUpdate.UPDATE_SCENE_CONFIG, sceneNumber));
+                    this.deviceStateUpdates.add(new DeviceStateUpdateImpl(DeviceStateUpdate.UPDATE_SCENE_CONFIG,
+                            new Short[] { sceneNumber, 0 }));
                 }
                 if (sceneOutputMap.get(sceneNumber) != null) {
                     if (!isShade()) {
@@ -606,8 +606,8 @@ public class DeviceImpl extends AbstractGeneralDeviceInformations implements Dev
                         }
                     }
                 } else {
-                    this.deviceStateUpdates
-                            .add(new DeviceStateUpdateImpl(DeviceStateUpdate.UPDATE_SCENE_OUTPUT, sceneNumber));
+                    this.deviceStateUpdates.add(new DeviceStateUpdateImpl(DeviceStateUpdate.UPDATE_SCENE_OUTPUT,
+                            new Short[] { sceneNumber, 0 }));
                 }
             }
 
@@ -615,145 +615,150 @@ public class DeviceImpl extends AbstractGeneralDeviceInformations implements Dev
     }
 
     private boolean checkSceneNumber(Short sceneNumber) {
-        if (this.outputMode.equals(OutputModeEnum.POWERSAVE)) {
-            switch (SceneEnum.getScene(sceneNumber)) {
-                case ABSENT:
-                case DEEP_OFF:
-                case SLEEPING:
-                    this.updateInternalDeviceState(new DeviceStateUpdateImpl(DeviceStateUpdate.UPDATE_ON_OFF, -1));
-                    return true;
-                case AREA_1_OFF:
-                case AREA_2_OFF:
-                case AREA_3_OFF:
-                case AREA_4_OFF:
-                case PRESET_0:
-                case PRESET_10:
-                case PRESET_20:
-                case PRESET_30:
-                case PRESET_40:
-                    return true;
-                default:
-                    break;
-            }
-        }
-        if (this.outputMode.equals(OutputModeEnum.WIPE)) {
-            switch (SceneEnum.getScene(sceneNumber)) {
-                case STANDBY:
-                case AUTO_STANDBY:
-                case AREA_1_OFF:
-                case AREA_2_OFF:
-                case AREA_3_OFF:
-                case AREA_4_OFF:
-                case PRESET_0:
-                case PRESET_10:
-                case PRESET_20:
-                case PRESET_30:
-                case PRESET_40:
-                    this.updateInternalDeviceState(new DeviceStateUpdateImpl(DeviceStateUpdate.UPDATE_ON_OFF, -1));
-                    return true;
-                default:
-                    break;
-            }
-        }
-        switch (SceneEnum.getScene(sceneNumber)) {
-            // on scenes
-            case DEVICE_ON:
-            case MAXIMUM:
-                if (!isShade()) {
-                    this.updateInternalDeviceState(new DeviceStateUpdateImpl(DeviceStateUpdate.UPDATE_ON_OFF, 1));
-                } else {
-                    this.updateInternalDeviceState(new DeviceStateUpdateImpl(DeviceStateUpdate.UPDATE_OPEN_CLOSE, 1));
-                    if (isBlind()) {
-                        this.updateInternalDeviceState(
-                                new DeviceStateUpdateImpl(DeviceStateUpdate.UPDATE_OPEN_CLOSE_ANGLE, 1));
-                    }
-                }
-                return true;
-            // off scenes
-            case MINIMUM:
-            case DEVICE_OFF:
-            case AUTO_OFF:
-                if (!isShade()) {
-                    this.updateInternalDeviceState(new DeviceStateUpdateImpl(DeviceStateUpdate.UPDATE_ON_OFF, -1));
-                } else {
-                    this.updateInternalDeviceState(new DeviceStateUpdateImpl(DeviceStateUpdate.UPDATE_OPEN_CLOSE, -1));
-                    if (isBlind()) {
-                        this.updateInternalDeviceState(
-                                new DeviceStateUpdateImpl(DeviceStateUpdate.UPDATE_OPEN_CLOSE_ANGLE, -1));
-                    }
-                }
-                return true;
-            // increase scenes
-            case INCREMENT:
-            case AREA_1_INCREMENT:
-            case AREA_2_INCREMENT:
-            case AREA_3_INCREMENT:
-            case AREA_4_INCREMENT:
-                if (isDimmable()) {
-                    if (outputValue == maxOutputValue) {
+        if (SceneEnum.containsScene(sceneNumber)) {
+            if (this.outputMode.equals(OutputModeEnum.POWERSAVE)) {
+                switch (SceneEnum.getScene(sceneNumber)) {
+                    case ABSENT:
+                    case DEEP_OFF:
+                    case SLEEPING:
+                        this.updateInternalDeviceState(new DeviceStateUpdateImpl(DeviceStateUpdate.UPDATE_ON_OFF, -1));
                         return true;
-                    }
-                    this.updateInternalDeviceState(
-                            new DeviceStateUpdateImpl(DeviceStateUpdate.UPDATE_BRIGHTNESS_INCREASE, 0));
-                }
-                if (isShade()) {
-                    if (slatPosition == maxSlatPosition) {
+                    case AREA_1_OFF:
+                    case AREA_2_OFF:
+                    case AREA_3_OFF:
+                    case AREA_4_OFF:
+                    case PRESET_0:
+                    case PRESET_10:
+                    case PRESET_20:
+                    case PRESET_30:
+                    case PRESET_40:
                         return true;
+                    default:
+                        break;
+                }
+            }
+            if (this.outputMode.equals(OutputModeEnum.WIPE)) {
+                switch (SceneEnum.getScene(sceneNumber)) {
+                    case STANDBY:
+                    case AUTO_STANDBY:
+                    case AREA_1_OFF:
+                    case AREA_2_OFF:
+                    case AREA_3_OFF:
+                    case AREA_4_OFF:
+                    case PRESET_0:
+                    case PRESET_10:
+                    case PRESET_20:
+                    case PRESET_30:
+                    case PRESET_40:
+                        this.updateInternalDeviceState(new DeviceStateUpdateImpl(DeviceStateUpdate.UPDATE_ON_OFF, -1));
+                        return true;
+                    default:
+                        break;
+                }
+            }
+            switch (SceneEnum.getScene(sceneNumber)) {
+                // on scenes
+                case DEVICE_ON:
+                case MAXIMUM:
+                    if (!isShade()) {
+                        this.updateInternalDeviceState(new DeviceStateUpdateImpl(DeviceStateUpdate.UPDATE_ON_OFF, 1));
+                    } else {
+                        this.updateInternalDeviceState(
+                                new DeviceStateUpdateImpl(DeviceStateUpdate.UPDATE_OPEN_CLOSE, 1));
+                        if (isBlind()) {
+                            this.updateInternalDeviceState(
+                                    new DeviceStateUpdateImpl(DeviceStateUpdate.UPDATE_OPEN_CLOSE_ANGLE, 1));
+                        }
                     }
-                    this.updateInternalDeviceState(
-                            new DeviceStateUpdateImpl(DeviceStateUpdate.UPDATE_SLAT_INCREASE, 0));
-                    if (isBlind()) {
-                        if (slatAngle == maxSlatAngle) {
+                    return true;
+                // off scenes
+                case MINIMUM:
+                case DEVICE_OFF:
+                case AUTO_OFF:
+                    if (!isShade()) {
+                        this.updateInternalDeviceState(new DeviceStateUpdateImpl(DeviceStateUpdate.UPDATE_ON_OFF, -1));
+                    } else {
+                        this.updateInternalDeviceState(
+                                new DeviceStateUpdateImpl(DeviceStateUpdate.UPDATE_OPEN_CLOSE, -1));
+                        if (isBlind()) {
+                            this.updateInternalDeviceState(
+                                    new DeviceStateUpdateImpl(DeviceStateUpdate.UPDATE_OPEN_CLOSE_ANGLE, -1));
+                        }
+                    }
+                    return true;
+                // increase scenes
+                case INCREMENT:
+                case AREA_1_INCREMENT:
+                case AREA_2_INCREMENT:
+                case AREA_3_INCREMENT:
+                case AREA_4_INCREMENT:
+                    if (isDimmable()) {
+                        if (outputValue == maxOutputValue) {
+                            return true;
+                        }
+                        this.updateInternalDeviceState(
+                                new DeviceStateUpdateImpl(DeviceStateUpdate.UPDATE_BRIGHTNESS_INCREASE, 0));
+                    }
+                    if (isShade()) {
+                        if (slatPosition == maxSlatPosition) {
+                            return true;
+                        }
+                        this.updateInternalDeviceState(
+                                new DeviceStateUpdateImpl(DeviceStateUpdate.UPDATE_SLAT_INCREASE, 0));
+                        if (isBlind()) {
+                            if (slatAngle == maxSlatAngle) {
+                                return true;
+                            }
+                            updateInternalDeviceState(
+                                    new DeviceStateUpdateImpl(DeviceStateUpdate.UPDATE_SLAT_ANGLE_INCREASE, 0));
+                        }
+                    }
+                    return true;
+                // decrease scenes
+                case DECREMENT:
+                case AREA_1_DECREMENT:
+                case AREA_2_DECREMENT:
+                case AREA_3_DECREMENT:
+                case AREA_4_DECREMENT:
+                    if (isDimmable()) {
+                        if (outputValue == minOutputValue) {
                             return true;
                         }
                         updateInternalDeviceState(
-                                new DeviceStateUpdateImpl(DeviceStateUpdate.UPDATE_SLAT_ANGLE_INCREASE, 0));
+                                new DeviceStateUpdateImpl(DeviceStateUpdate.UPDATE_BRIGHTNESS_DECREASE, 0));
                     }
-                }
-                return true;
-            // decrease scenes
-            case DECREMENT:
-            case AREA_1_DECREMENT:
-            case AREA_2_DECREMENT:
-            case AREA_3_DECREMENT:
-            case AREA_4_DECREMENT:
-                if (isDimmable()) {
-                    if (outputValue == minOutputValue) {
-                        return true;
-                    }
-                    updateInternalDeviceState(
-                            new DeviceStateUpdateImpl(DeviceStateUpdate.UPDATE_BRIGHTNESS_DECREASE, 0));
-                }
-                if (isShade()) {
-                    if (slatPosition == minSlatPosition) {
-                        return true;
-                    }
-                    updateInternalDeviceState(new DeviceStateUpdateImpl(DeviceStateUpdate.UPDATE_SLAT_DECREASE, 0));
-                    if (isBlind()) {
-                        if (slatAngle == minSlatAngle) {
+                    if (isShade()) {
+                        if (slatPosition == minSlatPosition) {
                             return true;
                         }
-                        this.updateInternalDeviceState(
-                                new DeviceStateUpdateImpl(DeviceStateUpdate.UPDATE_SLAT_ANGLE_INCREASE, 0));
+                        updateInternalDeviceState(new DeviceStateUpdateImpl(DeviceStateUpdate.UPDATE_SLAT_DECREASE, 0));
+                        if (isBlind()) {
+                            if (slatAngle == minSlatAngle) {
+                                return true;
+                            }
+                            this.updateInternalDeviceState(
+                                    new DeviceStateUpdateImpl(DeviceStateUpdate.UPDATE_SLAT_ANGLE_INCREASE, 0));
+                        }
                     }
-                }
-                return true;
-            // Stop scenes
-            case AREA_1_STOP:
-            case AREA_2_STOP:
-            case AREA_3_STOP:
-            case AREA_4_STOP:
-            case DEVICE_STOP:
-            case STOP:
-                this.deviceStateUpdates.add(new DeviceStateUpdateImpl(DeviceStateUpdate.UPDATE_OUTPUT_VALUE, 0));
-                return true;
-            // Area Stepping continue scenes
-            case AREA_STEPPING_CONTINUE:
-                // TODO: we don't know what will be happened when this scene was called. Some one know it?
-                return true;
-            default:
-                return false;
+                    return true;
+                // Stop scenes
+                case AREA_1_STOP:
+                case AREA_2_STOP:
+                case AREA_3_STOP:
+                case AREA_4_STOP:
+                case DEVICE_STOP:
+                case STOP:
+                    this.deviceStateUpdates.add(new DeviceStateUpdateImpl(DeviceStateUpdate.UPDATE_OUTPUT_VALUE, 0));
+                    return true;
+                // Area Stepping continue scenes
+                case AREA_STEPPING_CONTINUE:
+                    // TODO: we don't know what will be happened when this scene was called. Some one know it?
+                    return true;
+                default:
+                    return false;
+            }
         }
+        return false;
     }
 
     private Integer[] getStandartSceneOutput(short sceneNumber) {
@@ -843,6 +848,7 @@ public class DeviceImpl extends AbstractGeneralDeviceInformations implements Dev
             if (listener != null) {
                 listener.onSceneConfigAdded(sceneId);
             }
+            checkActiveSceneNumber(sceneId);
         }
     }
 
@@ -853,6 +859,14 @@ public class DeviceImpl extends AbstractGeneralDeviceInformations implements Dev
             if (listener != null) {
                 listener.onSceneConfigAdded(sceneId);
             }
+            checkActiveSceneNumber(sceneId);
+        }
+    }
+
+    private void checkActiveSceneNumber(short sceneId) {
+        if (activeSceneNumber == sceneId) {
+            internalCallScene(sceneId);
+            deviceStateUpdates.add(new DeviceStateUpdateImpl(DeviceStateUpdate.UPDATE_OUTPUT_VALUE, -1));
         }
     }
 
@@ -1084,17 +1098,37 @@ public class DeviceImpl extends AbstractGeneralDeviceInformations implements Dev
         } else {
             outputValue = (short) value;
             if (outputValue <= 0) {
-                this.isOn = false;
-                setDsSensorValue(SensorEnum.ACTIVE_POWER, 0);
-                setDsSensorValue(SensorEnum.OUTPUT_CURRENT, 0);
-                setDsSensorValue(SensorEnum.POWER_CONSUMPTION, 0);
-                setSensorDataReadingInitialized(SensorEnum.ELECTRIC_METER, false);
+                internalSetOff();
             } else {
                 this.isOn = true;
                 setCachedMeterData();
             }
             return outputValue;
         }
+    }
+
+    private void internalSetOff() {
+        this.isOn = false;
+        if (checkPowerSensorRefreshPriorityNever(SensorEnum.ACTIVE_POWER)) {
+            if (getSensorDataReadingInitialized(SensorEnum.ACTIVE_POWER)) {
+                deviceStateUpdates.add(new DeviceStateUpdateImpl(SensorEnum.ACTIVE_POWER, -1));
+            }
+            setDsSensorValue(SensorEnum.ACTIVE_POWER, 0);
+        }
+        if (checkPowerSensorRefreshPriorityNever(SensorEnum.OUTPUT_CURRENT)) {
+            if (getSensorDataReadingInitialized(SensorEnum.OUTPUT_CURRENT)) {
+                deviceStateUpdates.add(new DeviceStateUpdateImpl(SensorEnum.OUTPUT_CURRENT, -1));
+            }
+            setDsSensorValue(SensorEnum.OUTPUT_CURRENT, 0);
+        }
+        if (checkPowerSensorRefreshPriorityNever(SensorEnum.POWER_CONSUMPTION)) {
+            if (getSensorDataReadingInitialized(SensorEnum.POWER_CONSUMPTION)) {
+                deviceStateUpdates.add(new DeviceStateUpdateImpl(SensorEnum.POWER_CONSUMPTION, -1));
+            }
+            setDsSensorValue(SensorEnum.POWER_CONSUMPTION, 0);
+        }
+
+        // setSensorDataReadingInitialized(SensorEnum.ELECTRIC_METER, false);
     }
 
     private short internalSetAngleValue(int value) {
@@ -1214,40 +1248,32 @@ public class DeviceImpl extends AbstractGeneralDeviceInformations implements Dev
 
     @Override
     public boolean setFloatSensorValue(SensorEnum sensorType, Float floatSensorValue) {
-        return checkAndSetSensorValue(sensorType, null, floatSensorValue);// return setFloatSensorValue((Object)
-                                                                          // sensorType, floatSensorValue);
+        return checkAndSetSensorValue(sensorType, null, floatSensorValue);
     }
 
     @Override
     public boolean setFloatSensorValue(Short sensorIndex, Float floatSensorValue) {
-        return checkAndSetSensorValue(sensorIndex, null, floatSensorValue);// return setFloatSensorValue((Object)
-                                                                           // sensorIndex, floatSensorValue);
+        return checkAndSetSensorValue(sensorIndex, null, floatSensorValue);
     }
 
     @Override
     public boolean setDsSensorValue(Short sensorIndex, Integer dSSensorValue) {
-        return checkAndSetSensorValue(sensorIndex, dSSensorValue, null);// return setDsSensorValue((Object) sensorIndex,
-                                                                        // dSSensorValue);
+        return checkAndSetSensorValue(sensorIndex, dSSensorValue, null);
     }
 
     @Override
     public boolean setDsSensorValue(SensorEnum sensorType, Integer dSSensorValue) {
-        return checkAndSetSensorValue(sensorType, dSSensorValue, null);// return setDsSensorValue((Object) sensorType,
-                                                                       // dSSensorValue);
+        return checkAndSetSensorValue(sensorType, dSSensorValue, null);
     }
 
     @Override
     public boolean setDsSensorValue(Short sensorIndex, Integer dSSensorValue, Float floatSensorValue) {
-        return checkAndSetSensorValue(sensorIndex, dSSensorValue, floatSensorValue);// return setDsSensorValue((Object)
-                                                                                    // sensorIndex, dSSensorValue,
-                                                                                    // floatSensorValue);
+        return checkAndSetSensorValue(sensorIndex, dSSensorValue, floatSensorValue);
     }
 
     @Override
     public boolean setDsSensorValue(SensorEnum sensorType, Integer dSSensorValue, Float floatSensorValue) {
-        return checkAndSetSensorValue(sensorType, dSSensorValue, floatSensorValue);// return setDsSensorValue((Object)
-                                                                                   // sensorType, dSSensorValue,
-                                                                                   // floatSensorValue);
+        return checkAndSetSensorValue(sensorType, dSSensorValue, floatSensorValue);
     }
 
     @Override
@@ -1280,7 +1306,7 @@ public class DeviceImpl extends AbstractGeneralDeviceInformations implements Dev
 
     private Integer getDsSensorValue(Object obj) {
         if (obj != null) {
-            DeviceSensorValue devSenVal = getDeviceSensorValueForGet(obj);
+            DeviceSensorValue devSenVal = checkPowerSensor(getDeviceSensorValueForGet(obj));
             return devSenVal != null && devSenVal.getValid() ? devSenVal.getDsValue() : null;
         }
         return null;
@@ -1288,10 +1314,20 @@ public class DeviceImpl extends AbstractGeneralDeviceInformations implements Dev
 
     private Float getFloatSensorValue(Object obj) {
         if (obj != null) {
-            DeviceSensorValue devSenVal = getDeviceSensorValueForGet(obj);
+            DeviceSensorValue devSenVal = checkPowerSensor(getDeviceSensorValueForGet(obj));
             return devSenVal != null && devSenVal.getValid() ? devSenVal.getFloatValue() : null;
         }
         return null;
+    }
+
+    private DeviceSensorValue checkPowerSensor(DeviceSensorValue devSenVal) {
+        if (devSenVal != null) {
+            if (!devSenVal.getSensorType().equals(SensorEnum.ELECTRIC_METER)
+                    && !(SensorEnum.isPowerSensor(devSenVal.getSensorType()) && isOn)) {
+                devSenVal.setDsValue(0);
+            }
+        }
+        return devSenVal;
     }
 
     /**
@@ -1580,9 +1616,19 @@ public class DeviceImpl extends AbstractGeneralDeviceInformations implements Dev
                         if (sceneValue > -1) {
                             logger.debug("Saved sceneValue {}, sceneAngle {} for scene id {} into device with dsid {}",
                                     sceneValue, sceneAngle, sceneID, getDSID().getValue());
-                            synchronized (sceneOutputMap) {
-                                sceneOutputMap.put(sceneID, new Integer[] { sceneValue, sceneAngle });
-                            }
+                            setSceneOutputValue(sceneID, sceneValue, sceneAngle);
+                            deviceStateUpdates.add(new DeviceStateUpdateImpl(DeviceStateUpdate.UPDATE_SCENE_OUTPUT,
+                                    new Short[] { sceneID, (short) -1 }));
+                            /*
+                             * synchronized (sceneOutputMap) {
+                             * sceneOutputMap.put(sceneID, new Integer[] { sceneValue, sceneAngle });
+                             * if (activeSceneNumber == sceneID) {
+                             * internalCallScene(sceneID);
+                             * }
+                             * deviceStateUpdates
+                             * .add(new DeviceStateUpdateImpl(DeviceStateUpdate.UPDATE_OUTPUT_VALUE, -1));
+                             * }
+                             */
                         }
                         if (sceneSpecNew != null) {
                             logger.debug("Saved sceneConfig: [{}] for scene id {} into device with dsid {}",
@@ -1590,6 +1636,8 @@ public class DeviceImpl extends AbstractGeneralDeviceInformations implements Dev
                             synchronized (sceneConfigMap) {
                                 sceneConfigMap.put(sceneSpecNew.getScene().getSceneNumber(), sceneSpecNew);
                             }
+                            deviceStateUpdates.add(new DeviceStateUpdateImpl(DeviceStateUpdate.UPDATE_SCENE_CONFIG,
+                                    new Short[] { sceneID, (short) -1 }));
                         }
                     }
                 }

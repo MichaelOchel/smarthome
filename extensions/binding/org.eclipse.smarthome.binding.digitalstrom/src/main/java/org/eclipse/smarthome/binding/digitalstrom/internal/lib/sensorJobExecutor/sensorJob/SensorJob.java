@@ -60,4 +60,6 @@ public interface SensorJob {
      * @param time to set
      */
     public void setInitalisationTime(long time);
+
+    public String getID();
 }

@@ -73,5 +73,4 @@ public class SceneReadingJobExecutor extends AbstractSensorJobExecutor {
         logger.debug("Add SceneReadingJob from device with dSID {} and low-priority to SceneReadingJobExecutor",
                 sensorJob.getDSID());
     }
-
 }

@@ -162,9 +162,26 @@ public class CircuitScheduler {
                 SensorJob job = iter.next();
                 if (job.getDSID().equals(dSID)) {
                     iter.remove();
+                    logger.debug("Remove SensorJob with ID {}." + job.getID());
                 }
             }
-            logger.debug("Remove SensorJobs from device with dSID {}." + dSID);
+        }
+    }
+
+    /**
+     * Removes the {@link SensorJob} with the given ID .
+     *
+     * @param ID of the {@link SensorJob}
+     */
+    public void removeSensorJob(String ID) {
+        synchronized (sensorJobQueue) {
+            for (Iterator<SensorJob> iter = sensorJobQueue.iterator(); iter.hasNext();) {
+                SensorJob job = iter.next();
+                if (job.getID().equals(ID)) {
+                    iter.remove();
+                    logger.debug("Remove SensorJob with ID {}." + ID);
+                }
+            }
         }
     }
 

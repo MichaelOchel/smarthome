@@ -1,7 +1,6 @@
 package org.eclipse.smarthome.binding.digitalstrom.internal.lib.serverConnection;
 
 import java.time.Instant;
-import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -23,8 +22,6 @@ import org.eclipse.smarthome.binding.digitalstrom.internal.lib.manager.Connectio
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.manager.impl.ConnectionManagerImpl;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.serverConnection.constants.JSONApiResponseKeysEnum;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.Device;
-import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.constants.SensorEnum;
-import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.impl.DeviceSensorValue;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.impl.JSONDeviceSceneSpecImpl;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.impl.DeviceImpl;
 
@@ -44,55 +41,94 @@ public class TestApi {
         final String EVENT_LISTENER = "eventListener";
         final String PARSE_TEST = "parseTest";
         final String DEVICE_QUERY2 = "devQ2";
-        String testType = DEVICE_QUERY2;
+        String testType = "";
 
-        ConnectionManager connMan = new ConnectionManagerImpl(host, user, pw, false);
+        ConnectionManager connMan = new ConnectionManagerImpl(host1, user, user, false);
 
-        List<SensorEnum> deviceTypes = new ArrayList<SensorEnum>();
-        deviceTypes.add(SensorEnum.ACTIVE_POWER);
-        deviceTypes.add(SensorEnum.AIR_PRESSURE);
-        int index = deviceTypes.indexOf(SensorEnum.ACTIVE_POWER);
-        if (index < 0) {
-            deviceTypes.add(SensorEnum.ACTIVE_POWER);
-        }
-        System.out.println(deviceTypes.toString());
+        final String LAST_CALL_SCENE_QUERY = "/apartment/zones/*(*)/groups/*(*)/*(*)";
 
-        List<DeviceSensorValue> deviceSensorValues = new ArrayList<DeviceSensorValue>();
-        deviceSensorValues.add(new DeviceSensorValue(SensorEnum.ACTIVE_POWER, (short) 3));
-        deviceSensorValues.add(new DeviceSensorValue(SensorEnum.OUTPUT_CURRENT, (short) 4));
-        deviceSensorValues.add(new DeviceSensorValue(SensorEnum.ELECTRIC_METER, (short) 5));
-        DeviceSensorValue devSenVal = new DeviceSensorValue(SensorEnum.ELECTRIC_METER, (short) 3);
-        devSenVal.setDsValue(14);
-        index = deviceSensorValues.indexOf(devSenVal);
-        if (index < 0) {
-            deviceSensorValues.add(devSenVal);
-        } else {
-            deviceSensorValues.get(index).setDsValue(devSenVal.getDsValue());
-        }
-        System.out.println(deviceSensorValues.toString());
-        devSenVal = new DeviceSensorValue(SensorEnum.ELECTRIC_METER, (short) 3);
-        devSenVal.setDsValue(18);
-        index = deviceSensorValues.indexOf(devSenVal);
-        if (index < 0) {
-            deviceSensorValues.add(devSenVal);
-        } else {
-            deviceSensorValues.get(index).setDsValue(devSenVal.getDsValue());
-        }
-        System.out.println(deviceSensorValues.toString());
-        for (DeviceSensorValue sensorVal : deviceSensorValues) {
-            if (sensorVal.getSensorType().equals(SensorEnum.ELECTRIC_METER)) {
-                System.out.println(sensorVal.getSensorIndex());
-                System.out.println(sensorVal.equals(SensorEnum.ELECTRIC_METER));
+        if (connMan.checkConnection()) {
+            JsonObject response = connMan.getDigitalSTROMAPI().query2(connMan.getSessionToken(), LAST_CALL_SCENE_QUERY);
+            System.out.println(response.toString());
+            if (response.isJsonObject()) {
+                for (Entry<String, JsonElement> entry : response.entrySet()) {
+                    if (entry.getValue().isJsonObject()) {
+                        JsonObject zone = entry.getValue().getAsJsonObject();
+                        // System.out.println(entry.getValue().toString());
+                        int zoneID = -1;
+                        short groupID = -1;
+                        short sceneID = -1;
+                        if (zone.get(JSONApiResponseKeysEnum.ZONE_ID.getKey()) != null) {
+                            zoneID = zone.get(JSONApiResponseKeysEnum.ZONE_ID.getKey()).getAsInt();
+                        }
+                        for (Entry<String, JsonElement> groupEntry : zone.entrySet()) {
+                            if (groupEntry.getKey().startsWith("group") && groupEntry.getValue().isJsonObject()) {
+                                JsonObject group = groupEntry.getValue().getAsJsonObject();
+                                if (group.get(JSONApiResponseKeysEnum.DEVICES.getKey()) != null) {
+                                    // System.out.println(group.toString());
+                                    if (group.get(JSONApiResponseKeysEnum.GROUP.getKey()) != null) {
+                                        groupID = group.get(JSONApiResponseKeysEnum.GROUP.getKey()).getAsShort();
+                                    }
+                                    if (group.get(JSONApiResponseKeysEnum.LAST_CALL_SCENE.getKey()) != null) {
+                                        sceneID = group.get(JSONApiResponseKeysEnum.LAST_CALL_SCENE.getKey())
+                                                .getAsShort();
+                                    }
+                                    if (zoneID > -1 && groupID > -1 && sceneID > -1) {
+                                        System.out.println(zoneID + "-" + groupID + "-" + sceneID);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
             }
         }
-
-        index = deviceSensorValues.indexOf(SensorEnum.ACTIVE_POWER);
-        if (index > -1) {
-            System.out.println(deviceSensorValues.get(index).getSensorIndex());
-        }
-        Object obj = new String[] { "a", "b" };
-        System.out.println(obj.toString());
-
+        /*
+         * List<SensorEnum> deviceTypes = new ArrayList<SensorEnum>();
+         * deviceTypes.add(SensorEnum.ACTIVE_POWER);
+         * deviceTypes.add(SensorEnum.AIR_PRESSURE);
+         * int index = deviceTypes.indexOf(SensorEnum.ACTIVE_POWER);
+         * if (index < 0) {
+         * deviceTypes.add(SensorEnum.ACTIVE_POWER);
+         * }
+         * System.out.println(deviceTypes.toString());
+         *
+         * List<DeviceSensorValue> deviceSensorValues = new ArrayList<DeviceSensorValue>();
+         * deviceSensorValues.add(new DeviceSensorValue(SensorEnum.ACTIVE_POWER, (short) 3));
+         * deviceSensorValues.add(new DeviceSensorValue(SensorEnum.OUTPUT_CURRENT, (short) 4));
+         * deviceSensorValues.add(new DeviceSensorValue(SensorEnum.ELECTRIC_METER, (short) 5));
+         * DeviceSensorValue devSenVal = new DeviceSensorValue(SensorEnum.ELECTRIC_METER, (short) 3);
+         * devSenVal.setDsValue(14);
+         * index = deviceSensorValues.indexOf(devSenVal);
+         * if (index < 0) {
+         * deviceSensorValues.add(devSenVal);
+         * } else {
+         * deviceSensorValues.get(index).setDsValue(devSenVal.getDsValue());
+         * }
+         * System.out.println(deviceSensorValues.toString());
+         * devSenVal = new DeviceSensorValue(SensorEnum.ELECTRIC_METER, (short) 3);
+         * devSenVal.setDsValue(18);
+         * index = deviceSensorValues.indexOf(devSenVal);
+         * if (index < 0) {
+         * deviceSensorValues.add(devSenVal);
+         * } else {
+         * deviceSensorValues.get(index).setDsValue(devSenVal.getDsValue());
+         * }
+         * System.out.println(deviceSensorValues.toString());
+         * for (DeviceSensorValue sensorVal : deviceSensorValues) {
+         * if (sensorVal.getSensorType().equals(SensorEnum.ELECTRIC_METER)) {
+         * System.out.println(sensorVal.getSensorIndex());
+         * System.out.println(sensorVal.equals(SensorEnum.ELECTRIC_METER));
+         * }
+         * }
+         *
+         * index = deviceSensorValues.indexOf(SensorEnum.ACTIVE_POWER);
+         * if (index > -1) {
+         * System.out.println(deviceSensorValues.get(index).getSensorIndex());
+         * }
+         * Object obj = new String[] { "a", "b" };
+         * System.out.println(obj.toString());
+         */
         if (testType.equals(DEVICE_QUERY2)) {
             final String GET_DETAILD_DEVICES = "/apartment/zones/zone0(*)/devices/*(*)/*(*)/*(*)";
             if (connMan.checkConnection()) {

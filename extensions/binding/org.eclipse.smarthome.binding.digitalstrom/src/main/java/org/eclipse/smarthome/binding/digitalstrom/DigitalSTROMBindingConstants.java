@@ -83,19 +83,22 @@ public class DigitalSTROMBindingConstants {
     public static final String CHANNEL_ID_SCENE = "scene";
 
     // sensor
-    public static final String CHANNEL_ID_ELECTRIC_METER = "electricMeter";
-    public static final String CHANNEL_ID_OUTPUT_CURRENT = "outputCurrent";
-    public static final String CHANNEL_ID_ACTIVE_POWER = "activePower";
+    /*
+     * public static final String CHANNEL_ID_ELECTRIC_METER = "electricMeter";
+     * public static final String CHANNEL_ID_OUTPUT_CURRENT = "outputCurrent";
+     * public static final String CHANNEL_ID_ACTIVE_POWER = "activePower";
+     */
     public static final String CHANNEL_ID_TOTAL_ACTIVE_POWER = "totalActivePower";
     public static final String CHANNEL_ID_TOTAL_ELECTRIC_METER = "totalElectricMeter";
 
-    public static final ChannelTypeUID CHANNEL_TYPE_ELECTRIC_METER = new ChannelTypeUID(BINDING_ID,
-            CHANNEL_ID_ELECTRIC_METER);
-    public static final ChannelTypeUID CHANNEL_TYPE_OUTPUT_CURRENT = new ChannelTypeUID(BINDING_ID,
-            CHANNEL_ID_OUTPUT_CURRENT);
-    public static final ChannelTypeUID CHANNEL_TYPE_ACTIVE_POWER = new ChannelTypeUID(BINDING_ID,
-            CHANNEL_ID_ACTIVE_POWER);
-
+    /*
+     * public static final ChannelTypeUID CHANNEL_TYPE_ELECTRIC_METER = new ChannelTypeUID(BINDING_ID,
+     * CHANNEL_ID_ELECTRIC_METER);
+     * public static final ChannelTypeUID CHANNEL_TYPE_OUTPUT_CURRENT = new ChannelTypeUID(BINDING_ID,
+     * CHANNEL_ID_OUTPUT_CURRENT);
+     * public static final ChannelTypeUID CHANNEL_TYPE_ACTIVE_POWER = new ChannelTypeUID(BINDING_ID,
+     * CHANNEL_ID_ACTIVE_POWER);
+     */
     // options combined switches
     public static final String OPTION_COMBINED_BOTH_OFF = "0";
     public static final String OPTION_COMBINED_BOTH_ON = "200";

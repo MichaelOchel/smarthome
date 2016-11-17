@@ -448,7 +448,7 @@ public interface Device extends GeneralDeviceInformations {
      * @param sceneNumber
      * @param prio
      */
-    public void checkSceneConfig(Short sceneNumber, int prio);
+    public void checkSceneConfig(Short sceneNumber, short prio);
 
     /**
      * Sets the given output mode as new output mode of this {@link Device}.

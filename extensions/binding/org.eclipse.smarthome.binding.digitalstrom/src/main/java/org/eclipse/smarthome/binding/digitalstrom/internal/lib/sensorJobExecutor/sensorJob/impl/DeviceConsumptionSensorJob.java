@@ -97,4 +97,14 @@ public class DeviceConsumptionSensorJob implements SensorJob {
                 + device.getSensorIndex(sensorType) + ", deviceDSID : " + device.getDSID().getValue() + ", meterDSID="
                 + meterDSID + ", initalisationTime=" + initalisationTime + "]";
     }
+
+    @Override
+    public String getID() {
+        return this.getClass().getSimpleName() + "-" + device.getDSID().getValue() + "-" + sensorType.toString();
+    }
+
+    public static String getID(Device device, SensorEnum sensorType) {
+        return DeviceOutputValueSensorJob.class.getSimpleName() + "-" + device.getDSID().getValue() + "-"
+                + sensorType.toString();
+    }
 }

@@ -84,7 +84,11 @@ public class SceneManagerImpl implements SceneManager, EventHandler {
         }
         this.eventListener.start();
         logger.debug("start SceneManager");
-        stateChanged(ManagerStates.RUNNING);
+        if (!scenesGenerated) {
+            generateScenes();
+        } else {
+            stateChanged(ManagerStates.RUNNING);
+        }
     }
 
     @Override
@@ -126,6 +130,7 @@ public class SceneManagerImpl implements SceneManager, EventHandler {
                 }
 
                 if (!isEcho(dsidStr, sceneId)) {
+                    logger.debug(eventItem.getName() + " event for device: " + dsidStr);
                     if (isCallScene) {
                         this.callDeviceScene(dsidStr, sceneId);
                     } else {
@@ -137,11 +142,12 @@ public class SceneManagerImpl implements SceneManager, EventHandler {
                 String zoneIDStr = eventItem.getSource().get(EventResponseEnum.ZONEID);
                 String groupIDStr = eventItem.getSource().get(EventResponseEnum.GROUPID);
                 String sceneIDStr = eventItem.getProperties().get(EventResponseEnum.SCENEID);
-                logger.debug("event for scene: " + zoneIDStr + "-" + groupIDStr + "-" + sceneIDStr);
 
                 if (zoneIDStr != null && sceneIDStr != null && groupIDStr != null) {
                     intSceneID = zoneIDStr + "-" + groupIDStr + "-" + sceneIDStr;
                     if (!isEcho(intSceneID)) {
+                        logger.debug(eventItem.getName() + " event for scene: " + zoneIDStr + "-" + groupIDStr + "-"
+                                + sceneIDStr);
                         if (isCallScene) {
                             this.callInternalScene(intSceneID);
                         } else {
@@ -193,6 +199,22 @@ public class SceneManagerImpl implements SceneManager, EventHandler {
                 scene.addReferenceDevices(this.structureManager.getReferenceDeviceListFromZoneXGroupX(scene.getZoneID(),
                         scene.getGroupID()));
                 this.internalSceneMap.put(scene.getID(), scene);
+                scene.activateScene();
+            }
+        }
+    }
+
+    @Override
+    public void callInternalSceneWithoutDiscovery(Integer zoneID, Short groupID, Short sceneID) {
+        InternalScene intScene = this.internalSceneMap.get(zoneID + "-" + groupID + "-" + sceneID);
+        if (intScene != null) {
+            intScene.activateScene();
+        } else {
+            InternalScene scene = new InternalScene(zoneID, groupID, sceneID, null);
+            if (structureManager.checkZoneGroupID(scene.getZoneID(), scene.getGroupID())) {
+                scene.addReferenceDevices(this.structureManager.getReferenceDeviceListFromZoneXGroupX(scene.getZoneID(),
+                        scene.getGroupID()));
+                scene.activateScene();
             }
         }
     }
@@ -349,6 +371,7 @@ public class SceneManagerImpl implements SceneManager, EventHandler {
             String id = sceneListener.getSceneStatusListenerID();
             if (id.equals(SceneStatusListener.SCENE_DISCOVERY)) {
                 discovery.registerSceneDiscovery(sceneListener);
+                logger.debug("Scene-Discovery registrated");
                 for (InternalScene scene : internalSceneMap.values()) {
                     discovery.sceneDiscoverd(scene);
                 }
@@ -360,6 +383,7 @@ public class SceneManagerImpl implements SceneManager, EventHandler {
                     addInternalScene(createNewScene(id));
                     registerSceneListener(sceneListener);
                 }
+                logger.debug("SceneStatusListener with id {} is registrated", sceneListener.getSceneStatusListenerID());
             }
         }
     }
@@ -370,11 +394,14 @@ public class SceneManagerImpl implements SceneManager, EventHandler {
             String id = sceneListener.getSceneStatusListenerID();
             if (id.equals(SceneStatusListener.SCENE_DISCOVERY)) {
                 this.discovery.unRegisterDiscovery();
+                logger.debug("Scene-Discovery unregistrated");
             } else {
                 InternalScene intScene = this.internalSceneMap.get(sceneListener.getSceneStatusListenerID());
                 if (intScene != null) {
                     intScene.unregisterSceneListener();
                 }
+                logger.debug("SceneStatusListener with id {} is unregistrated",
+                        sceneListener.getSceneStatusListenerID());
             }
         }
     }

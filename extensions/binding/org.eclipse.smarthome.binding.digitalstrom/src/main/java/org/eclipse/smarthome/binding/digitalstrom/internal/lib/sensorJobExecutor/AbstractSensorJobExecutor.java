@@ -124,7 +124,7 @@ public abstract class AbstractSensorJobExecutor {
      *
      * @param sensorJob
      */
-    protected void addHighPriorityJob(SensorJob sensorJob) {
+    public void addHighPriorityJob(SensorJob sensorJob) {
         // TODO: can be Overridden to implement a priority
         addSensorJobToCircuitScheduler(sensorJob);
     }
@@ -134,7 +134,7 @@ public abstract class AbstractSensorJobExecutor {
      *
      * @param sensorJob
      */
-    protected void addMediumPriorityJob(SensorJob sensorJob) {
+    public void addMediumPriorityJob(SensorJob sensorJob) {
         // TODO: can be Overridden to implement a priority
         addSensorJobToCircuitScheduler(sensorJob);
     }
@@ -144,9 +144,25 @@ public abstract class AbstractSensorJobExecutor {
      *
      * @param sensorJob
      */
-    protected void addLowPriorityJob(SensorJob sensorJob) {
+    public void addLowPriorityJob(SensorJob sensorJob) {
         // TODO: can be Overridden to implement a priority
         addSensorJobToCircuitScheduler(sensorJob);
+    }
+
+    /**
+     * Adds a {@link SensorJob} with a given priority .
+     *
+     * @param sensorJob
+     * @param priority
+     */
+    public void addPriorityJob(SensorJob sensorJob, long priority) {
+        if (sensorJob == null) {
+            return;
+        }
+        sensorJob.setInitalisationTime(priority);
+        addSensorJobToCircuitScheduler(sensorJob);
+        logger.debug("Add SensorJob from device with dSID {} and priority {} to AbstractJobExecutor",
+                sensorJob.getDSID(), priority);
     }
 
     /**
@@ -186,6 +202,15 @@ public abstract class AbstractSensorJobExecutor {
             CircuitScheduler circuit = getCircuitScheduler(device.getMeterDSID());
             if (circuit != null) {
                 circuit.removeSensorJob(device.getDSID());
+            }
+        }
+    }
+
+    public void removeSensorJob(Device device, String ID) {
+        if (device != null && ID != null) {
+            CircuitScheduler circuit = getCircuitScheduler(device.getMeterDSID());
+            if (circuit != null) {
+                circuit.removeSensorJob(ID);
             }
         }
     }
