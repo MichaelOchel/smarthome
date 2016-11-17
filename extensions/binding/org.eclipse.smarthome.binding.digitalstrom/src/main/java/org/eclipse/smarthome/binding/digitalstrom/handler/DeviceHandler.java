@@ -147,11 +147,8 @@ public class DeviceHandler extends BaseThingHandler implements DeviceStatusListe
         for (Entry<String, Object> configurationParmeter : configurationParmeters.entrySet()) {
             configuration.put(configurationParmeter.getKey(), configurationParmeter.getValue());
         }
-
-        // check device info, load sensor priorities into the device and load sensor channels of the thing
-        // checkDeviceInfoConfig(configuration, device);
-
         updateConfiguration(configuration);
+        // check device info, load sensor priorities into the device and load sensor channels of the thing
         loadSensorChannels();
     }
 
@@ -159,10 +156,10 @@ public class DeviceHandler extends BaseThingHandler implements DeviceStatusListe
     public void bridgeStatusChanged(ThingStatusInfo bridgeStatusInfo) {
         if (bridgeStatusInfo.getStatus().equals(ThingStatus.ONLINE)) {
             if (dSID != null) {
-                if (getDssBridgeHandler() != null) {
+                if (getDssBridgeHandler() != null && device == null) {
                     updateStatus(ThingStatus.ONLINE, ThingStatusDetail.CONFIGURATION_PENDING,
                             "waiting for listener registration");
-                    logger.debug("Set status to {}", getThing().getStatus());
+                    logger.debug("Set status to {}", getThing().getStatusInfo());
                     dssBridgeHandler.registerDeviceStatusListener(this);
                 }
             } else {
@@ -192,21 +189,30 @@ public class DeviceHandler extends BaseThingHandler implements DeviceStatusListe
         }
 
         if (command instanceof RefreshType) {
-            switch (channelUID.getId()) {
-                case CHANNEL_ID_ACTIVE_POWER:
-                    dssBridgeHandler.sendComandsToDSS(device, new DeviceStateUpdateImpl(SensorEnum.ACTIVE_POWER, 1));
-                    break;
-                case CHANNEL_ID_OUTPUT_CURRENT:
-                    dssBridgeHandler.sendComandsToDSS(device, new DeviceStateUpdateImpl(SensorEnum.OUTPUT_CURRENT, 1));
-                    break;
-                case CHANNEL_ID_ELECTRIC_METER:
-                    dssBridgeHandler.sendComandsToDSS(device, new DeviceStateUpdateImpl(SensorEnum.ELECTRIC_METER, 1));
-                    break;
-                default:
-                    dssBridgeHandler.sendComandsToDSS(device,
-                            new DeviceStateUpdateImpl(DeviceStateUpdate.REFRESH_OUTPUT, 0));
-                    break;
+            try {
+                SensorEnum sensorType = SensorEnum.valueOf(channelUID.getId());
+                dssBridgeHandler.sendComandsToDSS(device, new DeviceStateUpdateImpl(sensorType, 1));
+            } catch (IllegalArgumentException e) {
+                dssBridgeHandler.sendComandsToDSS(device,
+                        new DeviceStateUpdateImpl(DeviceStateUpdate.REFRESH_OUTPUT, 0));
             }
+            /*
+             * switch (channelUID.getId()) {
+             * case CHANNEL_ID_ACTIVE_POWER:
+             * dssBridgeHandler.sendComandsToDSS(device, new DeviceStateUpdateImpl(SensorEnum.ACTIVE_POWER, 1));
+             * break;
+             * case CHANNEL_ID_OUTPUT_CURRENT:
+             * dssBridgeHandler.sendComandsToDSS(device, new DeviceStateUpdateImpl(SensorEnum.OUTPUT_CURRENT, 1));
+             * break;
+             * case CHANNEL_ID_ELECTRIC_METER:
+             * dssBridgeHandler.sendComandsToDSS(device, new DeviceStateUpdateImpl(SensorEnum.ELECTRIC_METER, 1));
+             * break;
+             * default:
+             * dssBridgeHandler.sendComandsToDSS(device,
+             * new DeviceStateUpdateImpl(DeviceStateUpdate.REFRESH_OUTPUT, 0));
+             * break;
+             * }
+             */
         } else if (!device.isShade()) {
             if (this.channelIsOutputChannel(channelUID.getId())) {
                 if (command instanceof PercentType) {
@@ -312,22 +318,27 @@ public class DeviceHandler extends BaseThingHandler implements DeviceStatusListe
             if (deviceStateUpdate != null) {
                 logger.debug("Update ESH-State");
                 if (deviceStateUpdate.isSensorUpdateType()) {
-                    switch (deviceStateUpdate.getTypeAsSensorEnum()) {
-                        case ELECTRIC_METER:
-                            updateState(new ChannelUID(getThing().getUID(), CHANNEL_ID_ELECTRIC_METER),
-                                    new DecimalType(deviceStateUpdate.getValueAsFloat()));
-                            return;
-                        case OUTPUT_CURRENT:
-                            updateState(new ChannelUID(getThing().getUID(), CHANNEL_ID_OUTPUT_CURRENT),
-                                    new DecimalType(deviceStateUpdate.getValueAsFloat().intValue()));
-                            return;
-                        case ACTIVE_POWER:
-                            updateState(new ChannelUID(getThing().getUID(), CHANNEL_ID_ACTIVE_POWER),
-                                    new DecimalType(deviceStateUpdate.getValueAsFloat().intValue()));
-                            return;
-                        default:
-                            return;
-                    }
+                    updateState(new ChannelUID(getThing().getUID(), deviceStateUpdate.getTypeAsSensorEnum().toString()),
+                            new DecimalType(deviceStateUpdate.getValueAsFloat()));
+                    return;
+                    /*
+                     * switch (deviceStateUpdate.getTypeAsSensorEnum()) {
+                     * case ELECTRIC_METER:
+                     * updateState(new ChannelUID(getThing().getUID(), CHANNEL_ID_ELECTRIC_METER),
+                     * new DecimalType(deviceStateUpdate.getValueAsFloat()));
+                     * return;
+                     * case OUTPUT_CURRENT:
+                     * updateState(new ChannelUID(getThing().getUID(), CHANNEL_ID_OUTPUT_CURRENT),
+                     * new DecimalType(deviceStateUpdate.getValueAsFloat().intValue()));
+                     * return;
+                     * case ACTIVE_POWER:
+                     * updateState(new ChannelUID(getThing().getUID(), CHANNEL_ID_ACTIVE_POWER),
+                     * new DecimalType(deviceStateUpdate.getValueAsFloat().intValue()));
+                     * return;
+                     * default:
+                     * return;
+                     * }
+                     */
                 }
                 if (!device.isShade()) {
                     switch (deviceStateUpdate.getType()) {
@@ -453,9 +464,9 @@ public class DeviceHandler extends BaseThingHandler implements DeviceStatusListe
     @Override
     public synchronized void onDeviceAdded(Object device) {
         if (device instanceof Device) {
-            if (((Device) device).isPresent()) {
+            this.device = (Device) device;
+            if (this.device.isPresent()) {
                 logger.debug("properties: " + getThing().getProperties().toString());
-                this.device = (Device) device;
                 ThingStatusInfo statusInfo = this.dssBridgeHandler.getThing().getStatusInfo();
                 updateStatus(statusInfo.getStatus(), statusInfo.getStatusDetail(), statusInfo.getDescription());
                 logger.debug("Set status to {}", getThing().getStatus());
@@ -479,10 +490,7 @@ public class DeviceHandler extends BaseThingHandler implements DeviceStatusListe
                     onSceneConfigAdded(i);
                 }
                 logger.debug("Load saved scene specification into device");
-                // if (getThing().getProperties().get(key) != null) {
                 this.device.saveConfigSceneSpecificationIntoDevice(getThing().getProperties());
-                // }
-                // this.device.saveConfigSceneSpecificationIntoDevice(this.getThing().getProperties());
 
             } else {
                 onDeviceRemoved(device);
@@ -596,65 +604,111 @@ public class DeviceHandler extends BaseThingHandler implements DeviceStatusListe
             Iterator<Channel> channelInter = channelList.iterator();
             while (channelInter.hasNext()) {
                 Channel channel = channelInter.next();
-                switch (channel.getUID().getId()) {
-                    case CHANNEL_ID_ACTIVE_POWER:
-                        if (activePowerPrio.equals(REFRESH_PRIORITY_NEVER)) {
-                            logger.debug("remove active power sensor channel");
-                            channelInter.remove();
-                            isActivePowerChannelLoaded = false;
-                            channelListChanged = true;
-                        } else {
-                            isActivePowerChannelLoaded = true;
-                        }
-                        break;
-                    case CHANNEL_ID_OUTPUT_CURRENT:
-                        if (outputCurrentPrio.equals(REFRESH_PRIORITY_NEVER)) {
-                            logger.debug("remove output current sensor channel");
-                            channelInter.remove();
-                            isOutputCurrentChannelLoaded = false;
-                            channelListChanged = true;
-                        } else {
-                            isOutputCurrentChannelLoaded = true;
-                        }
-                        break;
-                    case CHANNEL_ID_ELECTRIC_METER:
-                        if (electricMeterPrio.equals(REFRESH_PRIORITY_NEVER)) {
-                            logger.debug("remove eclectric meter sensor channel");
-                            channelInter.remove();
-                            isElectricMeterChannelLoaded = false;
-                            channelListChanged = true;
-                        } else {
-                            isElectricMeterChannelLoaded = true;
-                        }
-                        break;
+                try {
+                    SensorEnum sensorType = SensorEnum.valueOf(channel.getUID().getId());
+                    switch (sensorType) {
+                        case ACTIVE_POWER:
+                            if (activePowerPrio.equals(REFRESH_PRIORITY_NEVER)) {
+                                logger.debug("remove active power sensor channel");
+                                channelInter.remove();
+                                isActivePowerChannelLoaded = false;
+                                channelListChanged = true;
+                            } else {
+                                isActivePowerChannelLoaded = true;
+                            }
+                            break;
+                        case OUTPUT_CURRENT:
+                            if (outputCurrentPrio.equals(REFRESH_PRIORITY_NEVER)) {
+                                logger.debug("remove output current sensor channel");
+                                channelInter.remove();
+                                isOutputCurrentChannelLoaded = false;
+                                channelListChanged = true;
+                            } else {
+                                isOutputCurrentChannelLoaded = true;
+                            }
+                            break;
+                        case ELECTRIC_METER:
+                            if (electricMeterPrio.equals(REFRESH_PRIORITY_NEVER)) {
+                                logger.debug("remove eclectric meter sensor channel");
+                                channelInter.remove();
+                                isElectricMeterChannelLoaded = false;
+                                channelListChanged = true;
+                            } else {
+                                isElectricMeterChannelLoaded = true;
+                            }
+                            break;
+                    }
+                } catch (IllegalArgumentException e) {
+                    // ignore
                 }
+                /*
+                 * switch (channel.getUID().getId()) {
+                 * case CHANNEL_ID_ACTIVE_POWER:
+                 * if (activePowerPrio.equals(REFRESH_PRIORITY_NEVER)) {
+                 * logger.debug("remove active power sensor channel");
+                 * channelInter.remove();
+                 * isActivePowerChannelLoaded = false;
+                 * channelListChanged = true;
+                 * } else {
+                 * isActivePowerChannelLoaded = true;
+                 * }
+                 * break;
+                 * case CHANNEL_ID_OUTPUT_CURRENT:
+                 * if (outputCurrentPrio.equals(REFRESH_PRIORITY_NEVER)) {
+                 * logger.debug("remove output current sensor channel");
+                 * channelInter.remove();
+                 * isOutputCurrentChannelLoaded = false;
+                 * channelListChanged = true;
+                 * } else {
+                 * isOutputCurrentChannelLoaded = true;
+                 * }
+                 * break;
+                 * case CHANNEL_ID_ELECTRIC_METER:
+                 * if (electricMeterPrio.equals(REFRESH_PRIORITY_NEVER)) {
+                 * logger.debug("remove eclectric meter sensor channel");
+                 * channelInter.remove();
+                 * isElectricMeterChannelLoaded = false;
+                 * channelListChanged = true;
+                 * } else {
+                 * isElectricMeterChannelLoaded = true;
+                 * }
+                 * break;
+                 * }
+                 */
             }
         }
         // if sensor channels with priority unequal never are not loaded these channels will be loaded now
         if (!activePowerPrio.equals(REFRESH_PRIORITY_NEVER) && !isActivePowerChannelLoaded) {
             logger.debug("create active power sensor channel");
-            Channel channel = ChannelBuilder
-                    .create(new ChannelUID(this.getThing().getUID(), CHANNEL_ID_ACTIVE_POWER), "Number")
-                    .withType(DigitalSTROMBindingConstants.CHANNEL_TYPE_ACTIVE_POWER).build();
-            channelList.add(channel);
+            /*
+             * Channel channel = ChannelBuilder
+             * .create(new ChannelUID(this.getThing().getUID(), SensorEnum.ACTIVE_POWER.toString()), "Number")
+             * .withType(getSensorChannelType(SensorEnum.ACTIVE_POWER.toString())).build();
+             * channelList.add(getSensorChannel(SensorEnum.ACTIVE_POWER));
+             */
+            channelList.add(getSensorChannel(SensorEnum.ACTIVE_POWER));
             isActivePowerChannelLoaded = true;
             channelListChanged = true;
         }
         if (!outputCurrentPrio.equals(REFRESH_PRIORITY_NEVER) && !isOutputCurrentChannelLoaded) {
             logger.debug("create output current sensor channel");
-            Channel channel = ChannelBuilder
-                    .create(new ChannelUID(this.getThing().getUID(), CHANNEL_ID_OUTPUT_CURRENT), "Number")
-                    .withType(DigitalSTROMBindingConstants.CHANNEL_TYPE_OUTPUT_CURRENT).build();
-            channelList.add(channel);
+            /*
+             * Channel channel = ChannelBuilder
+             * .create(new ChannelUID(this.getThing().getUID(), SensorEnum.OUTPUT_CURRENT.toString()), "Number")
+             * .withType(getSensorChannelType(SensorEnum.OUTPUT_CURRENT)).build();
+             */
+            channelList.add(getSensorChannel(SensorEnum.OUTPUT_CURRENT));
             isOutputCurrentChannelLoaded = true;
             channelListChanged = true;
         }
         if (!electricMeterPrio.equals(REFRESH_PRIORITY_NEVER) && !isElectricMeterChannelLoaded) {
             logger.debug("create eclectric meter sensor channel");
-            Channel channel = ChannelBuilder
-                    .create(new ChannelUID(this.getThing().getUID(), CHANNEL_ID_ELECTRIC_METER), "Number")
-                    .withType(DigitalSTROMBindingConstants.CHANNEL_TYPE_ELECTRIC_METER).build();
-            channelList.add(channel);
+            /*
+             * Channel channel = ChannelBuilder
+             * .create(new ChannelUID(this.getThing().getUID(), SensorEnum.ELECTRIC_METER.toString()), "Number")
+             * .withType(getSensorChannelType(SensorEnum.ELECTRIC_METER)).build();
+             */
+            channelList.add(getSensorChannel(SensorEnum.ELECTRIC_METER));
             isElectricMeterChannelLoaded = true;
             channelListChanged = true;
         }
@@ -665,6 +719,11 @@ public class DeviceHandler extends BaseThingHandler implements DeviceStatusListe
             thingBuilder.withChannels(channelList);
             updateThing(thingBuilder.build());
         }
+    }
+
+    private Channel getSensorChannel(SensorEnum sensorType) {
+        return ChannelBuilder.create(new ChannelUID(this.getThing().getUID(), sensorType.toString()), "Number")
+                .withType(new ChannelTypeUID(BINDING_ID, sensorType.toString())).build();
     }
 
     private void checkOutputChannel() {
@@ -762,86 +821,101 @@ public class DeviceHandler extends BaseThingHandler implements DeviceStatusListe
         }
     }
 
+    private ChannelUID getSensorChannelUID(SensorEnum sensorType) {
+        return new ChannelUID(getThing().getUID(), sensorType.toString());
+    }
+
     @Override
     public void channelLinked(ChannelUID channelUID) {
         if (device != null) {
-            switch (channelUID.getId()) {
-                case CHANNEL_ID_GENERAL_DIMM:
-                    if (device.isOn()) {
-                        updateState(new ChannelUID(getThing().getUID(), CHANNEL_ID_GENERAL_DIMM), new PercentType(
-                                fromValueToPercent(device.getOutputValue(), device.getMaxOutputValue())));
-                    } else {
-                        updateState(new ChannelUID(getThing().getUID(), CHANNEL_ID_GENERAL_DIMM), new PercentType(0));
-                    }
-                    break;
-                case CHANNEL_ID_GENERAL_SWITCH:
-                    if (device.isOn()) {
-                        updateState(new ChannelUID(getThing().getUID(), CHANNEL_ID_GENERAL_SWITCH), OnOffType.ON);
-                    } else {
-                        updateState(new ChannelUID(getThing().getUID(), CHANNEL_ID_GENERAL_SWITCH), OnOffType.OFF);
-                    }
-                    break;
-                case CHANNEL_ID_BRIGHTNESS:
-                    if (device.isOn()) {
-                        updateState(new ChannelUID(getThing().getUID(), CHANNEL_ID_BRIGHTNESS), new PercentType(
-                                fromValueToPercent(device.getOutputValue(), device.getMaxOutputValue())));
-                    } else {
-                        updateState(new ChannelUID(getThing().getUID(), CHANNEL_ID_BRIGHTNESS), new PercentType(0));
-                    }
-                case CHANNEL_ID_LIGHT_SWITCH:
-                    if (device.isOn()) {
-                        updateState(new ChannelUID(getThing().getUID(), CHANNEL_ID_LIGHT_SWITCH), OnOffType.ON);
-                    } else {
-                        updateState(new ChannelUID(getThing().getUID(), CHANNEL_ID_LIGHT_SWITCH), OnOffType.OFF);
-                    }
-                    break;
-                case CHANNEL_ID_SHADE:
-                    updateState(new ChannelUID(getThing().getUID(), CHANNEL_ID_SHADE),
-                            new PercentType(fromValueToPercent(device.getSlatPosition(), device.getMaxSlatPosition())));
-                    break;
-                case CHANNEL_ID_SHADE_ANGLE:
-                    updateState(new ChannelUID(getThing().getUID(), CHANNEL_ID_SHADE_ANGLE),
-                            new PercentType(fromValueToPercent(device.getAnglePosition(), device.getMaxSlatAngle())));
-                    break;
-                case CHANNEL_ID_ELECTRIC_METER:
-                    Float val = device.getFloatSensorValue(SensorEnum.ELECTRIC_METER);
-                    if (val != null) {
-                        updateState(new ChannelUID(getThing().getUID(), CHANNEL_ID_ELECTRIC_METER),
-                                new DecimalType(val));
-                    }
-                    break;
-                case CHANNEL_ID_OUTPUT_CURRENT:
-                    val = device.getFloatSensorValue(SensorEnum.OUTPUT_CURRENT);
-                    if (val != null) {
-                        updateState(new ChannelUID(getThing().getUID(), CHANNEL_ID_OUTPUT_CURRENT),
-                                new DecimalType(val.intValue()));
-                    }
-                    break;
-                case CHANNEL_ID_ACTIVE_POWER:
-                    val = device.getFloatSensorValue(SensorEnum.ACTIVE_POWER);
-                    if (val != null) {
-                        updateState(new ChannelUID(getThing().getUID(), CHANNEL_ID_ACTIVE_POWER),
-                                new DecimalType(val.intValue()));
-                    }
-                    break;
-                case CHANNEL_ID_GENERAL_COMBINED_2_STAGE_SWITCH:
-                    updateState(new ChannelUID(getThing().getUID(), CHANNEL_ID_GENERAL_COMBINED_2_STAGE_SWITCH),
-                            new StringType(convertStageValue((short) 2, device.getOutputValue())));
-                    break;
-                case CHANNEL_ID_GENERAL_COMBINED_3_STAGE_SWITCH:
-                    updateState(new ChannelUID(getThing().getUID(), CHANNEL_ID_GENERAL_COMBINED_3_STAGE_SWITCH),
-                            new StringType(convertStageValue((short) 3, device.getOutputValue())));
-                    break;
-                case CHANNEL_ID_COMBINED_2_STAGE_SWITCH:
-                    updateState(new ChannelUID(getThing().getUID(), CHANNEL_ID_COMBINED_2_STAGE_SWITCH),
-                            new StringType(convertStageValue((short) 2, device.getOutputValue())));
-                    break;
-                case CHANNEL_ID_COMBINED_3_STAGE_SWITCH:
-                    updateState(new ChannelUID(getThing().getUID(), CHANNEL_ID_COMBINED_3_STAGE_SWITCH),
-                            new StringType(convertStageValue((short) 3, device.getOutputValue())));
-                    break;
-                default:
-                    return;
+            try {
+                SensorEnum sensorType = SensorEnum.valueOf(channelUID.getId());
+                Float val = device.getFloatSensorValue(sensorType);
+                if (val != null) {
+                    updateState(getSensorChannelUID(sensorType), new DecimalType(val));
+                }
+            } catch (IllegalArgumentException e) {
+                switch (channelUID.getId()) {
+                    case CHANNEL_ID_GENERAL_DIMM:
+                        if (device.isOn()) {
+                            updateState(new ChannelUID(getThing().getUID(), CHANNEL_ID_GENERAL_DIMM), new PercentType(
+                                    fromValueToPercent(device.getOutputValue(), device.getMaxOutputValue())));
+                        } else {
+                            updateState(new ChannelUID(getThing().getUID(), CHANNEL_ID_GENERAL_DIMM),
+                                    new PercentType(0));
+                        }
+                        break;
+                    case CHANNEL_ID_GENERAL_SWITCH:
+                        if (device.isOn()) {
+                            updateState(new ChannelUID(getThing().getUID(), CHANNEL_ID_GENERAL_SWITCH), OnOffType.ON);
+                        } else {
+                            updateState(new ChannelUID(getThing().getUID(), CHANNEL_ID_GENERAL_SWITCH), OnOffType.OFF);
+                        }
+                        break;
+                    case CHANNEL_ID_BRIGHTNESS:
+                        if (device.isOn()) {
+                            updateState(new ChannelUID(getThing().getUID(), CHANNEL_ID_BRIGHTNESS), new PercentType(
+                                    fromValueToPercent(device.getOutputValue(), device.getMaxOutputValue())));
+                        } else {
+                            updateState(new ChannelUID(getThing().getUID(), CHANNEL_ID_BRIGHTNESS), new PercentType(0));
+                        }
+                    case CHANNEL_ID_LIGHT_SWITCH:
+                        if (device.isOn()) {
+                            updateState(new ChannelUID(getThing().getUID(), CHANNEL_ID_LIGHT_SWITCH), OnOffType.ON);
+                        } else {
+                            updateState(new ChannelUID(getThing().getUID(), CHANNEL_ID_LIGHT_SWITCH), OnOffType.OFF);
+                        }
+                        break;
+                    case CHANNEL_ID_SHADE:
+                        updateState(new ChannelUID(getThing().getUID(), CHANNEL_ID_SHADE), new PercentType(
+                                fromValueToPercent(device.getSlatPosition(), device.getMaxSlatPosition())));
+                        break;
+                    case CHANNEL_ID_SHADE_ANGLE:
+                        updateState(new ChannelUID(getThing().getUID(), CHANNEL_ID_SHADE_ANGLE), new PercentType(
+                                fromValueToPercent(device.getAnglePosition(), device.getMaxSlatAngle())));
+                        break;
+                    /*
+                     * case CHANNEL_ID_ELECTRIC_METER:
+                     * Float val = device.getFloatSensorValue(SensorEnum.ELECTRIC_METER);
+                     * if (val != null) {
+                     * updateState(new ChannelUID(getThing().getUID(), CHANNEL_ID_ELECTRIC_METER),
+                     * new DecimalType(val));
+                     * }
+                     * break;
+                     * case CHANNEL_ID_OUTPUT_CURRENT:
+                     * val = device.getFloatSensorValue(SensorEnum.OUTPUT_CURRENT);
+                     * if (val != null) {
+                     * updateState(new ChannelUID(getThing().getUID(), CHANNEL_ID_OUTPUT_CURRENT),
+                     * new DecimalType(val.intValue()));
+                     * }
+                     * break;
+                     * case CHANNEL_ID_ACTIVE_POWER:
+                     * val = device.getFloatSensorValue(SensorEnum.ACTIVE_POWER);
+                     * if (val != null) {
+                     * updateState(new ChannelUID(getThing().getUID(), CHANNEL_ID_ACTIVE_POWER),
+                     * new DecimalType(val.intValue()));
+                     * }
+                     * break;
+                     */
+                    case CHANNEL_ID_GENERAL_COMBINED_2_STAGE_SWITCH:
+                        updateState(new ChannelUID(getThing().getUID(), CHANNEL_ID_GENERAL_COMBINED_2_STAGE_SWITCH),
+                                new StringType(convertStageValue((short) 2, device.getOutputValue())));
+                        break;
+                    case CHANNEL_ID_GENERAL_COMBINED_3_STAGE_SWITCH:
+                        updateState(new ChannelUID(getThing().getUID(), CHANNEL_ID_GENERAL_COMBINED_3_STAGE_SWITCH),
+                                new StringType(convertStageValue((short) 3, device.getOutputValue())));
+                        break;
+                    case CHANNEL_ID_COMBINED_2_STAGE_SWITCH:
+                        updateState(new ChannelUID(getThing().getUID(), CHANNEL_ID_COMBINED_2_STAGE_SWITCH),
+                                new StringType(convertStageValue((short) 2, device.getOutputValue())));
+                        break;
+                    case CHANNEL_ID_COMBINED_3_STAGE_SWITCH:
+                        updateState(new ChannelUID(getThing().getUID(), CHANNEL_ID_COMBINED_3_STAGE_SWITCH),
+                                new StringType(convertStageValue((short) 3, device.getOutputValue())));
+                        break;
+                    default:
+                        return;
+                }
             }
         }
     }
@@ -879,20 +953,33 @@ public class DeviceHandler extends BaseThingHandler implements DeviceStatusListe
             }
             if (!device.isShade()) {
                 if (isActivePowerChannelLoaded) {
-                    if (getThing().getChannel(CHANNEL_ID_ACTIVE_POWER) != null && isLinked(CHANNEL_ID_ACTIVE_POWER)) {
-                        channelLinked(new ChannelUID(getThing().getUID(), CHANNEL_ID_ACTIVE_POWER));
+                    // if (getThing().getChannel(CHANNEL_ID_ACTIVE_POWER) != null && isLinked(CHANNEL_ID_ACTIVE_POWER))
+                    // {
+                    // channelLinked(new ChannelUID(getThing().getUID(), CHANNEL_ID_ACTIVE_POWER));
+                    // }
+                    if (getThing().getChannel(SensorEnum.ACTIVE_POWER.toString()) != null
+                            && isLinked(SensorEnum.ACTIVE_POWER.toString())) {
+                        channelLinked(getSensorChannelUID(SensorEnum.ACTIVE_POWER));
                     }
                 }
                 if (isOutputCurrentChannelLoaded) {
-                    if (getThing().getChannel(CHANNEL_ID_OUTPUT_CURRENT) != null
-                            && isLinked(CHANNEL_ID_OUTPUT_CURRENT)) {
-                        channelLinked(new ChannelUID(getThing().getUID(), CHANNEL_ID_OUTPUT_CURRENT));
+                    // if (getThing().getChannel(CHANNEL_ID_OUTPUT_CURRENT) != null
+                    // && isLinked(CHANNEL_ID_OUTPUT_CURRENT)) {
+                    // channelLinked(new ChannelUID(getThing().getUID(), CHANNEL_ID_OUTPUT_CURRENT));
+                    // }
+                    if (getThing().getChannel(SensorEnum.OUTPUT_CURRENT.toString()) != null
+                            && isLinked(SensorEnum.OUTPUT_CURRENT.toString())) {
+                        channelLinked(getSensorChannelUID(SensorEnum.OUTPUT_CURRENT));
                     }
                 }
                 if (isElectricMeterChannelLoaded) {
-                    if (getThing().getChannel(CHANNEL_ID_ELECTRIC_METER) != null
-                            && isLinked(CHANNEL_ID_ELECTRIC_METER)) {
-                        channelLinked(new ChannelUID(getThing().getUID(), CHANNEL_ID_ELECTRIC_METER));
+                    // if (getThing().getChannel(CHANNEL_ID_ELECTRIC_METER) != null
+                    // && isLinked(CHANNEL_ID_ELECTRIC_METER)) {
+                    // channelLinked(new ChannelUID(getThing().getUID(), CHANNEL_ID_ELECTRIC_METER));
+                    // }
+                    if (getThing().getChannel(SensorEnum.ELECTRIC_METER.toString()) != null
+                            && isLinked(SensorEnum.ELECTRIC_METER.toString())) {
+                        channelLinked(getSensorChannelUID(SensorEnum.ELECTRIC_METER));
                     }
                 }
             } else {

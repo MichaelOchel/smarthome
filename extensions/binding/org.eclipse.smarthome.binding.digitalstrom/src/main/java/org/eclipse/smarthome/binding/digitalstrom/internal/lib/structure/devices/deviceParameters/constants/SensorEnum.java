@@ -45,42 +45,45 @@ public enum SensorEnum {
      * | 64 | Output current (H) | Ampere (mA) | 0 | 16380 | 4 |
      * | 65 | Power consumption | Volt-Ampere (VA) | 0 | 4095 | 1 |
      */
-    ACTIVE_POWER((short) 4, "watt", "W", 0, 4095, 1),
-    OUTPUT_CURRENT((short) 5, "ampere", "mA", 0, 4095, 1),
-    ELECTRIC_METER((short) 6, "kilowatt hours", "kWh", 0, (float) 40.95, (float) 0.01),
-    TEMPERATURE_INDOORS((short) 9, "kelvin", "K", 230, (float) 332.375, (float) 0.25),
-    TEMPERATURE_OUTDOORS((short) 10, "kelvin", "K", 230, (float) 332.375, (float) 0.25),
-    BRIGHTNESS_INDOORS((short) 11, "lux", "Lx", 1, (float) 131446.795, 800),
-    BRIGHTNESS_OUTDOORS((short) 12, "lux", "Lx", 1, (float) 131446.795, 800),
-    RELATIVE_HUMIDITY_INDOORS((short) 13, "percent", "%", 0, (float) 102.375, (float) 0.025),
-    RELATIVE_HUMIDITY_OUTDOORS((short) 14, "percent", "%", 0, (float) 102.375, (float) 0.025),
-    AIR_PRESSURE((short) 15, "pascal", "hPa", 0, (float) 1223.75, (float) 0.25),
-    WIND_SPEED((short) 18, "meters per second", "m/s", 0, (float) 102.375, (float) 0.025),
-    WIND_DIRECTION((short) 19, "degrees", "°", 0, (float) 511.875, (float) 0.54),
-    PRECIPITATION((short) 20, "millimeter per square meter", "mm/m2", 0, (float) 102.375, (float) 0.025),
-    CARBONE_DIOXIDE((short) 21, "parts per million", "ppm", 1, (float) 131446.795, 800),
-    SOUND_PRESSURE_LEVEL((short) 25, "decibel", "dB", 0, (float) 255.938, (float) 0.0625),
-    ROOM_TEMPERATION_SET_POINT((short) 50, "kelvin", "K", 230, (float) 332.375, (float) 0.025),
-    ROOM_TEMPERATION_CONTROL_VARIABLE((short) 51, "kelvin", "K", 230, (float) 332.375, (float) 0.25),
-    OUTPUT_CURRENT_H((short) 64, "ampere", "mA", 0, 16380, 4),
-    POWER_CONSUMPTION((short) 65, "volt-ampere", "VA", 0, 4095, 1);
+    ACTIVE_POWER((short) 4, "watt", "W", 0, 4095, 1, "%d"),
+    OUTPUT_CURRENT((short) 5, "ampere", "mA", 0, 4095, 1, "%d"),
+    ELECTRIC_METER((short) 6, "kilowatt_hours", "kWh", 0, (float) 40.95, (float) 0.01, "%.3f"),
+    TEMPERATURE_INDOORS((short) 9, "kelvin", "K", 230, (float) 332.375, (float) 0.25, "%.2f"),
+    TEMPERATURE_OUTDOORS((short) 10, "kelvin", "K", 230, (float) 332.375, (float) 0.25, "%.2f"),
+    BRIGHTNESS_INDOORS((short) 11, "lux", "Lx", 1, (float) 131446.795, 800, "%.3f"),
+    BRIGHTNESS_OUTDOORS((short) 12, "lux", "Lx", 1, (float) 131446.795, 800, "%.3f"),
+    RELATIVE_HUMIDITY_INDOORS((short) 13, "percent", "%", 0, (float) 102.375, (float) 0.025, "%.2f"),
+    RELATIVE_HUMIDITY_OUTDOORS((short) 14, "percent", "%", 0, (float) 102.375, (float) 0.025, "%.2f"),
+    AIR_PRESSURE((short) 15, "pascal", "hPa", 0, (float) 1223.75, (float) 0.25, "%.2f"),
+    WIND_SPEED((short) 18, "meters_per_second", "m/s", 0, (float) 102.375, (float) 0.025, "%.2f"),
+    WIND_DIRECTION((short) 19, "degrees", "°", 0, (float) 511.875, (float) 0.54, "%.2f"),
+    PRECIPITATION((short) 20, "millimeter_per_square_meter", "mm/m2", 0, (float) 102.375, (float) 0.025, "%.3f"),
+    CARBONE_DIOXIDE((short) 21, "parts_per_million", "ppm", 1, (float) 131446.795, 800, "%.3f"),
+    SOUND_PRESSURE_LEVEL((short) 25, "decibel", "dB", 0, (float) 255.938, (float) 0.0625, "%.2f"),
+    ROOM_TEMPERATION_SET_POINT((short) 50, "kelvin", "K", 230, (float) 332.375, (float) 0.025, "%.2f"),
+    ROOM_TEMPERATION_CONTROL_VARIABLE((short) 51, "kelvin", "K", 230, (float) 332.375, (float) 0.25, "%.2f"),
+    OUTPUT_CURRENT_H((short) 64, "ampere", "mA", 0, 16380, 4, "%d"),
+    POWER_CONSUMPTION((short) 65, "volt_ampere", "VA", 0, 4095, 1, "%d");
 
     private final Short sensorType;
     private final String unit;
     private final String unitShortcut;
+    private final String pattern;
     private final Integer min;
     private final Float max;
     private final Float resolution;
 
     static final HashMap<Short, SensorEnum> sensorEnums = new HashMap<Short, SensorEnum>();
 
-    SensorEnum(Short sensorType, String unit, String unitShortcut, int min, float max, float resolution) {
+    SensorEnum(Short sensorType, String unit, String unitShortcut, int min, float max, float resolution,
+            String plattern) {
         this.sensorType = sensorType;
         this.unit = unit;
         this.unitShortcut = unitShortcut;
         this.min = min;
         this.max = max;
         this.resolution = resolution;
+        this.pattern = plattern;
     }
 
     static {
@@ -175,6 +178,15 @@ public enum SensorEnum {
      */
     public String getUnitShortcut() {
         return this.unitShortcut;
+    }
+
+    /**
+     * Returns the pattern of this {@link OutputModeEnum} object for display.
+     *
+     * @return pattern
+     */
+    public String getPattern() {
+        return this.pattern;
     }
 
     /**

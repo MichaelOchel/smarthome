@@ -47,9 +47,9 @@ public class DsChannelTypeProvider implements ChannelTypeProvider {
             DigitalSTROMBindingConstants.CHANNEL_ID_GENERAL_COMBINED_2_STAGE_SWITCH,
             DigitalSTROMBindingConstants.CHANNEL_ID_GENERAL_COMBINED_3_STAGE_SWITCH,
             DigitalSTROMBindingConstants.CHANNEL_ID_SCENE, DigitalSTROMBindingConstants.CHANNEL_ID_SHADE,
-            DigitalSTROMBindingConstants.CHANNEL_ID_ELECTRIC_METER,
-            DigitalSTROMBindingConstants.CHANNEL_ID_OUTPUT_CURRENT,
-            DigitalSTROMBindingConstants.CHANNEL_ID_ACTIVE_POWER,
+            // DigitalSTROMBindingConstants.CHANNEL_ID_ELECTRIC_METER,
+            // DigitalSTROMBindingConstants.CHANNEL_ID_OUTPUT_CURRENT,
+            // DigitalSTROMBindingConstants.CHANNEL_ID_ACTIVE_POWER,
             DigitalSTROMBindingConstants.CHANNEL_ID_TOTAL_ACTIVE_POWER,
             DigitalSTROMBindingConstants.CHANNEL_ID_TOTAL_ELECTRIC_METER,
             DigitalSTROMBindingConstants.CHANNEL_ID_SHADE_ANGLE);
@@ -68,6 +68,15 @@ public class DsChannelTypeProvider implements ChannelTypeProvider {
         return shortcutUnit.equals(SensorEnum.ELECTRIC_METER.getUnitShortcut())
                 ? new StateDescription(null, null, null, "%.3f " + shortcutUnit, true, null)
                 : new StateDescription(null, null, null, "%d " + shortcutUnit, true, null);
+    }
+
+    private StateDescription getSensorStateDescription(SensorEnum sensorType) {
+        // the digitalSTROM resolution for temperature in kelvin is not correct but sensor-events and cached values are
+        // shown in °C so we will use this unit for temperature sensors
+        return sensorType.toString().contains("TEMPERATURE")
+                ? new StateDescription(null, null, null, sensorType.getPattern() + " " + "°C", true, null)
+                : new StateDescription(null, null, null, sensorType.getPattern() + " " + sensorType.getUnitShortcut(),
+                        true, null);
     }
 
     private StateDescription getCombinedStageDescription(short stages, boolean isLight, Locale locale) {
@@ -118,6 +127,17 @@ public class DsChannelTypeProvider implements ChannelTypeProvider {
         return i18n != null ? i18n.getText(bundle, key, i18n.getText(bundle, key, key, Locale.ENGLISH), locale) : key;
     }
 
+    private String getSesorDescription(SensorEnum sensorType, Locale locale) {
+        return getText("sensor_desc_0", locale) + getText(sensorType.toString(), locale) + " "
+                + getText("sensor_desc_1", locale) + getText(sensorType.toString(), locale) + " "
+                + getText("sensor_desc_2", locale) + " " + getText(sensorType.getUnit(), locale) + " ("
+                + sensorType.getUnitShortcut() + ") " + getText("sensor_desc_3", locale);
+    }
+
+    private String getSensorText(SensorEnum sensorType, Locale locale) {
+        return getText(sensorType.toString(), locale);
+    }
+
     @Override
     public Collection<ChannelType> getChannelTypes(Locale locale) {
         List<ChannelType> channelTypeList = new ArrayList<ChannelType>();
@@ -125,105 +145,135 @@ public class DsChannelTypeProvider implements ChannelTypeProvider {
             channelTypeList.add(
                     getChannelType(new ChannelTypeUID(DigitalSTROMBindingConstants.BINDING_ID, channelTypeId), locale));
         }
+        for (SensorEnum sensorType : SensorEnum.values()) {
+            channelTypeList.add(getChannelType(
+                    new ChannelTypeUID(DigitalSTROMBindingConstants.BINDING_ID, sensorType.toString()), locale));
+        }
         return channelTypeList;
     }
 
     @Override
     public ChannelType getChannelType(ChannelTypeUID channelTypeUID, Locale locale) {
         if (channelTypeUID.getBindingId().equals(DigitalSTROMBindingConstants.BINDING_ID)) {
-            switch (channelTypeUID.getId()) {
-                case DigitalSTROMBindingConstants.CHANNEL_ID_BRIGHTNESS:
-                    return new ChannelType(channelTypeUID, false, DIMMER, getText("CHANNEL_BRIGHTNESS_LABEL", locale),
-                            getText("CHANNEL_BRIGHTNESS_DESCRIPTION", locale), "dimmableLight",
-                            Sets.newHashSet(getText("YELLOW", locale), getText("DS", locale), getText("LIGHT", locale)),
-                            null, null);
-                case DigitalSTROMBindingConstants.CHANNEL_ID_LIGHT_SWITCH:
-                    return new ChannelType(channelTypeUID, false, SWITCH, getText("CHANNEL_LIGHT_SWITCH_LABEL", locale),
-                            getText("CHANNEL_LIGHT_SWITCH_DESCRIPTION", locale), "light",
-                            Sets.newHashSet(getText("YELLOW", locale), getText("DS", locale), getText("LIGHT", locale)),
-                            null, null);
-                case DigitalSTROMBindingConstants.CHANNEL_ID_GENERAL_DIMM:
-                    return new ChannelType(channelTypeUID, false, DIMMER, getText("CHANNEL_GENERAL_DIMM_LABEL", locale),
-                            getText("CHANNEL_GENERAL_DIMM_DESCRIPTION", locale), null,
-                            Sets.newHashSet(getText("BLACK", locale), getText("DS", locale), getText("JOKER", locale)),
-                            null, null);
-                case DigitalSTROMBindingConstants.CHANNEL_ID_GENERAL_SWITCH:
-                    return new ChannelType(channelTypeUID, false, SWITCH,
-                            getText("CHANNEL_GENERAL_SWITCH_LABEL", locale),
-                            getText("CHANNEL_GENERAL_SWITCH_DESCRIPTION", locale), null,
-                            Sets.newHashSet(getText("BLACK", locale), getText("DS", locale), getText("JOKER", locale)),
-                            null, null);
-                case DigitalSTROMBindingConstants.CHANNEL_ID_COMBINED_2_STAGE_SWITCH:
-                    return new ChannelType(channelTypeUID, false, STRING,
-                            getText("CHANNEL_COMBINED_2_STAGE_SWITCH_LABEL", locale),
-                            getText("CHANNEL_COMBINED_2_STAGE_SWITCH_DESCRIPTION", locale), "Lights",
-                            Sets.newHashSet(getText("YELLOW", locale), getText("DS", locale), getText("LIGHT", locale),
-                                    getText("UMR", locale)),
-                            getCombinedStageDescription((short) 2, true, locale), null);
-                case DigitalSTROMBindingConstants.CHANNEL_ID_COMBINED_3_STAGE_SWITCH:
-                    return new ChannelType(channelTypeUID, false, STRING,
-                            getText("CHANNEL_COMBINED_3_STAGE_SWITCH_LABEL", locale),
-                            getText("CHANNEL_COMBINED_3_STAGE_SWITCH_DESCRIPTION", locale), "Lights",
-                            Sets.newHashSet(getText("YELLOW", locale), getText("DS", locale), getText("LIGHT", locale),
-                                    getText("UMR", locale)),
-                            getCombinedStageDescription((short) 3, true, locale), null);
-                case DigitalSTROMBindingConstants.CHANNEL_ID_GENERAL_COMBINED_2_STAGE_SWITCH:
-                    return new ChannelType(channelTypeUID, false, STRING,
-                            getText("CHANNEL_GENERAL_COMBINED_2_STAGE_SWITCH_LABEL", locale),
-                            getText("CHANNEL_GENERAL_COMBINED_2_STAGE_SWITCH_DESCRIPTION", locale), null,
-                            Sets.newHashSet(getText("BLACK", locale), getText("DS", locale), getText("UMR", locale)),
-                            getCombinedStageDescription((short) 2, true, locale), null);
-                case DigitalSTROMBindingConstants.CHANNEL_ID_GENERAL_COMBINED_3_STAGE_SWITCH:
-                    return new ChannelType(channelTypeUID, false, STRING,
-                            getText("CHANNEL_GENERAL_COMBINED_3_STAGE_SWITCH_LABEL", locale),
-                            getText("CHANNEL_GENERAL_COMBINED_3_STAGE_SWITCH_DESCRIPTION", locale), null,
-                            Sets.newHashSet(getText("BLACK", locale), getText("DS", locale), getText("UMR", locale)),
-                            getCombinedStageDescription((short) 3, true, locale), null);
-                case DigitalSTROMBindingConstants.CHANNEL_ID_SHADE:
-                    return new ChannelType(channelTypeUID, false, SHADE, getText("CHANNEL_SHADE_LABEL", locale),
-                            getText("CHANNEL_SHADE_DESCRIPTION", locale), "Blinds",
-                            Sets.newHashSet(getText("GREY", locale), getText("DS", locale), getText("SHADE", locale)),
-                            null, null);
-                case DigitalSTROMBindingConstants.CHANNEL_ID_SHADE_ANGLE:
-                    return new ChannelType(channelTypeUID, false, DIMMER, getText("CHANNEL_SHADE_ANGLE_LABEL", locale),
-                            getText("CHANNEL_SHADE_ANGLE_DESCRIPTION", locale), "Blinds",
-                            Sets.newHashSet(getText("GREY", locale), getText("DS", locale), getText("SHADE", locale)),
-                            null, null);
-                case DigitalSTROMBindingConstants.CHANNEL_ID_ACTIVE_POWER:
-                    return new ChannelType(channelTypeUID, false, NUMBER, getText("CHANNEL_ACTIVE_POWER_LABEL", locale),
-                            getText("CHANNEL_ACTIVE_POWER_DESCRIPTION", locale), null,
-                            Sets.newHashSet(getText("ACTIVE_POWER", locale), getText("POWER_CONSUMPTION", locale),
-                                    getText("DS", locale)),
-                            getSensorStateDescription(SensorEnum.ACTIVE_POWER.getUnitShortcut()), null);
-                case DigitalSTROMBindingConstants.CHANNEL_ID_ELECTRIC_METER:
-                    return new ChannelType(channelTypeUID, false, NUMBER,
-                            getText("CHANNEL_ELECTRIC_METER_LABEL", locale),
-                            getText("CHANNEL_ELECTRIC_METER_DESCRIPTION", locale), "Energy",
-                            Sets.newHashSet(getText("ELECTRIC_METER", locale), getText("DS", locale)),
-                            getSensorStateDescription(SensorEnum.ELECTRIC_METER.getUnitShortcut()), null);
-                case DigitalSTROMBindingConstants.CHANNEL_ID_OUTPUT_CURRENT:
-                    return new ChannelType(channelTypeUID, false, NUMBER,
-                            getText("CHANNEL_OUTPUT_CURRENT_LABEL", locale),
-                            getText("CHANNEL_OUTPUT_CURRENT_DESCRIPTION", locale), "Energy",
-                            Sets.newHashSet(getText("OUTPUT_CURRENT", locale), getText("DS", locale)),
-                            getSensorStateDescription(SensorEnum.OUTPUT_CURRENT.getUnitShortcut()), null);
-                case DigitalSTROMBindingConstants.CHANNEL_ID_TOTAL_ACTIVE_POWER:
-                    return new ChannelType(channelTypeUID, false, NUMBER,
-                            getText("CHANNEL_TOTAL_ACTIVE_POWER_LABEL", locale),
-                            getText("CHANNEL_TOTAL_ACTIVE_POWER_DESCRIPTION", locale), "Energy",
-                            Sets.newHashSet(getText("ACTIVE_POWER", locale), getText("POWER_CONSUMPTION", locale),
-                                    getText("DS", locale)),
-                            getSensorStateDescription(SensorEnum.ACTIVE_POWER.getUnitShortcut()), null);
-                case DigitalSTROMBindingConstants.CHANNEL_ID_TOTAL_ELECTRIC_METER:
-                    return new ChannelType(channelTypeUID, false, NUMBER,
-                            getText("CHANNEL_TOTAL_ELECTRIC_METER_LABEL", locale),
-                            getText("CHANNEL_TOTAL_ELECTRIC_METER_DESCRIPTION", locale), "Energy",
-                            Sets.newHashSet(getText("ELECTRIC_METER", locale), getText("DS", locale)),
-                            getSensorStateDescription(SensorEnum.ELECTRIC_METER.getUnitShortcut()), null);
-                case DigitalSTROMBindingConstants.CHANNEL_ID_SCENE:
-                    return new ChannelType(channelTypeUID, false, SWITCH, getText("CHANNEL_SCENE_LABEL", locale),
-                            getText("CHANNEL_SCENE_DESCRIPTION", locale), "Energy",
-                            Sets.newHashSet(getText("SCENE", locale), getText("DS", locale)), null, null);
+            try {
+                SensorEnum sensorType = SensorEnum.valueOf(channelTypeUID.getId());
+                return new ChannelType(channelTypeUID, false, NUMBER, getSensorText(sensorType, locale),
+                        getSesorDescription(sensorType, locale), "Energy",
+                        Sets.newHashSet(getText("OUTPUT_CURRENT", locale), getText("DS", locale)),
+                        getSensorStateDescription(sensorType), null);
+            } catch (IllegalArgumentException e) {
+                switch (channelTypeUID.getId()) {
+                    case DigitalSTROMBindingConstants.CHANNEL_ID_BRIGHTNESS:
+                        return new ChannelType(channelTypeUID, false, DIMMER,
+                                getText("CHANNEL_BRIGHTNESS_LABEL", locale),
+                                getText("CHANNEL_BRIGHTNESS_DESCRIPTION", locale), "dimmableLight",
+                                Sets.newHashSet(getText("YELLOW", locale), getText("DS", locale),
+                                        getText("LIGHT", locale)),
+                                null, null);
+                    case DigitalSTROMBindingConstants.CHANNEL_ID_LIGHT_SWITCH:
+                        return new ChannelType(channelTypeUID, false, SWITCH,
+                                getText("CHANNEL_LIGHT_SWITCH_LABEL", locale),
+                                getText("CHANNEL_LIGHT_SWITCH_DESCRIPTION", locale), "light",
+                                Sets.newHashSet(getText("YELLOW", locale), getText("DS", locale),
+                                        getText("LIGHT", locale)),
+                                null, null);
+                    case DigitalSTROMBindingConstants.CHANNEL_ID_GENERAL_DIMM:
+                        return new ChannelType(channelTypeUID, false, DIMMER,
+                                getText("CHANNEL_GENERAL_DIMM_LABEL", locale),
+                                getText("CHANNEL_GENERAL_DIMM_DESCRIPTION", locale), null,
+                                Sets.newHashSet(getText("BLACK", locale), getText("DS", locale),
+                                        getText("JOKER", locale)),
+                                null, null);
+                    case DigitalSTROMBindingConstants.CHANNEL_ID_GENERAL_SWITCH:
+                        return new ChannelType(channelTypeUID, false, SWITCH,
+                                getText("CHANNEL_GENERAL_SWITCH_LABEL", locale),
+                                getText("CHANNEL_GENERAL_SWITCH_DESCRIPTION", locale), null,
+                                Sets.newHashSet(getText("BLACK", locale), getText("DS", locale),
+                                        getText("JOKER", locale)),
+                                null, null);
+                    case DigitalSTROMBindingConstants.CHANNEL_ID_COMBINED_2_STAGE_SWITCH:
+                        return new ChannelType(channelTypeUID, false, STRING,
+                                getText("CHANNEL_COMBINED_2_STAGE_SWITCH_LABEL", locale),
+                                getText("CHANNEL_COMBINED_2_STAGE_SWITCH_DESCRIPTION", locale), "Lights",
+                                Sets.newHashSet(getText("YELLOW", locale), getText("DS", locale),
+                                        getText("LIGHT", locale), getText("UMR", locale)),
+                                getCombinedStageDescription((short) 2, true, locale), null);
+                    case DigitalSTROMBindingConstants.CHANNEL_ID_COMBINED_3_STAGE_SWITCH:
+                        return new ChannelType(channelTypeUID, false, STRING,
+                                getText("CHANNEL_COMBINED_3_STAGE_SWITCH_LABEL", locale),
+                                getText("CHANNEL_COMBINED_3_STAGE_SWITCH_DESCRIPTION", locale), "Lights",
+                                Sets.newHashSet(getText("YELLOW", locale), getText("DS", locale),
+                                        getText("LIGHT", locale), getText("UMR", locale)),
+                                getCombinedStageDescription((short) 3, true, locale), null);
+                    case DigitalSTROMBindingConstants.CHANNEL_ID_GENERAL_COMBINED_2_STAGE_SWITCH:
+                        return new ChannelType(channelTypeUID, false, STRING,
+                                getText("CHANNEL_GENERAL_COMBINED_2_STAGE_SWITCH_LABEL", locale),
+                                getText("CHANNEL_GENERAL_COMBINED_2_STAGE_SWITCH_DESCRIPTION", locale), null,
+                                Sets.newHashSet(getText("BLACK", locale), getText("DS", locale),
+                                        getText("UMR", locale)),
+                                getCombinedStageDescription((short) 2, true, locale), null);
+                    case DigitalSTROMBindingConstants.CHANNEL_ID_GENERAL_COMBINED_3_STAGE_SWITCH:
+                        return new ChannelType(channelTypeUID, false, STRING,
+                                getText("CHANNEL_GENERAL_COMBINED_3_STAGE_SWITCH_LABEL", locale),
+                                getText("CHANNEL_GENERAL_COMBINED_3_STAGE_SWITCH_DESCRIPTION", locale), null,
+                                Sets.newHashSet(getText("BLACK", locale), getText("DS", locale),
+                                        getText("UMR", locale)),
+                                getCombinedStageDescription((short) 3, true, locale), null);
+                    case DigitalSTROMBindingConstants.CHANNEL_ID_SHADE:
+                        return new ChannelType(channelTypeUID, false, SHADE, getText("CHANNEL_SHADE_LABEL", locale),
+                                getText("CHANNEL_SHADE_DESCRIPTION", locale), "Blinds",
+                                Sets.newHashSet(getText("GREY", locale), getText("DS", locale),
+                                        getText("SHADE", locale)),
+                                null, null);
+                    case DigitalSTROMBindingConstants.CHANNEL_ID_SHADE_ANGLE:
+                        return new ChannelType(channelTypeUID, false, DIMMER,
+                                getText("CHANNEL_SHADE_ANGLE_LABEL", locale),
+                                getText("CHANNEL_SHADE_ANGLE_DESCRIPTION", locale), "Blinds",
+                                Sets.newHashSet(getText("GREY", locale), getText("DS", locale),
+                                        getText("SHADE", locale)),
+                                null, null);
+                    /*
+                     * case DigitalSTROMBindingConstants.CHANNEL_ID_ACTIVE_POWER:
+                     * return new ChannelType(channelTypeUID, false, NUMBER,
+                     * getText("CHANNEL_ACTIVE_POWER_LABEL", locale),
+                     * getText("CHANNEL_ACTIVE_POWER_DESCRIPTION", locale), null,
+                     * Sets.newHashSet(getText("ACTIVE_POWER", locale), getText("POWER_CONSUMPTION", locale),
+                     * getText("DS", locale)),
+                     * getSensorStateDescription(SensorEnum.ACTIVE_POWER.getUnitShortcut()), null);
+                     * case DigitalSTROMBindingConstants.CHANNEL_ID_ELECTRIC_METER:
+                     * return new ChannelType(channelTypeUID, false, NUMBER,
+                     * getText("CHANNEL_ELECTRIC_METER_LABEL", locale),
+                     * getText("CHANNEL_ELECTRIC_METER_DESCRIPTION", locale), "Energy",
+                     * Sets.newHashSet(getText("ELECTRIC_METER", locale), getText("DS", locale)),
+                     * getSensorStateDescription(SensorEnum.ELECTRIC_METER.getUnitShortcut()), null);
+                     * case DigitalSTROMBindingConstants.CHANNEL_ID_OUTPUT_CURRENT:
+                     * return new ChannelType(channelTypeUID, false, NUMBER,
+                     *
+                     * getText("CHANNEL_OUTPUT_CURRENT_LABEL", locale),
+                     * getText("CHANNEL_OUTPUT_CURRENT_DESCRIPTION", locale)
+                     * getSensorText(SensorEnum.OUTPUT_CURRENT, locale),
+                     * getSesorDescription(SensorEnum.OUTPUT_CURRENT, locale), "Energy",
+                     * Sets.newHashSet(getText("OUTPUT_CURRENT", locale), getText("DS", locale)),
+                     * getSensorStateDescription(SensorEnum.OUTPUT_CURRENT), null);
+                     */
+                    case DigitalSTROMBindingConstants.CHANNEL_ID_TOTAL_ACTIVE_POWER:
+                        return new ChannelType(channelTypeUID, false, NUMBER,
+                                getText("CHANNEL_TOTAL_ACTIVE_POWER_LABEL", locale),
+                                getText("CHANNEL_TOTAL_ACTIVE_POWER_DESCRIPTION", locale), "Energy",
+                                Sets.newHashSet(getText("ACTIVE_POWER", locale), getText("POWER_CONSUMPTION", locale),
+                                        getText("DS", locale)),
+                                getSensorStateDescription(SensorEnum.ACTIVE_POWER.getUnitShortcut()), null);
+                    case DigitalSTROMBindingConstants.CHANNEL_ID_TOTAL_ELECTRIC_METER:
+                        return new ChannelType(channelTypeUID, false, NUMBER,
+                                getText("CHANNEL_TOTAL_ELECTRIC_METER_LABEL", locale),
+                                getText("CHANNEL_TOTAL_ELECTRIC_METER_DESCRIPTION", locale), "Energy",
+                                Sets.newHashSet(getText("ELECTRIC_METER", locale), getText("DS", locale)),
+                                getSensorStateDescription(SensorEnum.ELECTRIC_METER.getUnitShortcut()), null);
+                    case DigitalSTROMBindingConstants.CHANNEL_ID_SCENE:
+                        return new ChannelType(channelTypeUID, false, SWITCH, getText("CHANNEL_SCENE_LABEL", locale),
+                                getText("CHANNEL_SCENE_DESCRIPTION", locale), "Energy",
+                                Sets.newHashSet(getText("SCENE", locale), getText("DS", locale)), null, null);
+                }
             }
         }
         return null;

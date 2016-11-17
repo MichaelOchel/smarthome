@@ -200,7 +200,9 @@ public enum JSONApiResponseKeysEnum {
     VALID("valid"),
     VALUE_DS("valueDS"),
     TIMESTAMP("timestamp"),
-    SENSOR_INPUTS("sensorInputs");
+    SENSOR_INPUTS("sensorInputs"),
+    GROUP("group"),
+    LAST_CALL_SCENE("lastCalledScene");
 
     private final String key;
 

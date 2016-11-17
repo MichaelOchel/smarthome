@@ -85,12 +85,14 @@ public class BridgeHandler extends BaseBridgeHandler
     private SceneManager sceneMan;
     private DeviceStatusManager devStatMan;
 
-    private List<SceneStatusListener> sceneListener;
+    private List<SceneStatusListener> sceneListeners;
     private List<DeviceStatusListener> devListener;
+    private DeviceStatusListener deviceDiscovery = null;
+    private SceneStatusListener sceneDiscovery = null;
     private Config config = null;
 
     List<SceneStatusListener> unregisterSceneStatusListeners = null;
-    private boolean generatingScenes = false;
+    // private boolean generatingScenes = true;
     private int connectionTimeoutCounter = 0;
 
     private class Initializer implements Runnable {
@@ -118,7 +120,7 @@ public class BridgeHandler extends BaseBridgeHandler
                 structMan = new StructureManagerImpl();
             }
             if (sceneMan == null) {
-                sceneMan = new SceneManagerImpl(connMan, structMan);
+                sceneMan = new SceneManagerImpl(connMan, structMan, bridge);
             }
             if (devStatMan == null) {
                 devStatMan = new DeviceStatusManagerImpl(connMan, structMan, sceneMan, bridge);
@@ -359,14 +361,33 @@ public class BridgeHandler extends BaseBridgeHandler
             }
 
             if (deviceStatusListener.getDeviceStatusListenerID() != null) {
-                devStatMan.registerDeviceListener(deviceStatusListener);
+                if (devStatMan.getManagerState().equals(ManagerStates.RUNNING)) {
+                    devStatMan.registerDeviceListener(deviceStatusListener);
+                    return;
+                }
+                if (deviceStatusListener.getDeviceStatusListenerID().equals(DeviceStatusListener.DEVICE_DISCOVERY)) {
+                    devStatMan.registerDeviceListener(deviceStatusListener);
+                }
             } else {
                 throw new IllegalArgumentException("It's not allowed to pass a DeviceStatusListener with ID = null.");
             }
         } else {
-            devListener = new LinkedList<DeviceStatusListener>();
-            devListener.add(deviceStatusListener);
+            if (deviceStatusListener.getDeviceStatusListenerID().equals(DeviceStatusListener.DEVICE_DISCOVERY)) {
+                deviceDiscovery = deviceStatusListener;
+            }
+            /*
+             * if (devListener == null) {
+             * devListener = new LinkedList<DeviceStatusListener>();
+             * }
+             * if (deviceStatusListener.getDeviceStatusListenerID().equals(DeviceStatusListener.DEVICE_DISCOVERY)
+             * && !devListener.contains(deviceStatusListener)) {
+             * logger.debug("list={} contains listenerID={} ? {}", devListener,
+             * deviceStatusListener.getDeviceStatusListenerID(), devListener.contains(deviceStatusListener));
+             * devListener.add(deviceStatusListener);
+             * }
+             */
         }
+
     }
 
     /**
@@ -390,7 +411,7 @@ public class BridgeHandler extends BaseBridgeHandler
      * @param deviceStatusListener (must not be null)
      */
     public synchronized void registerSceneStatusListener(SceneStatusListener sceneStatusListener) {
-        if (this.sceneMan != null && !generatingScenes) {
+        if (this.sceneMan != null /* && !generatingScenes */) {
             if (sceneStatusListener == null) {
                 throw new IllegalArgumentException("It's not allowed to pass null.");
             }
@@ -401,10 +422,19 @@ public class BridgeHandler extends BaseBridgeHandler
                 throw new IllegalArgumentException("It's not allowed to pass a SceneStatusListener with ID = null.");
             }
         } else {
-            if (sceneListener == null) {
-                sceneListener = new LinkedList<SceneStatusListener>();
+            if (sceneStatusListener.getSceneStatusListenerID().equals(SceneStatusListener.SCENE_DISCOVERY)) {
+                sceneDiscovery = sceneStatusListener;
             }
-            sceneListener.add(sceneStatusListener);
+            /*
+             * if (sceneListeners == null) {
+             * sceneListeners = new LinkedList<SceneStatusListener>();
+             * }
+             * if (!sceneListeners.contains(sceneStatusListener)) {
+             * logger.debug("list={} contains listenerID={} ? {}", sceneListeners.toString(),
+             * sceneStatusListener.getSceneStatusListenerID(), sceneListeners.contains(sceneStatusListener));
+             * sceneListeners.add(sceneStatusListener);
+             * }
+             */
         }
 
     }
@@ -415,18 +445,20 @@ public class BridgeHandler extends BaseBridgeHandler
      * @param sceneStatusListener (must not be null)
      */
     public void unregisterSceneStatusListener(SceneStatusListener sceneStatusListener) {
-        if (this.sceneMan != null && !generatingScenes) {
+        if (this.sceneMan != null /* && !generatingScenes */) {
             if (sceneStatusListener.getSceneStatusListenerID() != null) {
                 this.sceneMan.unregisterSceneListener(sceneStatusListener);
             } else {
                 throw new IllegalArgumentException("It's not allowed to pass a SceneStatusListener with ID = null..");
             }
-        } else {
-            if (unregisterSceneStatusListeners == null) {
-                unregisterSceneStatusListeners = new LinkedList<SceneStatusListener>();
-            }
-            unregisterSceneStatusListeners.add(sceneStatusListener);
-        }
+        } /*
+           * else {
+           * if (unregisterSceneStatusListeners == null) {
+           * unregisterSceneStatusListeners = new LinkedList<SceneStatusListener>();
+           * }
+           * unregisterSceneStatusListeners.add(sceneStatusListener);
+           * }
+           */
     }
 
     /**
@@ -496,7 +528,7 @@ public class BridgeHandler extends BaseBridgeHandler
                 break;
             case CONNECTION_RESUMED:
                 if (connectionTimeoutCounter > 0) {
-                    setStatus(ThingStatus.ONLINE);
+                    updateStatus(ThingStatus.ONLINE);
                     devStatMan.start();
                 }
                 break;
@@ -507,7 +539,7 @@ public class BridgeHandler extends BaseBridgeHandler
                         config.remove(USER_NAME);
                         config.remove(PASSWORD);
                         config.put(APPLICATION_TOKEN, connMan.getApplicationToken());
-                        // this.updateConfiguration(config);
+                        this.updateConfiguration(config);
                     }
                 }
                 return;
@@ -643,15 +675,22 @@ public class BridgeHandler extends BaseBridgeHandler
         if (managerType.equals(ManagerTypes.DEVICE_STATUS_MANAGER)) {
             switch (state) {
                 case INITIALIZING:
+                    if (deviceDiscovery != null) {
+                        devStatMan.registerDeviceListener(deviceDiscovery);
+                        deviceDiscovery = null;
+                    }
                     logger.info("Building digitalSTROM model");
                     break;
                 case RUNNING:
-                    setStatus(ThingStatus.ONLINE);
-                    if (devListener != null) {
-                        for (DeviceStatusListener deviceListener : devListener) {
-                            devStatMan.registerDeviceListener(deviceListener);
-                        }
-                    }
+                    updateStatus(ThingStatus.ONLINE);
+                    /*
+                     * if (devListener != null) {
+                     * for (DeviceStatusListener deviceListener : devListener) {
+                     * devStatMan.registerDeviceListener(deviceListener);
+                     * }
+                     * devListener = null;
+                     * }
+                     */
                     break;
                 case STOPPED:
                     if (!getThing().getStatusInfo().equals(ThingStatusDetail.COMMUNICATION_ERROR)
@@ -666,20 +705,30 @@ public class BridgeHandler extends BaseBridgeHandler
         if (managerType.equals(ManagerTypes.SCENE_MANAGER)) {
             switch (state) {
                 case GENERATING_SCENES:
-                    generatingScenes = true;
+                    logger.debug("SceneManager reports that he is generating scenes");
+                    if (sceneDiscovery != null) {
+                        sceneMan.registerSceneListener(sceneDiscovery);
+                        sceneDiscovery = null;
+                    }
+                    // generatingScenes = true;
                     break;
                 case RUNNING:
-                    if (unregisterSceneStatusListeners != null) {
-                        for (SceneStatusListener sceneListener : this.unregisterSceneStatusListeners) {
-                            sceneMan.registerSceneListener(sceneListener);
-                        }
-                    }
-                    if (sceneListener != null) {
-                        for (SceneStatusListener sceneListener : this.sceneListener) {
-                            sceneMan.registerSceneListener(sceneListener);
-                        }
-                    }
-                    generatingScenes = false;
+                    logger.debug("SceneManager reports that he is running");
+                    /*
+                     * if (unregisterSceneStatusListeners != null) {
+                     * for (SceneStatusListener sceneListener : this.unregisterSceneStatusListeners) {
+                     * sceneMan.unregisterSceneListener(sceneListener);
+                     * }
+                     * unregisterSceneStatusListeners = null;
+                     * }
+                     * if (sceneListeners != null) {
+                     * for (SceneStatusListener sceneListener : this.sceneListeners) {
+                     * sceneMan.registerSceneListener(sceneListener);
+                     * }
+                     * sceneListeners = null;
+                     * }
+                     */
+                    // generatingScenes = false;
                     break;
                 default:
                     break;

@@ -27,7 +27,7 @@ public class InternalScene {
     private final Short SCENE_ID;
     private final Short GROUP_ID;
     private final Integer ZONE_ID;
-    private String SceneName;
+    private String sceneName;
     private final String INTERNAL_SCENE_ID;
     private boolean active = false;
     private boolean deviceHasChanged = false;
@@ -64,12 +64,11 @@ public class InternalScene {
         }
         this.INTERNAL_SCENE_ID = this.ZONE_ID + "-" + this.GROUP_ID + "-" + this.SCENE_ID;
         if (StringUtils.isBlank(sceneName)) {
-            this.SceneName = this.INTERNAL_SCENE_ID;
+            this.sceneName = this.INTERNAL_SCENE_ID;
         } else {
-            this.SceneName = sceneName;
+            this.sceneName = sceneName;
         }
-        if ((sceneName != this.INTERNAL_SCENE_ID) && !sceneName.contains("Apartment-Scene: ")
-                && !sceneName.contains("Zone-Scene: Zone:")
+        if ((sceneName != null) && !sceneName.contains("Apartment-Scene: ") && !sceneName.contains("Zone-Scene: Zone:")
                 && !(sceneName.contains("Zone: ") && sceneName.contains("Group: ") && sceneName.contains("Scene: "))) {
             sceneType = SceneTypes.NAMED_SCENE;
         } else if (this.ZONE_ID == 0) {
@@ -172,11 +171,11 @@ public class InternalScene {
         if (!this.devices.contains(device)) {
             this.devices.add(device);
         }
-        int prio = 0;
+        short prio = 0;
         if (this.listener != null) {
-            prio = 1000;
+            prio = 1;
         } else {
-            prio = 2000;
+            prio = 2;
         }
         device.checkSceneConfig(SCENE_ID, prio);
     }
@@ -202,11 +201,11 @@ public class InternalScene {
      * </ul>
      */
     public void checkDeviceSceneConfig() {
-        int prio = 0;
+        short prio = 0;
         if (this.listener != null) {
-            prio = 1000;
+            prio = 1;
         } else {
-            prio = 2000;
+            prio = 2;
         }
         if (devices != null) {
             for (Device device : devices) {
@@ -263,7 +262,7 @@ public class InternalScene {
      * @return scene name
      */
     public String getSceneName() {
-        return SceneName;
+        return sceneName;
     }
 
     /**
@@ -272,7 +271,7 @@ public class InternalScene {
      * @param sceneName
      */
     public void setSceneName(String sceneName) {
-        SceneName = sceneName;
+        this.sceneName = sceneName;
     }
 
     /**
@@ -347,7 +346,7 @@ public class InternalScene {
 
     @Override
     public String toString() {
-        return "NamedScene [SceneName=" + SceneName + ", NAMED_SCENE_ID=" + INTERNAL_SCENE_ID + "]";
+        return "NamedScene [SceneName=" + sceneName + ", NAMED_SCENE_ID=" + INTERNAL_SCENE_ID + "]";
     }
 
     @Override

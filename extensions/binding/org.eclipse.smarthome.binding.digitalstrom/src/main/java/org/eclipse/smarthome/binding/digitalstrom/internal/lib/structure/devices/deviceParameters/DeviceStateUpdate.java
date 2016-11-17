@@ -101,4 +101,10 @@ public interface DeviceStateUpdate {
     SensorEnum getTypeAsSensorEnum();
 
     boolean isSensorUpdateType();
+
+    Short getSceneId();
+
+    Short getScenePriority();
+
+    boolean isSceneUpdateType();
 }

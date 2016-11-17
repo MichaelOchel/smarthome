@@ -71,6 +71,7 @@ public class DeviceStatusManagerImpl implements DeviceStatusManager {
     private ScheduledFuture<?> pollingScheduler = null;
 
     public static final String GET_DETAILD_DEVICES = "/apartment/zones/zone0(*)/devices/*(*)/*(*)/*(*)";
+    public static final String LAST_CALL_SCENE_QUERY = "/apartment/zones/*(*)/groups/*(*)/*(*)";
 
     private ConnectionManager connMan;
     private StructureManager strucMan;
@@ -192,7 +193,11 @@ public class DeviceStatusManagerImpl implements DeviceStatusManager {
                                                 updateSceneData(eshDevice, deviceStateUpdate);
                                                 break;
                                             case DeviceStateUpdate.UPDATE_OUTPUT_VALUE:
-                                                readOutputValue(eshDevice);
+                                                if (deviceStateUpdate.getValueAsInteger() > -1) {
+                                                    readOutputValue(eshDevice);
+                                                } else {
+                                                    removeSensorJob(eshDevice, deviceStateUpdate);
+                                                }
                                                 break;
                                             default:
                                                 sendComandsToDSS(eshDevice, deviceStateUpdate);
@@ -248,14 +253,17 @@ public class DeviceStatusManagerImpl implements DeviceStatusManager {
                         if (!strucMan.getDeviceMap().values().isEmpty()) {
                             logger.debug("Devices loaded");
                             devicesLoaded = true;
+                            setInizialStateWithLastCallScenes();
                             stateChanged(ManagerStates.RUNNING);
+                        } else {
+                            logger.info("No devices found");
                         }
                     }
 
-                    if (!sceneMan.scenesGenerated()
-                            && !sceneMan.getManagerState().equals(ManagerStates.GENERATING_SCENES)) {
+                    // TODO:
+                    if (sceneMan.getManagerState().equals(ManagerStates.STOPPED)) {
                         logger.debug(sceneMan.getManagerState().toString());
-                        sceneMan.generateScenes();
+                        sceneMan.start();
                     }
 
                     for (Device device : tempDeviceMap.values()) {
@@ -299,7 +307,7 @@ public class DeviceStatusManagerImpl implements DeviceStatusManager {
         private List<Device> getDetailedDevices() {
             List<Device> deviceList = new LinkedList<Device>();
             JsonObject result = connMan.getDigitalSTROMAPI().query2(connMan.getSessionToken(), GET_DETAILD_DEVICES);
-            if (result.isJsonObject()) {
+            if (result != null && result.isJsonObject()) {
                 if (result.getAsJsonObject().get("zone0").isJsonObject()) {
                     result = result.getAsJsonObject().get("zone0").getAsJsonObject();
                     for (Entry<String, JsonElement> entry : result.entrySet()) {
@@ -368,6 +376,34 @@ public class DeviceStatusManagerImpl implements DeviceStatusManager {
 
     };
 
+    private void removeSensorJob(Device eshDevice, DeviceStateUpdate deviceStateUpdate) {
+        switch (deviceStateUpdate.getType()) {
+            case DeviceStateUpdate.UPDATE_SCENE_CONFIG:
+                if (sceneJobExecutor != null) {
+                    sceneJobExecutor.removeSensorJob(eshDevice,
+                            SceneConfigReadingJob.getID(eshDevice, deviceStateUpdate.getSceneId()));
+                }
+                break;
+            case DeviceStateUpdate.UPDATE_SCENE_OUTPUT:
+                if (sceneJobExecutor != null) {
+                    sceneJobExecutor.removeSensorJob(eshDevice,
+                            SceneOutputValueReadingJob.getID(eshDevice, deviceStateUpdate.getSceneId()));
+                }
+                break;
+            case DeviceStateUpdate.UPDATE_OUTPUT_VALUE:
+                if (sensorJobExecutor != null) {
+                    sensorJobExecutor.removeSensorJob(eshDevice, DeviceOutputValueSensorJob.getID(eshDevice));
+                }
+                break;
+        }
+        if (deviceStateUpdate.isSensorUpdateType()) {
+            if (sensorJobExecutor != null) {
+                sensorJobExecutor.removeSensorJob(eshDevice,
+                        DeviceConsumptionSensorJob.getID(eshDevice, deviceStateUpdate.getTypeAsSensorEnum()));
+            }
+        }
+    }
+
     @Override
     public ManagerTypes getManagerType() {
         return ManagerTypes.DEVICE_STATUS_MANAGER;
@@ -391,6 +427,9 @@ public class DeviceStatusManagerImpl implements DeviceStatusManager {
         if (pollingScheduler == null || pollingScheduler.isCancelled()) {
             pollingScheduler = scheduler.scheduleAtFixedRate(new PollingRunnable(), 0, config.getPollingFrequency(),
                     TimeUnit.MILLISECONDS);
+            // sceneMan.start();
+        }
+        if (sceneMan.scenesGenerated()) {
             sceneMan.start();
         }
         if (sceneJobExecutor != null) {
@@ -695,6 +734,9 @@ public class DeviceStatusManagerImpl implements DeviceStatusManager {
                         updateSensorData(new DeviceConsumptionSensorJob(device, sensorType),
                                 device.getPowerSensorRefreshPriority(sensorType));
                         return;
+                    } else if (deviceStateUpdate.getValueAsInteger() < 0) {
+                        removeSensorJob(device, deviceStateUpdate);
+                        return;
                     } else {
                         int consumption = this.digitalSTROMClient.getDeviceSensorValue(connMan.getSessionToken(),
                                 device.getDSID(), null, device.getSensorIndex(sensorType));
@@ -758,9 +800,9 @@ public class DeviceStatusManagerImpl implements DeviceStatusManager {
                                         sceneMan.addEcho(device.getDSID().getValue(),
                                                 SceneEnum.MINIMUM.getSceneNumber());
                                     }
-                                    if (sensorJobExecutor != null) {
-                                        sensorJobExecutor.removeSensorJobs(device);
-                                    }
+                                    // if (sensorJobExecutor != null) {
+                                    // sensorJobExecutor.removeSensorJobs(device);
+                                    // }
                                 } else {
                                     commandHaveNoEffect = true;
                                 }
@@ -863,16 +905,37 @@ public class DeviceStatusManagerImpl implements DeviceStatusManager {
             this.sensorJobExecutor.startExecutor();
         }
         if (sensorJob != null && priority != null) {
-            if (priority.contains(Config.REFRESH_PRIORITY_HIGH)) {
-                sensorJobExecutor.addHighPriorityJob(sensorJob);
-            } else if (priority.contains(Config.REFRESH_PRIORITY_MEDIUM)) {
-                sensorJobExecutor.addMediumPriorityJob(sensorJob);
-            } else if (priority.contains(Config.REFRESH_PRIORITY_LOW)) {
-                sensorJobExecutor.addLowPriorityJob(sensorJob);
-            } else {
-                System.err.println("Sensor data update priority do not exist! Please check the input!");
-                return;
+            switch (priority) {
+                case Config.REFRESH_PRIORITY_HIGH:
+                    sensorJobExecutor.addHighPriorityJob(sensorJob);
+                    break;
+                case Config.REFRESH_PRIORITY_MEDIUM:
+                    sensorJobExecutor.addMediumPriorityJob(sensorJob);
+                    break;
+                case Config.REFRESH_PRIORITY_LOW:
+                    sensorJobExecutor.addLowPriorityJob(sensorJob);
+                    break;
+                default:
+                    try {
+                        long prio = Long.parseLong(priority);
+                        sensorJobExecutor.addPriorityJob(sensorJob, prio);
+                    } catch (NumberFormatException e) {
+                        System.err.println("Sensor data update priority do not exist! Please check the input!");
+                        return;
+                    }
             }
+            /*
+             * if (priority.contains(Config.REFRESH_PRIORITY_HIGH)) {
+             * sensorJobExecutor.addHighPriorityJob(sensorJob);
+             * } else if (priority.contains(Config.REFRESH_PRIORITY_MEDIUM)) {
+             * sensorJobExecutor.addMediumPriorityJob(sensorJob);
+             * } else if (priority.contains(Config.REFRESH_PRIORITY_LOW)) {
+             * sensorJobExecutor.addLowPriorityJob(sensorJob);
+             * } else {
+             * System.err.println("Sensor data update priority do not exist! Please check the input!");
+             * return;
+             * }
+             */
             logger.debug("Add new sensorJob {} with priority: {} to sensorJobExecuter", sensorJob.toString(), priority);
         }
     }
@@ -884,41 +947,24 @@ public class DeviceStatusManagerImpl implements DeviceStatusManager {
             this.sceneJobExecutor.startExecutor();
         }
 
-        // TODO: auf Short[] umstellen
         if (deviceStateUpdate != null) {
-            if (deviceStateUpdate.getValueAsInteger() < 1000) {
+            if (deviceStateUpdate.getScenePriority() > -1) {
                 if (deviceStateUpdate.getType().equals(DeviceStateUpdate.UPDATE_SCENE_OUTPUT)) {
-                    sceneJobExecutor.addHighPriorityJob(
-                            new SceneOutputValueReadingJob(device, (short) deviceStateUpdate.getValue()));
-                    DeviceOutputValueSensorJob devOutJob = new DeviceOutputValueSensorJob(device);
-                    devOutJob.setInitalisationTime(0);
-                    updateSensorData(devOutJob, Config.REFRESH_PRIORITY_HIGH);
+                    sceneJobExecutor.addPriorityJob(
+                            new SceneOutputValueReadingJob(device, deviceStateUpdate.getSceneId()),
+                            deviceStateUpdate.getScenePriority().longValue());
                 } else {
-                    sceneJobExecutor.addHighPriorityJob(
-                            new SceneConfigReadingJob(device, (short) deviceStateUpdate.getValue()));
+                    sceneJobExecutor.addPriorityJob(new SceneConfigReadingJob(device, deviceStateUpdate.getSceneId()),
+                            deviceStateUpdate.getScenePriority().longValue());
                 }
-            } else if (deviceStateUpdate.getValueAsInteger() < 2000) {
-                if (deviceStateUpdate.getType().equals(DeviceStateUpdate.UPDATE_SCENE_OUTPUT)) {
-                    sceneJobExecutor.addMediumPriorityJob(new SceneOutputValueReadingJob(device,
-                            (short) (deviceStateUpdate.getValueAsInteger() - 1000)));
-                } else {
-                    sceneJobExecutor.addMediumPriorityJob(
-                            new SceneConfigReadingJob(device, (short) (deviceStateUpdate.getValueAsInteger() - 1000)));
+                if (deviceStateUpdate.getScenePriority() == 0) {
+                    updateSensorData(new DeviceOutputValueSensorJob(device), "0");
                 }
-            } else if (deviceStateUpdate.getValueAsInteger() >= 2000 && deviceStateUpdate.getValueAsInteger() < 3000) {
-                if (deviceStateUpdate.getType().equals(DeviceStateUpdate.UPDATE_SCENE_OUTPUT)) {
-                    sceneJobExecutor.addLowPriorityJob(new SceneOutputValueReadingJob(device,
-                            (short) (deviceStateUpdate.getValueAsInteger() - 2000)));
-                } else {
-                    sceneJobExecutor.addLowPriorityJob(
-                            new SceneConfigReadingJob(device, (short) (deviceStateUpdate.getValueAsInteger() - 2000)));
-                }
+                logger.debug("Add new sceneReadingJob with priority: {} to SceneReadingJobExecuter",
+                        deviceStateUpdate.getScenePriority());
             } else {
-                System.err.println("Sensor data update priority do not exist! Please check the input!");
-                return;
+                removeSensorJob(device, deviceStateUpdate);
             }
-            logger.debug("Add new sceneReadingJob with priority: {} to SceneReadingJobExecuter",
-                    new Integer(deviceStateUpdate.getValueAsInteger()).toString().charAt(0));
         }
     }
 
@@ -926,15 +972,16 @@ public class DeviceStatusManagerImpl implements DeviceStatusManager {
     public void registerDeviceListener(DeviceStatusListener deviceListener) {
         if (deviceListener != null) {
             String id = deviceListener.getDeviceStatusListenerID();
-            logger.debug("register DeviceListener with id: " + id);
             if (id.equals(DeviceStatusListener.DEVICE_DISCOVERY)) {
                 this.deviceDiscovery = deviceListener;
+                logger.debug("register Device-Discovery ");
                 for (Device device : strucMan.getDeviceMap().values()) {
                     deviceDiscovery.onDeviceAdded(device);
                 }
             } else {
                 Device intDevice = strucMan.getDeviceByDSID(deviceListener.getDeviceStatusListenerID());
                 if (intDevice != null) {
+                    logger.debug("register DeviceListener with id: " + id);
                     intDevice.registerDeviceStateListener(deviceListener);
                 } else {
                     deviceListener.onDeviceRemoved(null);
@@ -947,6 +994,7 @@ public class DeviceStatusManagerImpl implements DeviceStatusManager {
     public void unregisterDeviceListener(DeviceStatusListener deviceListener) {
         if (deviceListener != null) {
             String id = deviceListener.getDeviceStatusListenerID();
+            logger.debug("unregister DeviceListener with id: " + id);
             if (id.equals(DeviceStatusListener.DEVICE_DISCOVERY)) {
                 this.deviceDiscovery = null;
             } else {
@@ -1039,5 +1087,43 @@ public class DeviceStatusManagerImpl implements DeviceStatusManager {
             }
         }
         return totalEnergyMeter;
+    }
+
+    private void setInizialStateWithLastCallScenes() {
+        if (sceneMan != null && connMan.checkConnection()) {
+            JsonObject response = connMan.getDigitalSTROMAPI().query2(connMan.getSessionToken(), LAST_CALL_SCENE_QUERY);
+            if (response.isJsonObject()) {
+                for (Entry<String, JsonElement> entry : response.entrySet()) {
+                    if (entry.getValue().isJsonObject()) {
+                        JsonObject zone = entry.getValue().getAsJsonObject();
+                        int zoneID = -1;
+                        short groupID = -1;
+                        short sceneID = -1;
+                        if (zone.get(JSONApiResponseKeysEnum.ZONE_ID.getKey()) != null) {
+                            zoneID = zone.get(JSONApiResponseKeysEnum.ZONE_ID.getKey()).getAsInt();
+                        }
+                        for (Entry<String, JsonElement> groupEntry : zone.entrySet()) {
+                            if (groupEntry.getKey().startsWith("group") && groupEntry.getValue().isJsonObject()) {
+                                JsonObject group = groupEntry.getValue().getAsJsonObject();
+                                if (group.get(JSONApiResponseKeysEnum.DEVICES.getKey()) != null) {
+                                    if (group.get(JSONApiResponseKeysEnum.GROUP.getKey()) != null) {
+                                        groupID = group.get(JSONApiResponseKeysEnum.GROUP.getKey()).getAsShort();
+                                    }
+                                    if (group.get(JSONApiResponseKeysEnum.LAST_CALL_SCENE.getKey()) != null) {
+                                        sceneID = group.get(JSONApiResponseKeysEnum.LAST_CALL_SCENE.getKey())
+                                                .getAsShort();
+                                    }
+                                    if (zoneID > -1 && groupID > -1 && sceneID > -1) {
+                                        logger.debug(
+                                                "inizial state, call scene " + zoneID + "-" + groupID + "-" + sceneID);
+                                        sceneMan.callInternalSceneWithoutDiscovery(zoneID, groupID, sceneID);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
     }
 }

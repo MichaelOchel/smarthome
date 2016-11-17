@@ -56,8 +56,12 @@ public class JSONDeviceSceneSpecImpl implements DeviceSceneSpec {
         this.scene = SceneEnum.getScene(sceneID);
     }
 
-    public JSONDeviceSceneSpecImpl(String SceneName) {
-        this.scene = SceneEnum.valueOf(SceneName);
+    public JSONDeviceSceneSpecImpl(String sceneName) {
+        try {
+            this.scene = SceneEnum.valueOf(sceneName);
+        } catch (IllegalArgumentException e) {
+            // ignore it
+        }
     }
 
     @Override

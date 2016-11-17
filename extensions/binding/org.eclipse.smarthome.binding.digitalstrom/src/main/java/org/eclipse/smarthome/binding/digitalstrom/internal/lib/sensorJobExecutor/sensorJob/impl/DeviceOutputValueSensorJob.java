@@ -124,4 +124,14 @@ public class DeviceOutputValueSensorJob implements SensorJob {
         return "DeviceOutputValueSensorJob [deviceDSID : " + device.getDSID().getValue() + ", meterDSID=" + meterDSID
                 + ", initalisationTime=" + initalisationTime + "]";
     }
+
+    @Override
+    public String getID() {
+        return this.getClass().getSimpleName() + "-" + device.getDSID().getValue();
+    }
+
+    public static String getID(Device device) {
+        return DeviceOutputValueSensorJob.class.getSimpleName() + "-" + device.getDSID().getValue();
+    }
+
 }

@@ -237,4 +237,6 @@ public interface SceneManager {
      * @return current {@link ManagerStates}
      */
     public ManagerStates getManagerState();
+
+    void callInternalSceneWithoutDiscovery(Integer zoneID, Short groupID, Short sceneID);
 }

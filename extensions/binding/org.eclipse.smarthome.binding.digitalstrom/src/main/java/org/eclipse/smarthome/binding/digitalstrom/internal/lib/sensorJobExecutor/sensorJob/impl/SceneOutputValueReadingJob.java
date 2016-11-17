@@ -103,4 +103,13 @@ public class SceneOutputValueReadingJob implements SensorJob {
         return "SceneOutputValueReadingJob [sceneID: " + sceneID + ", deviceDSID : " + device.getDSID().getValue()
                 + ", meterDSID=" + meterDSID + ", initalisationTime=" + initalisationTime + "]";
     }
+
+    @Override
+    public String getID() {
+        return this.getClass().getSimpleName() + "-" + device.getDSID().getValue() + sceneID;
+    }
+
+    public static String getID(Device device, Short sceneID) {
+        return DeviceOutputValueSensorJob.class.getSimpleName() + "-" + device.getDSID().getValue() + "-" + sceneID;
+    }
 }

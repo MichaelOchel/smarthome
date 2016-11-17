@@ -114,7 +114,7 @@ public class SceneHandler extends BaseThingHandler implements SceneStatusListene
     @Override
     public void bridgeStatusChanged(ThingStatusInfo bridgeStatusInfo) {
         if (bridgeStatusInfo.getStatus().equals(ThingStatus.ONLINE)) {
-            if (getBridgeHandler() != null) {
+            if (getBridgeHandler() != null && scene == null) {
                 String sceneID = getSceneID(getConfig(), bridgeHandler);
                 switch (sceneID) {
                     case SCENE_WRONG:
