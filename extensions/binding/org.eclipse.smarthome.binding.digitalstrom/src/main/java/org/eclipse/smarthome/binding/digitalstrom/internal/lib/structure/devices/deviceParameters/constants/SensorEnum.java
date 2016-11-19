@@ -154,7 +154,7 @@ public enum SensorEnum {
     }
 
     /**
-     * Returns the typeIndex of this {@link OutputModeEnum} object.
+     * Returns the typeIndex of this {@link SensorEnum} object.
      *
      * @return typeIndex
      */
@@ -163,7 +163,7 @@ public enum SensorEnum {
     }
 
     /**
-     * Returns the unit of this {@link OutputModeEnum} object.
+     * Returns the unit of this {@link SensorEnum} object.
      *
      * @return unit
      */
@@ -172,7 +172,7 @@ public enum SensorEnum {
     }
 
     /**
-     * Returns the unit shortcut of this {@link OutputModeEnum} object.
+     * Returns the unit shortcut of this {@link SensorEnum} object.
      *
      * @return unit shortcut
      */
@@ -181,7 +181,7 @@ public enum SensorEnum {
     }
 
     /**
-     * Returns the pattern of this {@link OutputModeEnum} object for display.
+     * Returns the pattern of this {@link SensorEnum} object for display.
      *
      * @return pattern
      */

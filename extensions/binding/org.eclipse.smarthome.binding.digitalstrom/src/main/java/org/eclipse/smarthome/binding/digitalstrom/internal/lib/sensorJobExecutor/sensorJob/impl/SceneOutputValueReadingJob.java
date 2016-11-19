@@ -106,7 +106,7 @@ public class SceneOutputValueReadingJob implements SensorJob {
 
     @Override
     public String getID() {
-        return this.getClass().getSimpleName() + "-" + device.getDSID().getValue() + sceneID;
+        return getID(device, sceneID);
     }
 
     public static String getID(Device device, Short sceneID) {

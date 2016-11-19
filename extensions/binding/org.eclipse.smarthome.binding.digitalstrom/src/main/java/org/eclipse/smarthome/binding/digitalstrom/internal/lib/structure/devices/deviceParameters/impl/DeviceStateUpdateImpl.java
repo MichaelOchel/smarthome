@@ -74,12 +74,40 @@ public class DeviceStateUpdateImpl implements DeviceStateUpdate {
 
     @Override
     public Integer getValueAsInteger() {
-        return (Integer) VALUE;
+        try {
+            if (VALUE instanceof Integer) {
+                return (Integer) VALUE;
+            }
+            if (VALUE instanceof Float) {
+                return ((Float) VALUE).intValue();
+            }
+            if (VALUE instanceof Short) {
+                return ((Short) VALUE).intValue();
+            }
+            if (VALUE instanceof String) {
+                return Integer.parseInt((String) VALUE);
+            }
+        } catch (Exception e) {
+            throw new ClassCastException();
+        }
+        throw new ClassCastException();
     }
 
     @Override
     public String getValueAsString() {
-        return (String) VALUE;
+        if (VALUE instanceof Integer) {
+            return ((Integer) VALUE).toString();
+        }
+        if (VALUE instanceof Float) {
+            return ((Float) VALUE).toString();
+        }
+        if (VALUE instanceof Short) {
+            return ((Short) VALUE).toString();
+        }
+        if (VALUE instanceof String) {
+            return (String) VALUE;
+        }
+        throw new ClassCastException();
     }
 
     @Override
@@ -89,12 +117,44 @@ public class DeviceStateUpdateImpl implements DeviceStateUpdate {
 
     @Override
     public Short getValueAsShort() {
-        return (Short) VALUE;
+        try {
+            if (VALUE instanceof Integer) {
+                return ((Integer) VALUE).shortValue();
+            }
+            if (VALUE instanceof Float) {
+                return ((Float) VALUE).shortValue();
+            }
+            if (VALUE instanceof Short) {
+                return (Short) VALUE;
+            }
+            if (VALUE instanceof String) {
+                return Short.parseShort((String) VALUE);
+            }
+        } catch (Exception e) {
+            throw new ClassCastException();
+        }
+        throw new ClassCastException();
     }
 
     @Override
     public Float getValueAsFloat() {
-        return (Float) VALUE;
+        try {
+            if (VALUE instanceof Integer) {
+                return ((Integer) VALUE).floatValue();
+            }
+            if (VALUE instanceof Float) {
+                return (Float) VALUE;
+            }
+            if (VALUE instanceof Short) {
+                return ((Short) VALUE).floatValue();
+            }
+            if (VALUE instanceof String) {
+                return Float.parseFloat((String) VALUE);
+            }
+        } catch (Exception e) {
+            throw new ClassCastException();
+        }
+        throw new ClassCastException();
     }
 
     @Override

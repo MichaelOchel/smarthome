@@ -127,7 +127,7 @@ public class DeviceOutputValueSensorJob implements SensorJob {
 
     @Override
     public String getID() {
-        return this.getClass().getSimpleName() + "-" + device.getDSID().getValue();
+        return getID(device);
     }
 
     public static String getID(Device device) {

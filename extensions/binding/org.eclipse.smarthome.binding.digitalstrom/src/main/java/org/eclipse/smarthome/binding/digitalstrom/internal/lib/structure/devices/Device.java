@@ -11,6 +11,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.config.Config;
+import org.eclipse.smarthome.binding.digitalstrom.internal.lib.event.types.EventItem;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.DeviceSceneSpec;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.DeviceStateUpdate;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.constants.FunctionalColorGroupEnum;
@@ -618,4 +619,14 @@ public interface Device extends GeneralDeviceInformations {
     boolean hasClimateSensors();
 
     boolean hasPowerSensors();
+
+    void setDeviceSensorDsValueBySensorJob(SensorEnum sensorType, Integer value);
+
+    void enableSensorEchoBox();
+
+    void disableSensorEchoBox();
+
+    boolean isSensorEchoBoxEnabled();
+
+    void setDeviceSensorByEvent(EventItem event);
 }

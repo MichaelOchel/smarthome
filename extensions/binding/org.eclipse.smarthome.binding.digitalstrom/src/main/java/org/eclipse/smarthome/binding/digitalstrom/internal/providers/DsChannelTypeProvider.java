@@ -38,7 +38,7 @@ import com.google.common.collect.Sets;
  */
 public class DsChannelTypeProvider implements ChannelTypeProvider {
 
-    public static final List<String> SUPPORTED_CHANNEL_TYPES = Lists.newArrayList(
+    private final List<String> SUPPORTED_CHANNEL_TYPES = Lists.newArrayList(
             DigitalSTROMBindingConstants.CHANNEL_ID_BRIGHTNESS, DigitalSTROMBindingConstants.CHANNEL_ID_LIGHT_SWITCH,
             DigitalSTROMBindingConstants.CHANNEL_ID_COMBINED_2_STAGE_SWITCH,
             DigitalSTROMBindingConstants.CHANNEL_ID_COMBINED_3_STAGE_SWITCH,
@@ -47,9 +47,6 @@ public class DsChannelTypeProvider implements ChannelTypeProvider {
             DigitalSTROMBindingConstants.CHANNEL_ID_GENERAL_COMBINED_2_STAGE_SWITCH,
             DigitalSTROMBindingConstants.CHANNEL_ID_GENERAL_COMBINED_3_STAGE_SWITCH,
             DigitalSTROMBindingConstants.CHANNEL_ID_SCENE, DigitalSTROMBindingConstants.CHANNEL_ID_SHADE,
-            // DigitalSTROMBindingConstants.CHANNEL_ID_ELECTRIC_METER,
-            // DigitalSTROMBindingConstants.CHANNEL_ID_OUTPUT_CURRENT,
-            // DigitalSTROMBindingConstants.CHANNEL_ID_ACTIVE_POWER,
             DigitalSTROMBindingConstants.CHANNEL_ID_TOTAL_ACTIVE_POWER,
             DigitalSTROMBindingConstants.CHANNEL_ID_TOTAL_ELECTRIC_METER,
             DigitalSTROMBindingConstants.CHANNEL_ID_SHADE_ANGLE);
@@ -128,10 +125,17 @@ public class DsChannelTypeProvider implements ChannelTypeProvider {
     }
 
     private String getSesorDescription(SensorEnum sensorType, Locale locale) {
-        return getText("sensor_desc_0", locale) + getText(sensorType.toString(), locale) + " "
-                + getText("sensor_desc_1", locale) + getText(sensorType.toString(), locale) + " "
-                + getText("sensor_desc_2", locale) + " " + getText(sensorType.getUnit(), locale) + " ("
-                + sensorType.getUnitShortcut() + ") " + getText("sensor_desc_3", locale);
+        // the digitalSTROM resolution for temperature in kelvin is not correct but sensor-events and cached values are
+        // shown in °C so we will use this unit for temperature sensors
+        return sensorType.toString().contains("TEMPERATURE")
+                ? getText("sensor_desc_0", locale) + getText(sensorType.toString(), locale) + " "
+                        + getText("sensor_desc_1", locale) + getText(sensorType.toString(), locale) + " "
+                        + getText("sensor_desc_2", locale) + " " + getText(sensorType.getUnit(), locale) + " (°C) "
+                        + getText("sensor_desc_3", locale)
+                : getText("sensor_desc_0", locale) + getText(sensorType.toString(), locale) + " "
+                        + getText("sensor_desc_1", locale) + getText(sensorType.toString(), locale) + " "
+                        + getText("sensor_desc_2", locale) + " " + getText(sensorType.getUnit(), locale) + " ("
+                        + sensorType.getUnitShortcut() + ") " + getText("sensor_desc_3", locale);
     }
 
     private String getSensorText(SensorEnum sensorType, Locale locale) {

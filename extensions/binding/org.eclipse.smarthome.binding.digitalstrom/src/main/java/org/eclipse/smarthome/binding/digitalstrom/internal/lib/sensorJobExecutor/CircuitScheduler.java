@@ -180,8 +180,10 @@ public class CircuitScheduler {
                 if (job.getID().equals(ID)) {
                     iter.remove();
                     logger.debug("Remove SensorJob with ID {}." + ID);
+                    return;
                 }
             }
+            logger.debug("No SensorJob with ID {} found, cannot remove a not existing SensorJob." + ID);
         }
     }
 
