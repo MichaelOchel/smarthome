@@ -41,9 +41,9 @@ public class TestApi {
         final String EVENT_LISTENER = "eventListener";
         final String PARSE_TEST = "parseTest";
         final String DEVICE_QUERY2 = "devQ2";
-        String testType = "";
+        String testType = EVENT_LISTENER;
 
-        ConnectionManager connMan = new ConnectionManagerImpl(host1, user, user, false);
+        ConnectionManager connMan = new ConnectionManagerImpl(host, user, pw, false);
 
         final String LAST_CALL_SCENE_QUERY = "/apartment/zones/*(*)/groups/*(*)/*(*)";
 
@@ -271,9 +271,21 @@ public class TestApi {
                     return this.getClass().getSimpleName() + "-" + supportetEvents.toString();
                 }
 
+                @Override
+                public void setEventListener(EventListener eventListener) {
+                    // TODO Auto-generated method stub
+
+                }
+
+                @Override
+                public void unsetEventListener(EventListener eventListener) {
+                    // TODO Auto-generated method stub
+
+                }
+
             }
-            EventListener eventListener = new EventListener(connMan,
-                    new DummyEventHandler(Lists.newArrayList(EventNames.CALL_SCENE, EventNames.UNDO_SCENE)));
+            EventListener eventListener = new EventListener(connMan, new DummyEventHandler(
+                    Lists.newArrayList(EventNames.CALL_SCENE, EventNames.UNDO_SCENE, EventNames.DEVICE_SENSOR_VALUE)));
             eventListener.start();
         }
         if (testType.equals(JSON_API_HEATING)) {

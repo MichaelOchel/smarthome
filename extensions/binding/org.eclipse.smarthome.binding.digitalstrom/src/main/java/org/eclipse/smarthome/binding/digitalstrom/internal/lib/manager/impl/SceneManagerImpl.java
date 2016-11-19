@@ -53,10 +53,10 @@ public class SceneManagerImpl implements SceneManager, EventHandler {
     private Map<String, InternalScene> internalSceneMap = Collections
             .synchronizedMap(new HashMap<String, InternalScene>());
 
-    private EventListener eventListener;
-    private StructureManager structureManager;
-    private ConnectionManager connectionManager;
-    private SceneDiscovery discovery;
+    private EventListener eventListener = null;
+    private StructureManager structureManager = null;
+    private ConnectionManager connectionManager = null;
+    private SceneDiscovery discovery = null;
     private ManagerStatusListener statusListener = null;
 
     private ManagerStates state = ManagerStates.STOPPED;
@@ -76,26 +76,42 @@ public class SceneManagerImpl implements SceneManager, EventHandler {
         this.statusListener = statusListener;
     }
 
+    public SceneManagerImpl(ConnectionManager connectionManager, StructureManager structureManager,
+            ManagerStatusListener statusListener, EventListener eventListener) {
+        this.structureManager = structureManager;
+        this.connectionManager = connectionManager;
+        this.discovery = new SceneDiscovery(this);
+        this.statusListener = statusListener;
+        this.eventListener = eventListener;
+    }
+
     @Override
     public void start() {
         logger.debug("start SceneManager");
         if (eventListener == null) {
+            logger.debug("no EventListener is set, create a new EventListener");
             eventListener = new EventListener(connectionManager, this);
-        }
-        this.eventListener.start();
-        logger.debug("start SceneManager");
-        if (!scenesGenerated) {
-            generateScenes();
         } else {
-            stateChanged(ManagerStates.RUNNING);
+            logger.debug("EventListener is set, add this SceneManager as EventHandler");
+            eventListener.addEventHandler(this);
         }
+        eventListener.start();
+        logger.debug("start SceneManager");
+        // if (!scenesGenerated) {
+        // generateScenes();
+        // } else {
+        // stateChanged(ManagerStates.RUNNING);
+        // }
+        stateChanged(ManagerStates.RUNNING);
     }
 
     @Override
     public void stop() {
-        if (this.eventListener != null) {
-            this.eventListener.stop();
-            this.eventListener = null;
+        logger.debug("stop SceneManager");
+        if (eventListener != null) {
+            // this.eventListener.stop();
+            // this.eventListener = null;
+            eventListener.removeEventHandler(this);
         }
         this.discovery.stop();
         this.stateChanged(ManagerStates.STOPPED);
@@ -165,6 +181,7 @@ public class SceneManagerImpl implements SceneManager, EventHandler {
             dsid = structureManager.getDeviceByDSUID(dsid).getDSID().getValue();
         }
         String echo = dsid + "-" + sceneId;
+        logger.debug(echo);
         return isEcho(echo);
     }
 
@@ -467,19 +484,33 @@ public class SceneManagerImpl implements SceneManager, EventHandler {
     }
 
     @Override
+    public String getUID() {
+        return this.getClass().getSimpleName() + "-" + SUPPORTED_EVENTS.toString();
+    }
+
+    @Override
     public List<String> getSupportetEvents() {
         return SUPPORTED_EVENTS;
     }
 
     @Override
     public boolean supportsEvent(String eventName) {
-        logger.debug("supports event? " + SUPPORTED_EVENTS.toString() + " contains " + eventName + " = "
-                + SUPPORTED_EVENTS.contains(eventName));
         return SUPPORTED_EVENTS.contains(eventName);
     }
 
     @Override
-    public String getUID() {
-        return this.getClass().getSimpleName() + "-" + SUPPORTED_EVENTS.toString();
+    public void setEventListener(EventListener eventListener) {
+        if (this.eventListener != null) {
+            this.eventListener.removeEventHandler(this);
+        }
+        this.eventListener = eventListener;
+    }
+
+    @Override
+    public void unsetEventListener(EventListener eventListener) {
+        if (this.eventListener != null) {
+            this.eventListener.removeEventHandler(this);
+        }
+        this.eventListener = null;
     }
 }

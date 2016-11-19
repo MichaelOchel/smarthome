@@ -18,6 +18,7 @@ import java.util.Set;
 import org.apache.commons.lang.StringUtils;
 import org.eclipse.smarthome.binding.digitalstrom.DigitalSTROMBindingConstants;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.config.Config;
+import org.eclipse.smarthome.binding.digitalstrom.internal.lib.event.EventListener;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.listener.ConnectionListener;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.listener.DeviceStatusListener;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.listener.ManagerStatusListener;
@@ -85,6 +86,8 @@ public class BridgeHandler extends BaseBridgeHandler
     private SceneManager sceneMan;
     private DeviceStatusManager devStatMan;
 
+    private EventListener eventListener;
+
     private List<SceneStatusListener> sceneListeners;
     private List<DeviceStatusListener> devListener;
     private DeviceStatusListener deviceDiscovery = null;
@@ -116,14 +119,18 @@ public class BridgeHandler extends BaseBridgeHandler
             }
 
             logger.info("Initializing digitalSTROM Manager");
+            if (eventListener == null) {
+                eventListener = new EventListener(connMan);
+                eventListener.start();
+            }
             if (structMan == null) {
                 structMan = new StructureManagerImpl();
             }
             if (sceneMan == null) {
-                sceneMan = new SceneManagerImpl(connMan, structMan, bridge);
+                sceneMan = new SceneManagerImpl(connMan, structMan, bridge, eventListener);
             }
             if (devStatMan == null) {
-                devStatMan = new DeviceStatusManagerImpl(connMan, structMan, sceneMan, bridge);
+                devStatMan = new DeviceStatusManagerImpl(connMan, structMan, sceneMan, bridge, eventListener);
             } else {
                 devStatMan.registerStatusListener(bridge);
             }
@@ -295,6 +302,10 @@ public class BridgeHandler extends BaseBridgeHandler
     @Override
     public void dispose() {
         logger.debug("Handler disposed");
+        if (eventListener != null) {
+            eventListener.stop();
+            // eventListener = null;
+        }
         if (devStatMan != null) {
             devStatMan.unregisterTotalPowerConsumptionListener();
             devStatMan.unregisterStatusListener();

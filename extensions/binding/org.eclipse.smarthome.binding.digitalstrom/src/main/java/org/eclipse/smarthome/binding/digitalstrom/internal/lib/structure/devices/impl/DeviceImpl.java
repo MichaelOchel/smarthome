@@ -20,6 +20,7 @@ import java.util.Set;
 import org.apache.commons.lang.StringUtils;
 import org.eclipse.smarthome.binding.digitalstrom.DigitalSTROMBindingConstants;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.config.Config;
+import org.eclipse.smarthome.binding.digitalstrom.internal.lib.event.types.EventItem;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.listener.DeviceStatusListener;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.serverConnection.constants.JSONApiResponseKeysEnum;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.AbstractGeneralDeviceInformations;
@@ -843,30 +844,30 @@ public class DeviceImpl extends AbstractGeneralDeviceInformations implements Dev
 
     @Override
     public void setSceneOutputValue(short sceneId, int value) {
-        synchronized (sceneOutputMap) {
-            sceneOutputMap.put(sceneId, new Integer[] { value, -1 });
-            if (listener != null) {
-                listener.onSceneConfigAdded(sceneId);
-            }
-            checkActiveSceneNumber(sceneId);
+        // synchronized (sceneOutputMap) {
+        // sceneOutputMap.put(sceneId, new Integer[] { value, -1 });
+        internalSetSceneOutputValue(sceneId, value, -1);
+        if (listener != null) {
+            listener.onSceneConfigAdded(sceneId);
         }
+        // internalSetSceneOutputValue(sceneId);
+        // }
     }
 
     @Override
     public void setSceneOutputValue(short sceneId, int value, int angle) {
-        synchronized (sceneOutputMap) {
-            sceneOutputMap.put(sceneId, new Integer[] { value, angle });
-            if (listener != null) {
-                listener.onSceneConfigAdded(sceneId);
-            }
-            checkActiveSceneNumber(sceneId);
+        internalSetSceneOutputValue(sceneId, value, angle);
+        if (listener != null) {
+            listener.onSceneConfigAdded(sceneId);
         }
     }
 
-    private void checkActiveSceneNumber(short sceneId) {
+    private void internalSetSceneOutputValue(short sceneId, int value, int angle) {
+        synchronized (sceneOutputMap) {
+            sceneOutputMap.put(sceneId, new Integer[] { value, angle });
+        }
         if (activeSceneNumber == sceneId) {
             internalCallScene(sceneId);
-            deviceStateUpdates.add(new DeviceStateUpdateImpl(DeviceStateUpdate.UPDATE_OUTPUT_VALUE, -1));
         }
     }
 
@@ -959,12 +960,14 @@ public class DeviceImpl extends AbstractGeneralDeviceInformations implements Dev
     private boolean checkSensorRefreshTime(SensorEnum sensorType) {
         if (sensorType != null) {
             DeviceSensorValue devSenVal = getDeviceSensorValue(sensorType);
-            if (devSenVal != null) {
-                int refresh = Config.DEFAULT_SENSORDATA_REFRESH_INTERVAL;
-                if (config != null) {
-                    refresh = config.getSensordataRefreshInterval();
+            if (devSenVal.getValid()) {
+                if (devSenVal != null) {
+                    int refresh = Config.DEFAULT_SENSORDATA_REFRESH_INTERVAL;
+                    if (config != null) {
+                        refresh = config.getSensordataRefreshInterval();
+                    }
+                    return (devSenVal.getTimestamp().getTime() + refresh) > System.currentTimeMillis();
                 }
-                return (devSenVal.getTimestamp().getTime() + refresh) > System.currentTimeMillis();
             }
         }
         return false;
@@ -1089,10 +1092,10 @@ public class DeviceImpl extends AbstractGeneralDeviceInformations implements Dev
         if (isShade()) {
             slatPosition = value;
             if (slatPosition <= 0) {
-                this.slatPosition = 0;
-                this.isOpen = false;
+                slatPosition = 0;
+                isOpen = false;
             } else {
-                this.isOpen = true;
+                isOpen = true;
             }
             return slatPosition;
         } else {
@@ -1100,8 +1103,20 @@ public class DeviceImpl extends AbstractGeneralDeviceInformations implements Dev
             if (outputValue <= 0) {
                 internalSetOff();
             } else {
-                this.isOn = true;
-                setCachedMeterData();
+                if (isSwitch()) {
+                    if (outputValue < switchPercentOff) {
+                        outputValue = 0;
+                        internalSetOff();
+                        isOn = false;
+                    } else {
+                        outputValue = maxOutputValue;
+                        isOn = true;
+                        setCachedMeterData();
+                    }
+                } else {
+                    isOn = true;
+                    setCachedMeterData();
+                }
             }
             return outputValue;
         }
@@ -1109,19 +1124,21 @@ public class DeviceImpl extends AbstractGeneralDeviceInformations implements Dev
 
     private void internalSetOff() {
         this.isOn = false;
-        if (checkPowerSensorRefreshPriorityNever(SensorEnum.ACTIVE_POWER)) {
+        logger.debug("internal set OFF " + getSensorDataReadingInitialized(SensorEnum.ACTIVE_POWER));
+        if (!checkPowerSensorRefreshPriorityNever(SensorEnum.ACTIVE_POWER)) {
             if (getSensorDataReadingInitialized(SensorEnum.ACTIVE_POWER)) {
                 deviceStateUpdates.add(new DeviceStateUpdateImpl(SensorEnum.ACTIVE_POWER, -1));
+                logger.debug("internal set sensor to 0");
             }
             setDsSensorValue(SensorEnum.ACTIVE_POWER, 0);
         }
-        if (checkPowerSensorRefreshPriorityNever(SensorEnum.OUTPUT_CURRENT)) {
+        if (!checkPowerSensorRefreshPriorityNever(SensorEnum.OUTPUT_CURRENT)) {
             if (getSensorDataReadingInitialized(SensorEnum.OUTPUT_CURRENT)) {
                 deviceStateUpdates.add(new DeviceStateUpdateImpl(SensorEnum.OUTPUT_CURRENT, -1));
             }
             setDsSensorValue(SensorEnum.OUTPUT_CURRENT, 0);
         }
-        if (checkPowerSensorRefreshPriorityNever(SensorEnum.POWER_CONSUMPTION)) {
+        if (!checkPowerSensorRefreshPriorityNever(SensorEnum.POWER_CONSUMPTION)) {
             if (getSensorDataReadingInitialized(SensorEnum.POWER_CONSUMPTION)) {
                 deviceStateUpdates.add(new DeviceStateUpdateImpl(SensorEnum.POWER_CONSUMPTION, -1));
             }
@@ -1178,10 +1195,73 @@ public class DeviceImpl extends AbstractGeneralDeviceInformations implements Dev
                 }
             } else {
                 if (deviceSensorValue.getTimestamp().after(deviceSensorValues.get(index).getTimestamp())) {
+                    logger.debug("set deviceSeneorValue, new deviceSensorValue is: " + deviceSensorValue.toString());
                     deviceSensorValues.set(index, deviceSensorValue);
+                    checkSensorValue(deviceSensorValue, true);
                 }
             }
         }
+    }
+
+    // TODO:set über EventItem --> echo
+    @Override
+    public void setDeviceSensorByEvent(EventItem event) {
+        DeviceSensorValue devSenVal = new DeviceSensorValue(event.getProperties());
+        if (devSenVal != null) {
+            SensorEnum sensorType = devSenVal.getSensorType();
+            if (!isEchoSensor(sensorType)) {
+                logger.debug("Event is no echo, set values {} for sensorType {}", devSenVal, devSenVal.getSensorType());
+                if (SensorEnum.isPowerSensor(sensorType) && getSensorDataReadingInitialized(sensorType)) {
+                    // TODO:
+                    logger.debug(
+                            "SensorJob was initialized, remove sensorjob for sensorType: " + devSenVal.getSensorType());
+                    deviceStateUpdates.add(new DeviceStateUpdateImpl(sensorType, -1));
+                }
+                setDeviceSensorValue(devSenVal);
+            } else {
+                logger.debug("Event is echo remove sensorType " + devSenVal.getSensorType() + " from echoBox");
+                sensorEchoBox.remove(devSenVal.getSensorType());
+            }
+        }
+    }
+
+    private boolean isEchoSensor(SensorEnum sensorType) {
+        return sensorEchoBox != null ? sensorEchoBox.contains(sensorType) : false;
+    }
+
+    private List<SensorEnum> sensorEchoBox = Collections.synchronizedList(new LinkedList<SensorEnum>());
+
+    @Override
+    public void setDeviceSensorDsValueBySensorJob(SensorEnum sensorType, Integer value) {
+        logger.debug("sensorJob for device {} is executet", dsid.getValue());
+        if (isSensorEchoBoxEnabled()) {
+            // temperature resolution is not correct, so waiting for device sensor-event
+            if (!sensorType.toString().contains("TEMPERATURE")) {
+                logger.debug("echoBox is enabled, add sensorType {} to echoBox", sensorType);
+                sensorEchoBox.add(sensorType);
+            } else {
+                logger.debug("echoBox is enabled, ignoring temperation update and wait for sensor Event");
+                return;
+            }
+        }
+        setDsSensorValue(sensorType, value);
+    }
+
+    @Override
+    public void enableSensorEchoBox() {
+        if (sensorEchoBox == null) {
+            sensorEchoBox = Collections.synchronizedList(new LinkedList<SensorEnum>());
+        }
+    }
+
+    @Override
+    public void disableSensorEchoBox() {
+        sensorEchoBox = null;
+    }
+
+    @Override
+    public boolean isSensorEchoBoxEnabled() {
+        return sensorEchoBox != null;
     }
 
     @Override
@@ -1357,29 +1437,34 @@ public class DeviceImpl extends AbstractGeneralDeviceInformations implements Dev
                 } else if (floatValue != null) {
                     isSet = devSenVal.setFloatValue(floatValue);
                 }
-
-                if (isSet) {
-                    if (outputMode.equals(OutputModeEnum.WIPE) && !isOn
-                            && devSenVal.getSensorType().equals(SensorEnum.ACTIVE_POWER)) {
-                        int standby = Config.DEFAULT_STANDBY_ACTIVE_POWER;
-                        if (config != null) {
-                            standby = config.getStandbyActivePower();
-                        }
-                        if (devSenVal.getDsValue() > standby) {
-                            this.updateInternalDeviceState(
-                                    new DeviceStateUpdateImpl(DeviceStateUpdate.UPDATE_ON_OFF, 1));
-                        }
-                    }
-                    if (SensorEnum.isPowerSensor(devSenVal.getSensorType())) {
-                        addPowerSensorCache(devSenVal);
-                    }
-                    informListenerAboutStateUpdate(
-                            new DeviceStateUpdateImpl(devSenVal.getSensorType(), devSenVal.getFloatValue()));
-                }
-                setSensorDataReadingInitialized(devSenVal.getSensorType(), false);
+                logger.debug("check devSenVal {} isSet={}", devSenVal.toString(), isSet);
+                checkSensorValue(devSenVal, isSet);
             }
         }
         return isSet;
+    }
+
+    private void checkSensorValue(DeviceSensorValue devSenVal, boolean isSet) {
+        if (devSenVal != null) {
+            if (isSet) {
+                if (outputMode.equals(OutputModeEnum.WIPE) && !isOn
+                        && devSenVal.getSensorType().equals(SensorEnum.ACTIVE_POWER)) {
+                    int standby = Config.DEFAULT_STANDBY_ACTIVE_POWER;
+                    if (config != null) {
+                        standby = config.getStandbyActivePower();
+                    }
+                    if (devSenVal.getDsValue() > standby) {
+                        this.updateInternalDeviceState(new DeviceStateUpdateImpl(DeviceStateUpdate.UPDATE_ON_OFF, 1));
+                    }
+                }
+                if (SensorEnum.isPowerSensor(devSenVal.getSensorType())) {
+                    addPowerSensorCache(devSenVal);
+                }
+                informListenerAboutStateUpdate(
+                        new DeviceStateUpdateImpl(devSenVal.getSensorType(), devSenVal.getFloatValue()));
+            }
+            setSensorDataReadingInitialized(devSenVal.getSensorType(), false);
+        }
     }
 
     private void addPowerSensorCache(DeviceSensorValue newDevSenVal) {
@@ -1470,53 +1555,47 @@ public class DeviceImpl extends AbstractGeneralDeviceInformations implements Dev
                     this.internalUndoScene();
                     return;
                 default:
-                    if (deviceStateUpdate.getType().startsWith(DeviceStateUpdate.UPDATE_DEVICE_SENSOR)) {
-                        SensorEnum sensorType = SensorEnum
-                                .getSensor(Short.parseShort(deviceStateUpdate.getType().split("-")[1]));
-                        if (deviceStateUpdate.getValue() instanceof Integer) {
-                            setDsSensorValue(sensorType, deviceStateUpdate.getValueAsInteger());
-                        }
-                        if (deviceStateUpdate.getValue() instanceof Float) {
-                            setFloatSensorValue(sensorType, deviceStateUpdate.getValueAsFloat());
-                        }
+                    if (deviceStateUpdate.isSensorUpdateType()) {
+                        SensorEnum sensorType = deviceStateUpdate.getTypeAsSensorEnum();
+                        setFloatSensorValue(sensorType, deviceStateUpdate.getValueAsFloat());
                     }
                     return;
             }
-            if (activeScene != null) {
-                Integer[] sceneOutput = getStandartSceneOutput(activeScene.getSceneID());
-                if (sceneOutput == null) {
-                    sceneOutput = sceneOutputMap.get(activeScene.getSceneID());
-                }
-                if (sceneOutput != null) {
-                    boolean outputChanged = false;
-                    if (isShade()) {
-                        if (isBlind() && sceneOutput[1] != slatAngle) {
-                            logger.debug("Scene output angle: {} setted output value {}", sceneOutput[1], slatAngle);
-                            outputChanged = true;
-                        }
-                        if (sceneOutput[0] != slatPosition) {
-                            logger.debug("Scene output value: {} setted output value {}", sceneOutput[0], slatPosition);
-                            outputChanged = true;
-                        }
-                    } else {
-                        if (sceneOutput[0] != outputValue) {
-                            outputChanged = true;
-                        }
-                    }
-                    if (outputChanged) {
-                        logger.debug("Device output from Device with dSID {} changed deactivate scene {}",
-                                dsid.getValue(), activeScene.getID());
-                        activeScene.deviceSceneChanged((short) -1);
-                        lastScene = null;
-                        activeScene = null;
-                    }
-
-                } else {
-                    lastScene = null;
-                }
-            }
-            informListenerAboutStateUpdate(deviceStateUpdate);
         }
+        if (activeScene != null) {
+            Integer[] sceneOutput = getStandartSceneOutput(activeScene.getSceneID());
+            if (sceneOutput == null) {
+                sceneOutput = sceneOutputMap.get(activeScene.getSceneID());
+            }
+            if (sceneOutput != null) {
+                boolean outputChanged = false;
+                if (isShade()) {
+                    if (isBlind() && sceneOutput[1] != slatAngle) {
+                        logger.debug("Scene output angle: {} setted output value {}", sceneOutput[1], slatAngle);
+                        outputChanged = true;
+                    }
+                    if (sceneOutput[0] != slatPosition) {
+                        logger.debug("Scene output value: {} setted output value {}", sceneOutput[0], slatPosition);
+                        outputChanged = true;
+                    }
+                } else {
+                    if (sceneOutput[0] != outputValue) {
+                        outputChanged = true;
+                    }
+                }
+                if (outputChanged) {
+                    logger.debug("Device output from Device with dSID {} changed deactivate scene {}", dsid.getValue(),
+                            activeScene.getID());
+                    activeScene.deviceSceneChanged((short) -1);
+                    lastScene = null;
+                    activeScene = null;
+                }
+
+            } else {
+                lastScene = null;
+            }
+        }
+        informListenerAboutStateUpdate(deviceStateUpdate);
     }
 
     @Override
@@ -1616,7 +1695,7 @@ public class DeviceImpl extends AbstractGeneralDeviceInformations implements Dev
                         if (sceneValue > -1) {
                             logger.debug("Saved sceneValue {}, sceneAngle {} for scene id {} into device with dsid {}",
                                     sceneValue, sceneAngle, sceneID, getDSID().getValue());
-                            setSceneOutputValue(sceneID, sceneValue, sceneAngle);
+                            internalSetSceneOutputValue(sceneID, sceneValue, sceneAngle);
                             deviceStateUpdates.add(new DeviceStateUpdateImpl(DeviceStateUpdate.UPDATE_SCENE_OUTPUT,
                                     new Short[] { sceneID, (short) -1 }));
                             /*

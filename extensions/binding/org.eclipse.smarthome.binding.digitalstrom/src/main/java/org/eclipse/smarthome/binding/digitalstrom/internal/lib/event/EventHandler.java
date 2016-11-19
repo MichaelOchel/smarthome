@@ -22,7 +22,7 @@ public interface EventHandler {
 
     /**
      * Returns true, if the {@link EventHandler} supports the given event.
-     * 
+     *
      * @param eventName
      * @return true, if event is supported, otherwise false
      */
@@ -34,4 +34,8 @@ public interface EventHandler {
      * @return uid of the EventHandler
      */
     public String getUID();
+
+    public void setEventListener(EventListener eventListener);
+
+    public void unsetEventListener(EventListener eventListener);
 }

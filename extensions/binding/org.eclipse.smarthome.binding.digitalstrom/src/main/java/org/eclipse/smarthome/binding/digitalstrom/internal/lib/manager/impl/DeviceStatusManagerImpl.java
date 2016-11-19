@@ -17,6 +17,11 @@ import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.config.Config;
+import org.eclipse.smarthome.binding.digitalstrom.internal.lib.event.EventHandler;
+import org.eclipse.smarthome.binding.digitalstrom.internal.lib.event.EventListener;
+import org.eclipse.smarthome.binding.digitalstrom.internal.lib.event.constants.EventNames;
+import org.eclipse.smarthome.binding.digitalstrom.internal.lib.event.constants.EventResponseEnum;
+import org.eclipse.smarthome.binding.digitalstrom.internal.lib.event.types.EventItem;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.listener.ConnectionListener;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.listener.DeviceStatusListener;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.listener.ManagerStatusListener;
@@ -54,6 +59,7 @@ import org.eclipse.smarthome.core.common.ThreadPoolManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.google.common.collect.Lists;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 
@@ -63,9 +69,10 @@ import com.google.gson.JsonObject;
  * @author Michael Ochel - Initial contribution
  * @author Matthias Siegele - Initial contribution
  */
-public class DeviceStatusManagerImpl implements DeviceStatusManager {
+public class DeviceStatusManagerImpl implements DeviceStatusManager, EventHandler {
 
     private Logger logger = LoggerFactory.getLogger(DeviceStatusManagerImpl.class);
+    public static final List<String> SUPPORTED_EVENTS = Lists.newArrayList(EventNames.DEVICE_SENSOR_VALUE);
 
     private final ScheduledExecutorService scheduler = ThreadPoolManager.getScheduledPool(Config.THREADPOOL_NAME);
     private ScheduledFuture<?> pollingScheduler = null;
@@ -81,6 +88,7 @@ public class DeviceStatusManagerImpl implements DeviceStatusManager {
 
     private SensorJobExecutor sensorJobExecutor = null;
     private SceneReadingJobExecutor sceneJobExecutor = null;
+    private EventListener eventListener = null;
 
     private List<String> meters = null;
     private List<TrashDevice> trashDevices = new LinkedList<TrashDevice>();
@@ -98,28 +106,33 @@ public class DeviceStatusManagerImpl implements DeviceStatusManager {
     private ManagerStatusListener statusListener = null;
 
     public DeviceStatusManagerImpl(Config config) {
-        init(new ConnectionManagerImpl(config), null, null, null);
+        init(new ConnectionManagerImpl(config), null, null, null, null);
     }
 
     public DeviceStatusManagerImpl(String hostAddress, String user, String password, String appToken) {
-        init(new ConnectionManagerImpl(hostAddress, user, password, false), null, null, null);
+        init(new ConnectionManagerImpl(hostAddress, user, password, false), null, null, null, null);
     }
 
     public DeviceStatusManagerImpl(ConnectionManager connMan, StructureManager strucMan, SceneManager sceneMan) {
-        init(connMan, strucMan, sceneMan, null);
+        init(connMan, strucMan, sceneMan, null, null);
     }
 
     public DeviceStatusManagerImpl(ConnectionManager connMan, StructureManager strucMan, SceneManager sceneMan,
             ManagerStatusListener statusListener) {
-        init(connMan, strucMan, sceneMan, statusListener);
+        init(connMan, strucMan, sceneMan, statusListener, null);
+    }
+
+    public DeviceStatusManagerImpl(ConnectionManager connMan, StructureManager strucMan, SceneManager sceneMan,
+            ManagerStatusListener statusListener, EventListener eventListener) {
+        init(connMan, strucMan, sceneMan, statusListener, eventListener);
     }
 
     public DeviceStatusManagerImpl(ConnectionManager connMan) {
-        init(connMan, null, null, null);
+        init(connMan, null, null, null, null);
     }
 
     private void init(ConnectionManager connMan, StructureManager strucMan, SceneManager sceneMan,
-            ManagerStatusListener statusListener) {
+            ManagerStatusListener statusListener, EventListener eventListener) {
         this.connMan = connMan;
         this.digitalSTROMClient = connMan.getDigitalSTROMAPI();
         this.config = connMan.getConfig();
@@ -134,6 +147,7 @@ public class DeviceStatusManagerImpl implements DeviceStatusManager {
             this.sceneMan = new SceneManagerImpl(connMan, strucMan, statusListener);
         }
         this.statusListener = statusListener;
+        this.eventListener = eventListener;
     }
 
     private class PollingRunnable implements Runnable {
@@ -261,9 +275,13 @@ public class DeviceStatusManagerImpl implements DeviceStatusManager {
                     }
 
                     // TODO:
-                    if (sceneMan.getManagerState().equals(ManagerStates.STOPPED)) {
+                    // if (sceneMan.getManagerState().equals(ManagerStates.STOPPED)
+                    // && !getManagerState().equals(ManagerStates.STOPPED)) {
+                    if (!sceneMan.scenesGenerated() && devicesLoaded
+                            && !sceneMan.getManagerState().equals(ManagerStates.GENERATING_SCENES)) {
                         logger.debug(sceneMan.getManagerState().toString());
-                        sceneMan.start();
+                        // sceneMan.start();
+                        sceneMan.generateScenes();
                     }
 
                     for (Device device : tempDeviceMap.values()) {
@@ -398,6 +416,8 @@ public class DeviceStatusManagerImpl implements DeviceStatusManager {
         }
         if (deviceStateUpdate.isSensorUpdateType()) {
             if (sensorJobExecutor != null) {
+                logger.debug("remove SensorJob with ID: "
+                        + DeviceConsumptionSensorJob.getID(eshDevice, deviceStateUpdate.getTypeAsSensorEnum()));
                 sensorJobExecutor.removeSensorJob(eshDevice,
                         DeviceConsumptionSensorJob.getID(eshDevice, deviceStateUpdate.getTypeAsSensorEnum()));
             }
@@ -410,7 +430,7 @@ public class DeviceStatusManagerImpl implements DeviceStatusManager {
     }
 
     @Override
-    public ManagerStates getManagerState() {
+    public synchronized ManagerStates getManagerState() {
         return state;
     }
 
@@ -423,15 +443,16 @@ public class DeviceStatusManagerImpl implements DeviceStatusManager {
 
     @Override
     public synchronized void start() {
-        logger.debug("start pollingScheduler");
+        logger.debug("start DeviceStatusManager");
         if (pollingScheduler == null || pollingScheduler.isCancelled()) {
             pollingScheduler = scheduler.scheduleAtFixedRate(new PollingRunnable(), 0, config.getPollingFrequency(),
                     TimeUnit.MILLISECONDS);
             // sceneMan.start();
+            logger.debug("start pollingScheduler");
         }
-        if (sceneMan.scenesGenerated()) {
-            sceneMan.start();
-        }
+        // if (sceneMan.scenesGenerated()) {
+        sceneMan.start();
+        // }
         if (sceneJobExecutor != null) {
             this.sceneJobExecutor.startExecutor();
         }
@@ -439,24 +460,34 @@ public class DeviceStatusManagerImpl implements DeviceStatusManager {
         if (sensorJobExecutor != null) {
             this.sensorJobExecutor.startExecutor();
         }
+        if (eventListener != null) {
+            eventListener.addEventHandler(this);
+        } else {
+            eventListener = new EventListener(connMan, this);
+            eventListener.start();
+        }
     }
 
     @Override
     public synchronized void stop() {
-        logger.debug("stop pollingScheduler");
+        logger.debug("stop DeviceStatusManager");
+        stateChanged(ManagerStates.STOPPED);
         if (sceneMan != null) {
             sceneMan.stop();
         }
         if (pollingScheduler != null && !pollingScheduler.isCancelled()) {
             pollingScheduler.cancel(true);
             pollingScheduler = null;
-            stateChanged(ManagerStates.STOPPED);
+            logger.debug("stop pollingScheduler");
         }
         if (sceneJobExecutor != null) {
             this.sceneJobExecutor.shutdown();
         }
         if (sensorJobExecutor != null) {
             this.sensorJobExecutor.shutdown();
+        }
+        if (eventListener != null) {
+            eventListener.removeEventHandler(this);
         }
     }
 
@@ -731,17 +762,20 @@ public class DeviceStatusManagerImpl implements DeviceStatusManager {
                     SensorEnum sensorType = deviceStateUpdate.getTypeAsSensorEnum();
                     if (deviceStateUpdate.getValueAsInteger() == 0) {
                         logger.debug("Device need " + sensorType + " SensorData update");
+                        // TODO:
                         updateSensorData(new DeviceConsumptionSensorJob(device, sensorType),
                                 device.getPowerSensorRefreshPriority(sensorType));
                         return;
                     } else if (deviceStateUpdate.getValueAsInteger() < 0) {
+                        // TODO:
                         removeSensorJob(device, deviceStateUpdate);
                         return;
                     } else {
                         int consumption = this.digitalSTROMClient.getDeviceSensorValue(connMan.getSessionToken(),
                                 device.getDSID(), null, device.getSensorIndex(sensorType));
                         if (consumption >= 0) {
-                            device.updateInternalDeviceState(new DeviceStateUpdateImpl(sensorType, consumption));
+                            device.setDeviceSensorDsValueBySensorJob(sensorType, consumption);
+                            // device.updateInternalDeviceState(new DeviceStateUpdateImpl(sensorType, consumption));
                             requestSuccsessful = true;
                         }
                     }
@@ -904,6 +938,7 @@ public class DeviceStatusManagerImpl implements DeviceStatusManager {
             sensorJobExecutor = new SensorJobExecutor(connMan);
             this.sensorJobExecutor.startExecutor();
         }
+        // TODO: echo bzw. sensorjob exists? zum löschen .... in Device?
         if (sensorJob != null && priority != null) {
             switch (priority) {
                 case Config.REFRESH_PRIORITY_HIGH:
@@ -1125,5 +1160,53 @@ public class DeviceStatusManagerImpl implements DeviceStatusManager {
                 }
             }
         }
+    }
+
+    @Override
+    public void handleEvent(EventItem eventItem) {
+        if (eventItem.getName().equals(EventNames.DEVICE_SENSOR_VALUE)) {
+            logger.debug("Detect " + EventNames.DEVICE_SENSOR_VALUE + " eventItem=" + eventItem.toString());
+            if (eventItem.getSource().get(EventResponseEnum.DSID) != null) {
+                String dSID = eventItem.getSource().get(EventResponseEnum.DSID);
+                Device dev = strucMan.getDeviceByDSID(dSID);
+                if (dev == null) {
+                    dev = strucMan.getDeviceByDSUID(dSID);
+                }
+                if (dev != null) {
+                    dev.setDeviceSensorByEvent(eventItem);
+                }
+            }
+        }
+    }
+
+    @Override
+    public List<String> getSupportetEvents() {
+        return SUPPORTED_EVENTS;
+    }
+
+    @Override
+    public boolean supportsEvent(String eventName) {
+        return SUPPORTED_EVENTS.contains(eventName);
+    }
+
+    @Override
+    public String getUID() {
+        return getClass().getName();
+    }
+
+    @Override
+    public void setEventListener(EventListener eventListener) {
+        if (this.eventListener != null) {
+            this.eventListener.removeEventHandler(this);
+        }
+        this.eventListener = eventListener;
+    }
+
+    @Override
+    public void unsetEventListener(EventListener eventListener) {
+        if (this.eventListener != null) {
+            this.eventListener.removeEventHandler(this);
+        }
+        this.eventListener = null;
     }
 }

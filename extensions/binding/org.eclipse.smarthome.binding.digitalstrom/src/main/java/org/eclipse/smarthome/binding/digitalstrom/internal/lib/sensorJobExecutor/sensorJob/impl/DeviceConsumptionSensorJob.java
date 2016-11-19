@@ -29,12 +29,31 @@ public class DeviceConsumptionSensorJob implements SensorJob {
     private SensorEnum sensorType = null;
     private DSID meterDSID = null;
     private long initalisationTime = 0;
+    private boolean updateDevice = true;
 
     /**
-     * Creates a new {@link DeviceConsumptionSensorJob} with the given {@link SensorEnum} for the given {@link Device}.
+     * Creates a new {@link DeviceConsumptionSensorJob}. Through updateDevice you can set, if the {@link Device} will be
+     * updates automatically.
      *
      * @param device
-     * @param type sensor index
+     * @param sensor type
+     * @param updateDevice (true = automatically device, otherwise false)
+     * @see #DeviceConsumptionSensorJob(Device, SensorEnum)
+     */
+    public DeviceConsumptionSensorJob(Device device, SensorEnum type, boolean updateDevice) {
+        this.device = device;
+        this.sensorType = type;
+        this.meterDSID = device.getMeterDSID();
+        this.initalisationTime = System.currentTimeMillis();
+        this.updateDevice = updateDevice;
+    }
+
+    /**
+     * Creates a new {@link DeviceConsumptionSensorJob} with the given {@link SensorEnum} for the given {@link Device}
+     * and automatically {@link Device} update.
+     *
+     * @param device
+     * @param sensor type
      */
     public DeviceConsumptionSensorJob(Device device, SensorEnum type) {
         this.device = device;
@@ -48,7 +67,9 @@ public class DeviceConsumptionSensorJob implements SensorJob {
         int consumption = digitalSTROM.getDeviceSensorValue(token, this.device.getDSID(), null,
                 device.getSensorIndex(sensorType));
         logger.debug("Executes {} new device consumption is {}", this.toString(), consumption);
-        device.setDsSensorValue(sensorType, consumption);
+        if (updateDevice) {
+            device.setDeviceSensorDsValueBySensorJob(sensorType, consumption);
+        }
     }
 
     @Override
@@ -100,11 +121,11 @@ public class DeviceConsumptionSensorJob implements SensorJob {
 
     @Override
     public String getID() {
-        return this.getClass().getSimpleName() + "-" + device.getDSID().getValue() + "-" + sensorType.toString();
+        return getID(device, sensorType);
     }
 
     public static String getID(Device device, SensorEnum sensorType) {
-        return DeviceOutputValueSensorJob.class.getSimpleName() + "-" + device.getDSID().getValue() + "-"
+        return DeviceConsumptionSensorJob.class.getSimpleName() + "-" + device.getDSID().getValue() + "-"
                 + sensorType.toString();
     }
 }

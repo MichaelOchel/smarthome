@@ -637,6 +637,8 @@ public class DeviceHandler extends BaseThingHandler implements DeviceStatusListe
                                 isElectricMeterChannelLoaded = true;
                             }
                             break;
+                        default:
+                            break;
                     }
                 } catch (IllegalArgumentException e) {
                     // ignore
