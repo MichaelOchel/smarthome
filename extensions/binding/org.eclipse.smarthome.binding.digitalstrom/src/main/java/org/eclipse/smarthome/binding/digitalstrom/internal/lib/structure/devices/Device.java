@@ -580,7 +580,7 @@ public interface Device extends GeneralDeviceInformations {
 
     List<SensorEnum> getPowerSensorTypes();
 
-    List<SensorEnum> getClimateSensorTypesTypes();
+    List<SensorEnum> getClimateSensorTypes();
 
     List<DeviceSensorValue> getDeviceSensorValues();
 
@@ -629,4 +629,8 @@ public interface Device extends GeneralDeviceInformations {
     boolean isSensorEchoBoxEnabled();
 
     void setDeviceSensorByEvent(EventItem event);
+
+    boolean checkPowerSensorRefreshPriorityNever(SensorEnum powerSensorType);
+
+    boolean containsSensorType(SensorEnum sensorType);
 }

@@ -87,7 +87,6 @@ public class DeviceImpl extends AbstractGeneralDeviceInformations implements Dev
             .synchronizedList(new ArrayList<DeviceSensorValue>());
     private List<SensorEnum> devicePowerSensorTypes = new ArrayList<SensorEnum>();
     private List<SensorEnum> deviceClimateSensorTypes = new ArrayList<SensorEnum>();
-    private boolean hasClimateSensors = false;
 
     // for scenes
     private short activeSceneNumber = -1;
@@ -345,7 +344,7 @@ public class DeviceImpl extends AbstractGeneralDeviceInformations implements Dev
 
     @Override
     public boolean isSensorDevice() {
-        return !isDeviceWithOutput() && hasClimateSensors;
+        return !isDeviceWithOutput() && !deviceClimateSensorTypes.isEmpty();
     }
 
     @Override
@@ -763,33 +762,35 @@ public class DeviceImpl extends AbstractGeneralDeviceInformations implements Dev
     }
 
     private Integer[] getStandartSceneOutput(short sceneNumber) {
-        switch (SceneEnum.getScene(sceneNumber)) {
-            case DEVICE_ON:
-            case MAXIMUM:
-                if (!isShade()) {
-                    return new Integer[] { (int) maxOutputValue, -1 };
-                } else {
-                    if (isBlind()) {
-                        return new Integer[] { (int) maxSlatPosition, (int) maxSlatAngle };
+        if (SceneEnum.getScene(sceneNumber) != null) {
+            switch (SceneEnum.getScene(sceneNumber)) {
+                case DEVICE_ON:
+                case MAXIMUM:
+                    if (!isShade()) {
+                        return new Integer[] { (int) maxOutputValue, -1 };
                     } else {
-                        return new Integer[] { (int) maxSlatPosition, -1 };
+                        if (isBlind()) {
+                            return new Integer[] { (int) maxSlatPosition, (int) maxSlatAngle };
+                        } else {
+                            return new Integer[] { (int) maxSlatPosition, -1 };
+                        }
                     }
-                }
-                // off scenes
-            case MINIMUM:
-            case DEVICE_OFF:
-            case AUTO_OFF:
-                if (!isShade()) {
-                    return new Integer[] { (int) 0, -1 };
-                } else {
-                    if (isBlind()) {
-                        return new Integer[] { (int) 0, 0 };
-                    } else {
+                    // off scenes
+                case MINIMUM:
+                case DEVICE_OFF:
+                case AUTO_OFF:
+                    if (!isShade()) {
                         return new Integer[] { (int) 0, -1 };
+                    } else {
+                        if (isBlind()) {
+                            return new Integer[] { (int) 0, 0 };
+                        } else {
+                            return new Integer[] { (int) 0, -1 };
+                        }
                     }
-                }
-            default:
-                break;
+                default:
+                    break;
+            }
         }
         return null;
     }
@@ -934,7 +935,7 @@ public class DeviceImpl extends AbstractGeneralDeviceInformations implements Dev
         if (powerSensorType != null && SensorEnum.isPowerSensor(powerSensorType)) {
             boolean isUpToDate = true;
             if (powerSensorType.equals(SensorEnum.ACTIVE_POWER)) {
-                isUpToDate = (outputMode.equals(OutputModeEnum.WIPE) && !isOn)
+                isUpToDate = (outputMode != null && outputMode.equals(OutputModeEnum.WIPE) && !isOn)
                         || (isOn && !isShade()) && !checkPowerSensorRefreshPriorityNever(powerSensorType)
                                 ? checkSensorRefreshTime(powerSensorType) : true;
             }
@@ -1018,7 +1019,8 @@ public class DeviceImpl extends AbstractGeneralDeviceInformations implements Dev
         return null;
     }
 
-    private boolean checkPowerSensorRefreshPriorityNever(SensorEnum powerSensorType) {
+    @Override
+    public boolean checkPowerSensorRefreshPriorityNever(SensorEnum powerSensorType) {
         if (getPowerSensorRefreshPriority(powerSensorType) != null) {
             return getPowerSensorRefreshPriority(powerSensorType).equals(Config.REFRESH_PRIORITY_NEVER);
         }
@@ -1047,21 +1049,20 @@ public class DeviceImpl extends AbstractGeneralDeviceInformations implements Dev
     }
 
     private String[] getPowerSensorRefresh(SensorEnum powerSensorType) {
-        if (SensorEnum.isPowerSensor(powerSensorType)) {
-            switch (powerSensorType) {
-                case ACTIVE_POWER:
-                    return (String[]) powerSensorRefresh[0];
-                case OUTPUT_CURRENT:
-                    return (String[]) powerSensorRefresh[1];
-                case ELECTRIC_METER:
-                    return (String[]) powerSensorRefresh[2];
-                case POWER_CONSUMPTION:
-                    return (String[]) powerSensorRefresh[3];
-                default:
-                    break;
-            }
+        // if (SensorEnum.isPowerSensor(powerSensorType)) {
+        switch (powerSensorType) {
+            case ACTIVE_POWER:
+                return (String[]) powerSensorRefresh[0];
+            case OUTPUT_CURRENT:
+                return (String[]) powerSensorRefresh[1];
+            case ELECTRIC_METER:
+                return (String[]) powerSensorRefresh[2];
+            case POWER_CONSUMPTION:
+                return (String[]) powerSensorRefresh[3];
+            default:
+                return null;
         }
-        return null;
+        // }
     }
 
     private boolean checkPriority(String priority) {
@@ -1173,13 +1174,21 @@ public class DeviceImpl extends AbstractGeneralDeviceInformations implements Dev
     }
 
     @Override
-    public List<SensorEnum> getClimateSensorTypesTypes() {
+    public List<SensorEnum> getClimateSensorTypes() {
         return deviceClimateSensorTypes;
     }
 
     @Override
     public List<DeviceSensorValue> getDeviceSensorValues() {
         return deviceSensorValues;
+    }
+
+    @Override
+    public boolean containsSensorType(SensorEnum sensorType) {
+        if (sensorType != null) {
+            return getSensorTypes().contains(sensorType);
+        }
+        return false;
     }
 
     @Override
@@ -1197,7 +1206,7 @@ public class DeviceImpl extends AbstractGeneralDeviceInformations implements Dev
                 if (deviceSensorValue.getTimestamp().after(deviceSensorValues.get(index).getTimestamp())) {
                     logger.debug("set deviceSeneorValue, new deviceSensorValue is: " + deviceSensorValue.toString());
                     deviceSensorValues.set(index, deviceSensorValue);
-                    checkSensorValue(deviceSensorValue, true);
+                    checkSensorValueSet(deviceSensorValue, true);
                 }
             }
         }
@@ -1401,7 +1410,7 @@ public class DeviceImpl extends AbstractGeneralDeviceInformations implements Dev
     }
 
     private DeviceSensorValue checkPowerSensor(DeviceSensorValue devSenVal) {
-        if (devSenVal != null) {
+        if (devSenVal != null && SensorEnum.isPowerSensor(devSenVal.getSensorType())) {
             if (!devSenVal.getSensorType().equals(SensorEnum.ELECTRIC_METER)
                     && !(SensorEnum.isPowerSensor(devSenVal.getSensorType()) && isOn)) {
                 devSenVal.setDsValue(0);
@@ -1438,13 +1447,13 @@ public class DeviceImpl extends AbstractGeneralDeviceInformations implements Dev
                     isSet = devSenVal.setFloatValue(floatValue);
                 }
                 logger.debug("check devSenVal {} isSet={}", devSenVal.toString(), isSet);
-                checkSensorValue(devSenVal, isSet);
+                checkSensorValueSet(devSenVal, isSet);
             }
         }
         return isSet;
     }
 
-    private void checkSensorValue(DeviceSensorValue devSenVal, boolean isSet) {
+    private void checkSensorValueSet(DeviceSensorValue devSenVal, boolean isSet) {
         if (devSenVal != null) {
             if (isSet) {
                 if (outputMode.equals(OutputModeEnum.WIPE) && !isOn
@@ -1713,7 +1722,7 @@ public class DeviceImpl extends AbstractGeneralDeviceInformations implements Dev
                             logger.debug("Saved sceneConfig: [{}] for scene id {} into device with dsid {}",
                                     sceneSpecNew.toString(), sceneID, getDSID().getValue());
                             synchronized (sceneConfigMap) {
-                                sceneConfigMap.put(sceneSpecNew.getScene().getSceneNumber(), sceneSpecNew);
+                                sceneConfigMap.put(sceneID, sceneSpecNew);
                             }
                             deviceStateUpdates.add(new DeviceStateUpdateImpl(DeviceStateUpdate.UPDATE_SCENE_CONFIG,
                                     new Short[] { sceneID, (short) -1 }));
@@ -1796,7 +1805,7 @@ public class DeviceImpl extends AbstractGeneralDeviceInformations implements Dev
                 + ", functionalGroup=" + functionalGroup + ", functionalName=" + functionalName + ", hwInfo=" + hwInfo
                 + ", getName()=" + getName() + ", getDSID()=" + getDSID() + ", getDSUID()=" + getDSUID()
                 + ", isPresent()=" + isPresent() + ", isValide()=" + isValide() + ", getDisplayID()=" + getDisplayID()
-                + ", getSensorTypes()=" + getSensorTypes() + ", getDeviceSensorValues()=" + getDeviceSensorValues()
-                + ", powerSensorRefresh=" + powerSensorRefreshToString() + "]";
+                + ", outputMode=" + outputMode + ", getSensorTypes()=" + getSensorTypes() + ", getDeviceSensorValues()="
+                + getDeviceSensorValues() + ", powerSensorRefresh=" + powerSensorRefreshToString() + "]";
     }
 }

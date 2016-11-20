@@ -89,8 +89,9 @@ public class DeviceDiscoveryService extends AbstractDiscoveryService {
     }
 
     private void onDeviceAddedInternal(Device device) {
-        if (deviceType.equals(device.getHWinfo().substring(0, 2)) && device.isDeviceWithOutput()
-                && device.isPresent()) {
+        if ((device.isSensorDevice() && deviceType.equals(device.getHWinfo()))
+                || (deviceType.equals(device.getHWinfo().substring(0, 2)) && device.isDeviceWithOutput()
+                        && device.isPresent())) {
             ThingUID thingUID = getThingUID(device);
             if (thingUID != null) {
                 ThingUID bridgeUID = bridgeHandler.getThing().getUID();
@@ -122,7 +123,9 @@ public class DeviceDiscoveryService extends AbstractDiscoveryService {
     private ThingUID getThingUID(Device device) {
         ThingUID bridgeUID = bridgeHandler.getThing().getUID();
         ThingTypeUID thingTypeUID = new ThingTypeUID(BINDING_ID, device.getHWinfo().substring(0, 2));
-
+        if (device.isSensorDevice() && deviceType.equals(device.getHWinfo())) {
+            thingTypeUID = new ThingTypeUID(BINDING_ID, device.getHWinfo());
+        }
         if (getSupportedThingTypes().contains(thingTypeUID)) {
             String thingDeviceId = device.getDSID().toString();
             ThingUID thingUID = new ThingUID(thingTypeUID, bridgeUID, thingDeviceId);

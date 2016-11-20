@@ -539,7 +539,7 @@ public class BridgeHandler extends BaseBridgeHandler
                 break;
             case CONNECTION_RESUMED:
                 if (connectionTimeoutCounter > 0) {
-                    updateStatus(ThingStatus.ONLINE);
+                    setStatus(ThingStatus.ONLINE);
                     devStatMan.start();
                 }
                 break;
@@ -561,11 +561,13 @@ public class BridgeHandler extends BaseBridgeHandler
     }
 
     private void setStatus(ThingStatus status) {
+        logger.debug("set status to: " + status);
         updateStatus(status);
         for (Thing thing : getThing().getThings()) {
             ThingHandler handler = thing.getHandler();
             if (handler != null) {
-                handler.initialize();
+                handler.bridgeStatusChanged(getThing().getStatusInfo());
+                // handler.initialize();
             }
         }
     }

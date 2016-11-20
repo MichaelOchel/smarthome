@@ -114,7 +114,7 @@ public class EventListener {
     }
 
     public void internalStop() {
-        if (pollingScheduler != null || !pollingScheduler.isCancelled()) {
+        if (pollingScheduler != null && !pollingScheduler.isCancelled()) {
             pollingScheduler.cancel(true);
             pollingScheduler = null;
             unsubscribe();

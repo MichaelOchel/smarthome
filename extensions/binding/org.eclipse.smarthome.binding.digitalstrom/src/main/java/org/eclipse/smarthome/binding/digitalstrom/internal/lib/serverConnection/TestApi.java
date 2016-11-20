@@ -1,7 +1,5 @@
 package org.eclipse.smarthome.binding.digitalstrom.internal.lib.serverConnection;
 
-import java.time.Instant;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -41,48 +39,50 @@ public class TestApi {
         final String EVENT_LISTENER = "eventListener";
         final String PARSE_TEST = "parseTest";
         final String DEVICE_QUERY2 = "devQ2";
-        String testType = EVENT_LISTENER;
+        String testType = DEVICE_QUERY2;
 
         ConnectionManager connMan = new ConnectionManagerImpl(host, user, pw, false);
 
         final String LAST_CALL_SCENE_QUERY = "/apartment/zones/*(*)/groups/*(*)/*(*)";
 
-        if (connMan.checkConnection()) {
-            JsonObject response = connMan.getDigitalSTROMAPI().query2(connMan.getSessionToken(), LAST_CALL_SCENE_QUERY);
-            System.out.println(response.toString());
-            if (response.isJsonObject()) {
-                for (Entry<String, JsonElement> entry : response.entrySet()) {
-                    if (entry.getValue().isJsonObject()) {
-                        JsonObject zone = entry.getValue().getAsJsonObject();
-                        // System.out.println(entry.getValue().toString());
-                        int zoneID = -1;
-                        short groupID = -1;
-                        short sceneID = -1;
-                        if (zone.get(JSONApiResponseKeysEnum.ZONE_ID.getKey()) != null) {
-                            zoneID = zone.get(JSONApiResponseKeysEnum.ZONE_ID.getKey()).getAsInt();
-                        }
-                        for (Entry<String, JsonElement> groupEntry : zone.entrySet()) {
-                            if (groupEntry.getKey().startsWith("group") && groupEntry.getValue().isJsonObject()) {
-                                JsonObject group = groupEntry.getValue().getAsJsonObject();
-                                if (group.get(JSONApiResponseKeysEnum.DEVICES.getKey()) != null) {
-                                    // System.out.println(group.toString());
-                                    if (group.get(JSONApiResponseKeysEnum.GROUP.getKey()) != null) {
-                                        groupID = group.get(JSONApiResponseKeysEnum.GROUP.getKey()).getAsShort();
-                                    }
-                                    if (group.get(JSONApiResponseKeysEnum.LAST_CALL_SCENE.getKey()) != null) {
-                                        sceneID = group.get(JSONApiResponseKeysEnum.LAST_CALL_SCENE.getKey())
-                                                .getAsShort();
-                                    }
-                                    if (zoneID > -1 && groupID > -1 && sceneID > -1) {
-                                        System.out.println(zoneID + "-" + groupID + "-" + sceneID);
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
+        /*
+         * if (connMan.checkConnection()) {
+         * JsonObject response = connMan.getDigitalSTROMAPI().query2(connMan.getSessionToken(), LAST_CALL_SCENE_QUERY);
+         * System.out.println(response.toString());
+         * if (response.isJsonObject()) {
+         * for (Entry<String, JsonElement> entry : response.entrySet()) {
+         * if (entry.getValue().isJsonObject()) {
+         * JsonObject zone = entry.getValue().getAsJsonObject();
+         * // System.out.println(entry.getValue().toString());
+         * int zoneID = -1;
+         * short groupID = -1;
+         * short sceneID = -1;
+         * if (zone.get(JSONApiResponseKeysEnum.ZONE_ID.getKey()) != null) {
+         * zoneID = zone.get(JSONApiResponseKeysEnum.ZONE_ID.getKey()).getAsInt();
+         * }
+         * for (Entry<String, JsonElement> groupEntry : zone.entrySet()) {
+         * if (groupEntry.getKey().startsWith("group") && groupEntry.getValue().isJsonObject()) {
+         * JsonObject group = groupEntry.getValue().getAsJsonObject();
+         * if (group.get(JSONApiResponseKeysEnum.DEVICES.getKey()) != null) {
+         * // System.out.println(group.toString());
+         * if (group.get(JSONApiResponseKeysEnum.GROUP.getKey()) != null) {
+         * groupID = group.get(JSONApiResponseKeysEnum.GROUP.getKey()).getAsShort();
+         * }
+         * if (group.get(JSONApiResponseKeysEnum.LAST_CALL_SCENE.getKey()) != null) {
+         * sceneID = group.get(JSONApiResponseKeysEnum.LAST_CALL_SCENE.getKey())
+         * .getAsShort();
+         * }
+         * if (zoneID > -1 && groupID > -1 && sceneID > -1) {
+         * System.out.println(zoneID + "-" + groupID + "-" + sceneID);
+         * }
+         * }
+         * }
+         * }
+         * }
+         * }
+         * }
+         * }
+         */
         /*
          * List<SensorEnum> deviceTypes = new ArrayList<SensorEnum>();
          * deviceTypes.add(SensorEnum.ACTIVE_POWER);
@@ -133,7 +133,7 @@ public class TestApi {
             final String GET_DETAILD_DEVICES = "/apartment/zones/zone0(*)/devices/*(*)/*(*)/*(*)";
             if (connMan.checkConnection()) {
                 JsonObject result = connMan.getDigitalSTROMAPI().query2(connMan.getSessionToken(), GET_DETAILD_DEVICES);
-                System.out.println(result.toString());
+                // System.out.println(result.toString());
                 if (result.isJsonObject()) {
                     if (result.getAsJsonObject().get("zone0").isJsonObject()) {
                         result = result.getAsJsonObject().get("zone0").getAsJsonObject();
@@ -141,19 +141,28 @@ public class TestApi {
                             if (!(entry.getKey().equals(JSONApiResponseKeysEnum.ZONE_ID.getKey())
                                     && entry.getKey().equals(JSONApiResponseKeysEnum.NAME.getKey()))
                                     && entry.getValue().isJsonObject()) {
-                                Device dev = new DeviceImpl(entry.getValue().getAsJsonObject());
-                                dev.setSensorDataRefreshPriority(Config.REFRESH_PRIORITY_HIGH,
+                                Device device = new DeviceImpl(entry.getValue().getAsJsonObject());
+                                device.setSensorDataRefreshPriority(Config.REFRESH_PRIORITY_HIGH,
                                         Config.REFRESH_PRIORITY_LOW, Config.REFRESH_PRIORITY_MEDIUM);
-                                System.out.println(dev.toString());
+                                if ((device.isSensorDevice()
+                                        && DigitalSTROMBindingConstants.THING_TYPE_ID_DS_I_SENSE_200_DEVICE
+                                                .equals(device.getHWinfo()))
+                                        || (DigitalSTROMBindingConstants.THING_TYPE_ID_DS_I_SENSE_200_DEVICE
+                                                .equals(device.getHWinfo().substring(0, 2))
+                                                && device.isDeviceWithOutput() && device.isPresent())) {
+                                    System.out.println(device.toString());
+                                }
                             }
                         }
                     }
                 }
             }
-            System.out.println(Date.from(Instant.ofEpochMilli(System.currentTimeMillis())));
+
         }
 
-        if (testType.equals(PARSE_TEST)) {
+        if (testType.equals(PARSE_TEST))
+
+        {
 
             HashMap<String, String> propertries = new HashMap<String, String>();
             propertries.put(DigitalSTROMBindingConstants.DEVICE_SCENE + "1", "test1");
