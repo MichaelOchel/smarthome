@@ -61,10 +61,66 @@ public class DsChannelTypeProvider implements ChannelTypeProvider {
     private final String STRING = "String";
     private final String NUMBER = "Number";
 
+    // categories
+    private final String CATEGORY_BLINDES = "Blinds";
+    private final String CATEGORY_DIMMABLE_LIGHT = "DimmableLight";
+    private final String CATEGORY_CARBONE_DIOXIDE = "CarbonDioxide";
+    private final String CATEGORY_ENERGY = "Energy";
+    private final String CATEGORY_HUMIDITY = "Humidity";
+    private final String CATEGORY_LIGHT = "Light";
+    private final String CATEGORY_PRESSURE = "Pressure";
+    // private final String CATEGORY_SOUND_VOLUME = "SoundVolume";
+    private final String CATEGORY_TEMPERATURE = "Temperature";
+    private final String CATEGORY_WIND = "Wind";
+    private final String CATEGORY_RAIN = "Rain";
+
+    // rollershutter?
+    private final String CATEGORY_MOVE_CONTROL = "MoveControl";
+
     private StateDescription getSensorStateDescription(String shortcutUnit) {
         return shortcutUnit.equals(SensorEnum.ELECTRIC_METER.getUnitShortcut())
                 ? new StateDescription(null, null, null, "%.3f " + shortcutUnit, true, null)
                 : new StateDescription(null, null, null, "%d " + shortcutUnit, true, null);
+    }
+
+    private String getSensorCategory(SensorEnum sensorType) {
+        switch (sensorType) {
+            case ACTIVE_POWER:
+            case ELECTRIC_METER:
+            case OUTPUT_CURRENT:
+            case OUTPUT_CURRENT_H:
+            case POWER_CONSUMPTION:
+                return CATEGORY_ENERGY;
+            case AIR_PRESSURE:
+                return CATEGORY_PRESSURE;
+            case CARBONE_DIOXIDE:
+                return CATEGORY_CARBONE_DIOXIDE;
+            case PRECIPITATION:
+                return CATEGORY_RAIN;
+            case RELATIVE_HUMIDITY_INDOORS:
+            case RELATIVE_HUMIDITY_OUTDOORS:
+                return CATEGORY_HUMIDITY;
+            case ROOM_TEMPERATION_CONTROL_VARIABLE:
+                break;
+            case ROOM_TEMPERATION_SET_POINT:
+                break;
+            case TEMPERATURE_INDOORS:
+                break;
+            case TEMPERATURE_OUTDOORS:
+                return CATEGORY_TEMPERATURE;
+            case WIND_DIRECTION:
+            case WIND_SPEED:
+                return CATEGORY_WIND;
+            // missing category
+            case BRIGHTNESS_INDOORS:
+            case BRIGHTNESS_OUTDOORS:
+            case SOUND_PRESSURE_LEVEL:
+                break;
+            default:
+                break;
+
+        }
+        return null;
     }
 
     private StateDescription getSensorStateDescription(SensorEnum sensorType) {
@@ -130,7 +186,7 @@ public class DsChannelTypeProvider implements ChannelTypeProvider {
         return sensorType.toString().contains("TEMPERATURE")
                 ? getText("sensor_desc_0", locale) + getText(sensorType.toString(), locale) + " "
                         + getText("sensor_desc_1", locale) + getText(sensorType.toString(), locale) + " "
-                        + getText("sensor_desc_2", locale) + " " + getText(sensorType.getUnit(), locale) + " (°C) "
+                        + getText("sensor_desc_2", locale) + " " + getText("degrees_celsius", locale) + " (°C) "
                         + getText("sensor_desc_3", locale)
                 : getText("sensor_desc_0", locale) + getText(sensorType.toString(), locale) + " "
                         + getText("sensor_desc_1", locale) + getText(sensorType.toString(), locale) + " "
@@ -162,22 +218,22 @@ public class DsChannelTypeProvider implements ChannelTypeProvider {
             try {
                 SensorEnum sensorType = SensorEnum.valueOf(channelTypeUID.getId());
                 return new ChannelType(channelTypeUID, false, NUMBER, getSensorText(sensorType, locale),
-                        getSesorDescription(sensorType, locale), "Energy",
-                        Sets.newHashSet(getText("OUTPUT_CURRENT", locale), getText("DS", locale)),
+                        getSesorDescription(sensorType, locale), getSensorCategory(sensorType),
+                        Sets.newHashSet(getSensorText(sensorType, locale), getText("DS", locale)),
                         getSensorStateDescription(sensorType), null);
             } catch (IllegalArgumentException e) {
                 switch (channelTypeUID.getId()) {
                     case DigitalSTROMBindingConstants.CHANNEL_ID_BRIGHTNESS:
                         return new ChannelType(channelTypeUID, false, DIMMER,
                                 getText("CHANNEL_BRIGHTNESS_LABEL", locale),
-                                getText("CHANNEL_BRIGHTNESS_DESCRIPTION", locale), "dimmableLight",
+                                getText("CHANNEL_BRIGHTNESS_DESCRIPTION", locale), CATEGORY_DIMMABLE_LIGHT,
                                 Sets.newHashSet(getText("YELLOW", locale), getText("DS", locale),
                                         getText("LIGHT", locale)),
                                 null, null);
                     case DigitalSTROMBindingConstants.CHANNEL_ID_LIGHT_SWITCH:
                         return new ChannelType(channelTypeUID, false, SWITCH,
                                 getText("CHANNEL_LIGHT_SWITCH_LABEL", locale),
-                                getText("CHANNEL_LIGHT_SWITCH_DESCRIPTION", locale), "light",
+                                getText("CHANNEL_LIGHT_SWITCH_DESCRIPTION", locale), CATEGORY_LIGHT,
                                 Sets.newHashSet(getText("YELLOW", locale), getText("DS", locale),
                                         getText("LIGHT", locale)),
                                 null, null);
@@ -225,52 +281,29 @@ public class DsChannelTypeProvider implements ChannelTypeProvider {
                                 getCombinedStageDescription((short) 3, true, locale), null);
                     case DigitalSTROMBindingConstants.CHANNEL_ID_SHADE:
                         return new ChannelType(channelTypeUID, false, SHADE, getText("CHANNEL_SHADE_LABEL", locale),
-                                getText("CHANNEL_SHADE_DESCRIPTION", locale), "Blinds",
+                                getText("CHANNEL_SHADE_DESCRIPTION", locale), CATEGORY_MOVE_CONTROL,
                                 Sets.newHashSet(getText("GREY", locale), getText("DS", locale),
                                         getText("SHADE", locale)),
                                 null, null);
                     case DigitalSTROMBindingConstants.CHANNEL_ID_SHADE_ANGLE:
                         return new ChannelType(channelTypeUID, false, DIMMER,
                                 getText("CHANNEL_SHADE_ANGLE_LABEL", locale),
-                                getText("CHANNEL_SHADE_ANGLE_DESCRIPTION", locale), "Blinds",
+                                getText("CHANNEL_SHADE_ANGLE_DESCRIPTION", locale), CATEGORY_BLINDES,
                                 Sets.newHashSet(getText("GREY", locale), getText("DS", locale),
                                         getText("SHADE", locale)),
                                 null, null);
-                    /*
-                     * case DigitalSTROMBindingConstants.CHANNEL_ID_ACTIVE_POWER:
-                     * return new ChannelType(channelTypeUID, false, NUMBER,
-                     * getText("CHANNEL_ACTIVE_POWER_LABEL", locale),
-                     * getText("CHANNEL_ACTIVE_POWER_DESCRIPTION", locale), null,
-                     * Sets.newHashSet(getText("ACTIVE_POWER", locale), getText("POWER_CONSUMPTION", locale),
-                     * getText("DS", locale)),
-                     * getSensorStateDescription(SensorEnum.ACTIVE_POWER.getUnitShortcut()), null);
-                     * case DigitalSTROMBindingConstants.CHANNEL_ID_ELECTRIC_METER:
-                     * return new ChannelType(channelTypeUID, false, NUMBER,
-                     * getText("CHANNEL_ELECTRIC_METER_LABEL", locale),
-                     * getText("CHANNEL_ELECTRIC_METER_DESCRIPTION", locale), "Energy",
-                     * Sets.newHashSet(getText("ELECTRIC_METER", locale), getText("DS", locale)),
-                     * getSensorStateDescription(SensorEnum.ELECTRIC_METER.getUnitShortcut()), null);
-                     * case DigitalSTROMBindingConstants.CHANNEL_ID_OUTPUT_CURRENT:
-                     * return new ChannelType(channelTypeUID, false, NUMBER,
-                     *
-                     * getText("CHANNEL_OUTPUT_CURRENT_LABEL", locale),
-                     * getText("CHANNEL_OUTPUT_CURRENT_DESCRIPTION", locale)
-                     * getSensorText(SensorEnum.OUTPUT_CURRENT, locale),
-                     * getSesorDescription(SensorEnum.OUTPUT_CURRENT, locale), "Energy",
-                     * Sets.newHashSet(getText("OUTPUT_CURRENT", locale), getText("DS", locale)),
-                     * getSensorStateDescription(SensorEnum.OUTPUT_CURRENT), null);
-                     */
+                    // TODO: auch autmatisch? auf alle erweitern?
                     case DigitalSTROMBindingConstants.CHANNEL_ID_TOTAL_ACTIVE_POWER:
                         return new ChannelType(channelTypeUID, false, NUMBER,
                                 getText("CHANNEL_TOTAL_ACTIVE_POWER_LABEL", locale),
-                                getText("CHANNEL_TOTAL_ACTIVE_POWER_DESCRIPTION", locale), "Energy",
+                                getText("CHANNEL_TOTAL_ACTIVE_POWER_DESCRIPTION", locale), CATEGORY_ENERGY,
                                 Sets.newHashSet(getText("ACTIVE_POWER", locale), getText("POWER_CONSUMPTION", locale),
                                         getText("DS", locale)),
                                 getSensorStateDescription(SensorEnum.ACTIVE_POWER.getUnitShortcut()), null);
                     case DigitalSTROMBindingConstants.CHANNEL_ID_TOTAL_ELECTRIC_METER:
                         return new ChannelType(channelTypeUID, false, NUMBER,
                                 getText("CHANNEL_TOTAL_ELECTRIC_METER_LABEL", locale),
-                                getText("CHANNEL_TOTAL_ELECTRIC_METER_DESCRIPTION", locale), "Energy",
+                                getText("CHANNEL_TOTAL_ELECTRIC_METER_DESCRIPTION", locale), CATEGORY_ENERGY,
                                 Sets.newHashSet(getText("ELECTRIC_METER", locale), getText("DS", locale)),
                                 getSensorStateDescription(SensorEnum.ELECTRIC_METER.getUnitShortcut()), null);
                     case DigitalSTROMBindingConstants.CHANNEL_ID_SCENE:
