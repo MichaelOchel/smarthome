@@ -6,7 +6,7 @@
 >
 
     <!-- yellow/black Device -->
-    <config-description uri="binding:digitalstrom:device">
+    <config-description uri="binding:digitalstrom:deviceWithPowerSensors">
         <parameter-group name="devInfo">
             <label>@text/DS_DEVICE_PARM_GROUP_INFO_LABEL</label>
             <description>@text/DS_DEVICE_PARM_GROUP_INFO_DESC</description>
@@ -59,7 +59,7 @@
         </parameter>
     </config-description>
     <!-- gray Device -->
-    <config-description uri="binding:digitalstrom:grayDevice">
+    <config-description uri="binding:digitalstrom:deviceWithoutPowerSensors">
         <parameter name="dSID" type="text" readOnly="true">
             <label>@text/DS_DEVICE_PARM_DSID_LABEL</label>
             <description>@text/DS_DEVICE_PARM_DSID_DESC</description>
