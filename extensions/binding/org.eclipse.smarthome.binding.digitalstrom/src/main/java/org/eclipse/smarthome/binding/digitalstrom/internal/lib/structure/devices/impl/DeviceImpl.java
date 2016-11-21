@@ -353,6 +353,11 @@ public class DeviceImpl extends AbstractGeneralDeviceInformations implements Dev
     }
 
     @Override
+    public boolean isTemperatureControlledDevice() {
+        return functionalName.equals(FunctionalNameAndColorGroupEnum.TEMPERATION_CONTROL);
+    }
+
+    @Override
     public boolean isShade() {
         return OutputModeEnum.outputModeIsShade(outputMode);
     }
@@ -1212,7 +1217,6 @@ public class DeviceImpl extends AbstractGeneralDeviceInformations implements Dev
         }
     }
 
-    // TODO:set über EventItem --> echo
     @Override
     public void setDeviceSensorByEvent(EventItem event) {
         DeviceSensorValue devSenVal = new DeviceSensorValue(event.getProperties());
@@ -1221,7 +1225,6 @@ public class DeviceImpl extends AbstractGeneralDeviceInformations implements Dev
             if (!isEchoSensor(sensorType)) {
                 logger.debug("Event is no echo, set values {} for sensorType {}", devSenVal, devSenVal.getSensorType());
                 if (SensorEnum.isPowerSensor(sensorType) && getSensorDataReadingInitialized(sensorType)) {
-                    // TODO:
                     logger.debug(
                             "SensorJob was initialized, remove sensorjob for sensorType: " + devSenVal.getSensorType());
                     deviceStateUpdates.add(new DeviceStateUpdateImpl(sensorType, -1));

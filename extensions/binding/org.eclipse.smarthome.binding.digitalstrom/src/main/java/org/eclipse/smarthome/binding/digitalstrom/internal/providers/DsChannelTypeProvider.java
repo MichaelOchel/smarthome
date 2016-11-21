@@ -11,8 +11,11 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Locale;
+import java.util.Set;
 
 import org.eclipse.smarthome.binding.digitalstrom.DigitalSTROMBindingConstants;
+import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.constants.FunctionalColorGroupEnum;
+import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.constants.OutputModeEnum;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.constants.SensorEnum;
 import org.eclipse.smarthome.core.i18n.I18nProvider;
 import org.eclipse.smarthome.core.thing.type.ChannelGroupType;
@@ -39,27 +42,52 @@ import com.google.common.collect.Sets;
 public class DsChannelTypeProvider implements ChannelTypeProvider {
 
     private final List<String> SUPPORTED_CHANNEL_TYPES = Lists.newArrayList(
-            DigitalSTROMBindingConstants.CHANNEL_ID_BRIGHTNESS, DigitalSTROMBindingConstants.CHANNEL_ID_LIGHT_SWITCH,
-            DigitalSTROMBindingConstants.CHANNEL_ID_COMBINED_2_STAGE_SWITCH,
-            DigitalSTROMBindingConstants.CHANNEL_ID_COMBINED_3_STAGE_SWITCH,
-            DigitalSTROMBindingConstants.CHANNEL_ID_GENERAL_DIMM,
-            DigitalSTROMBindingConstants.CHANNEL_ID_GENERAL_SWITCH,
-            DigitalSTROMBindingConstants.CHANNEL_ID_GENERAL_COMBINED_2_STAGE_SWITCH,
-            DigitalSTROMBindingConstants.CHANNEL_ID_GENERAL_COMBINED_3_STAGE_SWITCH,
-            DigitalSTROMBindingConstants.CHANNEL_ID_SCENE, DigitalSTROMBindingConstants.CHANNEL_ID_SHADE,
-            DigitalSTROMBindingConstants.CHANNEL_ID_TOTAL_ACTIVE_POWER,
-            DigitalSTROMBindingConstants.CHANNEL_ID_TOTAL_ELECTRIC_METER,
-            DigitalSTROMBindingConstants.CHANNEL_ID_SHADE_ANGLE);
+            DigitalSTROMBindingConstants.CHANNEL_ID_SCENE, DigitalSTROMBindingConstants.CHANNEL_ID_TOTAL_ACTIVE_POWER,
+            DigitalSTROMBindingConstants.CHANNEL_ID_TOTAL_ELECTRIC_METER);
 
+    /*
+     * output channels dynamic?
+     * dimmer / light, general, heating
+     * switch / light, general, heating
+     * 2/3 stage / light, general
+     * scene
+     * shade / shade
+     * shade angle / shade
+     * temperature controlled
+     * wipe / general
+     */
     private I18nProvider i18n = null;
     private Bundle bundle = null;
 
+    // channelID building (effect group type + (nothing || item type || extended item type) e.g. lightSwitch, shade or
+    // shadeAngle
+    // channel effect group type
+    public final static String LIGHT = "light"; // and tag
+    public final static String SHADE = "shade"; // and tag
+    public final static String HEATING = "heating"; // and tag
+    public final static String GENERAL = "general";
+    public final static String SCENE = "scene";
+    // channel extended item type
+    public final static String WIPE = "Wipe";
+    public final static String ANGLE = "Angle";
+    public final static String STAGE = "Stage"; // pre stageses e.g. 2+STAGE_SWITCH
+    public final static String TEMPERATURE_CONTROLLED = "TemperatureControlled";
+
     // item types
-    private final String DIMMER = "Dimmer";
-    private final String SWITCH = "Switch";
-    private final String SHADE = "Rollershutter";
-    private final String STRING = "String";
-    private final String NUMBER = "Number";
+    public final static String DIMMER = "Dimmer";
+    public final static String SWITCH = "Switch";
+    public final static String ROLLERSHUTTER = "Rollershutter";
+    public final static String STRING = "String";
+    public final static String NUMBER = "Number";
+
+    // tags
+    private final String GE = "GE";
+    private final String GR = "GR";
+    private final String BL = "BL";
+    private final String SW = "SW";
+    private final String DS = "DS";
+    private final String JOKER = "JOKER";
+    // private final String BLIDNS = "shade";
 
     // categories
     private final String CATEGORY_BLINDES = "Blinds";
@@ -69,14 +97,82 @@ public class DsChannelTypeProvider implements ChannelTypeProvider {
     private final String CATEGORY_HUMIDITY = "Humidity";
     private final String CATEGORY_LIGHT = "Light";
     private final String CATEGORY_PRESSURE = "Pressure";
-    // private final String CATEGORY_SOUND_VOLUME = "SoundVolume";
+    private final String CATEGORY_SOUND_VOLUME = "SoundVolume";
     private final String CATEGORY_TEMPERATURE = "Temperature";
     private final String CATEGORY_WIND = "Wind";
     private final String CATEGORY_RAIN = "Rain";
 
     // rollershutter?
-    private final String CATEGORY_MOVE_CONTROL = "MoveControl";
+    // private final String CATEGORY_MOVE_CONTROL = "MoveControl";
 
+    public static String getOutputChannelTypeID(FunctionalColorGroupEnum functionalGroup, OutputModeEnum outputMode) {
+        String channelPreID = GENERAL;
+        if (functionalGroup.equals(FunctionalColorGroupEnum.YELLOW)) {
+            channelPreID = LIGHT;
+        }
+        if (functionalGroup.equals(FunctionalColorGroupEnum.GREY)) {
+            if (outputMode.equals(OutputModeEnum.POSITION_CON)) {
+                return SHADE;
+            }
+            if (outputMode.equals(OutputModeEnum.POSITION_CON_US)) {
+                return SHADE + "_" + ANGLE.toLowerCase();
+            }
+        }
+        if (functionalGroup.equals(FunctionalColorGroupEnum.BLUE)) {
+            channelPreID = HEATING;
+            if (OutputModeEnum.outputModeIsTemperationControlled(outputMode)) {
+                return channelPreID + "_" + TEMPERATURE_CONTROLLED.toLowerCase();
+            }
+        }
+        if (OutputModeEnum.outputModeIsSwitch(outputMode)) {
+            return channelPreID + "_" + SWITCH.toLowerCase();
+        }
+        if (OutputModeEnum.outputModeIsDimmable(outputMode)) {
+            return channelPreID + "_" + DIMMER.toLowerCase();
+        }
+        if (!channelPreID.equals(HEATING)) {
+            if (outputMode.equals(OutputModeEnum.COMBINED_2_STAGE_SWITCH)) {
+                return channelPreID + "_2_" + STAGE.toLowerCase();
+            }
+            if (outputMode.equals(OutputModeEnum.COMBINED_3_STAGE_SWITCH)) {
+                return channelPreID + "_3_" + STAGE.toLowerCase();
+            }
+        }
+        return null;
+    }
+
+    private static List<String> SUPPORTED_OUTPUT_CHANNEL_TYPES = new ArrayList<>();
+
+    public static boolean isOutputChannel(String channelTypeID) {
+        return SUPPORTED_OUTPUT_CHANNEL_TYPES.contains(channelTypeID);
+    }
+
+    private void init() {
+        String channelIDpre = GENERAL;
+        for (short i = 0; i < 3; i++) {
+            if (i == 1) {
+                channelIDpre = LIGHT;
+            }
+            if (i == 2) {
+                channelIDpre = HEATING;
+                SUPPORTED_OUTPUT_CHANNEL_TYPES.add(channelIDpre + "_" + TEMPERATURE_CONTROLLED.toLowerCase());
+            }
+            SUPPORTED_OUTPUT_CHANNEL_TYPES.add(channelIDpre + "_" + SWITCH.toLowerCase());
+            SUPPORTED_OUTPUT_CHANNEL_TYPES.add(channelIDpre + "_" + DIMMER.toLowerCase());
+            if (i < 2) {
+                SUPPORTED_OUTPUT_CHANNEL_TYPES.add(channelIDpre + "_2_" + STAGE.toLowerCase());
+                SUPPORTED_OUTPUT_CHANNEL_TYPES.add(channelIDpre + "_3_" + STAGE.toLowerCase());
+            }
+        }
+        channelIDpre = SHADE;
+        SUPPORTED_OUTPUT_CHANNEL_TYPES.add(channelIDpre);
+        SUPPORTED_OUTPUT_CHANNEL_TYPES.add(channelIDpre + "_" + ANGLE.toLowerCase());
+    }
+
+    /*
+     * LIGHT+SWITCH;
+     *
+     */
     private StateDescription getSensorStateDescription(String shortcutUnit) {
         return shortcutUnit.equals(SensorEnum.ELECTRIC_METER.getUnitShortcut())
                 ? new StateDescription(null, null, null, "%.3f " + shortcutUnit, true, null)
@@ -111,10 +207,11 @@ public class DsChannelTypeProvider implements ChannelTypeProvider {
             case WIND_DIRECTION:
             case WIND_SPEED:
                 return CATEGORY_WIND;
+            case SOUND_PRESSURE_LEVEL:
+                return CATEGORY_SOUND_VOLUME;
             // missing category
             case BRIGHTNESS_INDOORS:
             case BRIGHTNESS_OUTDOORS:
-            case SOUND_PRESSURE_LEVEL:
                 break;
             default:
                 break;
@@ -126,42 +223,51 @@ public class DsChannelTypeProvider implements ChannelTypeProvider {
     private StateDescription getSensorStateDescription(SensorEnum sensorType) {
         // the digitalSTROM resolution for temperature in kelvin is not correct but sensor-events and cached values are
         // shown in °C so we will use this unit for temperature sensors
-        return sensorType.toString().contains("TEMPERATURE")
-                ? new StateDescription(null, null, null, sensorType.getPattern() + " " + "°C", true, null)
-                : new StateDescription(null, null, null, sensorType.getPattern() + " " + sensorType.getUnitShortcut(),
-                        true, null);
+        String unitShortCut = sensorType.getUnitShortcut();
+        if (unitShortCut.equals("%")) {
+            unitShortCut = "%%";
+        }
+        if (sensorType.toString().contains("TEMPERATURE")) {
+            unitShortCut = "°C";
+        }
+        return new StateDescription(null, null, null, sensorType.getPattern() + " " + unitShortCut, true, null);
     }
 
-    private StateDescription getCombinedStageDescription(short stages, boolean isLight, Locale locale) {
-        List<StateOption> stateOptions = new ArrayList<StateOption>();
-        if (isLight) {
-            stateOptions.add(new StateOption(DigitalSTROMBindingConstants.OPTION_COMBINED_BOTH_OFF,
-                    getText("OPTION_BOTH_LIGHTS_OFF", locale)));
-            stateOptions.add(new StateOption(DigitalSTROMBindingConstants.OPTION_COMBINED_BOTH_ON,
-                    getText("OPTION_BOTH_LIGHTS_ON", locale)));
-            stateOptions.add(new StateOption(DigitalSTROMBindingConstants.OPTION_COMBINED_FIRST_ON,
-                    getText("OPTION_FIRST_LIGHT_ON", locale)));
-            if (stages == 3) {
-                stateOptions.add(new StateOption(DigitalSTROMBindingConstants.OPTION_COMBINED_SECOND_ON,
-                        getText("OPTION_SECOND_LIGHT_ON", locale)));
+    private StateDescription getStageDescription(String channelID, Locale locale) {
+        if (channelID.contains(STAGE.toLowerCase())) {
+            List<StateOption> stateOptions = new ArrayList<StateOption>();
+            // if (isLight) {
+            if (channelID.contains(LIGHT)) {
+                stateOptions.add(new StateOption(DigitalSTROMBindingConstants.OPTION_COMBINED_BOTH_OFF,
+                        getText("OPTION_BOTH_LIGHTS_OFF", locale)));
+                stateOptions.add(new StateOption(DigitalSTROMBindingConstants.OPTION_COMBINED_BOTH_ON,
+                        getText("OPTION_BOTH_LIGHTS_ON", locale)));
+                stateOptions.add(new StateOption(DigitalSTROMBindingConstants.OPTION_COMBINED_FIRST_ON,
+                        getText("OPTION_FIRST_LIGHT_ON", locale)));
+                if (channelID.contains("3")) {
+                    stateOptions.add(new StateOption(DigitalSTROMBindingConstants.OPTION_COMBINED_SECOND_ON,
+                            getText("OPTION_SECOND_LIGHT_ON", locale)));
+                }
+            } else {
+                stateOptions.add(new StateOption(DigitalSTROMBindingConstants.OPTION_COMBINED_BOTH_OFF,
+                        getText("OPTION_BOTH_RELAIS_OFF", locale)));
+                stateOptions.add(new StateOption(DigitalSTROMBindingConstants.OPTION_COMBINED_BOTH_ON,
+                        getText("OPTION_BOTH_RELAIS_ON", locale)));
+                stateOptions.add(new StateOption(DigitalSTROMBindingConstants.OPTION_COMBINED_FIRST_ON,
+                        getText("OPTION_FIRST_RELAIS_ON", locale)));
+                if (channelID.contains("3")) {
+                    stateOptions.add(new StateOption(DigitalSTROMBindingConstants.OPTION_COMBINED_SECOND_ON,
+                            getText("OPTION_SECOND_RELAIS_ON", locale)));
+                }
             }
-        } else {
-            stateOptions.add(new StateOption(DigitalSTROMBindingConstants.OPTION_COMBINED_BOTH_OFF,
-                    getText("OPTION_BOTH_RELAIS_OFF", locale)));
-            stateOptions.add(new StateOption(DigitalSTROMBindingConstants.OPTION_COMBINED_BOTH_ON,
-                    getText("OPTION_BOTH_RELAIS_ON", locale)));
-            stateOptions.add(new StateOption(DigitalSTROMBindingConstants.OPTION_COMBINED_FIRST_ON,
-                    getText("OPTION_FIRST_RELAIS_ON", locale)));
-            if (stages == 3) {
-                stateOptions.add(new StateOption(DigitalSTROMBindingConstants.OPTION_COMBINED_SECOND_ON,
-                        getText("OPTION_SECOND_RELAIS_ON", locale)));
-            }
+            return new StateDescription(null, null, null, null, false, stateOptions);
         }
-        return new StateDescription(null, null, null, null, false, stateOptions);
+        return null;
     }
 
     protected void activate(ComponentContext componentContext) {
         this.bundle = componentContext.getBundleContext().getBundle();
+        init();
     }
 
     protected void deactivate(ComponentContext componentContext) {
@@ -205,11 +311,79 @@ public class DsChannelTypeProvider implements ChannelTypeProvider {
             channelTypeList.add(
                     getChannelType(new ChannelTypeUID(DigitalSTROMBindingConstants.BINDING_ID, channelTypeId), locale));
         }
+        for (String channelTypeId : SUPPORTED_OUTPUT_CHANNEL_TYPES) {
+            channelTypeList.add(
+                    getChannelType(new ChannelTypeUID(DigitalSTROMBindingConstants.BINDING_ID, channelTypeId), locale));
+        }
         for (SensorEnum sensorType : SensorEnum.values()) {
+            // TODO: lower case
             channelTypeList.add(getChannelType(
                     new ChannelTypeUID(DigitalSTROMBindingConstants.BINDING_ID, sensorType.toString()), locale));
         }
         return channelTypeList;
+    }
+
+    private String getLabelText(String channelID, Locale locale) {
+        return getText(channelID + "_label", locale);
+    }
+
+    private String getDescText(String channelID, Locale locale) {
+        return getText(channelID + "_desc", locale);
+    }
+
+    private String getCategory(String channelID) {
+        if (channelID.contains(LIGHT)) {
+            if (channelID.contains(DIMMER.toLowerCase())) {
+                return CATEGORY_DIMMABLE_LIGHT;
+            }
+            return CATEGORY_LIGHT;
+        }
+        if (channelID.contains(SHADE)) {
+            if (channelID.contains(ANGLE.toLowerCase())) {
+                return CATEGORY_BLINDES;
+            }
+            return ROLLERSHUTTER;
+        }
+        return null;
+    }
+
+    private Set<String> getTags(String channelID, Locale locale) {
+        if (channelID.contains(LIGHT)) {
+            return Sets.newHashSet(getText(GE, locale), getText(DS, locale), getText(LIGHT, locale));
+        }
+        if (channelID.contains(GENERAL)) {
+            return Sets.newHashSet(getText(SW, locale), getText(DS, locale), getText(JOKER, locale));
+        }
+        if (channelID.contains(SHADE)) {
+            return Sets.newHashSet(getText(GR, locale), getText(DS, locale), getText("SHADE", locale));
+        }
+        if (channelID.contains(SCENE)) {
+            return Sets.newHashSet(getText(SCENE, locale), getText(DS, locale));
+        }
+        if (channelID.contains(HEATING)) {
+            return Sets.newHashSet(getText(BL, locale), getText(DS, locale), getText(HEATING, locale));
+        }
+        return null;
+    }
+
+    public static String getItemType(String channelID) {
+        // TODO: STAGE_SWITCH zu Stage umbenennen?
+        if (channelID != null) {
+            if (channelID.contains(STAGE.toLowerCase()) || channelID.contains(TEMPERATURE_CONTROLLED.toLowerCase())) {
+                return STRING;
+            }
+            if (channelID.contains(SWITCH.toLowerCase()) || channelID.contains(SCENE)
+                    || channelID.contains(WIPE.toLowerCase())) {
+                return SWITCH;
+            }
+            if (channelID.contains(DIMMER.toLowerCase()) || channelID.contains(ANGLE.toLowerCase())) {
+                return DIMMER;
+            }
+            if (channelID.contains(SHADE)) {
+                return ROLLERSHUTTER;
+            }
+        }
+        return null;
     }
 
     @Override
@@ -222,76 +396,14 @@ public class DsChannelTypeProvider implements ChannelTypeProvider {
                         Sets.newHashSet(getSensorText(sensorType, locale), getText("DS", locale)),
                         getSensorStateDescription(sensorType), null);
             } catch (IllegalArgumentException e) {
-                switch (channelTypeUID.getId()) {
-                    case DigitalSTROMBindingConstants.CHANNEL_ID_BRIGHTNESS:
-                        return new ChannelType(channelTypeUID, false, DIMMER,
-                                getText("CHANNEL_BRIGHTNESS_LABEL", locale),
-                                getText("CHANNEL_BRIGHTNESS_DESCRIPTION", locale), CATEGORY_DIMMABLE_LIGHT,
-                                Sets.newHashSet(getText("YELLOW", locale), getText("DS", locale),
-                                        getText("LIGHT", locale)),
-                                null, null);
-                    case DigitalSTROMBindingConstants.CHANNEL_ID_LIGHT_SWITCH:
-                        return new ChannelType(channelTypeUID, false, SWITCH,
-                                getText("CHANNEL_LIGHT_SWITCH_LABEL", locale),
-                                getText("CHANNEL_LIGHT_SWITCH_DESCRIPTION", locale), CATEGORY_LIGHT,
-                                Sets.newHashSet(getText("YELLOW", locale), getText("DS", locale),
-                                        getText("LIGHT", locale)),
-                                null, null);
-                    case DigitalSTROMBindingConstants.CHANNEL_ID_GENERAL_DIMM:
-                        return new ChannelType(channelTypeUID, false, DIMMER,
-                                getText("CHANNEL_GENERAL_DIMM_LABEL", locale),
-                                getText("CHANNEL_GENERAL_DIMM_DESCRIPTION", locale), null,
-                                Sets.newHashSet(getText("BLACK", locale), getText("DS", locale),
-                                        getText("JOKER", locale)),
-                                null, null);
-                    case DigitalSTROMBindingConstants.CHANNEL_ID_GENERAL_SWITCH:
-                        return new ChannelType(channelTypeUID, false, SWITCH,
-                                getText("CHANNEL_GENERAL_SWITCH_LABEL", locale),
-                                getText("CHANNEL_GENERAL_SWITCH_DESCRIPTION", locale), null,
-                                Sets.newHashSet(getText("BLACK", locale), getText("DS", locale),
-                                        getText("JOKER", locale)),
-                                null, null);
-                    case DigitalSTROMBindingConstants.CHANNEL_ID_COMBINED_2_STAGE_SWITCH:
-                        return new ChannelType(channelTypeUID, false, STRING,
-                                getText("CHANNEL_COMBINED_2_STAGE_SWITCH_LABEL", locale),
-                                getText("CHANNEL_COMBINED_2_STAGE_SWITCH_DESCRIPTION", locale), "Lights",
-                                Sets.newHashSet(getText("YELLOW", locale), getText("DS", locale),
-                                        getText("LIGHT", locale), getText("UMR", locale)),
-                                getCombinedStageDescription((short) 2, true, locale), null);
-                    case DigitalSTROMBindingConstants.CHANNEL_ID_COMBINED_3_STAGE_SWITCH:
-                        return new ChannelType(channelTypeUID, false, STRING,
-                                getText("CHANNEL_COMBINED_3_STAGE_SWITCH_LABEL", locale),
-                                getText("CHANNEL_COMBINED_3_STAGE_SWITCH_DESCRIPTION", locale), "Lights",
-                                Sets.newHashSet(getText("YELLOW", locale), getText("DS", locale),
-                                        getText("LIGHT", locale), getText("UMR", locale)),
-                                getCombinedStageDescription((short) 3, true, locale), null);
-                    case DigitalSTROMBindingConstants.CHANNEL_ID_GENERAL_COMBINED_2_STAGE_SWITCH:
-                        return new ChannelType(channelTypeUID, false, STRING,
-                                getText("CHANNEL_GENERAL_COMBINED_2_STAGE_SWITCH_LABEL", locale),
-                                getText("CHANNEL_GENERAL_COMBINED_2_STAGE_SWITCH_DESCRIPTION", locale), null,
-                                Sets.newHashSet(getText("BLACK", locale), getText("DS", locale),
-                                        getText("UMR", locale)),
-                                getCombinedStageDescription((short) 2, true, locale), null);
-                    case DigitalSTROMBindingConstants.CHANNEL_ID_GENERAL_COMBINED_3_STAGE_SWITCH:
-                        return new ChannelType(channelTypeUID, false, STRING,
-                                getText("CHANNEL_GENERAL_COMBINED_3_STAGE_SWITCH_LABEL", locale),
-                                getText("CHANNEL_GENERAL_COMBINED_3_STAGE_SWITCH_DESCRIPTION", locale), null,
-                                Sets.newHashSet(getText("BLACK", locale), getText("DS", locale),
-                                        getText("UMR", locale)),
-                                getCombinedStageDescription((short) 3, true, locale), null);
-                    case DigitalSTROMBindingConstants.CHANNEL_ID_SHADE:
-                        return new ChannelType(channelTypeUID, false, SHADE, getText("CHANNEL_SHADE_LABEL", locale),
-                                getText("CHANNEL_SHADE_DESCRIPTION", locale), CATEGORY_MOVE_CONTROL,
-                                Sets.newHashSet(getText("GREY", locale), getText("DS", locale),
-                                        getText("SHADE", locale)),
-                                null, null);
-                    case DigitalSTROMBindingConstants.CHANNEL_ID_SHADE_ANGLE:
-                        return new ChannelType(channelTypeUID, false, DIMMER,
-                                getText("CHANNEL_SHADE_ANGLE_LABEL", locale),
-                                getText("CHANNEL_SHADE_ANGLE_DESCRIPTION", locale), CATEGORY_BLINDES,
-                                Sets.newHashSet(getText("GREY", locale), getText("DS", locale),
-                                        getText("SHADE", locale)),
-                                null, null);
+                String channelID = channelTypeUID.getId();
+                if (SUPPORTED_OUTPUT_CHANNEL_TYPES.contains(channelID)) {
+                    // TODO:WIPE? config standby?
+                    return new ChannelType(channelTypeUID, false, getItemType(channelID),
+                            getLabelText(channelID, locale), getDescText(channelID, locale), getCategory(channelID),
+                            getTags(channelID, locale), getStageDescription(channelID, locale), null);
+                }
+                switch (channelID) {
                     // TODO: auch autmatisch? auf alle erweitern?
                     case DigitalSTROMBindingConstants.CHANNEL_ID_TOTAL_ACTIVE_POWER:
                         return new ChannelType(channelTypeUID, false, NUMBER,
@@ -306,11 +418,15 @@ public class DsChannelTypeProvider implements ChannelTypeProvider {
                                 getText("CHANNEL_TOTAL_ELECTRIC_METER_DESCRIPTION", locale), CATEGORY_ENERGY,
                                 Sets.newHashSet(getText("ELECTRIC_METER", locale), getText("DS", locale)),
                                 getSensorStateDescription(SensorEnum.ELECTRIC_METER.getUnitShortcut()), null);
+
                     case DigitalSTROMBindingConstants.CHANNEL_ID_SCENE:
                         return new ChannelType(channelTypeUID, false, SWITCH, getText("CHANNEL_SCENE_LABEL", locale),
-                                getText("CHANNEL_SCENE_DESCRIPTION", locale), "Energy",
+                                getText("CHANNEL_SCENE_DESCRIPTION", locale), null,
                                 Sets.newHashSet(getText("SCENE", locale), getText("DS", locale)), null, null);
+                    default:
+                        break;
                 }
+
             }
         }
         return null;

@@ -1,5 +1,6 @@
 package org.eclipse.smarthome.binding.digitalstrom.internal.lib.serverConnection;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -11,7 +12,6 @@ import org.eclipse.smarthome.binding.digitalstrom.internal.lib.climate.jsonRespo
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.climate.jsonResponseContainer.impl.TemperatureControlConfig;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.climate.jsonResponseContainer.impl.TemperatureControlStatus;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.climate.jsonResponseContainer.impl.TemperatureControlValues;
-import org.eclipse.smarthome.binding.digitalstrom.internal.lib.config.Config;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.event.EventHandler;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.event.EventListener;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.event.constants.EventNames;
@@ -20,8 +20,11 @@ import org.eclipse.smarthome.binding.digitalstrom.internal.lib.manager.Connectio
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.manager.impl.ConnectionManagerImpl;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.serverConnection.constants.JSONApiResponseKeysEnum;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.Device;
+import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.constants.FunctionalColorGroupEnum;
+import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.constants.OutputModeEnum;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.impl.JSONDeviceSceneSpecImpl;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.impl.DeviceImpl;
+import org.eclipse.smarthome.binding.digitalstrom.internal.providers.DsChannelTypeProvider;
 
 import com.google.common.collect.Lists;
 import com.google.gson.JsonElement;
@@ -45,6 +48,74 @@ public class TestApi {
 
         final String LAST_CALL_SCENE_QUERY = "/apartment/zones/*(*)/groups/*(*)/*(*)";
 
+        List<String> SUPPORTED_OUTPUT_CHANNEL_TYPES = new ArrayList<>();
+
+        String channelIDpre = DsChannelTypeProvider.GENERAL;
+        for (short i = 0; i < 3; i++) {
+            if (i == 1) {
+                channelIDpre = DsChannelTypeProvider.LIGHT;
+            }
+            if (i == 2) {
+                channelIDpre = DsChannelTypeProvider.HEATING;
+                SUPPORTED_OUTPUT_CHANNEL_TYPES.add(channelIDpre + DsChannelTypeProvider.TEMPERATURE_CONTROLLED);
+            }
+            SUPPORTED_OUTPUT_CHANNEL_TYPES.add(channelIDpre + DsChannelTypeProvider.SWITCH);
+            SUPPORTED_OUTPUT_CHANNEL_TYPES.add(channelIDpre + DsChannelTypeProvider.DIMMER);
+            if (i < 2) {
+                SUPPORTED_OUTPUT_CHANNEL_TYPES.add(channelIDpre + 2 + DsChannelTypeProvider.STAGE);
+                SUPPORTED_OUTPUT_CHANNEL_TYPES.add(channelIDpre + 3 + DsChannelTypeProvider.STAGE);
+            }
+        }
+        channelIDpre = DsChannelTypeProvider.SHADE;
+        SUPPORTED_OUTPUT_CHANNEL_TYPES.add(channelIDpre);
+        SUPPORTED_OUTPUT_CHANNEL_TYPES.add(channelIDpre + DsChannelTypeProvider.ANGLE);
+        for (String channelID : SUPPORTED_OUTPUT_CHANNEL_TYPES) {
+            System.out.println(channelID);
+        }
+
+        System.out.println("");
+
+        FunctionalColorGroupEnum functionalGroup = FunctionalColorGroupEnum.YELLOW;
+        OutputModeEnum outputMode = OutputModeEnum.COMBINED_3_STAGE_SWITCH;
+
+        String channelPreID = DsChannelTypeProvider.GENERAL;
+        System.out.println(FunctionalColorGroupEnum.YELLOW.equals(null));
+        if (FunctionalColorGroupEnum.YELLOW.equals(functionalGroup)) {
+            channelPreID = DsChannelTypeProvider.LIGHT;
+            System.out.println(channelPreID);
+        }
+        System.out.println(channelPreID);
+        if (functionalGroup.equals(FunctionalColorGroupEnum.GREY)) {
+            if (outputMode.equals(OutputModeEnum.POSITION_CON)) {
+                System.out.println(DsChannelTypeProvider.SHADE);
+            }
+            if (outputMode.equals(OutputModeEnum.POSITION_CON_US)) {
+                System.out.println(DsChannelTypeProvider.SHADE + DsChannelTypeProvider.ANGLE);
+            }
+        }
+        if (functionalGroup.equals(FunctionalColorGroupEnum.BLUE)) {
+            channelPreID = DsChannelTypeProvider.HEATING;
+            if (OutputModeEnum.outputModeIsTemperationControlled(outputMode)) {
+                System.out.println(channelPreID + DsChannelTypeProvider.TEMPERATURE_CONTROLLED);
+            }
+        }
+        if (OutputModeEnum.outputModeIsSwitch(outputMode)) {
+            System.out.println(channelPreID + DsChannelTypeProvider.SWITCH);
+        }
+        if (OutputModeEnum.outputModeIsDimmable(outputMode)) {
+            System.out.println(channelPreID + DsChannelTypeProvider.DIMMER);
+        }
+        System.out.println(!channelPreID.equals(DsChannelTypeProvider.HEATING));
+        if (!channelPreID.equals(DsChannelTypeProvider.HEATING)) {
+            if (outputMode.equals(OutputModeEnum.COMBINED_2_STAGE_SWITCH)) {
+                System.out.println(channelPreID + 2 + DsChannelTypeProvider.STAGE);
+            }
+            if (outputMode.equals(OutputModeEnum.COMBINED_2_STAGE_SWITCH)) {
+                System.out.println(channelPreID + 3 + DsChannelTypeProvider.STAGE);
+            }
+        }
+
+        System.out.println(DsChannelTypeProvider.getOutputChannelTypeID(functionalGroup, outputMode));
         /*
          * if (connMan.checkConnection()) {
          * JsonObject response = connMan.getDigitalSTROMAPI().query2(connMan.getSessionToken(), LAST_CALL_SCENE_QUERY);
@@ -142,16 +213,18 @@ public class TestApi {
                                     && entry.getKey().equals(JSONApiResponseKeysEnum.NAME.getKey()))
                                     && entry.getValue().isJsonObject()) {
                                 Device device = new DeviceImpl(entry.getValue().getAsJsonObject());
-                                device.setSensorDataRefreshPriority(Config.REFRESH_PRIORITY_HIGH,
-                                        Config.REFRESH_PRIORITY_LOW, Config.REFRESH_PRIORITY_MEDIUM);
-                                if ((device.isSensorDevice()
-                                        && DigitalSTROMBindingConstants.THING_TYPE_ID_DS_I_SENSE_200_DEVICE
-                                                .equals(device.getHWinfo()))
-                                        || (DigitalSTROMBindingConstants.THING_TYPE_ID_DS_I_SENSE_200_DEVICE
-                                                .equals(device.getHWinfo().substring(0, 2))
-                                                && device.isDeviceWithOutput() && device.isPresent())) {
-                                    System.out.println(device.toString());
-                                }
+                                // device.setSensorDataRefreshPriority(Config.REFRESH_PRIORITY_HIGH,
+                                // Config.REFRESH_PRIORITY_LOW, Config.REFRESH_PRIORITY_MEDIUM);
+                                /*
+                                 * if ((device.isSensorDevice()
+                                 * && DigitalSTROMBindingConstants.THING_TYPE_ID_DS_I_SENSE_200_DEVICE
+                                 * .equals(device.getHWinfo()))
+                                 * || (DigitalSTROMBindingConstants.THING_TYPE_ID_DS_I_SENSE_200_DEVICE
+                                 * .equals(device.getHWinfo().substring(0, 2))
+                                 * && device.isDeviceWithOutput() && device.isPresent())) {
+                                 */
+                                System.out.println(device.toString());
+                                // }
                             }
                         }
                     }
