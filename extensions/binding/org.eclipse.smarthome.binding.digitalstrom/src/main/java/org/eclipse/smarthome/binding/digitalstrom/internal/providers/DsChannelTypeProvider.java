@@ -9,6 +9,7 @@ package org.eclipse.smarthome.binding.digitalstrom.internal.providers;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Set;
@@ -104,6 +105,27 @@ public class DsChannelTypeProvider implements ChannelTypeProvider {
 
     // rollershutter?
     // private final String CATEGORY_MOVE_CONTROL = "MoveControl";
+
+    protected void activate(ComponentContext componentContext) {
+        this.bundle = componentContext.getBundleContext().getBundle();
+        init();
+    }
+
+    protected void deactivate(ComponentContext componentContext) {
+        this.bundle = null;
+    }
+
+    protected void setI18nProvider(I18nProvider i18n) {
+        this.i18n = i18n;
+    };
+
+    protected void unsetI18nProvider(I18nProvider i18n) {
+        this.i18n = null;
+    };
+
+    private String getText(String key, Locale locale) {
+        return i18n != null ? i18n.getText(bundle, key, i18n.getText(bundle, key, key, Locale.ENGLISH), locale) : key;
+    }
 
     public static String getOutputChannelTypeID(FunctionalColorGroupEnum functionalGroup, OutputModeEnum outputMode) {
         String channelPreID = GENERAL;
@@ -265,27 +287,6 @@ public class DsChannelTypeProvider implements ChannelTypeProvider {
         return null;
     }
 
-    protected void activate(ComponentContext componentContext) {
-        this.bundle = componentContext.getBundleContext().getBundle();
-        init();
-    }
-
-    protected void deactivate(ComponentContext componentContext) {
-        this.bundle = null;
-    }
-
-    protected void setI18nProvider(I18nProvider i18n) {
-        this.i18n = i18n;
-    };
-
-    protected void unsetI18nProvider(I18nProvider i18n) {
-        this.i18n = null;
-    };
-
-    private String getText(String key, Locale locale) {
-        return i18n != null ? i18n.getText(bundle, key, i18n.getText(bundle, key, key, Locale.ENGLISH), locale) : key;
-    }
-
     private String getSesorDescription(SensorEnum sensorType, Locale locale) {
         // the digitalSTROM resolution for temperature in kelvin is not correct but sensor-events and cached values are
         // shown in °C so we will use this unit for temperature sensors
@@ -306,7 +307,7 @@ public class DsChannelTypeProvider implements ChannelTypeProvider {
 
     @Override
     public Collection<ChannelType> getChannelTypes(Locale locale) {
-        List<ChannelType> channelTypeList = new ArrayList<ChannelType>();
+        List<ChannelType> channelTypeList = new LinkedList<ChannelType>();
         for (String channelTypeId : SUPPORTED_CHANNEL_TYPES) {
             channelTypeList.add(
                     getChannelType(new ChannelTypeUID(DigitalSTROMBindingConstants.BINDING_ID, channelTypeId), locale));

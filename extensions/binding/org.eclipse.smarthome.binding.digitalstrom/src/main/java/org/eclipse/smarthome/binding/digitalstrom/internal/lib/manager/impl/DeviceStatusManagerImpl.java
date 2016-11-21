@@ -319,7 +319,7 @@ public class DeviceStatusManagerImpl implements DeviceStatusManager, EventHandle
                     }
                 }
             } catch (Exception e) {
-                logger.error("An exception occurred", e);
+                logger.error("An exception occurred: ", e);
             }
         }
 
