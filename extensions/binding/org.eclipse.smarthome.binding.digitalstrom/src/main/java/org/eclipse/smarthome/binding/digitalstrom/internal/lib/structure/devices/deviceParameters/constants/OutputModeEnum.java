@@ -30,6 +30,8 @@ public enum OutputModeEnum {
      * | 22 | Reverse phase control dimmer with characteristic curve |
      * | 23 | PWM (pulse width modulation) |
      * | 24 | PWM with characteristic curve |
+     * | 30 | PWM to control heating control valve | (from dS web configurator, it dosn't stand in the ds-basic.pdf from
+     * 19.08.2015)
      * | 33 | Positioning control |
      * | 34 | combined 2 stage switch [Both relais switch combined in tow steps depending on the output value. Output >
      * 33% - relais 1 is on. Output > 66% - relais 1 and 2 are on.] | (from ds web configurator, it dosn't stand in the
@@ -48,6 +50,10 @@ public enum OutputModeEnum {
      * ds-basic.pdf from 02.06.2015)
      * | 51 | dimmed 1-10V [dimming with 1-10V control power] | (from dS web configurator, it dosn't stand in the
      * ds-basic.pdf from 02.06.2015)
+     * | 64 | temperature controlled switch for heating though the dSS | (from dS web configurator, it dosn't stand in
+     * the ds-basic.pdf from 19.08.2015)
+     * | 65 | temperature controlled pwm for heating though the dSS | (from dS web configurator, it dosn't stand in the
+     * ds-basic.pdf from 19.08.2015)
      *
      */
     DISABLED(0),
@@ -60,6 +66,7 @@ public enum OutputModeEnum {
     RPC_DIMMER_CC(22),
     PWM(23),
     PWM_CC(24),
+    HEATING_PWM(30),
     POSITION_CON(33),
     COMBINED_2_STAGE_SWITCH(34),
     SINGLE_SWITCH(35),
@@ -70,7 +77,9 @@ public enum OutputModeEnum {
     POSITION_CON_US(42),
     COMBINED_SWITCH(43),
     DIMMED_0_10V(49),
-    DIMMED_1_10V(51);
+    DIMMED_1_10V(51),
+    TEMPRETURE_SWITCHED(54),
+    TEMPRETURE_PWM(54);
 
     private final int mode;
 
@@ -111,6 +120,7 @@ public enum OutputModeEnum {
             case RPC_DIMMER_CC:
             case DIMMED_0_10V:
             case DIMMED_1_10V:
+            case HEATING_PWM:
                 return true;
             default:
                 return false;
@@ -142,7 +152,7 @@ public enum OutputModeEnum {
 
     /**
      * Returns true, if the output mode is a shade control output mode, otherwise false.
-     * 
+     *
      * @param outputMode
      * @return true, if outputMode is for shade control, otherwise false
      */
@@ -153,6 +163,28 @@ public enum OutputModeEnum {
         switch (outputMode) {
             case POSITION_CON:
             case POSITION_CON_US:
+                return true;
+            default:
+                return false;
+        }
+    }
+
+    /**
+     * Returns true, if the output mode is a temperature controlled output mode, otherwise false.<br>
+     * <br>
+     * <b>Note:</b>
+     * This output mode will be automatically controlled through the digitalSTROM-Server and can't be set manually.
+     *
+     * @param outputMode
+     * @return true, if outputMode is temperature controlled, otherwise false
+     */
+    public static boolean outputModeIsTemperationControlled(OutputModeEnum outputMode) {
+        if (outputMode == null) {
+            return false;
+        }
+        switch (outputMode) {
+            case TEMPRETURE_PWM:
+            case TEMPRETURE_SWITCHED:
                 return true;
             default:
                 return false;

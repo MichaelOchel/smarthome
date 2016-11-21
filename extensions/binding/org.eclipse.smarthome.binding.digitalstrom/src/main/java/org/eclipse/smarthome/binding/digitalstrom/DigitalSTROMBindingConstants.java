@@ -9,7 +9,6 @@ package org.eclipse.smarthome.binding.digitalstrom;
 
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.scene.constants.SceneTypes;
 import org.eclipse.smarthome.core.thing.ThingTypeUID;
-import org.eclipse.smarthome.core.thing.type.ChannelTypeUID;
 
 /**
  * The {@link DigitalSTROMBindingConstants} class defines common constants, which are
@@ -28,6 +27,7 @@ public class DigitalSTROMBindingConstants {
     public static final String THING_TYPE_ID_GE_DEVICE = "GE";
     public static final String THING_TYPE_ID_SW_DEVICE = "SW";
     public static final String THING_TYPE_ID_GR_DEVICE = "GR";
+    public static final String THING_TYPE_ID_BL_DEVICE = "BL";
     public static final String THING_TYPE_ID_DS_I_SENSE_200_DEVICE = "dS-iSens200";
 
     // List of all Thing Type UIDs
@@ -36,6 +36,7 @@ public class DigitalSTROMBindingConstants {
     public final static ThingTypeUID THING_TYPE_GE_DEVICE = new ThingTypeUID(BINDING_ID, THING_TYPE_ID_GE_DEVICE);
     public final static ThingTypeUID THING_TYPE_SW_DEVICE = new ThingTypeUID(BINDING_ID, THING_TYPE_ID_SW_DEVICE);
     public final static ThingTypeUID THING_TYPE_GR_DEVICE = new ThingTypeUID(BINDING_ID, THING_TYPE_ID_GR_DEVICE);
+    public final static ThingTypeUID THING_TYPE_BL_DEVICE = new ThingTypeUID(BINDING_ID, THING_TYPE_ID_BL_DEVICE);
     public final static ThingTypeUID THING_TYPE_DS_I_SENSE_200_DEVICE = new ThingTypeUID(BINDING_ID,
             THING_TYPE_ID_DS_I_SENSE_200_DEVICE);
 
@@ -47,61 +48,62 @@ public class DigitalSTROMBindingConstants {
     /* List of all Channels */
 
     // Light
-    public static final String CHANNEL_ID_BRIGHTNESS = "brightness";
-    public static final String CHANNEL_ID_LIGHT_SWITCH = "lightSwitch";
-    public static final String CHANNEL_ID_COMBINED_2_STAGE_SWITCH = "combined2StageSwitch";
-    public static final String CHANNEL_ID_COMBINED_3_STAGE_SWITCH = "combined3StageSwitch";
-
-    public static final ChannelTypeUID CHANNEL_TYPE_BRIGHTNESS = new ChannelTypeUID(BINDING_ID, CHANNEL_ID_BRIGHTNESS);
-    public static final ChannelTypeUID CHANNEL_TYPE_LIGHT_SWITCH = new ChannelTypeUID(BINDING_ID,
-            CHANNEL_ID_LIGHT_SWITCH);
-    public static final ChannelTypeUID CHANNEL_TYPE_COMBINED_2_STAGE_SWITCH = new ChannelTypeUID(BINDING_ID,
-            CHANNEL_ID_COMBINED_2_STAGE_SWITCH);
-    public static final ChannelTypeUID CHANNEL_TYPE_COMBINED_3_STAGE_SWITCH = new ChannelTypeUID(BINDING_ID,
-            CHANNEL_ID_COMBINED_3_STAGE_SWITCH);
-
-    // black
-    public static final String CHANNEL_ID_GENERAL_DIMM = "generalDimm";
-    public static final String CHANNEL_ID_GENERAL_SWITCH = "generalSwitch";
-    public static final String CHANNEL_ID_GENERAL_COMBINED_2_STAGE_SWITCH = "generalCombined2StageSwitch";
-    public static final String CHANNEL_ID_GENERAL_COMBINED_3_STAGE_SWITCH = "generalCombined3StageSwitch";
-
-    public static final ChannelTypeUID CHANNEL_TYPE_GENERAL_DIMM = new ChannelTypeUID(BINDING_ID,
-            CHANNEL_ID_GENERAL_DIMM);
-    public static final ChannelTypeUID CHANNEL_TYPE_GENERAL_SWITCH = new ChannelTypeUID(BINDING_ID,
-            CHANNEL_ID_GENERAL_SWITCH);
-    public static final ChannelTypeUID CHANNEL_TYPE_GENERAL_COMBINED_2_STAGE_SWITCH = new ChannelTypeUID(BINDING_ID,
-            CHANNEL_ID_GENERAL_COMBINED_2_STAGE_SWITCH);
-    public static final ChannelTypeUID CHANNEL_TYPE_GENERAL_COMBINED_3_STAGE_SWITCH = new ChannelTypeUID(BINDING_ID,
-            CHANNEL_ID_GENERAL_COMBINED_3_STAGE_SWITCH);
-
-    // shade
-    public static final String CHANNEL_ID_SHADE = "shade";
-    public static final String CHANNEL_ID_SHADE_ANGLE = "shadeAngle";
-
-    public static final ChannelTypeUID CHANNEL_TYPE_SHADE_ANGLE = new ChannelTypeUID(BINDING_ID,
-            CHANNEL_ID_SHADE_ANGLE);
-
+    /*
+     * public static final String CHANNEL_ID_BRIGHTNESS = "brightness";
+     * public static final String CHANNEL_ID_LIGHT_SWITCH = "lightSwitch";
+     * public static final String CHANNEL_ID_COMBINED_2_STAGE_SWITCH = "combined2StageSwitch";
+     * public static final String CHANNEL_ID_COMBINED_3_STAGE_SWITCH = "combined3StageSwitch";
+     *
+     * public static final ChannelTypeUID CHANNEL_TYPE_BRIGHTNESS = new ChannelTypeUID(BINDING_ID,
+     * CHANNEL_ID_BRIGHTNESS);
+     * public static final ChannelTypeUID CHANNEL_TYPE_LIGHT_SWITCH = new ChannelTypeUID(BINDING_ID,
+     * CHANNEL_ID_LIGHT_SWITCH);
+     * public static final ChannelTypeUID CHANNEL_TYPE_COMBINED_2_STAGE_SWITCH = new ChannelTypeUID(BINDING_ID,
+     * CHANNEL_ID_COMBINED_2_STAGE_SWITCH);
+     * public static final ChannelTypeUID CHANNEL_TYPE_COMBINED_3_STAGE_SWITCH = new ChannelTypeUID(BINDING_ID,
+     * CHANNEL_ID_COMBINED_3_STAGE_SWITCH);
+     *
+     * // black
+     * public static final String CHANNEL_ID_GENERAL_DIMM = "generalDimm";
+     * public static final String CHANNEL_ID_GENERAL_SWITCH = "generalSwitch";
+     * public static final String CHANNEL_ID_GENERAL_COMBINED_2_STAGE_SWITCH = "generalCombined2StageSwitch";
+     * public static final String CHANNEL_ID_GENERAL_COMBINED_3_STAGE_SWITCH = "generalCombined3StageSwitch";
+     *
+     * public static final ChannelTypeUID CHANNEL_TYPE_GENERAL_DIMM = new ChannelTypeUID(BINDING_ID,
+     * CHANNEL_ID_GENERAL_DIMM);
+     * public static final ChannelTypeUID CHANNEL_TYPE_GENERAL_SWITCH = new ChannelTypeUID(BINDING_ID,
+     * CHANNEL_ID_GENERAL_SWITCH);
+     * public static final ChannelTypeUID CHANNEL_TYPE_GENERAL_COMBINED_2_STAGE_SWITCH = new ChannelTypeUID(BINDING_ID,
+     * CHANNEL_ID_GENERAL_COMBINED_2_STAGE_SWITCH);
+     * public static final ChannelTypeUID CHANNEL_TYPE_GENERAL_COMBINED_3_STAGE_SWITCH = new ChannelTypeUID(BINDING_ID,
+     * CHANNEL_ID_GENERAL_COMBINED_3_STAGE_SWITCH);
+     *
+     * // shade
+     * public static final String CHANNEL_ID_SHADE = "shade";
+     * public static final String CHANNEL_ID_SHADE_ANGLE = "shadeAngle";
+     *
+     * public static final ChannelTypeUID CHANNEL_TYPE_SHADE_ANGLE = new ChannelTypeUID(BINDING_ID,
+     * CHANNEL_ID_SHADE_ANGLE);
+     *
+     * // heating
+     * public static final String CHANNEL_ID_HEATING_PWM = "heatingPWM";
+     * public static final String CHANNEL_ID_HEATING_SWITCH = "heatingSwitch";
+     * public static final String CHANNEL_ID_TEMPERATURE_CONTROLLED = "temperatureControlled";
+     *
+     * public static final ChannelTypeUID CHANNEL_TYPE_HEATING_PWM = new ChannelTypeUID(BINDING_ID,
+     * CHANNEL_ID_HEATING_PWM);
+     * public static final ChannelTypeUID CHANNEL_TYPE_HEATING_SWITCH = new ChannelTypeUID(BINDING_ID,
+     * CHANNEL_ID_HEATING_SWITCH);
+     * public static final ChannelTypeUID CHANNEL_TYPE_TEMPERATURE_CONTROLLED = new ChannelTypeUID(BINDING_ID,
+     * CHANNEL_ID_TEMPERATURE_CONTROLLED);
+     */
     // scene
     public static final String CHANNEL_ID_SCENE = "scene";
 
     // sensor
-    /*
-     * public static final String CHANNEL_ID_ELECTRIC_METER = "electricMeter";
-     * public static final String CHANNEL_ID_OUTPUT_CURRENT = "outputCurrent";
-     * public static final String CHANNEL_ID_ACTIVE_POWER = "activePower";
-     */
     public static final String CHANNEL_ID_TOTAL_ACTIVE_POWER = "totalActivePower";
     public static final String CHANNEL_ID_TOTAL_ELECTRIC_METER = "totalElectricMeter";
 
-    /*
-     * public static final ChannelTypeUID CHANNEL_TYPE_ELECTRIC_METER = new ChannelTypeUID(BINDING_ID,
-     * CHANNEL_ID_ELECTRIC_METER);
-     * public static final ChannelTypeUID CHANNEL_TYPE_OUTPUT_CURRENT = new ChannelTypeUID(BINDING_ID,
-     * CHANNEL_ID_OUTPUT_CURRENT);
-     * public static final ChannelTypeUID CHANNEL_TYPE_ACTIVE_POWER = new ChannelTypeUID(BINDING_ID,
-     * CHANNEL_ID_ACTIVE_POWER);
-     */
     // options combined switches
     public static final String OPTION_COMBINED_BOTH_OFF = "0";
     public static final String OPTION_COMBINED_BOTH_ON = "200";
@@ -154,6 +156,7 @@ public class DigitalSTROMBindingConstants {
     public static final String REFRESH_PRIORITY_HIGH = "high";
 
     /* Scene config */
+    // TODO: scene name = property?
     public static final String SCENE_NAME = "sceneName";
     public static final String SCENE_ZONE_ID = "zoneID";
     public static final String SCENE_GROUP_ID = "groupID";

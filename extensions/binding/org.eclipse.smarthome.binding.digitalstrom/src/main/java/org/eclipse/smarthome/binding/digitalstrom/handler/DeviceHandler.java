@@ -24,10 +24,9 @@ import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.DeviceSceneSpec;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.DeviceStateUpdate;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.constants.ChangeableDeviceConfigEnum;
-import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.constants.FunctionalColorGroupEnum;
-import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.constants.OutputModeEnum;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.constants.SensorEnum;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.impl.DeviceStateUpdateImpl;
+import org.eclipse.smarthome.binding.digitalstrom.internal.providers.DsChannelTypeProvider;
 import org.eclipse.smarthome.config.core.Configuration;
 import org.eclipse.smarthome.core.library.types.DecimalType;
 import org.eclipse.smarthome.core.library.types.IncreaseDecreaseType;
@@ -75,7 +74,7 @@ public class DeviceHandler extends BaseThingHandler implements DeviceStatusListe
     public final static Set<ThingTypeUID> SUPPORTED_THING_TYPES = Sets.newHashSet(
             DigitalSTROMBindingConstants.THING_TYPE_GE_DEVICE, DigitalSTROMBindingConstants.THING_TYPE_SW_DEVICE,
             DigitalSTROMBindingConstants.THING_TYPE_GR_DEVICE,
-            DigitalSTROMBindingConstants.THING_TYPE_DS_I_SENSE_200_DEVICE);
+            DigitalSTROMBindingConstants.THING_TYPE_DS_I_SENSE_200_DEVICE, THING_TYPE_BL_DEVICE);
 
     private String dSID = null;
 
@@ -86,10 +85,6 @@ public class DeviceHandler extends BaseThingHandler implements DeviceStatusListe
     private Command lastComand = null;
 
     private String currentChannel = null;
-
-    // private boolean isActivePowerChannelLoaded = false;
-    // private boolean isOutputCurrentChannelLoaded = false;
-    // private boolean isElectricMeterChannelLoaded = false;
 
     public DeviceHandler(Thing thing) {
         super(thing);
@@ -198,7 +193,7 @@ public class DeviceHandler extends BaseThingHandler implements DeviceStatusListe
                         new DeviceStateUpdateImpl(DeviceStateUpdate.REFRESH_OUTPUT, 0));
             }
         } else if (!device.isShade()) {
-            if (this.channelIsOutputChannel(channelUID.getId())) {
+            if (DsChannelTypeProvider.isOutputChannel(channelUID.getId())) {
                 if (command instanceof PercentType) {
                     device.setOutputValue(
                             (short) fromPercentToValue(((PercentType) command).intValue(), device.getMaxOutputValue()));
@@ -221,7 +216,7 @@ public class DeviceHandler extends BaseThingHandler implements DeviceStatusListe
                 logger.warn("Command sent to an unknown channel id: " + channelUID);
             }
         } else {
-            if (channelUID.getId().equals(CHANNEL_ID_SHADE_ANGLE)) {
+            if (channelUID.getId().contains(DsChannelTypeProvider.ANGLE)) {
                 if (command instanceof PercentType) {
                     device.setAnglePosition(
                             (short) fromPercentToValue(((PercentType) command).intValue(), device.getMaxSlatAngle()));
@@ -238,7 +233,7 @@ public class DeviceHandler extends BaseThingHandler implements DeviceStatusListe
                         device.decreaseSlatAngle();
                     }
                 }
-            } else if (channelUID.getId().equals(DigitalSTROMBindingConstants.CHANNEL_ID_SHADE)) {
+            } else if (channelUID.getId().contains(DsChannelTypeProvider.SHADE)) {
                 if (command instanceof PercentType) {
                     int percent = ((PercentType) command).intValue();
                     if (!device.getHWinfo().equals("GR-KL200")) {
@@ -315,49 +310,36 @@ public class DeviceHandler extends BaseThingHandler implements DeviceStatusListe
                         case DeviceStateUpdate.UPDATE_BRIGHTNESS_DECREASE:
                         case DeviceStateUpdate.UPDATE_BRIGHTNESS_INCREASE:
                         case DeviceStateUpdate.UPDATE_BRIGHTNESS:
-                            switch (currentChannel) {
-                                case CHANNEL_ID_COMBINED_2_STAGE_SWITCH:
-                                case CHANNEL_ID_GENERAL_COMBINED_2_STAGE_SWITCH:
+                            if (currentChannel.contains(DsChannelTypeProvider.DIMMER)) {
+                                if (deviceStateUpdate.getValueAsInteger() > 0) {
+                                    updateState(new ChannelUID(getThing().getUID(), currentChannel),
+                                            new PercentType(fromValueToPercent(deviceStateUpdate.getValueAsInteger(),
+                                                    device.getMaxOutputValue())));
+                                } else {
+                                    updateState(new ChannelUID(getThing().getUID(), currentChannel), OnOffType.OFF);
+                                }
+                            }
+                            if (currentChannel.contains(DsChannelTypeProvider.STAGE)) {
+                                if (currentChannel.contains("2")) {
                                     updateState(new ChannelUID(getThing().getUID(), currentChannel),
                                             new StringType(convertStageValue((short) 2, device.getOutputValue())));
-                                    break;
-                                case CHANNEL_ID_COMBINED_3_STAGE_SWITCH:
-                                case CHANNEL_ID_GENERAL_COMBINED_3_STAGE_SWITCH:
+                                } else {
                                     updateState(new ChannelUID(getThing().getUID(), currentChannel),
                                             new StringType(convertStageValue((short) 3, device.getOutputValue())));
-                                    break;
-                                case CHANNEL_ID_BRIGHTNESS:
-                                case CHANNEL_ID_GENERAL_DIMM:
-                                    if (deviceStateUpdate.getValueAsInteger() > 0) {
-                                        updateState(new ChannelUID(getThing().getUID(), currentChannel),
-                                                new PercentType(
-                                                        fromValueToPercent(deviceStateUpdate.getValueAsInteger(),
-                                                                device.getMaxOutputValue())));
-                                    } else {
-                                        updateState(new ChannelUID(getThing().getUID(), currentChannel), OnOffType.OFF);
-                                    }
-                                    break;
+                                }
                             }
                             break;
                         case DeviceStateUpdate.UPDATE_ON_OFF:
-                            switch (currentChannel) {
-                                case CHANNEL_ID_COMBINED_2_STAGE_SWITCH:
-                                case CHANNEL_ID_GENERAL_COMBINED_2_STAGE_SWITCH:
-                                    updateState(new ChannelUID(getThing().getUID(), currentChannel),
-                                            new StringType(convertStageValue((short) 2, device.getOutputValue())));
-                                    break;
-                                case CHANNEL_ID_COMBINED_3_STAGE_SWITCH:
-                                case CHANNEL_ID_GENERAL_COMBINED_3_STAGE_SWITCH:
-                                    updateState(new ChannelUID(getThing().getUID(), currentChannel),
-                                            new StringType(convertStageValue((short) 3, device.getOutputValue())));
-                                    break;
-                                default:
-                                    if (deviceStateUpdate.getValueAsInteger() > 0) {
-                                        updateState(new ChannelUID(getThing().getUID(), currentChannel), OnOffType.ON);
-                                    } else {
-                                        updateState(new ChannelUID(getThing().getUID(), currentChannel), OnOffType.OFF);
-                                    }
+                            if (currentChannel.contains(DsChannelTypeProvider.STAGE)) {
+                                onDeviceStateChanged(new DeviceStateUpdateImpl(DeviceStateUpdate.UPDATE_BRIGHTNESS,
+                                        device.getOutputValue()));
                             }
+                            if (deviceStateUpdate.getValueAsInteger() > 0) {
+                                updateState(new ChannelUID(getThing().getUID(), currentChannel), OnOffType.ON);
+                            } else {
+                                updateState(new ChannelUID(getThing().getUID(), currentChannel), OnOffType.OFF);
+                            }
+                            // }
                             break;
                         default:
                             return;
@@ -379,10 +361,10 @@ public class DeviceHandler extends BaseThingHandler implements DeviceStatusListe
                         case DeviceStateUpdate.UPDATE_OPEN_CLOSE_ANGLE:
                             if (device.isBlind()) {
                                 if (deviceStateUpdate.getValueAsInteger() > 0) {
-                                    updateState(new ChannelUID(getThing().getUID(), CHANNEL_ID_SHADE_ANGLE),
+                                    updateState(new ChannelUID(getThing().getUID(), currentChannel),
                                             PercentType.HUNDRED);
                                 } else {
-                                    updateState(new ChannelUID(getThing().getUID(), CHANNEL_ID_SHADE_ANGLE),
+                                    updateState(new ChannelUID(getThing().getUID(), currentChannel), // CHANNEL_ID_SHADE_ANGLE
                                             PercentType.ZERO);
                                 }
                             }
@@ -390,7 +372,7 @@ public class DeviceHandler extends BaseThingHandler implements DeviceStatusListe
                         case DeviceStateUpdate.UPDATE_SLAT_ANGLE_DECREASE:
                         case DeviceStateUpdate.UPDATE_SLAT_ANGLE_INCREASE:
                         case DeviceStateUpdate.UPDATE_SLAT_ANGLE:
-                            updateState(new ChannelUID(getThing().getUID(), CHANNEL_ID_SHADE_ANGLE),
+                            updateState(new ChannelUID(getThing().getUID(), currentChannel),
                                     new PercentType(fromValueToPercent(deviceStateUpdate.getValueAsInteger(),
                                             device.getMaxSlatAngle())));
                             return;
@@ -400,7 +382,8 @@ public class DeviceHandler extends BaseThingHandler implements DeviceStatusListe
                     if (!device.getHWinfo().equals("GR-KL210")) {
                         percent = 100 - percent;
                     }
-                    updateState(new ChannelUID(getThing().getUID(), CHANNEL_ID_SHADE), new PercentType(percent));
+                    updateState(new ChannelUID(getThing().getUID(), DsChannelTypeProvider.SHADE),
+                            new PercentType(percent));
                 }
             }
         }
@@ -456,7 +439,10 @@ public class DeviceHandler extends BaseThingHandler implements DeviceStatusListe
                     checkOutputChannel();
                 } else if (this.device.isBlind()) {
                     // load channel for set the angle of jalousie devices
-                    loadOutputChannel(CHANNEL_TYPE_SHADE_ANGLE, "Dimmer");
+                    String channelTypeID = DsChannelTypeProvider.getOutputChannelTypeID(
+                            ((Device) device).getFunctionalColorGroup(), ((Device) device).getOutputMode());
+                    loadOutputChannel(new ChannelTypeUID(BINDING_ID, channelTypeID),
+                            DsChannelTypeProvider.getItemType(channelTypeID));
                 }
 
                 // load first channel values
@@ -612,41 +598,6 @@ public class DeviceHandler extends BaseThingHandler implements DeviceStatusListe
                         } else {
                             addLoadedSensorChannel(sensorType);
                         }
-                        /*
-                         * switch (sensorType) {
-                         * case ACTIVE_POWER:
-                         * if (device.checkPowerSensorRefreshPriorityNever(sensorType)) {
-                         * logger.debug("remove {} sensor channel", sensorType.toString());
-                         * channelInter.remove();
-                         * channelListChanged = removeLoadedSensorChannel(sensorType);// true;
-                         * } else {
-                         * addLoadedSensorChannel(sensorType);
-                         * }
-                         * break;
-                         * case OUTPUT_CURRENT:
-                         * if (outputCurrentPrio.equals(REFRESH_PRIORITY_NEVER)) {
-                         * logger.debug("remove output current sensor channel");
-                         * channelInter.remove();
-                         * isOutputCurrentChannelLoaded = false;
-                         * channelListChanged = true;
-                         * } else {
-                         * isOutputCurrentChannelLoaded = true;
-                         * }
-                         * break;
-                         * case ELECTRIC_METER:
-                         * if (electricMeterPrio.equals(REFRESH_PRIORITY_NEVER)) {
-                         * logger.debug("remove eclectric meter sensor channel");
-                         * channelInter.remove();
-                         * isElectricMeterChannelLoaded = false;
-                         * channelListChanged = true;
-                         * } else {
-                         * isElectricMeterChannelLoaded = true;
-                         * }
-                         * break;
-                         * default:
-                         * break;
-                         * }
-                         */
                     } else {
                         if (device.containsSensorType(sensorType)) {
                             addLoadedSensorChannel(sensorType);
@@ -686,7 +637,7 @@ public class DeviceHandler extends BaseThingHandler implements DeviceStatusListe
     }
 
     private Channel getSensorChannel(SensorEnum sensorType) {
-        return ChannelBuilder.create(new ChannelUID(this.getThing().getUID(), sensorType.toString()), "Number")
+        return ChannelBuilder.create(getSensorChannelUID(sensorType), "Number")
                 .withType(new ChannelTypeUID(BINDING_ID, sensorType.toString())).build();
     }
 
@@ -699,33 +650,14 @@ public class DeviceHandler extends BaseThingHandler implements DeviceStatusListe
         if (!device.isDeviceWithOutput()) {
             loadOutputChannel(null, null);
         }
-
-        if (device.getFunctionalColorGroup().equals(FunctionalColorGroupEnum.YELLOW)) {
-            if (device.isDimmable() && (currentChannel == null || currentChannel != CHANNEL_ID_BRIGHTNESS)) {
-                loadOutputChannel(CHANNEL_TYPE_BRIGHTNESS, "Dimmer");
-            } else if (device.isSwitch() && (currentChannel != null || currentChannel != CHANNEL_ID_LIGHT_SWITCH)) {
-                loadOutputChannel(CHANNEL_TYPE_LIGHT_SWITCH, "Switch");
-            } else if (device.getOutputMode().equals(OutputModeEnum.COMBINED_2_STAGE_SWITCH)
-                    && (currentChannel != null || currentChannel != CHANNEL_ID_COMBINED_2_STAGE_SWITCH)) {
-                loadOutputChannel(CHANNEL_TYPE_COMBINED_2_STAGE_SWITCH, "String");
-            } else if (device.getOutputMode().equals(OutputModeEnum.COMBINED_3_STAGE_SWITCH)
-                    && (currentChannel != null || currentChannel != CHANNEL_ID_COMBINED_3_STAGE_SWITCH)) {
-                loadOutputChannel(CHANNEL_TYPE_COMBINED_3_STAGE_SWITCH, "String");
-            }
-        } else {
-            if (device.isDimmable() && (currentChannel == null || currentChannel != CHANNEL_ID_GENERAL_DIMM)) {
-                loadOutputChannel(CHANNEL_TYPE_GENERAL_DIMM, "Dimmer");
-            } else if (device.isSwitch() && (currentChannel != null || currentChannel != CHANNEL_ID_GENERAL_SWITCH)) {
-                loadOutputChannel(CHANNEL_TYPE_GENERAL_SWITCH, "Switch");
-            } else if (device.getOutputMode().equals(OutputModeEnum.COMBINED_2_STAGE_SWITCH)
-                    && (currentChannel != null || currentChannel != CHANNEL_ID_GENERAL_COMBINED_2_STAGE_SWITCH)) {
-                loadOutputChannel(CHANNEL_TYPE_GENERAL_COMBINED_2_STAGE_SWITCH, "String");
-            } else if (device.getOutputMode().equals(OutputModeEnum.COMBINED_3_STAGE_SWITCH)
-                    && (currentChannel != null || currentChannel != CHANNEL_ID_GENERAL_COMBINED_3_STAGE_SWITCH)) {
-                loadOutputChannel(CHANNEL_TYPE_GENERAL_COMBINED_3_STAGE_SWITCH, "String");
-            } else {
-                loadOutputChannel(null, null);
-            }
+        String channelTypeID = DsChannelTypeProvider.getOutputChannelTypeID(device.getFunctionalColorGroup(),
+                device.getOutputMode());
+        logger.debug("load channel: typeID="
+                + DsChannelTypeProvider.getOutputChannelTypeID(device.getFunctionalColorGroup(), device.getOutputMode())
+                + ", itemType=" + DsChannelTypeProvider.getItemType(channelTypeID));
+        if (channelTypeID != null && (currentChannel == null || currentChannel != channelTypeID)) {
+            loadOutputChannel(new ChannelTypeUID(BINDING_ID, channelTypeID),
+                    DsChannelTypeProvider.getItemType(channelTypeID));
         }
     }
 
@@ -741,12 +673,15 @@ public class DeviceHandler extends BaseThingHandler implements DeviceStatusListe
                 Iterator<Channel> channelInter = channelList.iterator();
                 while (channelInter.hasNext()) {
                     Channel eshChannel = channelInter.next();
-                    if (channelIsOutputChannel(eshChannel.getUID().getId())) {
-                        if (!eshChannel.getUID().getId().equals(currentChannel)) {
+                    if (DsChannelTypeProvider.isOutputChannel(eshChannel.getUID().getId())) {
+                        if (!eshChannel.getUID().getId().equals(currentChannel) && !(device.isShade()
+                                && eshChannel.getUID().getId().equals(DsChannelTypeProvider.SHADE))) {
                             channelInter.remove();
                             channelListChanged = true;
                         } else {
-                            channelIsAlreadyLoaded = true;
+                            if (!device.isShade()) {
+                                channelIsAlreadyLoaded = true;
+                            }
                         }
                     }
                 }
@@ -770,23 +705,6 @@ public class DeviceHandler extends BaseThingHandler implements DeviceStatusListe
 
     }
 
-    private boolean channelIsOutputChannel(String id) {
-        switch (id) {
-            case CHANNEL_ID_GENERAL_DIMM:
-            case CHANNEL_ID_GENERAL_SWITCH:
-            case CHANNEL_ID_BRIGHTNESS:
-            case CHANNEL_ID_LIGHT_SWITCH:
-            case CHANNEL_ID_SHADE_ANGLE:
-            case CHANNEL_ID_GENERAL_COMBINED_2_STAGE_SWITCH:
-            case CHANNEL_ID_GENERAL_COMBINED_3_STAGE_SWITCH:
-            case CHANNEL_ID_COMBINED_2_STAGE_SWITCH:
-            case CHANNEL_ID_COMBINED_3_STAGE_SWITCH:
-                return true;
-            default:
-                return false;
-        }
-    }
-
     private ChannelUID getSensorChannelUID(SensorEnum sensorType) {
         return new ChannelUID(getThing().getUID(), sensorType.toString());
     }
@@ -801,86 +719,42 @@ public class DeviceHandler extends BaseThingHandler implements DeviceStatusListe
                     updateState(getSensorChannelUID(sensorType), new DecimalType(val));
                 }
             } catch (IllegalArgumentException e) {
-                switch (channelUID.getId()) {
-                    case CHANNEL_ID_GENERAL_DIMM:
-                        if (device.isOn()) {
-                            updateState(new ChannelUID(getThing().getUID(), CHANNEL_ID_GENERAL_DIMM), new PercentType(
-                                    fromValueToPercent(device.getOutputValue(), device.getMaxOutputValue())));
-                        } else {
-                            updateState(new ChannelUID(getThing().getUID(), CHANNEL_ID_GENERAL_DIMM),
-                                    new PercentType(0));
-                        }
-                        break;
-                    case CHANNEL_ID_GENERAL_SWITCH:
-                        if (device.isOn()) {
-                            updateState(new ChannelUID(getThing().getUID(), CHANNEL_ID_GENERAL_SWITCH), OnOffType.ON);
-                        } else {
-                            updateState(new ChannelUID(getThing().getUID(), CHANNEL_ID_GENERAL_SWITCH), OnOffType.OFF);
-                        }
-                        break;
-                    case CHANNEL_ID_BRIGHTNESS:
-                        if (device.isOn()) {
-                            updateState(new ChannelUID(getThing().getUID(), CHANNEL_ID_BRIGHTNESS), new PercentType(
-                                    fromValueToPercent(device.getOutputValue(), device.getMaxOutputValue())));
-                        } else {
-                            updateState(new ChannelUID(getThing().getUID(), CHANNEL_ID_BRIGHTNESS), new PercentType(0));
-                        }
-                    case CHANNEL_ID_LIGHT_SWITCH:
-                        if (device.isOn()) {
-                            updateState(new ChannelUID(getThing().getUID(), CHANNEL_ID_LIGHT_SWITCH), OnOffType.ON);
-                        } else {
-                            updateState(new ChannelUID(getThing().getUID(), CHANNEL_ID_LIGHT_SWITCH), OnOffType.OFF);
-                        }
-                        break;
-                    case CHANNEL_ID_SHADE:
-                        updateState(new ChannelUID(getThing().getUID(), CHANNEL_ID_SHADE), new PercentType(
-                                fromValueToPercent(device.getSlatPosition(), device.getMaxSlatPosition())));
-                        break;
-                    case CHANNEL_ID_SHADE_ANGLE:
-                        updateState(new ChannelUID(getThing().getUID(), CHANNEL_ID_SHADE_ANGLE), new PercentType(
-                                fromValueToPercent(device.getAnglePosition(), device.getMaxSlatAngle())));
-                        break;
-                    /*
-                     * case CHANNEL_ID_ELECTRIC_METER:
-                     * Float val = device.getFloatSensorValue(SensorEnum.ELECTRIC_METER);
-                     * if (val != null) {
-                     * updateState(new ChannelUID(getThing().getUID(), CHANNEL_ID_ELECTRIC_METER),
-                     * new DecimalType(val));
-                     * }
-                     * break;
-                     * case CHANNEL_ID_OUTPUT_CURRENT:
-                     * val = device.getFloatSensorValue(SensorEnum.OUTPUT_CURRENT);
-                     * if (val != null) {
-                     * updateState(new ChannelUID(getThing().getUID(), CHANNEL_ID_OUTPUT_CURRENT),
-                     * new DecimalType(val.intValue()));
-                     * }
-                     * break;
-                     * case CHANNEL_ID_ACTIVE_POWER:
-                     * val = device.getFloatSensorValue(SensorEnum.ACTIVE_POWER);
-                     * if (val != null) {
-                     * updateState(new ChannelUID(getThing().getUID(), CHANNEL_ID_ACTIVE_POWER),
-                     * new DecimalType(val.intValue()));
-                     * }
-                     * break;
-                     */
-                    case CHANNEL_ID_GENERAL_COMBINED_2_STAGE_SWITCH:
-                        updateState(new ChannelUID(getThing().getUID(), CHANNEL_ID_GENERAL_COMBINED_2_STAGE_SWITCH),
-                                new StringType(convertStageValue((short) 2, device.getOutputValue())));
-                        break;
-                    case CHANNEL_ID_GENERAL_COMBINED_3_STAGE_SWITCH:
-                        updateState(new ChannelUID(getThing().getUID(), CHANNEL_ID_GENERAL_COMBINED_3_STAGE_SWITCH),
-                                new StringType(convertStageValue((short) 3, device.getOutputValue())));
-                        break;
-                    case CHANNEL_ID_COMBINED_2_STAGE_SWITCH:
-                        updateState(new ChannelUID(getThing().getUID(), CHANNEL_ID_COMBINED_2_STAGE_SWITCH),
-                                new StringType(convertStageValue((short) 2, device.getOutputValue())));
-                        break;
-                    case CHANNEL_ID_COMBINED_3_STAGE_SWITCH:
-                        updateState(new ChannelUID(getThing().getUID(), CHANNEL_ID_COMBINED_3_STAGE_SWITCH),
-                                new StringType(convertStageValue((short) 3, device.getOutputValue())));
-                        break;
-                    default:
+                if (channelUID.getId().contains(DsChannelTypeProvider.DIMMER)) {
+                    if (device.isOn()) {
+                        updateState(channelUID, new PercentType(
+                                fromValueToPercent(device.getOutputValue(), device.getMaxOutputValue())));
+                    } else {
+                        updateState(channelUID, new PercentType(0));
+                    }
+                    return;
+                }
+                if (channelUID.getId().contains(DsChannelTypeProvider.SWITCH)) {
+                    if (device.isOn()) {
+                        updateState(channelUID, OnOffType.ON);
+                    } else {
+                        updateState(channelUID, OnOffType.OFF);
+                    }
+                    return;
+                }
+                if (channelUID.getId().contains(DsChannelTypeProvider.SHADE)) {
+                    updateState(channelUID,
+                            new PercentType(fromValueToPercent(device.getSlatPosition(), device.getMaxSlatPosition())));
+                    return;
+                }
+                if (channelUID.getId().contains(DsChannelTypeProvider.ANGLE)) {
+                    updateState(channelUID,
+                            new PercentType(fromValueToPercent(device.getAnglePosition(), device.getMaxSlatAngle())));
+                    return;
+                }
+                if (channelUID.getId().contains(DsChannelTypeProvider.STAGE)) {
+                    if (channelUID.getId().contains("2")) {
+                        updateState(channelUID, new StringType(convertStageValue((short) 2, device.getOutputValue())));
                         return;
+                    }
+                    if (channelUID.getId().contains("2")) {
+                        updateState(channelUID, new StringType(convertStageValue((short) 3, device.getOutputValue())));
+                        return;
+                    }
                 }
             }
         }
@@ -927,8 +801,8 @@ public class DeviceHandler extends BaseThingHandler implements DeviceStatusListe
                     }
                 }
             } else {
-                if (isLinked(CHANNEL_ID_SHADE)) {
-                    channelLinked(new ChannelUID(getThing().getUID(), CHANNEL_ID_SHADE));
+                if (isLinked(DsChannelTypeProvider.SHADE)) {
+                    channelLinked(new ChannelUID(getThing().getUID(), DsChannelTypeProvider.SHADE));
                 }
             }
         }

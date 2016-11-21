@@ -633,4 +633,6 @@ public interface Device extends GeneralDeviceInformations {
     boolean checkPowerSensorRefreshPriorityNever(SensorEnum powerSensorType);
 
     boolean containsSensorType(SensorEnum sensorType);
+
+    boolean isTemperatureControlledDevice();
 }
