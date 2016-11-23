@@ -203,6 +203,7 @@ public class DsAPIImpl implements DsAPI {
 
             JsonObject responseObj = JSONResponseHandler.toJsonObject(response);
             if (JSONResponseHandler.checkResponse(responseObj)) {
+                responseObj = JSONResponseHandler.getResultJsonObject(responseObj);
                 if (responseObj.get(JSONApiResponseKeysEnum.CIRCUITS.getKey()).isJsonArray()) {
                     JsonArray array = responseObj.get(JSONApiResponseKeysEnum.CIRCUITS.getKey()).getAsJsonArray();
 

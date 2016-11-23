@@ -2,13 +2,17 @@ package org.eclipse.smarthome.binding.digitalstrom.internal.providers;
 
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
 
 import org.eclipse.smarthome.binding.digitalstrom.DigitalSTROMBindingConstants;
+import org.eclipse.smarthome.binding.digitalstrom.handler.CircuitHandler;
 import org.eclipse.smarthome.binding.digitalstrom.handler.DeviceHandler;
+import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.constants.MeteringTypeEnum;
+import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.constants.MeteringUnitsEnum;
 import org.eclipse.smarthome.core.i18n.I18nProvider;
 import org.eclipse.smarthome.core.thing.ThingTypeUID;
 import org.eclipse.smarthome.core.thing.binding.ThingTypeProvider;
@@ -24,13 +28,14 @@ import com.google.common.collect.Lists;
 
 public class DsDeviceThingTypeProvider implements ThingTypeProvider {
 
-    private enum SupportedThingTypes {
+    public static enum SupportedThingTypes {
         // ThingType, responsible ThingHanlder, Device config-description with power-sensors
         GE(DeviceHandler.class.getSimpleName(), true),
         GR(DeviceHandler.class.getSimpleName(), false),
         SW(DeviceHandler.class.getSimpleName(), true),
         BL(DeviceHandler.class.getSimpleName(), true),
-        dSiSens200(DeviceHandler.class.getSimpleName(), false);
+        dSiSens200(DeviceHandler.class.getSimpleName(), false),
+        circuit(CircuitHandler.class.getSimpleName(), false);
 
         private final String handler;
         private final boolean havePowerSensors;
@@ -71,6 +76,10 @@ public class DsDeviceThingTypeProvider implements ThingTypeProvider {
                 DeviceHandler.SUPPORTED_THING_TYPES
                         .add(new ThingTypeUID(DigitalSTROMBindingConstants.BINDING_ID, supportedThingType.toString()));
             }
+            if (supportedThingType.handler.equals(CircuitHandler.class.getSimpleName())) {
+                CircuitHandler.SUPPORTED_THING_TYPES
+                        .add(new ThingTypeUID(DigitalSTROMBindingConstants.BINDING_ID, supportedThingType.toString()));
+            }
         }
     }
 
@@ -106,6 +115,17 @@ public class DsDeviceThingTypeProvider implements ThingTypeProvider {
             if (SupportedThingTypes.GR.equals(supportedThingType)) {
                 channelDefinitions = Lists.newArrayList(new ChannelDefinition(DsChannelTypeProvider.SHADE,
                         new ChannelTypeUID(DigitalSTROMBindingConstants.BINDING_ID, DsChannelTypeProvider.SHADE)));
+            }
+            if (SupportedThingTypes.circuit.equals(supportedThingType)) {
+                channelDefinitions = new ArrayList<ChannelDefinition>(3);
+                for (MeteringTypeEnum meteringType : MeteringTypeEnum.values()) {
+                    for (MeteringUnitsEnum meteringUnit : meteringType.getMeteringUnitList()) {
+                        channelDefinitions
+                                .add(new ChannelDefinition(meteringType.toString() + "_" + meteringUnit.toString(),
+                                        new ChannelTypeUID(DigitalSTROMBindingConstants.BINDING_ID,
+                                                meteringType.toString() + "_" + meteringUnit.toString())));
+                    }
+                }
             }
 
             return new ThingType(thingTypeUID,

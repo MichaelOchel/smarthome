@@ -194,9 +194,11 @@ public interface StructureManager {
 
     Circuit addCircuit(Circuit circuit);
 
-    Circuit getCircuit(DSID dSID);
+    Circuit getCircuitByDSID(DSID dSID);
 
-    Circuit getCircuit(String dSUID);
+    Circuit getCircuitByDSID(String dSID);
+
+    Circuit getCircuitByDSUID(String dSUID);
 
     Circuit updateCircuitConfig(Circuit newCircuit);
 

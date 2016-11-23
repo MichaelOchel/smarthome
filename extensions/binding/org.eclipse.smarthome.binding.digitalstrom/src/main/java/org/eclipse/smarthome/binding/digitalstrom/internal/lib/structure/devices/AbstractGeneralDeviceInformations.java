@@ -25,6 +25,8 @@ public abstract class AbstractGeneralDeviceInformations implements GeneralDevice
             dsid = new DSID(jsonDeviceObject.get(JSONApiResponseKeysEnum.ID.getKey()).getAsString());
         } else if (jsonDeviceObject.get(JSONApiResponseKeysEnum.DSID.getKey()) != null) {
             dsid = new DSID(jsonDeviceObject.get(JSONApiResponseKeysEnum.DSID.getKey()).getAsString());
+        } else if (jsonDeviceObject.get(JSONApiResponseKeysEnum.DSID_LOWER_CASE.getKey()) != null) {
+            dsid = new DSID(jsonDeviceObject.get(JSONApiResponseKeysEnum.DSID_LOWER_CASE.getKey()).getAsString());
         }
         if (jsonDeviceObject.get(JSONApiResponseKeysEnum.DSUID.getKey()) != null) {
             dSUID = jsonDeviceObject.get(JSONApiResponseKeysEnum.DSUID.getKey()).getAsString();
@@ -93,7 +95,7 @@ public abstract class AbstractGeneralDeviceInformations implements GeneralDevice
     }
 
     @Override
-    public void registerDeviceStateListener(DeviceStatusListener listener) {
+    public void registerDeviceStatusListener(DeviceStatusListener listener) {
         if (listener != null) {
             this.listener = listener;
             listener.onDeviceAdded(this);
@@ -101,7 +103,7 @@ public abstract class AbstractGeneralDeviceInformations implements GeneralDevice
     }
 
     @Override
-    public DeviceStatusListener unregisterDeviceStateListener() {
+    public DeviceStatusListener unregisterDeviceStatusListener() {
         DeviceStatusListener listener = this.listener;
         this.listener = null;
         return listener;
@@ -109,7 +111,92 @@ public abstract class AbstractGeneralDeviceInformations implements GeneralDevice
 
     @Override
     public boolean isListenerRegisterd() {
-        return (listener != null);
+        return listener != null;
+    }
+
+    @Override
+    public DeviceStatusListener getDeviceStatusListener() {
+        return listener;
+    }
+
+    /*
+     * (non-Javadoc)
+     *
+     * @see java.lang.Object#hashCode()
+     */
+    @Override
+    public int hashCode() {
+        final int prime = 31;
+        int result = 1;
+        result = prime * result + ((dSUID == null) ? 0 : dSUID.hashCode());
+        result = prime * result + ((displayID == null) ? 0 : displayID.hashCode());
+        result = prime * result + ((dsid == null) ? 0 : dsid.hashCode());
+        result = prime * result + ((isPresent == null) ? 0 : isPresent.hashCode());
+        result = prime * result + ((isValide == null) ? 0 : isValide.hashCode());
+        result = prime * result + ((name == null) ? 0 : name.hashCode());
+        return result;
+    }
+
+    /*
+     * (non-Javadoc)
+     *
+     * @see java.lang.Object#equals(java.lang.Object)
+     */
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) {
+            return true;
+        }
+        if (obj == null) {
+            return false;
+        }
+        if (!(obj instanceof AbstractGeneralDeviceInformations)) {
+            return false;
+        }
+        AbstractGeneralDeviceInformations other = (AbstractGeneralDeviceInformations) obj;
+        if (dSUID == null) {
+            if (other.dSUID != null) {
+                return false;
+            }
+        } else if (!dSUID.equals(other.dSUID)) {
+            return false;
+        }
+        if (displayID == null) {
+            if (other.displayID != null) {
+                return false;
+            }
+        } else if (!displayID.equals(other.displayID)) {
+            return false;
+        }
+        if (dsid == null) {
+            if (other.dsid != null) {
+                return false;
+            }
+        } else if (!dsid.equals(other.dsid)) {
+            return false;
+        }
+        if (isPresent == null) {
+            if (other.isPresent != null) {
+                return false;
+            }
+        } else if (!isPresent.equals(other.isPresent)) {
+            return false;
+        }
+        if (isValide == null) {
+            if (other.isValide != null) {
+                return false;
+            }
+        } else if (!isValide.equals(other.isValide)) {
+            return false;
+        }
+        if (name == null) {
+            if (other.name != null) {
+                return false;
+            }
+        } else if (!name.equals(other.name)) {
+            return false;
+        }
+        return true;
     }
 
     @Override

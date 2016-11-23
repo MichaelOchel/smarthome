@@ -7,13 +7,30 @@
  */
 package org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.constants;
 
+import java.util.List;
+
+import com.google.common.collect.Lists;
+
 /**
  * The {@link MeteringTypeEnum} lists all available digitalSTROM metering types.
  *
  * @author Alexander Betker
+ * @author Michael Ochel - add MeteringUnitEnum list
+ * @author Matthias Siegele - add MeteringUnitEnum list
  */
 public enum MeteringTypeEnum {
-    energy,
-    energyDelta,
-    consumption;
+    energy(Lists.newArrayList(MeteringUnitsEnum.Wh, MeteringUnitsEnum.Ws)),
+    // currently null by request getLast
+    // energyDelta(Lists.newArrayList(MeteringUnitsEnum.Wh, MeteringUnitsEnum.Ws)),
+    consumption(Lists.newArrayList(MeteringUnitsEnum.Wh));
+
+    public final List<MeteringUnitsEnum> meteringUnits;
+
+    private MeteringTypeEnum(List<MeteringUnitsEnum> meteringUnits) {
+        this.meteringUnits = meteringUnits;
+    }
+
+    public List<MeteringUnitsEnum> getMeteringUnitList() {
+        return meteringUnits;
+    }
 }

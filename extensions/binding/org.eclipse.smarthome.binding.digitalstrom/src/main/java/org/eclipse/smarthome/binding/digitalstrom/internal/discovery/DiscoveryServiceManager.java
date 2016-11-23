@@ -12,14 +12,18 @@ import java.util.Hashtable;
 import java.util.Map;
 
 import org.eclipse.smarthome.binding.digitalstrom.handler.BridgeHandler;
+import org.eclipse.smarthome.binding.digitalstrom.handler.CircuitHandler;
 import org.eclipse.smarthome.binding.digitalstrom.handler.DeviceHandler;
 import org.eclipse.smarthome.binding.digitalstrom.handler.SceneHandler;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.listener.DeviceStatusListener;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.listener.SceneStatusListener;
+import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.AbstractGeneralDeviceInformations;
+import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.Circuit;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.Device;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.DeviceStateUpdate;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.constants.ChangeableDeviceConfigEnum;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.scene.InternalScene;
+import org.eclipse.smarthome.binding.digitalstrom.internal.providers.DsDeviceThingTypeProvider;
 import org.eclipse.smarthome.config.discovery.AbstractDiscoveryService;
 import org.eclipse.smarthome.config.discovery.DiscoveryService;
 import org.eclipse.smarthome.core.thing.ThingTypeUID;
@@ -55,6 +59,9 @@ public class DiscoveryServiceManager implements SceneStatusListener, DeviceStatu
             discoveryServices.put(type.getId(), new SceneDiscoveryService(bridgeHandler, type));
         }
         for (ThingTypeUID type : DeviceHandler.SUPPORTED_THING_TYPES) {
+            discoveryServices.put(type.getId(), new DeviceDiscoveryService(bridgeHandler, type));
+        }
+        for (ThingTypeUID type : CircuitHandler.SUPPORTED_THING_TYPES) {
             discoveryServices.put(type.getId(), new DeviceDiscoveryService(bridgeHandler, type));
         }
         bridgeHandler.registerSceneStatusListener(this);
@@ -145,7 +152,8 @@ public class DiscoveryServiceManager implements SceneStatusListener, DeviceStatu
         if (device instanceof Device) {
             String id = ((Device) device).getHWinfo().substring(0, 2);
             if (discoveryServices.get(id) != null) {
-                ((DeviceDiscoveryService) discoveryServices.get(id)).onDeviceRemoved((Device) device);
+                ((DeviceDiscoveryService) discoveryServices.get(id))
+                        .onDeviceRemoved((AbstractGeneralDeviceInformations) device);
             }
         }
     }
@@ -158,7 +166,15 @@ public class DiscoveryServiceManager implements SceneStatusListener, DeviceStatu
                 id = ((Device) device).getHWinfo();
             }
             if (discoveryServices.get(id) != null) {
-                ((DeviceDiscoveryService) discoveryServices.get(id)).onDeviceAdded((Device) device);
+                ((DeviceDiscoveryService) discoveryServices.get(id))
+                        .onDeviceAdded((AbstractGeneralDeviceInformations) device);
+            }
+        }
+        if (device instanceof Circuit) {
+            if (discoveryServices.get(DsDeviceThingTypeProvider.SupportedThingTypes.circuit.toString()) != null) {
+                ((DeviceDiscoveryService) discoveryServices
+                        .get(DsDeviceThingTypeProvider.SupportedThingTypes.circuit.toString()))
+                                .onDeviceAdded((AbstractGeneralDeviceInformations) device);
             }
         }
     }
