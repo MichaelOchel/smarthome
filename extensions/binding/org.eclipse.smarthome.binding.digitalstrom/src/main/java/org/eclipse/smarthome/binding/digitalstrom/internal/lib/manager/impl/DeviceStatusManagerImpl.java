@@ -42,6 +42,7 @@ import org.eclipse.smarthome.binding.digitalstrom.internal.lib.sensorJobExecutor
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.sensorJobExecutor.sensorJob.impl.SceneOutputValueReadingJob;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.serverConnection.DsAPI;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.serverConnection.constants.JSONApiResponseKeysEnum;
+import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.Circuit;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.Device;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.CachedMeteringValue;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.DeviceConstants;
@@ -90,16 +91,17 @@ public class DeviceStatusManagerImpl implements DeviceStatusManager, EventHandle
     private SceneReadingJobExecutor sceneJobExecutor = null;
     private EventListener eventListener = null;
 
-    private List<String> meters = null;
+    // private List<String> meters = null;
     private List<TrashDevice> trashDevices = new LinkedList<TrashDevice>();
 
     private long lastBinCheck = 0;
     private ManagerStates state = ManagerStates.STOPPED;
 
     private int tempConsumption = 0;
-    private int totalPowerConsumption = 0;
+    // private int totalPowerConsumption = 0;
     private int tempEnergyMeter = 0;
-    private int totalEnergyMeter = 0;
+    private int tempEnergyMeterWs = 0;
+    // private int totalEnergyMeter = 0;
 
     private DeviceStatusListener deviceDiscovery = null;
     private TotalPowerConsumptionListener totalPowerConsumptionListener = null;
@@ -176,10 +178,28 @@ public class DeviceStatusManagerImpl implements DeviceStatusManager, EventHandle
                     List<Device> currentDeviceList = getDetailedDevices();
 
                     // update the current total power consumption
-                    if (totalPowerConsumptionListener != null && nextSensorUpdate <= System.currentTimeMillis()) {
-                        meters = digitalSTROMClient.getMeterList(connMan.getSessionToken());
-                        totalPowerConsumptionListener.onTotalPowerConsumptionChanged(getTotalPowerConsumption());
-                        totalPowerConsumptionListener.onEnergyMeterValueChanged(getTotalEnergyMeterValue());
+                    if (/* totalPowerConsumptionListener != null && */nextSensorUpdate <= System.currentTimeMillis()) {
+                        // TODO:
+                        // check circuits
+                        List<Circuit> circuits = digitalSTROMClient.getApartmentCircuits(connMan.getSessionToken());
+                        for (Circuit circuit : circuits) {
+                            if (strucMan.getCircuitByDSID(circuit.getDSID()) != null) {
+                                if (!circuit.equals(strucMan.getCircuitByDSID(circuit.getDSID()))) {
+                                    strucMan.updateCircuitConfig(circuit);
+                                }
+                            } else {
+                                strucMan.addCircuit(circuit);
+                                if (deviceDiscovery != null) {
+                                    deviceDiscovery.onDeviceAdded(circuit);
+                                }
+                            }
+                        }
+                        getMeterData();
+                        /*
+                         * meters = digitalSTROMClient.getMeterList(connMan.getSessionToken());
+                         * totalPowerConsumptionListener.onTotalPowerConsumptionChanged(getTotalPowerConsumption());
+                         * totalPowerConsumptionListener.onEnergyMeterValueChanged(getTotalEnergyMeterValue());
+                         */
                         nextSensorUpdate = System.currentTimeMillis() + config.getTotalPowerUpdateInterval();
                     }
 
@@ -289,7 +309,7 @@ public class DeviceStatusManagerImpl implements DeviceStatusManager, EventHandle
                         logger.debug("Found removed devices.");
 
                         trashDevices.add(new TrashDevice(device));
-                        DeviceStatusListener listener = device.unregisterDeviceStateListener();
+                        DeviceStatusListener listener = device.unregisterDeviceStatusListener();
                         if (listener != null) {
                             listener.onDeviceRemoved(null);
                         }
@@ -939,7 +959,6 @@ public class DeviceStatusManagerImpl implements DeviceStatusManager, EventHandle
             sensorJobExecutor = new SensorJobExecutor(connMan);
             this.sensorJobExecutor.startExecutor();
         }
-        // TODO: echo bzw. sensorjob exists? zum löschen .... in Device?
         if (sensorJob != null && priority != null) {
             switch (priority) {
                 case Config.REFRESH_PRIORITY_HIGH:
@@ -1017,10 +1036,17 @@ public class DeviceStatusManagerImpl implements DeviceStatusManager, EventHandle
             } else {
                 Device intDevice = strucMan.getDeviceByDSID(deviceListener.getDeviceStatusListenerID());
                 if (intDevice != null) {
-                    logger.debug("register DeviceListener with id: " + id);
-                    intDevice.registerDeviceStateListener(deviceListener);
+                    logger.debug("register DeviceListener with id: {} to Device ", id);
+                    intDevice.registerDeviceStatusListener(deviceListener);
                 } else {
-                    deviceListener.onDeviceRemoved(null);
+                    Circuit intCircuit = strucMan
+                            .getCircuitByDSID(new DSID(deviceListener.getDeviceStatusListenerID()));
+                    if (intCircuit != null) {
+                        logger.debug("register DeviceListener with id: {} to Circuit ", id);
+                        intCircuit.registerDeviceStatusListener(deviceListener);
+                    } else {
+                        deviceListener.onDeviceRemoved(null);
+                    }
                 }
             }
         }
@@ -1036,7 +1062,16 @@ public class DeviceStatusManagerImpl implements DeviceStatusManager, EventHandle
             } else {
                 Device intDevice = strucMan.getDeviceByDSID(deviceListener.getDeviceStatusListenerID());
                 if (intDevice != null) {
-                    intDevice.unregisterDeviceStateListener();
+                    intDevice.unregisterDeviceStatusListener();
+                } else {
+                    Circuit intCircuit = strucMan
+                            .getCircuitByDSID(new DSID(deviceListener.getDeviceStatusListenerID()));
+                    if (intCircuit != null) {
+                        intCircuit.unregisterDeviceStatusListener();
+                        if (deviceDiscovery != null) {
+                            deviceListener.onDeviceAdded(intCircuit);
+                        }
+                    }
                 }
             }
         }
@@ -1093,36 +1128,69 @@ public class DeviceStatusManagerImpl implements DeviceStatusManager, EventHandle
         this.connMan.unregisterConnectionListener();
     }
 
+    public final static String ALL_METERS = ".meters(all)";
+
     @Override
     public int getTotalPowerConsumption() {
         List<CachedMeteringValue> cachedConsumptionMeteringValues = digitalSTROMClient
-                .getLatest(connMan.getSessionToken(), MeteringTypeEnum.consumption, meters, null);
+                .getLatest(connMan.getSessionToken(), MeteringTypeEnum.consumption, ALL_METERS, null);
         if (cachedConsumptionMeteringValues != null) {
             tempConsumption = 0;
             for (CachedMeteringValue value : cachedConsumptionMeteringValues) {
                 tempConsumption += value.getValue();
-            }
-            if (tempConsumption != totalPowerConsumption) {
-                totalPowerConsumption = tempConsumption;
+                if (strucMan.getCircuitByDSID(value.getDsid()) != null) {
+                    strucMan.getCircuitByDSID(value.getDsid()).addMeteringValue(value);
+                }
             }
         }
-        return totalPowerConsumption;
+        return tempConsumption;
+    }
+
+    private void getMeterData() {
+        int val = getTotalPowerConsumption();
+        if (totalPowerConsumptionListener != null) {
+            totalPowerConsumptionListener.onTotalPowerConsumptionChanged(val);
+        }
+        val = getTotalEnergyMeterValue();
+        if (totalPowerConsumptionListener != null) {
+            totalPowerConsumptionListener.onEnergyMeterValueChanged(val);
+        }
+        val = getTotalEnergyMeterWsValue();
+        if (totalPowerConsumptionListener != null) {
+            totalPowerConsumptionListener.onEnergyMeterWsValueChanged(val);
+        }
     }
 
     @Override
     public int getTotalEnergyMeterValue() {
         List<CachedMeteringValue> cachedEnergyMeteringValues = digitalSTROMClient.getLatest(connMan.getSessionToken(),
-                MeteringTypeEnum.energy, meters, MeteringUnitsEnum.Wh);
+                MeteringTypeEnum.energy, ALL_METERS, MeteringUnitsEnum.Wh);
         if (cachedEnergyMeteringValues != null) {
             tempEnergyMeter = 0;
             for (CachedMeteringValue value : cachedEnergyMeteringValues) {
                 tempEnergyMeter += value.getValue();
-            }
-            if (tempEnergyMeter != totalEnergyMeter) {
-                totalEnergyMeter = tempEnergyMeter;
+                if (strucMan.getCircuitByDSID(value.getDsid()) != null) {
+                    strucMan.getCircuitByDSID(value.getDsid()).addMeteringValue(value);
+                }
             }
         }
-        return totalEnergyMeter;
+        return tempEnergyMeter;
+    }
+
+    @Override
+    public int getTotalEnergyMeterWsValue() {
+        List<CachedMeteringValue> cachedEnergyMeteringValues = digitalSTROMClient.getLatest(connMan.getSessionToken(),
+                MeteringTypeEnum.energy, ALL_METERS, MeteringUnitsEnum.Ws);
+        if (cachedEnergyMeteringValues != null) {
+            tempEnergyMeterWs = 0;
+            for (CachedMeteringValue value : cachedEnergyMeteringValues) {
+                tempEnergyMeterWs += value.getValue();
+                if (strucMan.getCircuitByDSID(value.getDsid()) != null) {
+                    strucMan.getCircuitByDSID(value.getDsid()).addMeteringValue(value);
+                }
+            }
+        }
+        return tempEnergyMeterWs;
     }
 
     private void setInizialStateWithLastCallScenes() {

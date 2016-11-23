@@ -9,8 +9,8 @@
         <label>@text/DSS_BRIDGE_LABEL</label>
         <description>@text/DSS_BRIDGE_DESC</description>
         <channels>
-            <channel typeId="totalActivePower" id="totalActivePower" />
-            <channel typeId="totalElectricMeter" id="totalElectricMeter" />
+            <channel typeId="total_consumption_Wh" id="total_consumption_Wh" />
+            <channel typeId="total_energy_Wh" id="total_energy_Wh" /><channel typeId="total_energy_Ws" id="total_energy_Ws"></channel>
         </channels>
         <properties>
             <property name="serverCert"></property>

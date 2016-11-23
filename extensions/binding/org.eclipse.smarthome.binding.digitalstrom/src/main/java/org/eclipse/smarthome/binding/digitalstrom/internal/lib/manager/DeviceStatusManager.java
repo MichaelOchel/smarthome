@@ -228,4 +228,6 @@ public interface DeviceStatusManager {
      * @return the current total energy meter value
      */
     public int getTotalEnergyMeterValue();
+
+    int getTotalEnergyMeterWsValue();
 }

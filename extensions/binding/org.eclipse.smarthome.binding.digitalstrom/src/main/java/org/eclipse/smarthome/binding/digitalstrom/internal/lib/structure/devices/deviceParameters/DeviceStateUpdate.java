@@ -42,11 +42,11 @@ public interface DeviceStateUpdate {
     public final static String UPDATE_SLAT_STOP = "slatStop";
 
     // sensor data
-    // public final static String UPDATE_ACTIVE_POWER = "activePower";
-    // public final static String UPDATE_OUTPUT_CURRENT = "outputCurrent";
-    // public final static String UPDATE_ELECTRIC_METER = "electricMeter";
     public final static String UPDATE_OUTPUT_VALUE = "outputValue";
     public final static String UPDATE_DEVICE_SENSOR = "deviceSensor-";
+
+    // metering data
+    public final static String UPDATE_CIRCUIT_METER = "circuitMeter";
 
     // scene
     /** A scene call can have the value between 0 and 127. */

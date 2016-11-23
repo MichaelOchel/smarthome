@@ -713,7 +713,7 @@ public class DeviceHandler extends BaseThingHandler implements DeviceStatusListe
                 SensorEnum sensorType = SensorEnum.valueOf(channelUID.getId());
                 Float val = device.getFloatSensorValue(sensorType);
                 if (val != null) {
-                    updateState(getSensorChannelUID(sensorType), new DecimalType(val));
+                    updateState(channelUID, new DecimalType(val));
                 }
             } catch (IllegalArgumentException e) {
                 if (channelUID.getId().contains(DsChannelTypeProvider.DIMMER)) {

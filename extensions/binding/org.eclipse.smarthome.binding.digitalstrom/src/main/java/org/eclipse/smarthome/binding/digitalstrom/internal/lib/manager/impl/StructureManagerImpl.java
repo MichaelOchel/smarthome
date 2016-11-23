@@ -17,6 +17,7 @@ import java.util.Set;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.manager.ConnectionManager;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.manager.StructureManager;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.serverConnection.impl.JSONResponseHandler;
+import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.AbstractGeneralDeviceInformations;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.Circuit;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.Device;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.CachedMeteringValue;
@@ -188,12 +189,9 @@ public class StructureManagerImpl implements StructureManager {
         if (deviceMap == null) {
             deviceMap = Collections.synchronizedMap(new HashMap<DSID, Device>()); // deviceList.size()
         }
-        if (dSUIDToDSIDMap == null) {
-            dSUIDToDSIDMap = Collections.synchronizedMap(new HashMap<String, DSID>()); // deviceList.size()
-        }
         if (device.getDSID() != null) {
             deviceMap.put(device.getDSID(), device);
-            dSUIDToDSIDMap.put(device.getDSUID(), device.getDSID());
+            addDSIDtoDSUID((AbstractGeneralDeviceInformations) device);
         }
     }
 
@@ -375,29 +373,46 @@ public class StructureManagerImpl implements StructureManager {
     @Override
     public Circuit addCircuit(Circuit circuit) {
         if (circuitMap == null) {
-            circuitMap = new HashMap<DSID, Circuit>();
+            circuitMap = Collections.synchronizedMap(new HashMap<DSID, Circuit>());
         }
-        dSUIDToDSIDMap.put(circuit.getDSUID(), circuit.getDSID());
+        addDSIDtoDSUID((AbstractGeneralDeviceInformations) circuit);
         return circuitMap.put(circuit.getDSID(), circuit);
     }
 
-    @Override
-    public Circuit getCircuit(DSID dSID) {
-        return circuitMap.get(dSID);
+    private void addDSIDtoDSUID(AbstractGeneralDeviceInformations deviceInfo) {
+        if (dSUIDToDSIDMap == null) {
+            dSUIDToDSIDMap = Collections.synchronizedMap(new HashMap<String, DSID>());
+        }
+        if (deviceInfo.getDSID() != null) {
+            dSUIDToDSIDMap.put(deviceInfo.getDSUID(), deviceInfo.getDSID());
+        }
     }
 
     @Override
-    public Circuit getCircuit(String dSUID) {
-        return dSUIDToDSIDMap.get(dSUID) != null ? getCircuit(dSUIDToDSIDMap.get(dSUID)) : null;
+    public Circuit getCircuitByDSID(DSID dSID) {
+        return circuitMap != null ? circuitMap.get(dSID) : null;
+    }
+
+    @Override
+    public Circuit getCircuitByDSUID(String dSUID) {
+        return dSUIDToDSIDMap.get(dSUID) != null ? getCircuitByDSID(dSUIDToDSIDMap.get(dSUID)) : null;
+    }
+
+    @Override
+    public Circuit getCircuitByDSID(String dSID) {
+        return getCircuitByDSID(new DSID(dSID));
     }
 
     @Override
     public Circuit updateCircuitConfig(Circuit newCircuit) {
         if (circuitMap != null) {
             Circuit intCircuit = circuitMap.get(newCircuit.getDSID());
-            if (intCircuit != null) {
+            if (intCircuit != null && !intCircuit.equals(newCircuit)) {
                 for (CachedMeteringValue meteringValue : intCircuit.getAllCachedMeteringValues()) {
                     newCircuit.addMeteringValue(meteringValue);
+                }
+                if (intCircuit.isListenerRegisterd()) {
+
                 }
             }
         }

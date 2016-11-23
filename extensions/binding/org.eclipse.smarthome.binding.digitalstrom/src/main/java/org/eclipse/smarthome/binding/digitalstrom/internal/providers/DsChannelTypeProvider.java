@@ -16,6 +16,8 @@ import java.util.Set;
 
 import org.eclipse.smarthome.binding.digitalstrom.DigitalSTROMBindingConstants;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.constants.FunctionalColorGroupEnum;
+import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.constants.MeteringTypeEnum;
+import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.constants.MeteringUnitsEnum;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.constants.OutputModeEnum;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.constants.SensorEnum;
 import org.eclipse.smarthome.core.i18n.I18nProvider;
@@ -80,6 +82,8 @@ public class DsChannelTypeProvider implements ChannelTypeProvider {
     public final static String ROLLERSHUTTER = "Rollershutter";
     public final static String STRING = "String";
     public final static String NUMBER = "Number";
+
+    public final static String TOTAL_PRE = "total_";
 
     // tags
     private final String GE = "GE";
@@ -290,19 +294,22 @@ public class DsChannelTypeProvider implements ChannelTypeProvider {
     private String getSesorDescription(SensorEnum sensorType, Locale locale) {
         // the digitalSTROM resolution for temperature in kelvin is not correct but sensor-events and cached values are
         // shown in °C so we will use this unit for temperature sensors
-        return sensorType.toString().contains("TEMPERATURE")
-                ? getText("sensor_desc_0", locale) + getText(sensorType.toString(), locale) + " "
-                        + getText("sensor_desc_1", locale) + getText(sensorType.toString(), locale) + " "
-                        + getText("sensor_desc_2", locale) + " " + getText("degrees_celsius", locale) + " (°C) "
-                        + getText("sensor_desc_3", locale)
-                : getText("sensor_desc_0", locale) + getText(sensorType.toString(), locale) + " "
-                        + getText("sensor_desc_1", locale) + getText(sensorType.toString(), locale) + " "
-                        + getText("sensor_desc_2", locale) + " " + getText(sensorType.getUnit(), locale) + " ("
-                        + sensorType.getUnitShortcut() + ") " + getText("sensor_desc_3", locale);
+        return getDescText(sensorType.toString().toLowerCase() + "_label",
+                locale);/*
+                         * sensorType.toString().contains("TEMPERATURE")
+                         * ? getText("sensor_desc_0", locale) + getText(sensorType.toString(), locale) + " "
+                         * + getText("sensor_desc_1", locale) + getText(sensorType.toString(), locale) + " "
+                         * + getText("sensor_desc_2", locale) + " " + getText("degrees_celsius", locale) + " (°C) "
+                         * + getText("sensor_desc_3", locale)
+                         * : getText("sensor_desc_0", locale) + getText(sensorType.toString(), locale) + " "
+                         * + getText("sensor_desc_1", locale) + getText(sensorType.toString(), locale) + " "
+                         * + getText("sensor_desc_2", locale) + " " + getText(sensorType.getUnit(), locale) + " ("
+                         * + sensorType.getUnitShortcut() + ") " + getText("sensor_desc_3", locale);
+                         */
     }
 
     private String getSensorText(SensorEnum sensorType, Locale locale) {
-        return getText(sensorType.toString(), locale);
+        return getText(sensorType.toString().toLowerCase() + "_desc", locale);
     }
 
     @Override
@@ -317,9 +324,17 @@ public class DsChannelTypeProvider implements ChannelTypeProvider {
                     getChannelType(new ChannelTypeUID(DigitalSTROMBindingConstants.BINDING_ID, channelTypeId), locale));
         }
         for (SensorEnum sensorType : SensorEnum.values()) {
-            // TODO: lower case
             channelTypeList.add(getChannelType(
-                    new ChannelTypeUID(DigitalSTROMBindingConstants.BINDING_ID, sensorType.toString()), locale));
+                    new ChannelTypeUID(DigitalSTROMBindingConstants.BINDING_ID, sensorType.toString().toLowerCase()),
+                    locale));
+        }
+        for (MeteringTypeEnum meteringType : MeteringTypeEnum.values()) {
+            for (MeteringUnitsEnum meteringUnit : meteringType.getMeteringUnitList()) {
+                channelTypeList.add(getChannelType(new ChannelTypeUID(DigitalSTROMBindingConstants.BINDING_ID,
+                        meteringType.toString() + "_" + meteringUnit.toString()), locale));
+                channelTypeList.add(getChannelType(new ChannelTypeUID(DigitalSTROMBindingConstants.BINDING_ID,
+                        TOTAL_PRE + meteringType.toString() + "_" + meteringUnit.toString()), locale));
+            }
         }
         return channelTypeList;
     }
@@ -391,7 +406,7 @@ public class DsChannelTypeProvider implements ChannelTypeProvider {
     public ChannelType getChannelType(ChannelTypeUID channelTypeUID, Locale locale) {
         if (channelTypeUID.getBindingId().equals(DigitalSTROMBindingConstants.BINDING_ID)) {
             try {
-                SensorEnum sensorType = SensorEnum.valueOf(channelTypeUID.getId());
+                SensorEnum sensorType = SensorEnum.valueOf(channelTypeUID.getId().toUpperCase());
                 return new ChannelType(channelTypeUID, false, NUMBER, getSensorText(sensorType, locale),
                         getSesorDescription(sensorType, locale), getSensorCategory(sensorType),
                         Sets.newHashSet(getSensorText(sensorType, locale), getText("DS", locale)),
@@ -426,6 +441,36 @@ public class DsChannelTypeProvider implements ChannelTypeProvider {
                                 Sets.newHashSet(getText("SCENE", locale), getText("DS", locale)), null, null);
                     default:
                         break;
+                }
+                try {
+                    // check metering channel
+                    String[] meteringChannelSplit = channelID.split("_");
+                    if (meteringChannelSplit.length > 1) {
+                        short offset = 0;
+                        // if total_
+                        if (meteringChannelSplit.length == 3) {
+                            offset = 1;
+                        }
+                        // check through IllegalArgumentException, if channel is metering
+                        MeteringTypeEnum meteringType = MeteringTypeEnum.valueOf(meteringChannelSplit[0 + offset]);
+                        MeteringUnitsEnum unitType = MeteringUnitsEnum.valueOf(meteringChannelSplit[1 + offset]);
+
+                        String pattern = "%.3f kWh";
+
+                        if (MeteringTypeEnum.energy.equals(meteringType)) {
+                            if (MeteringUnitsEnum.Ws.equals(unitType)) {
+                                pattern = "%d " + unitType.toString();
+                            }
+                        } else {
+                            pattern = "%d W";
+                        }
+                        return new ChannelType(channelTypeUID, false, NUMBER, getLabelText(channelID, locale),
+                                getDescText(channelID, locale), CATEGORY_ENERGY,
+                                Sets.newHashSet(getLabelText(channelID, locale), getText("DS", locale)),
+                                new StateDescription(null, null, null, pattern, true, null), null);
+                    }
+                } catch (IllegalArgumentException e1) {
+                    // ignore
                 }
 
             }
