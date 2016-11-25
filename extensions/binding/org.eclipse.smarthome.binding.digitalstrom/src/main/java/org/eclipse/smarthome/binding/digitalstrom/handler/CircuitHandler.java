@@ -138,8 +138,10 @@ public class CircuitHandler extends BaseThingHandler implements DeviceStatusList
 
     @Override
     public void handleCommand(ChannelUID channelUID, Command command) {
-        // TODO Auto-generated method stub
-
+        // the same handling like total metering values
+        if (dssBridgeHandler != null) {
+            dssBridgeHandler.handleCommand(channelUID, command);
+        }
     }
 
     @Override
@@ -147,10 +149,6 @@ public class CircuitHandler extends BaseThingHandler implements DeviceStatusList
         if (deviceStateUpdate != null && DeviceStateUpdate.UPDATE_CIRCUIT_METER.equals(deviceStateUpdate.getType())) {
             if (deviceStateUpdate.getValue() instanceof CachedMeteringValue) {
                 CachedMeteringValue cachedVal = (CachedMeteringValue) deviceStateUpdate.getValue();
-                logger.debug(cachedVal.getMeteringType() + " " + cachedVal.getMeteringUnit() + " = "
-                        + (cachedVal.getMeteringType().equals(MeteringTypeEnum.energy)
-                                && (cachedVal.getMeteringUnit() == null
-                                        || cachedVal.getMeteringUnit().equals(MeteringUnitsEnum.Wh))));
                 if (cachedVal.getMeteringType().equals(MeteringTypeEnum.energy) && (cachedVal.getMeteringUnit() == null
                         || cachedVal.getMeteringUnit().equals(MeteringUnitsEnum.Wh))) {
                     updateState(getChannelID(cachedVal), new DecimalType(cachedVal.getValue() * 0.001));
