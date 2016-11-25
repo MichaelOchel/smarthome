@@ -46,7 +46,7 @@ public abstract class BaseSensorValues {
                     jObject.get(JSONApiResponseKeysEnum.HUMIDITY_VALUE_TIME.getKey()).getAsString()));
         }
         if (jObject.get(JSONApiResponseKeysEnum.CO2_CONCENTRATION_VALUE.getKey()) != null) {
-            addSensorValue(new CachedSensorValue(SensorEnum.CARBONE_DIOXIDE,
+            addSensorValue(new CachedSensorValue(SensorEnum.CARBON_DIOXIDE,
                     jObject.get(JSONApiResponseKeysEnum.CO2_CONCENTRATION_VALUE.getKey()).getAsFloat(),
                     jObject.get(JSONApiResponseKeysEnum.CO2_CONCENTRATION_VALUE_TIME.getKey()).getAsString()));
         }
@@ -114,7 +114,7 @@ public abstract class BaseSensorValues {
 
     /**
      * Returns true, if the given sensor type exist, otherwise false.
-     * 
+     *
      * @param sensorType
      * @return true, if the given sensor type exist, otherwise false
      */
