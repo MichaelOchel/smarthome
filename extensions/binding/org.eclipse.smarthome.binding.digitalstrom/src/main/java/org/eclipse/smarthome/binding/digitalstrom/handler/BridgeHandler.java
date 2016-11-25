@@ -321,17 +321,20 @@ public class BridgeHandler extends BaseBridgeHandler
     @Override
     public void handleCommand(ChannelUID channelUID, Command command) {
         if (command instanceof RefreshType) {
-            switch (channelUID.getId()) {
-                case CHANNEL_ID_TOTAL_ACTIVE_POWER:
-                    updateState(channelUID, new DecimalType(devStatMan.getTotalPowerConsumption()));
-                    break;
-                case CHANNEL_ID_TOTAL_ELECTRIC_METER:
-                    updateState(channelUID, new DecimalType(devStatMan.getTotalEnergyMeterValue()));
-                    break;
-                default:
-                    logger.debug("Command received for an unknown channel: {}", channelUID.getId());
-                    break;
-            }
+            channelLinked(channelUID);
+            /*
+             * switch (channelUID.getId()) {
+             * case CHANNEL_ID_TOTAL_ACTIVE_POWER:
+             * updateState(channelUID, new DecimalType(devStatMan.getTotalPowerConsumption()));
+             * break;
+             * case CHANNEL_ID_TOTAL_ELECTRIC_METER:
+             * updateState(channelUID, new DecimalType(devStatMan.getTotalEnergyMeterValue()));
+             * break;
+             * default:
+             * logger.debug("Command received for an unknown channel: {}", channelUID.getId());
+             * break;
+             * }
+             */
         } else {
             logger.debug("Command {} is not supported for channel: {}", command, channelUID.getId());
         }

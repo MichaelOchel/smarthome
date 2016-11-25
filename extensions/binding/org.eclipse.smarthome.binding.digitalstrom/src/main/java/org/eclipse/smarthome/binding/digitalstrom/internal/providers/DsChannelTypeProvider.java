@@ -31,7 +31,6 @@ import org.eclipse.smarthome.core.types.StateOption;
 import org.osgi.framework.Bundle;
 import org.osgi.service.component.ComponentContext;
 
-import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 
 /**
@@ -44,9 +43,11 @@ import com.google.common.collect.Sets;
  */
 public class DsChannelTypeProvider implements ChannelTypeProvider {
 
-    private final List<String> SUPPORTED_CHANNEL_TYPES = Lists.newArrayList(
-            DigitalSTROMBindingConstants.CHANNEL_ID_SCENE, DigitalSTROMBindingConstants.CHANNEL_ID_TOTAL_ACTIVE_POWER,
-            DigitalSTROMBindingConstants.CHANNEL_ID_TOTAL_ELECTRIC_METER);
+    // private final List<String> SUPPORTED_CHANNEL_TYPES = Lists
+    // .newArrayList(DigitalSTROMBindingConstants.CHANNEL_ID_SCENE
+    // , DigitalSTROMBindingConstants.CHANNEL_ID_TOTAL_ACTIVE_POWER,
+    // DigitalSTROMBindingConstants.CHANNEL_ID_TOTAL_ELECTRIC_METER
+    // );
 
     /*
      * output channels dynamic?
@@ -193,6 +194,7 @@ public class DsChannelTypeProvider implements ChannelTypeProvider {
         channelIDpre = SHADE;
         SUPPORTED_OUTPUT_CHANNEL_TYPES.add(channelIDpre);
         SUPPORTED_OUTPUT_CHANNEL_TYPES.add(channelIDpre + "_" + ANGLE.toLowerCase());
+        SUPPORTED_OUTPUT_CHANNEL_TYPES.add(SCENE);
     }
 
     /*
@@ -315,10 +317,12 @@ public class DsChannelTypeProvider implements ChannelTypeProvider {
     @Override
     public Collection<ChannelType> getChannelTypes(Locale locale) {
         List<ChannelType> channelTypeList = new LinkedList<ChannelType>();
-        for (String channelTypeId : SUPPORTED_CHANNEL_TYPES) {
-            channelTypeList.add(
-                    getChannelType(new ChannelTypeUID(DigitalSTROMBindingConstants.BINDING_ID, channelTypeId), locale));
-        }
+        /*
+         * for (String channelTypeId : SUPPORTED_CHANNEL_TYPES) {
+         * channelTypeList.add(
+         * getChannelType(new ChannelTypeUID(DigitalSTROMBindingConstants.BINDING_ID, channelTypeId), locale));
+         * }
+         */
         for (String channelTypeId : SUPPORTED_OUTPUT_CHANNEL_TYPES) {
             channelTypeList.add(
                     getChannelType(new ChannelTypeUID(DigitalSTROMBindingConstants.BINDING_ID, channelTypeId), locale));
@@ -418,30 +422,31 @@ public class DsChannelTypeProvider implements ChannelTypeProvider {
                     return new ChannelType(channelTypeUID, false, getItemType(channelID),
                             getLabelText(channelID, locale), getDescText(channelID, locale), getCategory(channelID),
                             getTags(channelID, locale), getStageDescription(channelID, locale), null);
-                }
-                switch (channelID) {
-                    // TODO: auch autmatisch? auf alle erweitern?
-                    case DigitalSTROMBindingConstants.CHANNEL_ID_TOTAL_ACTIVE_POWER:
-                        return new ChannelType(channelTypeUID, false, NUMBER,
-                                getText("CHANNEL_TOTAL_ACTIVE_POWER_LABEL", locale),
-                                getText("CHANNEL_TOTAL_ACTIVE_POWER_DESCRIPTION", locale), CATEGORY_ENERGY,
-                                Sets.newHashSet(getText("ACTIVE_POWER", locale), getText("POWER_CONSUMPTION", locale),
-                                        getText("DS", locale)),
-                                getSensorStateDescription(SensorEnum.ACTIVE_POWER.getUnitShortcut()), null);
-                    case DigitalSTROMBindingConstants.CHANNEL_ID_TOTAL_ELECTRIC_METER:
-                        return new ChannelType(channelTypeUID, false, NUMBER,
-                                getText("CHANNEL_TOTAL_ELECTRIC_METER_LABEL", locale),
-                                getText("CHANNEL_TOTAL_ELECTRIC_METER_DESCRIPTION", locale), CATEGORY_ENERGY,
-                                Sets.newHashSet(getText("ELECTRIC_METER", locale), getText("DS", locale)),
-                                getSensorStateDescription(SensorEnum.ELECTRIC_METER.getUnitShortcut()), null);
-
-                    case DigitalSTROMBindingConstants.CHANNEL_ID_SCENE:
-                        return new ChannelType(channelTypeUID, false, SWITCH, getText("CHANNEL_SCENE_LABEL", locale),
-                                getText("CHANNEL_SCENE_DESCRIPTION", locale), null,
-                                Sets.newHashSet(getText("SCENE", locale), getText("DS", locale)), null, null);
-                    default:
-                        break;
-                }
+                } /*
+                   * switch (channelID) {
+                   * // TODO: auch autmatisch? auf alle erweitern?
+                   * case DigitalSTROMBindingConstants.CHANNEL_ID_TOTAL_ACTIVE_POWER:
+                   * return new ChannelType(channelTypeUID, false, NUMBER,
+                   * getText("CHANNEL_TOTAL_ACTIVE_POWER_LABEL", locale),
+                   * getText("CHANNEL_TOTAL_ACTIVE_POWER_DESCRIPTION", locale), CATEGORY_ENERGY,
+                   * Sets.newHashSet(getText("ACTIVE_POWER", locale), getText("POWER_CONSUMPTION", locale),
+                   * getText("DS", locale)),
+                   * getSensorStateDescription(SensorEnum.ACTIVE_POWER.getUnitShortcut()), null);
+                   * case DigitalSTROMBindingConstants.CHANNEL_ID_TOTAL_ELECTRIC_METER:
+                   * return new ChannelType(channelTypeUID, false, NUMBER,
+                   * getText("CHANNEL_TOTAL_ELECTRIC_METER_LABEL", locale),
+                   * getText("CHANNEL_TOTAL_ELECTRIC_METER_DESCRIPTION", locale), CATEGORY_ENERGY,
+                   * Sets.newHashSet(getText("ELECTRIC_METER", locale), getText("DS", locale)),
+                   * getSensorStateDescription(SensorEnum.ELECTRIC_METER.getUnitShortcut()), null);
+                   *
+                   * case DigitalSTROMBindingConstants.CHANNEL_ID_SCENE:
+                   * return new ChannelType(channelTypeUID, false, SWITCH, getText("CHANNEL_SCENE_LABEL", locale),
+                   * getText("CHANNEL_SCENE_DESCRIPTION", locale), null,
+                   * Sets.newHashSet(getText("SCENE", locale), getText("DS", locale)), null, null);
+                   * default:
+                   * break;
+                   * }
+                   */
                 try {
                     // check metering channel
                     String[] meteringChannelSplit = channelID.split("_");
