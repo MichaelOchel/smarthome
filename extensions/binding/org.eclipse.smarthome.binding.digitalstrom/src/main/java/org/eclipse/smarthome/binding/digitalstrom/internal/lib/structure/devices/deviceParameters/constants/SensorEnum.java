@@ -40,7 +40,7 @@ public enum SensorEnum {
      * | 21 | Carbon Dioxide | Parts per million (ppm) | 1 | 131446,795 | logarithmic: ppm = 10 * (x/800), x = 800 * log
      * (ppm) |
      * | 25 | Sound pressure level | Decibel (dB) | 0 | 255,938 | 0,25/4 |
-     * | 50 | Room temperature set point | Kelvin (K) | 230 | 332,375 | 0,025 |
+     * | 50 | Room temperature set point | Kelvin (K) | 230 | 332,375 | 0,025 | (not correct)
      * | 51 | Room temperature control variable | Percent (%) | 0 | 102,375 | 0,025 |
      * | 64 | Output current (H) | Ampere (mA) | 0 | 16380 | 4 |
      * | 65 | Power consumption | Volt-Ampere (VA) | 0 | 4095 | 1 |

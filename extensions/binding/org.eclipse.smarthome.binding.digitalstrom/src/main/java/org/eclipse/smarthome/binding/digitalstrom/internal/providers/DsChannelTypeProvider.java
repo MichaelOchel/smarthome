@@ -9,12 +9,15 @@ package org.eclipse.smarthome.binding.digitalstrom.internal.providers;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Set;
 
 import org.eclipse.smarthome.binding.digitalstrom.DigitalSTROMBindingConstants;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.constants.FunctionalColorGroupEnum;
+import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.constants.MeteringTypeEnum;
+import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.constants.MeteringUnitsEnum;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.constants.OutputModeEnum;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.constants.SensorEnum;
 import org.eclipse.smarthome.core.i18n.I18nProvider;
@@ -28,7 +31,6 @@ import org.eclipse.smarthome.core.types.StateOption;
 import org.osgi.framework.Bundle;
 import org.osgi.service.component.ComponentContext;
 
-import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 
 /**
@@ -41,9 +43,11 @@ import com.google.common.collect.Sets;
  */
 public class DsChannelTypeProvider implements ChannelTypeProvider {
 
-    private final List<String> SUPPORTED_CHANNEL_TYPES = Lists.newArrayList(
-            DigitalSTROMBindingConstants.CHANNEL_ID_SCENE, DigitalSTROMBindingConstants.CHANNEL_ID_TOTAL_ACTIVE_POWER,
-            DigitalSTROMBindingConstants.CHANNEL_ID_TOTAL_ELECTRIC_METER);
+    // private final List<String> SUPPORTED_CHANNEL_TYPES = Lists
+    // .newArrayList(DigitalSTROMBindingConstants.CHANNEL_ID_SCENE
+    // , DigitalSTROMBindingConstants.CHANNEL_ID_TOTAL_ACTIVE_POWER,
+    // DigitalSTROMBindingConstants.CHANNEL_ID_TOTAL_ELECTRIC_METER
+    // );
 
     /*
      * output channels dynamic?
@@ -80,6 +84,8 @@ public class DsChannelTypeProvider implements ChannelTypeProvider {
     public final static String STRING = "String";
     public final static String NUMBER = "Number";
 
+    public final static String TOTAL_PRE = "total_";
+
     // tags
     private final String GE = "GE";
     private final String GR = "GR";
@@ -104,6 +110,27 @@ public class DsChannelTypeProvider implements ChannelTypeProvider {
 
     // rollershutter?
     // private final String CATEGORY_MOVE_CONTROL = "MoveControl";
+
+    protected void activate(ComponentContext componentContext) {
+        this.bundle = componentContext.getBundleContext().getBundle();
+        init();
+    }
+
+    protected void deactivate(ComponentContext componentContext) {
+        this.bundle = null;
+    }
+
+    protected void setI18nProvider(I18nProvider i18n) {
+        this.i18n = i18n;
+    };
+
+    protected void unsetI18nProvider(I18nProvider i18n) {
+        this.i18n = null;
+    };
+
+    private String getText(String key, Locale locale) {
+        return i18n != null ? i18n.getText(bundle, key, i18n.getText(bundle, key, key, Locale.ENGLISH), locale) : key;
+    }
 
     public static String getOutputChannelTypeID(FunctionalColorGroupEnum functionalGroup, OutputModeEnum outputMode) {
         String channelPreID = GENERAL;
@@ -167,6 +194,7 @@ public class DsChannelTypeProvider implements ChannelTypeProvider {
         channelIDpre = SHADE;
         SUPPORTED_OUTPUT_CHANNEL_TYPES.add(channelIDpre);
         SUPPORTED_OUTPUT_CHANNEL_TYPES.add(channelIDpre + "_" + ANGLE.toLowerCase());
+        SUPPORTED_OUTPUT_CHANNEL_TYPES.add(SCENE);
     }
 
     /*
@@ -265,60 +293,52 @@ public class DsChannelTypeProvider implements ChannelTypeProvider {
         return null;
     }
 
-    protected void activate(ComponentContext componentContext) {
-        this.bundle = componentContext.getBundleContext().getBundle();
-        init();
-    }
-
-    protected void deactivate(ComponentContext componentContext) {
-        this.bundle = null;
-    }
-
-    protected void setI18nProvider(I18nProvider i18n) {
-        this.i18n = i18n;
-    };
-
-    protected void unsetI18nProvider(I18nProvider i18n) {
-        this.i18n = null;
-    };
-
-    private String getText(String key, Locale locale) {
-        return i18n != null ? i18n.getText(bundle, key, i18n.getText(bundle, key, key, Locale.ENGLISH), locale) : key;
-    }
-
     private String getSesorDescription(SensorEnum sensorType, Locale locale) {
         // the digitalSTROM resolution for temperature in kelvin is not correct but sensor-events and cached values are
         // shown in °C so we will use this unit for temperature sensors
-        return sensorType.toString().contains("TEMPERATURE")
-                ? getText("sensor_desc_0", locale) + getText(sensorType.toString(), locale) + " "
-                        + getText("sensor_desc_1", locale) + getText(sensorType.toString(), locale) + " "
-                        + getText("sensor_desc_2", locale) + " " + getText("degrees_celsius", locale) + " (°C) "
-                        + getText("sensor_desc_3", locale)
-                : getText("sensor_desc_0", locale) + getText(sensorType.toString(), locale) + " "
-                        + getText("sensor_desc_1", locale) + getText(sensorType.toString(), locale) + " "
-                        + getText("sensor_desc_2", locale) + " " + getText(sensorType.getUnit(), locale) + " ("
-                        + sensorType.getUnitShortcut() + ") " + getText("sensor_desc_3", locale);
+        return getDescText(sensorType.toString().toLowerCase() + "_label",
+                locale);/*
+                         * sensorType.toString().contains("TEMPERATURE")
+                         * ? getText("sensor_desc_0", locale) + getText(sensorType.toString(), locale) + " "
+                         * + getText("sensor_desc_1", locale) + getText(sensorType.toString(), locale) + " "
+                         * + getText("sensor_desc_2", locale) + " " + getText("degrees_celsius", locale) + " (°C) "
+                         * + getText("sensor_desc_3", locale)
+                         * : getText("sensor_desc_0", locale) + getText(sensorType.toString(), locale) + " "
+                         * + getText("sensor_desc_1", locale) + getText(sensorType.toString(), locale) + " "
+                         * + getText("sensor_desc_2", locale) + " " + getText(sensorType.getUnit(), locale) + " ("
+                         * + sensorType.getUnitShortcut() + ") " + getText("sensor_desc_3", locale);
+                         */
     }
 
     private String getSensorText(SensorEnum sensorType, Locale locale) {
-        return getText(sensorType.toString(), locale);
+        return getText(sensorType.toString().toLowerCase() + "_desc", locale);
     }
 
     @Override
     public Collection<ChannelType> getChannelTypes(Locale locale) {
-        List<ChannelType> channelTypeList = new ArrayList<ChannelType>();
-        for (String channelTypeId : SUPPORTED_CHANNEL_TYPES) {
-            channelTypeList.add(
-                    getChannelType(new ChannelTypeUID(DigitalSTROMBindingConstants.BINDING_ID, channelTypeId), locale));
-        }
+        List<ChannelType> channelTypeList = new LinkedList<ChannelType>();
+        /*
+         * for (String channelTypeId : SUPPORTED_CHANNEL_TYPES) {
+         * channelTypeList.add(
+         * getChannelType(new ChannelTypeUID(DigitalSTROMBindingConstants.BINDING_ID, channelTypeId), locale));
+         * }
+         */
         for (String channelTypeId : SUPPORTED_OUTPUT_CHANNEL_TYPES) {
             channelTypeList.add(
                     getChannelType(new ChannelTypeUID(DigitalSTROMBindingConstants.BINDING_ID, channelTypeId), locale));
         }
         for (SensorEnum sensorType : SensorEnum.values()) {
-            // TODO: lower case
             channelTypeList.add(getChannelType(
-                    new ChannelTypeUID(DigitalSTROMBindingConstants.BINDING_ID, sensorType.toString()), locale));
+                    new ChannelTypeUID(DigitalSTROMBindingConstants.BINDING_ID, sensorType.toString().toLowerCase()),
+                    locale));
+        }
+        for (MeteringTypeEnum meteringType : MeteringTypeEnum.values()) {
+            for (MeteringUnitsEnum meteringUnit : meteringType.getMeteringUnitList()) {
+                channelTypeList.add(getChannelType(new ChannelTypeUID(DigitalSTROMBindingConstants.BINDING_ID,
+                        meteringType.toString() + "_" + meteringUnit.toString()), locale));
+                channelTypeList.add(getChannelType(new ChannelTypeUID(DigitalSTROMBindingConstants.BINDING_ID,
+                        TOTAL_PRE + meteringType.toString() + "_" + meteringUnit.toString()), locale));
+            }
         }
         return channelTypeList;
     }
@@ -390,7 +410,7 @@ public class DsChannelTypeProvider implements ChannelTypeProvider {
     public ChannelType getChannelType(ChannelTypeUID channelTypeUID, Locale locale) {
         if (channelTypeUID.getBindingId().equals(DigitalSTROMBindingConstants.BINDING_ID)) {
             try {
-                SensorEnum sensorType = SensorEnum.valueOf(channelTypeUID.getId());
+                SensorEnum sensorType = SensorEnum.valueOf(channelTypeUID.getId().toUpperCase());
                 return new ChannelType(channelTypeUID, false, NUMBER, getSensorText(sensorType, locale),
                         getSesorDescription(sensorType, locale), getSensorCategory(sensorType),
                         Sets.newHashSet(getSensorText(sensorType, locale), getText("DS", locale)),
@@ -402,29 +422,60 @@ public class DsChannelTypeProvider implements ChannelTypeProvider {
                     return new ChannelType(channelTypeUID, false, getItemType(channelID),
                             getLabelText(channelID, locale), getDescText(channelID, locale), getCategory(channelID),
                             getTags(channelID, locale), getStageDescription(channelID, locale), null);
-                }
-                switch (channelID) {
-                    // TODO: auch autmatisch? auf alle erweitern?
-                    case DigitalSTROMBindingConstants.CHANNEL_ID_TOTAL_ACTIVE_POWER:
-                        return new ChannelType(channelTypeUID, false, NUMBER,
-                                getText("CHANNEL_TOTAL_ACTIVE_POWER_LABEL", locale),
-                                getText("CHANNEL_TOTAL_ACTIVE_POWER_DESCRIPTION", locale), CATEGORY_ENERGY,
-                                Sets.newHashSet(getText("ACTIVE_POWER", locale), getText("POWER_CONSUMPTION", locale),
-                                        getText("DS", locale)),
-                                getSensorStateDescription(SensorEnum.ACTIVE_POWER.getUnitShortcut()), null);
-                    case DigitalSTROMBindingConstants.CHANNEL_ID_TOTAL_ELECTRIC_METER:
-                        return new ChannelType(channelTypeUID, false, NUMBER,
-                                getText("CHANNEL_TOTAL_ELECTRIC_METER_LABEL", locale),
-                                getText("CHANNEL_TOTAL_ELECTRIC_METER_DESCRIPTION", locale), CATEGORY_ENERGY,
-                                Sets.newHashSet(getText("ELECTRIC_METER", locale), getText("DS", locale)),
-                                getSensorStateDescription(SensorEnum.ELECTRIC_METER.getUnitShortcut()), null);
+                } /*
+                   * switch (channelID) {
+                   * // TODO: auch autmatisch? auf alle erweitern?
+                   * case DigitalSTROMBindingConstants.CHANNEL_ID_TOTAL_ACTIVE_POWER:
+                   * return new ChannelType(channelTypeUID, false, NUMBER,
+                   * getText("CHANNEL_TOTAL_ACTIVE_POWER_LABEL", locale),
+                   * getText("CHANNEL_TOTAL_ACTIVE_POWER_DESCRIPTION", locale), CATEGORY_ENERGY,
+                   * Sets.newHashSet(getText("ACTIVE_POWER", locale), getText("POWER_CONSUMPTION", locale),
+                   * getText("DS", locale)),
+                   * getSensorStateDescription(SensorEnum.ACTIVE_POWER.getUnitShortcut()), null);
+                   * case DigitalSTROMBindingConstants.CHANNEL_ID_TOTAL_ELECTRIC_METER:
+                   * return new ChannelType(channelTypeUID, false, NUMBER,
+                   * getText("CHANNEL_TOTAL_ELECTRIC_METER_LABEL", locale),
+                   * getText("CHANNEL_TOTAL_ELECTRIC_METER_DESCRIPTION", locale), CATEGORY_ENERGY,
+                   * Sets.newHashSet(getText("ELECTRIC_METER", locale), getText("DS", locale)),
+                   * getSensorStateDescription(SensorEnum.ELECTRIC_METER.getUnitShortcut()), null);
+                   *
+                   * case DigitalSTROMBindingConstants.CHANNEL_ID_SCENE:
+                   * return new ChannelType(channelTypeUID, false, SWITCH, getText("CHANNEL_SCENE_LABEL", locale),
+                   * getText("CHANNEL_SCENE_DESCRIPTION", locale), null,
+                   * Sets.newHashSet(getText("SCENE", locale), getText("DS", locale)), null, null);
+                   * default:
+                   * break;
+                   * }
+                   */
+                try {
+                    // check metering channel
+                    String[] meteringChannelSplit = channelID.split("_");
+                    if (meteringChannelSplit.length > 1) {
+                        short offset = 0;
+                        // if total_
+                        if (meteringChannelSplit.length == 3) {
+                            offset = 1;
+                        }
+                        // check through IllegalArgumentException, if channel is metering
+                        MeteringTypeEnum meteringType = MeteringTypeEnum.valueOf(meteringChannelSplit[0 + offset]);
+                        MeteringUnitsEnum unitType = MeteringUnitsEnum.valueOf(meteringChannelSplit[1 + offset]);
 
-                    case DigitalSTROMBindingConstants.CHANNEL_ID_SCENE:
-                        return new ChannelType(channelTypeUID, false, SWITCH, getText("CHANNEL_SCENE_LABEL", locale),
-                                getText("CHANNEL_SCENE_DESCRIPTION", locale), null,
-                                Sets.newHashSet(getText("SCENE", locale), getText("DS", locale)), null, null);
-                    default:
-                        break;
+                        String pattern = "%.3f kWh";
+
+                        if (MeteringTypeEnum.energy.equals(meteringType)) {
+                            if (MeteringUnitsEnum.Ws.equals(unitType)) {
+                                pattern = "%d " + unitType.toString();
+                            }
+                        } else {
+                            pattern = "%d W";
+                        }
+                        return new ChannelType(channelTypeUID, false, NUMBER, getLabelText(channelID, locale),
+                                getDescText(channelID, locale), CATEGORY_ENERGY,
+                                Sets.newHashSet(getLabelText(channelID, locale), getText("DS", locale)),
+                                new StateDescription(null, null, null, pattern, true, null), null);
+                    }
+                } catch (IllegalArgumentException e1) {
+                    // ignore
                 }
 
             }

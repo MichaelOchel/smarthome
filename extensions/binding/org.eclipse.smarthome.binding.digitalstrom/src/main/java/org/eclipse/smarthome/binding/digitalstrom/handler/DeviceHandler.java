@@ -10,6 +10,7 @@ package org.eclipse.smarthome.binding.digitalstrom.handler;
 import static org.eclipse.smarthome.binding.digitalstrom.DigitalSTROMBindingConstants.*;
 
 import java.math.BigDecimal;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
@@ -53,8 +54,6 @@ import org.eclipse.smarthome.core.types.RefreshType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.google.common.collect.Sets;
-
 /**
  * The {@link DeviceHandler} is responsible for handling the configuration, load supported channels of a
  * digitalSTROM device and handling commands, which are sent to one of the channels. <br>
@@ -71,10 +70,8 @@ public class DeviceHandler extends BaseThingHandler implements DeviceStatusListe
 
     private Logger logger = LoggerFactory.getLogger(DeviceHandler.class);
 
-    public final static Set<ThingTypeUID> SUPPORTED_THING_TYPES = Sets.newHashSet(
-            DigitalSTROMBindingConstants.THING_TYPE_GE_DEVICE, DigitalSTROMBindingConstants.THING_TYPE_SW_DEVICE,
-            DigitalSTROMBindingConstants.THING_TYPE_GR_DEVICE,
-            DigitalSTROMBindingConstants.THING_TYPE_DS_I_SENSE_200_DEVICE, THING_TYPE_BL_DEVICE);
+    // will be filled by DsDeviceThingTypeProvider
+    public static Set<ThingTypeUID> SUPPORTED_THING_TYPES = new HashSet<ThingTypeUID>();
 
     private String dSID = null;
 
@@ -716,7 +713,7 @@ public class DeviceHandler extends BaseThingHandler implements DeviceStatusListe
                 SensorEnum sensorType = SensorEnum.valueOf(channelUID.getId());
                 Float val = device.getFloatSensorValue(sensorType);
                 if (val != null) {
-                    updateState(getSensorChannelUID(sensorType), new DecimalType(val));
+                    updateState(channelUID, new DecimalType(val));
                 }
             } catch (IllegalArgumentException e) {
                 if (channelUID.getId().contains(DsChannelTypeProvider.DIMMER)) {

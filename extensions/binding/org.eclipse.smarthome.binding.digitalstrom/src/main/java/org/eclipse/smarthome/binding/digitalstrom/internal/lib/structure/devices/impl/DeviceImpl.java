@@ -1611,9 +1611,9 @@ public class DeviceImpl extends AbstractGeneralDeviceInformations implements Dev
     }
 
     @Override
-    public DeviceStatusListener unregisterDeviceStateListener() {
+    public DeviceStatusListener unregisterDeviceStatusListener() {
         setAllSensorDataRefreshPrioritiesToNever();
-        return super.unregisterDeviceStateListener();
+        return super.unregisterDeviceStatusListener();
     }
 
     private void setCachedMeterData() {

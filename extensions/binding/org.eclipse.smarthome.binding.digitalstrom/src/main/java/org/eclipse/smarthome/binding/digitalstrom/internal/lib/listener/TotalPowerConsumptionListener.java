@@ -30,4 +30,6 @@ public interface TotalPowerConsumptionListener {
      * @param newPowerConsumption
      */
     public void onEnergyMeterValueChanged(int newEnergyMeterValue);
+
+    public void onEnergyMeterWsValueChanged(int val);
 }

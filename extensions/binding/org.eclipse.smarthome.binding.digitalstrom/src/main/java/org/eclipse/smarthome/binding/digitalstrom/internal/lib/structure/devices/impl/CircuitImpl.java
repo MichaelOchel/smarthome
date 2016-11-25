@@ -6,15 +6,15 @@ import org.eclipse.smarthome.binding.digitalstrom.internal.lib.serverConnection.
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.AbstractGeneralDeviceInformations;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.Circuit;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.CachedMeteringValue;
+import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.DeviceStateUpdate;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.constants.MeteringTypeEnum;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.constants.MeteringUnitsEnum;
+import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.impl.DeviceStateUpdateImpl;
 
 import com.google.common.collect.Lists;
 import com.google.gson.JsonObject;
 
 public class CircuitImpl extends AbstractGeneralDeviceInformations implements Circuit {
-
-    // TODO: complete circuit interface and this class
 
     // Config
     private Integer hwVersion = null;
@@ -273,43 +273,57 @@ public class CircuitImpl extends AbstractGeneralDeviceInformations implements Ci
         if (cachedMeteringValue != null) {
             switch (cachedMeteringValue.getMeteringType()) {
                 case consumption:
-                    if (checkNewer(this.consumption, cachedMeteringValue)) {
-                        this.consumption = cachedMeteringValue;
+                    if (checkNewer(consumption, cachedMeteringValue)) {
+                        consumption = cachedMeteringValue;
+                        informListener(cachedMeteringValue);
                     }
                     break;
                 case energy:
                     if (cachedMeteringValue.getMeteringUnit() == null
                             || cachedMeteringValue.getMeteringUnit().equals(MeteringUnitsEnum.Wh)) {
-                        if (checkNewer(this.energyWh, cachedMeteringValue)) {
-                            this.energyWh = cachedMeteringValue;
+                        if (checkNewer(energyWh, cachedMeteringValue)) {
+                            energyWh = cachedMeteringValue;
+                            informListener(cachedMeteringValue);
                         }
                     } else {
-                        if (checkNewer(this.energyWs, cachedMeteringValue)) {
-                            this.energyWs = cachedMeteringValue;
+                        if (checkNewer(energyWs, cachedMeteringValue)) {
+                            energyWs = cachedMeteringValue;
+                            informListener(cachedMeteringValue);
                         }
                     }
                     break;
-                case energyDelta:
-                    if (cachedMeteringValue.getMeteringUnit() == null
-                            || cachedMeteringValue.getMeteringUnit().equals(MeteringUnitsEnum.Wh)) {
-                        if (checkNewer(this.energyDeltaWh, cachedMeteringValue)) {
-                            this.energyDeltaWh = cachedMeteringValue;
-                        }
-                    } else {
-                        if (checkNewer(this.energyDeltaWs, cachedMeteringValue)) {
-                            this.energyDeltaWs = cachedMeteringValue;
-                        }
-                    }
-                    break;
+                /*
+                 * case energyDelta:
+                 * if (cachedMeteringValue.getMeteringUnit() == null
+                 * || cachedMeteringValue.getMeteringUnit().equals(MeteringUnitsEnum.Wh)) {
+                 * if (checkNewer(energyDeltaWh, cachedMeteringValue)) {
+                 * energyDeltaWh = cachedMeteringValue;
+                 * informListener(cachedMeteringValue);
+                 * }
+                 * } else {
+                 * if (checkNewer(energyDeltaWs, cachedMeteringValue)) {
+                 * energyDeltaWs = cachedMeteringValue;
+                 * informListener(cachedMeteringValue);
+                 * }
+                 * }
+                 * break;
+                 */
                 default:
                     break;
             }
         }
     }
 
+    private void informListener(CachedMeteringValue newMeteringValue) {
+        if (isListenerRegisterd()) {
+            super.listener.onDeviceStateChanged(
+                    new DeviceStateUpdateImpl(DeviceStateUpdate.UPDATE_CIRCUIT_METER, newMeteringValue));
+        }
+    }
+
     private boolean checkNewer(CachedMeteringValue oldCachedMeteringValue, CachedMeteringValue newCachedMeteringValue) {
-        return oldCachedMeteringValue != null
-                && oldCachedMeteringValue.getDateAsDate().before(newCachedMeteringValue.getDateAsDate());
+        return oldCachedMeteringValue == null
+                || oldCachedMeteringValue.getDateAsDate().before(newCachedMeteringValue.getDateAsDate());
     }
 
     @Override
@@ -323,12 +337,14 @@ public class CircuitImpl extends AbstractGeneralDeviceInformations implements Ci
                 } else {
                     return getValue(this.energyWs);
                 }
-            case energyDelta:
-                if (meteringUnit.equals(MeteringUnitsEnum.Wh)) {
-                    return getValue(this.energyDeltaWh);
-                } else {
-                    return getValue(this.energyDeltaWs);
-                }
+                /*
+                 * case energyDelta:
+                 * if (meteringUnit.equals(MeteringUnitsEnum.Wh)) {
+                 * return getValue(this.energyDeltaWh);
+                 * } else {
+                 * return getValue(this.energyDeltaWs);
+                 * }
+                 */
             default:
                 break;
         }
@@ -342,5 +358,182 @@ public class CircuitImpl extends AbstractGeneralDeviceInformations implements Ci
     @Override
     public List<CachedMeteringValue> getAllCachedMeteringValues() {
         return Lists.newArrayList(consumption, energyDeltaWh, energyDeltaWs, energyWh, energyWs);
+    }
+
+    /*
+     * public void registerDeviceStausListenerForConfigUpdate(DeviceStatusListener deviceStatusListener) {
+     * if (deviceStatusListener != null) {
+     * super.listener = deviceStatusListener;
+     * this.listener.onDeviceConfigChanged(null);
+     * }
+     * }
+     */
+
+    /*
+     * (non-Javadoc)
+     *
+     * @see java.lang.Object#hashCode()
+     */
+    @Override
+    public int hashCode() {
+        final int prime = 31;
+        int result = super.hashCode();
+        result = prime * result + ((apiVersion == null) ? 0 : apiVersion.hashCode());
+        result = prime * result + ((armSwVersion == null) ? 0 : armSwVersion.hashCode());
+        result = prime * result + ((busMemberType == null) ? 0 : busMemberType.hashCode());
+        result = prime * result + ((dspSwVersion == null) ? 0 : dspSwVersion.hashCode());
+        result = prime * result + ((hasDevices == null) ? 0 : hasDevices.hashCode());
+        result = prime * result + ((hasMetering == null) ? 0 : hasMetering.hashCode());
+        result = prime * result + ((hwName == null) ? 0 : hwName.hashCode());
+        result = prime * result + ((hwVersion == null) ? 0 : hwVersion.hashCode());
+        result = prime * result + ((hwVersionString == null) ? 0 : hwVersionString.hashCode());
+        result = prime * result + ((ignoreActionsFromNewDevices == null) ? 0 : ignoreActionsFromNewDevices.hashCode());
+        result = prime * result + ((swVersion == null) ? 0 : swVersion.hashCode());
+        result = prime * result + ((vdcConfigURL == null) ? 0 : vdcConfigURL.hashCode());
+        result = prime * result + ((vdcHardwareGuid == null) ? 0 : vdcHardwareGuid.hashCode());
+        result = prime * result + ((vdcHardwareModelGuid == null) ? 0 : vdcHardwareModelGuid.hashCode());
+        result = prime * result + ((vdcModelUID == null) ? 0 : vdcModelUID.hashCode());
+        result = prime * result + ((vdcOemGuid == null) ? 0 : vdcOemGuid.hashCode());
+        result = prime * result + ((vdcVendorGuid == null) ? 0 : vdcVendorGuid.hashCode());
+        return result;
+    }
+
+    /*
+     * (non-Javadoc)
+     *
+     * @see java.lang.Object#equals(java.lang.Object)
+     */
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) {
+            return true;
+        }
+        if (!super.equals(obj)) {
+            return false;
+        }
+        if (!(obj instanceof CircuitImpl)) {
+            return false;
+        }
+        CircuitImpl other = (CircuitImpl) obj;
+        if (apiVersion == null) {
+            if (other.apiVersion != null) {
+                return false;
+            }
+        } else if (!apiVersion.equals(other.apiVersion)) {
+            return false;
+        }
+        if (armSwVersion == null) {
+            if (other.armSwVersion != null) {
+                return false;
+            }
+        } else if (!armSwVersion.equals(other.armSwVersion)) {
+            return false;
+        }
+        if (busMemberType == null) {
+            if (other.busMemberType != null) {
+                return false;
+            }
+        } else if (!busMemberType.equals(other.busMemberType)) {
+            return false;
+        }
+        if (dspSwVersion == null) {
+            if (other.dspSwVersion != null) {
+                return false;
+            }
+        } else if (!dspSwVersion.equals(other.dspSwVersion)) {
+            return false;
+        }
+        if (hasDevices == null) {
+            if (other.hasDevices != null) {
+                return false;
+            }
+        } else if (!hasDevices.equals(other.hasDevices)) {
+            return false;
+        }
+        if (hasMetering == null) {
+            if (other.hasMetering != null) {
+                return false;
+            }
+        } else if (!hasMetering.equals(other.hasMetering)) {
+            return false;
+        }
+        if (hwName == null) {
+            if (other.hwName != null) {
+                return false;
+            }
+        } else if (!hwName.equals(other.hwName)) {
+            return false;
+        }
+        if (hwVersion == null) {
+            if (other.hwVersion != null) {
+                return false;
+            }
+        } else if (!hwVersion.equals(other.hwVersion)) {
+            return false;
+        }
+        if (hwVersionString == null) {
+            if (other.hwVersionString != null) {
+                return false;
+            }
+        } else if (!hwVersionString.equals(other.hwVersionString)) {
+            return false;
+        }
+        if (ignoreActionsFromNewDevices == null) {
+            if (other.ignoreActionsFromNewDevices != null) {
+                return false;
+            }
+        } else if (!ignoreActionsFromNewDevices.equals(other.ignoreActionsFromNewDevices)) {
+            return false;
+        }
+        if (swVersion == null) {
+            if (other.swVersion != null) {
+                return false;
+            }
+        } else if (!swVersion.equals(other.swVersion)) {
+            return false;
+        }
+        if (vdcConfigURL == null) {
+            if (other.vdcConfigURL != null) {
+                return false;
+            }
+        } else if (!vdcConfigURL.equals(other.vdcConfigURL)) {
+            return false;
+        }
+        if (vdcHardwareGuid == null) {
+            if (other.vdcHardwareGuid != null) {
+                return false;
+            }
+        } else if (!vdcHardwareGuid.equals(other.vdcHardwareGuid)) {
+            return false;
+        }
+        if (vdcHardwareModelGuid == null) {
+            if (other.vdcHardwareModelGuid != null) {
+                return false;
+            }
+        } else if (!vdcHardwareModelGuid.equals(other.vdcHardwareModelGuid)) {
+            return false;
+        }
+        if (vdcModelUID == null) {
+            if (other.vdcModelUID != null) {
+                return false;
+            }
+        } else if (!vdcModelUID.equals(other.vdcModelUID)) {
+            return false;
+        }
+        if (vdcOemGuid == null) {
+            if (other.vdcOemGuid != null) {
+                return false;
+            }
+        } else if (!vdcOemGuid.equals(other.vdcOemGuid)) {
+            return false;
+        }
+        if (vdcVendorGuid == null) {
+            if (other.vdcVendorGuid != null) {
+                return false;
+            }
+        } else if (!vdcVendorGuid.equals(other.vdcVendorGuid)) {
+            return false;
+        }
+        return true;
     }
 }

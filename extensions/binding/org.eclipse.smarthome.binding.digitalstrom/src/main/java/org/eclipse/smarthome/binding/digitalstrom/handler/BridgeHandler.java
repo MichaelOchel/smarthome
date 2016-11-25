@@ -34,9 +34,13 @@ import org.eclipse.smarthome.binding.digitalstrom.internal.lib.manager.impl.Conn
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.manager.impl.DeviceStatusManagerImpl;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.manager.impl.SceneManagerImpl;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.manager.impl.StructureManagerImpl;
+import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.Circuit;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.Device;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.DeviceStateUpdate;
+import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.constants.MeteringTypeEnum;
+import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.constants.MeteringUnitsEnum;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.scene.InternalScene;
+import org.eclipse.smarthome.binding.digitalstrom.internal.providers.DsChannelTypeProvider;
 import org.eclipse.smarthome.config.core.Configuration;
 import org.eclipse.smarthome.core.library.types.DecimalType;
 import org.eclipse.smarthome.core.thing.Bridge;
@@ -88,8 +92,6 @@ public class BridgeHandler extends BaseBridgeHandler
 
     private EventListener eventListener;
 
-    private List<SceneStatusListener> sceneListeners;
-    private List<DeviceStatusListener> devListener;
     private DeviceStatusListener deviceDiscovery = null;
     private SceneStatusListener sceneDiscovery = null;
     private Config config = null;
@@ -319,17 +321,20 @@ public class BridgeHandler extends BaseBridgeHandler
     @Override
     public void handleCommand(ChannelUID channelUID, Command command) {
         if (command instanceof RefreshType) {
-            switch (channelUID.getId()) {
-                case CHANNEL_ID_TOTAL_ACTIVE_POWER:
-                    updateState(channelUID, new DecimalType(devStatMan.getTotalPowerConsumption()));
-                    break;
-                case CHANNEL_ID_TOTAL_ELECTRIC_METER:
-                    updateState(channelUID, new DecimalType(devStatMan.getTotalEnergyMeterValue()));
-                    break;
-                default:
-                    logger.debug("Command received for an unknown channel: {}", channelUID.getId());
-                    break;
-            }
+            channelLinked(channelUID);
+            /*
+             * switch (channelUID.getId()) {
+             * case CHANNEL_ID_TOTAL_ACTIVE_POWER:
+             * updateState(channelUID, new DecimalType(devStatMan.getTotalPowerConsumption()));
+             * break;
+             * case CHANNEL_ID_TOTAL_ELECTRIC_METER:
+             * updateState(channelUID, new DecimalType(devStatMan.getTotalEnergyMeterValue()));
+             * break;
+             * default:
+             * logger.debug("Command received for an unknown channel: {}", channelUID.getId());
+             * break;
+             * }
+             */
         } else {
             logger.debug("Command {} is not supported for channel: {}", command, channelUID.getId());
         }
@@ -500,30 +505,52 @@ public class BridgeHandler extends BaseBridgeHandler
 
     @Override
     public void channelLinked(ChannelUID channelUID) {
-        switch (channelUID.getId()) {
-            case CHANNEL_ID_TOTAL_ACTIVE_POWER:
-                if (devStatMan != null) {
-                    onTotalPowerConsumptionChanged(devStatMan.getTotalPowerConsumption());
-                }
-                break;
-            case CHANNEL_ID_TOTAL_ELECTRIC_METER:
-                if (devStatMan != null) {
+        String[] meteringChannelSplit = channelUID.getId().split("_");
+        if (meteringChannelSplit.length > 2) {
+            MeteringTypeEnum meteringType = MeteringTypeEnum.valueOf(meteringChannelSplit[1]);
+            MeteringUnitsEnum unitType = MeteringUnitsEnum.valueOf(meteringChannelSplit[2]);
+            if (meteringType.equals(MeteringTypeEnum.energy)) {
+                if (unitType == null || unitType.equals(MeteringUnitsEnum.Wh)) {
                     onEnergyMeterValueChanged(devStatMan.getTotalEnergyMeterValue());
+                } else {
+                    onEnergyMeterWsValueChanged(devStatMan.getTotalEnergyMeterWsValue());
                 }
+            } else {
+                onTotalPowerConsumptionChanged(devStatMan.getTotalPowerConsumption());
+            }
         }
+        /*
+         * switch (channelUID.getId()) {
+         * case CHANNEL_ID_TOTAL_ACTIVE_POWER:
+         * if (devStatMan != null) {
+         * onTotalPowerConsumptionChanged(devStatMan.getTotalPowerConsumption());
+         * }
+         * break;
+         * case CHANNEL_ID_TOTAL_ELECTRIC_METER:
+         * if (devStatMan != null) {
+         * onEnergyMeterValueChanged(devStatMan.getTotalEnergyMeterValue());
+         * }
+         * }
+         */
     }
 
     @Override
     public void onTotalPowerConsumptionChanged(int newPowerConsumption) {
-        updateChannelState(CHANNEL_ID_TOTAL_ACTIVE_POWER, newPowerConsumption);
+        updateChannelState(MeteringTypeEnum.consumption, MeteringUnitsEnum.Wh, newPowerConsumption);
     }
 
     @Override
     public void onEnergyMeterValueChanged(int newEnergyMeterValue) {
-        updateChannelState(CHANNEL_ID_TOTAL_ELECTRIC_METER, newEnergyMeterValue * 0.001);
+        updateChannelState(MeteringTypeEnum.energy, MeteringUnitsEnum.Wh, newEnergyMeterValue * 0.001);
     }
 
-    private void updateChannelState(String channelID, double value) {
+    @Override
+    public void onEnergyMeterWsValueChanged(int newEnergyMeterValue) {
+        updateChannelState(MeteringTypeEnum.energy, MeteringUnitsEnum.Ws, newEnergyMeterValue);
+    }
+
+    private void updateChannelState(MeteringTypeEnum meteringType, MeteringUnitsEnum meteringUnit, double value) {
+        String channelID = DsChannelTypeProvider.TOTAL_PRE + meteringType.toString() + "_" + meteringUnit.toString();
         if (getThing().getChannel(channelID) != null) {
             updateState(new ChannelUID(getThing().getUID(), channelID), new DecimalType(value));
         }
@@ -747,5 +774,11 @@ public class BridgeHandler extends BaseBridgeHandler
                     break;
             }
         }
+    }
+
+    public List<Circuit> getCircuits() {
+        logger.debug("circuits: " + this.structMan.getCircuitMap().values().toString());
+        return this.structMan != null && this.structMan.getCircuitMap() != null
+                ? new LinkedList<Circuit>(this.structMan.getCircuitMap().values()) : null;
     }
 }

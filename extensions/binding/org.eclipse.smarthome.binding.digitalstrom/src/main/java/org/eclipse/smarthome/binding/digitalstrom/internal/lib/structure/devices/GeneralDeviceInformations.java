@@ -54,14 +54,14 @@ public interface GeneralDeviceInformations {
      *
      * @param deviceStatuslistener
      */
-    public void registerDeviceStateListener(DeviceStatusListener deviceStatuslistener);
+    public void registerDeviceStatusListener(DeviceStatusListener deviceStatuslistener);
 
     /**
      * Unregister the {@link DeviceStatusListener} to this {@link Device} if it exists.
      *
      * @return the unregistered {@link DeviceStatusListener} or null if no one was registered
      */
-    public DeviceStatusListener unregisterDeviceStateListener();
+    public DeviceStatusListener unregisterDeviceStatusListener();
 
     /**
      * Returns true, if a {@link DeviceStatusListener} is registered to this {@link Device}, otherwise false.
@@ -75,4 +75,6 @@ public interface GeneralDeviceInformations {
     public void setIsValide(boolean isPresent);
 
     public String getDisplayID();
+
+    DeviceStatusListener getDeviceStatusListener();
 }

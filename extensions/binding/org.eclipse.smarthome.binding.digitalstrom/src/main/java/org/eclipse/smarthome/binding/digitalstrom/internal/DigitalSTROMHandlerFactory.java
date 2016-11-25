@@ -15,6 +15,7 @@ import java.util.Set;
 import org.apache.commons.lang.StringUtils;
 import org.eclipse.smarthome.binding.digitalstrom.DigitalSTROMBindingConstants;
 import org.eclipse.smarthome.binding.digitalstrom.handler.BridgeHandler;
+import org.eclipse.smarthome.binding.digitalstrom.handler.CircuitHandler;
 import org.eclipse.smarthome.binding.digitalstrom.handler.DeviceHandler;
 import org.eclipse.smarthome.binding.digitalstrom.handler.SceneHandler;
 import org.eclipse.smarthome.binding.digitalstrom.internal.discovery.DiscoveryServiceManager;
@@ -45,7 +46,8 @@ public class DigitalSTROMHandlerFactory extends BaseThingHandlerFactory {
     private HashMap<String, DiscoveryServiceManager> discoveryServiceManagers = new HashMap<String, DiscoveryServiceManager>();
 
     public final static Set<ThingTypeUID> SUPPORTED_THING_TYPES = Sets.union(SceneHandler.SUPPORTED_THING_TYPES,
-            Sets.union(BridgeHandler.SUPPORTED_THING_TYPES, DeviceHandler.SUPPORTED_THING_TYPES));
+            Sets.union(BridgeHandler.SUPPORTED_THING_TYPES,
+                    Sets.union(DeviceHandler.SUPPORTED_THING_TYPES, CircuitHandler.SUPPORTED_THING_TYPES)));
     private HashMap<ThingUID, BridgeHandler> bridgeHandlers = null;
 
     @Override
@@ -71,6 +73,11 @@ public class DigitalSTROMHandlerFactory extends BaseThingHandlerFactory {
         }
 
         if (DeviceHandler.SUPPORTED_THING_TYPES.contains(thingTypeUID)) {
+            ThingUID dsDeviceUID = getDeviceUID(thingTypeUID, thingUID, configuration, bridgeUID);
+            return super.createThing(thingTypeUID, configuration, dsDeviceUID, bridgeUID);
+        }
+
+        if (CircuitHandler.SUPPORTED_THING_TYPES.contains(thingTypeUID)) {
             ThingUID dsDeviceUID = getDeviceUID(thingTypeUID, thingUID, configuration, bridgeUID);
             return super.createThing(thingTypeUID, configuration, dsDeviceUID, bridgeUID);
         }
@@ -105,6 +112,10 @@ public class DigitalSTROMHandlerFactory extends BaseThingHandlerFactory {
 
         if (DeviceHandler.SUPPORTED_THING_TYPES.contains(thingTypeUID)) {
             return new DeviceHandler(thing);
+        }
+
+        if (CircuitHandler.SUPPORTED_THING_TYPES.contains(thingTypeUID)) {
+            return new CircuitHandler(thing);
         }
 
         if (SceneHandler.SUPPORTED_THING_TYPES.contains(thingTypeUID)) {
