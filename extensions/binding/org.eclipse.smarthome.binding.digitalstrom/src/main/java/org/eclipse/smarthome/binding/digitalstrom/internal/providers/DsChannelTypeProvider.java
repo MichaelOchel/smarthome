@@ -189,7 +189,7 @@ public class DsChannelTypeProvider implements ChannelTypeProvider {
                 return CATEGORY_ENERGY;
             case AIR_PRESSURE:
                 return CATEGORY_PRESSURE;
-            case CARBONE_DIOXIDE:
+            case CARBON_DIOXIDE:
                 return CATEGORY_CARBONE_DIOXIDE;
             case PRECIPITATION:
                 return CATEGORY_RAIN;

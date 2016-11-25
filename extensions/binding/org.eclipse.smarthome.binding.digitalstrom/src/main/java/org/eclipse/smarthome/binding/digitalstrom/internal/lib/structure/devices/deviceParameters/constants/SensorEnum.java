@@ -36,7 +36,7 @@ public enum SensorEnum {
      * | 15 | Air pressure | Pascal (hPa) | 200 | 1223,75 | 0,25 |
      * | 18 | Wind speed | Meters per second (m/s) | 0 | 102,375 | 0,025 |
      * | 19 | Wind direction | degrees | 0 | 511,875 | 0,54 |
-     * | 20 | Precipitation | Millimeter per square meter (mm/m2) | 0 | 102,375 | 0,025 |
+     * | 20 | Precipitation | Milliliter per square meter (ml/m2) | 0 | 102,375 | 0,025 |
      * | 21 | Carbon Dioxide | Parts per million (ppm) | 1 | 131446,795 | logarithmic: ppm = 10 * (x/800), x = 800 * log
      * (ppm) |
      * | 25 | Sound pressure level | Decibel (dB) | 0 | 255,938 | 0,25/4 |
@@ -44,6 +44,11 @@ public enum SensorEnum {
      * | 51 | Room temperature control variable | Percent (%) | 0 | 102,375 | 0,025 |
      * | 64 | Output current (H) | Ampere (mA) | 0 | 16380 | 4 |
      * | 65 | Power consumption | Volt-Ampere (VA) | 0 | 4095 | 1 |
+     *
+     * Note: Point 20 precipitation, mm/m2 doesn't exist as unit, so it's liter or milliliter per square meter (ml/m2 or
+     * l/m2)
+     * otherwise it's only mm what is the same as l/m2)
+     *
      */
     ACTIVE_POWER((short) 4, "watt", "W", 0, 4095, 1, "%d"),
     OUTPUT_CURRENT((short) 5, "ampere", "mA", 0, 4095, 1, "%d"),
@@ -58,7 +63,7 @@ public enum SensorEnum {
     WIND_SPEED((short) 18, "meters_per_second", "m/s", 0, (float) 102.375, (float) 0.025, "%.2f"),
     WIND_DIRECTION((short) 19, "degrees", "°", 0, (float) 511.875, (float) 0.54, "%.2f"),
     PRECIPITATION((short) 20, "millimeter_per_square_meter", "mm/m2", 0, (float) 102.375, (float) 0.025, "%.3f"),
-    CARBONE_DIOXIDE((short) 21, "parts_per_million", "ppm", 1, (float) 131446.795, 800, "%.3f"),
+    CARBON_DIOXIDE((short) 21, "parts_per_million", "ppm", 1, (float) 131446.795, 800, "%.3f"),
     SOUND_PRESSURE_LEVEL((short) 25, "decibel", "dB", 0, (float) 255.938, (float) 0.0625, "%.2f"),
     ROOM_TEMPERATION_SET_POINT((short) 50, "kelvin", "K", 230, (float) 332.375, (float) 0.025, "%.2f"),
     ROOM_TEMPERATION_CONTROL_VARIABLE((short) 51, "kelvin", "K", 230, (float) 332.375, (float) 0.25, "%.2f"),
@@ -115,7 +120,7 @@ public enum SensorEnum {
                 case WIND_SPEED:
                 case WIND_DIRECTION:
                 case PRECIPITATION:
-                case CARBONE_DIOXIDE:
+                case CARBON_DIOXIDE:
                 case SOUND_PRESSURE_LEVEL:
                 case ROOM_TEMPERATION_SET_POINT:
                 case ROOM_TEMPERATION_CONTROL_VARIABLE:
