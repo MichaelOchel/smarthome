@@ -6,8 +6,8 @@
 
     <!--DigitalStrom Bridge -->
     <bridge-type id="dssBridge">
-        <label>@text/DSS_BRIDGE_LABEL</label>
-        <description>@text/DSS_BRIDGE_DESC</description>
+        <label>@text/dSS_label</label>
+        <description>@text/dSS_desc</description>
         <channels>
             <channel typeId="total_consumption_Wh" id="total_consumption_Wh" />
             <channel typeId="total_energy_Wh" id="total_energy_Wh" /><channel typeId="total_energy_Ws" id="total_energy_Ws"></channel>

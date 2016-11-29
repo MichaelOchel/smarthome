@@ -10,7 +10,7 @@ package org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.device
 import java.util.HashMap;
 
 /**
- * The {@link FunctionalNameAndColorGroupEnum} contains all digitalSTROM functional group names and links to their
+ * The {@link FuncNameAndColorGroupEnum} contains all digitalSTROM functional group names and links to their
  * {@link FunctionalColorGroupEnum}.
  *
  * @see http://developer.digitalstrom.org/Architecture/ds-basics.pdf,
@@ -18,7 +18,8 @@ import java.util.HashMap;
  * @author Michael Ochel - Initial contribution
  * @author Matthias Siegele - Initial contribution
  */
-public enum FunctionalNameAndColorGroupEnum {
+
+public enum FuncNameAndColorGroupEnum {
     /*
      * | Number | Name | Color | Function |
      * --------------------------------------------------------------------------------------
@@ -56,10 +57,10 @@ public enum FunctionalNameAndColorGroupEnum {
     private final short colorGroup;
     private final FunctionalColorGroupEnum color;
 
-    static final HashMap<Short, FunctionalNameAndColorGroupEnum> colorGroups = new HashMap<Short, FunctionalNameAndColorGroupEnum>();
+    static final HashMap<Short, FuncNameAndColorGroupEnum> colorGroups = new HashMap<Short, FuncNameAndColorGroupEnum>();
 
     static {
-        for (FunctionalNameAndColorGroupEnum colorGroup : FunctionalNameAndColorGroupEnum.values()) {
+        for (FuncNameAndColorGroupEnum colorGroup : FuncNameAndColorGroupEnum.values()) {
             colorGroups.put(colorGroup.getFunctionalColorGroup(), colorGroup);
         }
     }
@@ -75,17 +76,16 @@ public enum FunctionalNameAndColorGroupEnum {
     }
 
     /**
-     * Returns the {@link FunctionalNameAndColorGroupEnum} of the given functional name group id.
+     * Returns the {@link FuncNameAndColorGroupEnum} of the given functional name group id.
      *
      * @param functionalNameGroupID
      * @return FunctionalNameAndColorGroupEnum
      */
-    public static FunctionalNameAndColorGroupEnum getMode(Short functionalNameGroupID) {
+    public static FuncNameAndColorGroupEnum getMode(Short functionalNameGroupID) {
         return colorGroups.get(functionalNameGroupID);
     }
 
-    private FunctionalNameAndColorGroupEnum(short functionalColorGroupID,
-            FunctionalColorGroupEnum functionalColorGroup) {
+    private FuncNameAndColorGroupEnum(short functionalColorGroupID, FunctionalColorGroupEnum functionalColorGroup) {
         this.colorGroup = functionalColorGroupID;
         this.color = functionalColorGroup;
     }

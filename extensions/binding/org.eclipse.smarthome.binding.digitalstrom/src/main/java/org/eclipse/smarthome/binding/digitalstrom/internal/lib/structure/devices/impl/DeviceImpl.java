@@ -29,8 +29,8 @@ import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.DeviceSceneSpec;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.DeviceStateUpdate;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.constants.ChangeableDeviceConfigEnum;
+import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.constants.FuncNameAndColorGroupEnum;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.constants.FunctionalColorGroupEnum;
-import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.constants.FunctionalNameAndColorGroupEnum;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.constants.OutputModeEnum;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.constants.SensorEnum;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.impl.DSID;
@@ -64,7 +64,7 @@ public class DeviceImpl extends AbstractGeneralDeviceInformations implements Dev
     private List<Short> groupList = new LinkedList<Short>();
 
     private FunctionalColorGroupEnum functionalGroup = null;
-    private FunctionalNameAndColorGroupEnum functionalName = null;
+    private FuncNameAndColorGroupEnum functionalName = null;
     private String hwInfo;
 
     private OutputModeEnum outputMode = null;
@@ -198,10 +198,10 @@ public class DeviceImpl extends AbstractGeneralDeviceInformations implements Dev
     private void initAddGroup(Short groupID) {
         if (groupID != -1) {
             this.groupList.add(groupID);
-            if (FunctionalNameAndColorGroupEnum.containsColorGroup(groupID)) {
-                if (this.functionalName == null || !FunctionalNameAndColorGroupEnum.getMode(groupID)
-                        .equals(FunctionalNameAndColorGroupEnum.JOKER)) {
-                    this.functionalName = FunctionalNameAndColorGroupEnum.getMode(groupID);
+            if (FuncNameAndColorGroupEnum.containsColorGroup(groupID)) {
+                if (this.functionalName == null
+                        || !FuncNameAndColorGroupEnum.getMode(groupID).equals(FuncNameAndColorGroupEnum.JOKER)) {
+                    this.functionalName = FuncNameAndColorGroupEnum.getMode(groupID);
                     this.functionalGroup = functionalName.getFunctionalColor();
                 }
             }
@@ -349,12 +349,12 @@ public class DeviceImpl extends AbstractGeneralDeviceInformations implements Dev
 
     @Override
     public boolean isHeatingDevice() {
-        return functionalName.equals(FunctionalNameAndColorGroupEnum.HEATING);
+        return functionalName.equals(FuncNameAndColorGroupEnum.HEATING);
     }
 
     @Override
     public boolean isTemperatureControlledDevice() {
-        return functionalName.equals(FunctionalNameAndColorGroupEnum.TEMPERATION_CONTROL);
+        return functionalName.equals(FuncNameAndColorGroupEnum.TEMPERATION_CONTROL);
     }
 
     @Override
