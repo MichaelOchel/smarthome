@@ -82,4 +82,14 @@ public class EventItemImpl implements EventItem {
     public Map<EventResponseEnum, String> getSource() {
         return source;
     }
+
+    /*
+     * (non-Javadoc)
+     * 
+     * @see java.lang.Object#toString()
+     */
+    @Override
+    public String toString() {
+        return "EventItemImpl [name=" + name + ", properties=" + properties + ", source=" + source + "]";
+    }
 }

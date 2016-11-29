@@ -152,7 +152,8 @@ public class DeviceHandler extends BaseThingHandler implements DeviceStatusListe
                 if (getDssBridgeHandler() != null && device == null) {
                     updateStatus(ThingStatus.ONLINE, ThingStatusDetail.CONFIGURATION_PENDING,
                             "waiting for listener registration");
-                    dssBridgeHandler.registerDeviceStatusListener(this);
+                    // TODO: testen obs klappt .. ist schon in getDssBridgeHandler() drin
+                    // dssBridgeHandler.registerDeviceStatusListener(this);
                 }
             } else {
                 updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.CONFIGURATION_ERROR, "No dSID is set!");
@@ -280,10 +281,15 @@ public class DeviceHandler extends BaseThingHandler implements DeviceStatusListe
 
             if (handler instanceof BridgeHandler) {
                 dssBridgeHandler = (BridgeHandler) handler;
-                dssBridgeHandler.registerDeviceStatusListener(this);
+                if (device == null) {
+                    // TODO: testen
+                    dssBridgeHandler.registerDeviceStatusListener(this);
+                }
             } else {
                 return null;
             }
+        } else if (device == null) {
+            dssBridgeHandler.registerDeviceStatusListener(this);
         }
         return dssBridgeHandler;
     }
@@ -294,93 +300,97 @@ public class DeviceHandler extends BaseThingHandler implements DeviceStatusListe
 
     @Override
     public synchronized void onDeviceStateChanged(DeviceStateUpdate deviceStateUpdate) {
-        if (device != null && (currentChannel != null || sensorChannlesLoaded())) {
+        if (device != null) {
             if (deviceStateUpdate != null) {
-                logger.debug("Update ESH-State");
-                if (deviceStateUpdate.isSensorUpdateType()) {
-                    updateState(getSensorChannelUID(deviceStateUpdate.getTypeAsSensorEnum()),
-                            new DecimalType(deviceStateUpdate.getValueAsFloat()));
-                    return;
+                if (sensorChannlesLoaded()) {
+                    if (deviceStateUpdate.isSensorUpdateType()) {
+                        updateState(getSensorChannelUID(deviceStateUpdate.getTypeAsSensorEnum()),
+                                new DecimalType(deviceStateUpdate.getValueAsFloat()));
+                        logger.debug("Update ESH-State");
+                        return;
+                    }
                 }
-                if (!device.isShade()) {
-                    switch (deviceStateUpdate.getType()) {
-                        case DeviceStateUpdate.UPDATE_BRIGHTNESS_DECREASE:
-                        case DeviceStateUpdate.UPDATE_BRIGHTNESS_INCREASE:
-                        case DeviceStateUpdate.UPDATE_BRIGHTNESS:
-                            if (currentChannel.contains(DsChannelTypeProvider.DIMMER)) {
+                if (currentChannel != null) {
+                    if (!device.isShade()) {
+                        switch (deviceStateUpdate.getType()) {
+                            case DeviceStateUpdate.UPDATE_BRIGHTNESS_DECREASE:
+                            case DeviceStateUpdate.UPDATE_BRIGHTNESS_INCREASE:
+                            case DeviceStateUpdate.UPDATE_BRIGHTNESS:
+                                if (currentChannel.contains(DsChannelTypeProvider.DIMMER)) {
+                                    if (deviceStateUpdate.getValueAsInteger() > 0) {
+                                        updateState(new ChannelUID(getThing().getUID(), currentChannel),
+                                                new PercentType(
+                                                        fromValueToPercent(deviceStateUpdate.getValueAsInteger(),
+                                                                device.getMaxOutputValue())));
+                                    } else {
+                                        updateState(new ChannelUID(getThing().getUID(), currentChannel), OnOffType.OFF);
+                                    }
+                                } else if (currentChannel.contains(DsChannelTypeProvider.STAGE)) {
+                                    if (currentChannel.contains("2")) {
+                                        updateState(new ChannelUID(getThing().getUID(), currentChannel),
+                                                new StringType(convertStageValue((short) 2, device.getOutputValue())));
+                                    } else {
+                                        updateState(new ChannelUID(getThing().getUID(), currentChannel),
+                                                new StringType(convertStageValue((short) 3, device.getOutputValue())));
+                                    }
+                                }
+                                break;
+                            case DeviceStateUpdate.UPDATE_ON_OFF:
+                                if (currentChannel.contains(DsChannelTypeProvider.STAGE)) {
+                                    onDeviceStateChanged(new DeviceStateUpdateImpl(DeviceStateUpdate.UPDATE_BRIGHTNESS,
+                                            device.getOutputValue()));
+                                }
                                 if (deviceStateUpdate.getValueAsInteger() > 0) {
-                                    updateState(new ChannelUID(getThing().getUID(), currentChannel),
-                                            new PercentType(fromValueToPercent(deviceStateUpdate.getValueAsInteger(),
-                                                    device.getMaxOutputValue())));
+                                    updateState(new ChannelUID(getThing().getUID(), currentChannel), OnOffType.ON);
                                 } else {
                                     updateState(new ChannelUID(getThing().getUID(), currentChannel), OnOffType.OFF);
                                 }
-                            }
-                            if (currentChannel.contains(DsChannelTypeProvider.STAGE)) {
-                                if (currentChannel.contains("2")) {
-                                    updateState(new ChannelUID(getThing().getUID(), currentChannel),
-                                            new StringType(convertStageValue((short) 2, device.getOutputValue())));
-                                } else {
-                                    updateState(new ChannelUID(getThing().getUID(), currentChannel),
-                                            new StringType(convertStageValue((short) 3, device.getOutputValue())));
-                                }
-                            }
-                            break;
-                        case DeviceStateUpdate.UPDATE_ON_OFF:
-                            if (currentChannel.contains(DsChannelTypeProvider.STAGE)) {
-                                onDeviceStateChanged(new DeviceStateUpdateImpl(DeviceStateUpdate.UPDATE_BRIGHTNESS,
-                                        device.getOutputValue()));
-                            }
-                            if (deviceStateUpdate.getValueAsInteger() > 0) {
-                                updateState(new ChannelUID(getThing().getUID(), currentChannel), OnOffType.ON);
-                            } else {
-                                updateState(new ChannelUID(getThing().getUID(), currentChannel), OnOffType.OFF);
-                            }
-                            // }
-                            break;
-                        default:
-                            return;
-                    }
-                } else {
-                    int percent = 0;
-                    switch (deviceStateUpdate.getType()) {
-                        case DeviceStateUpdate.UPDATE_SLAT_DECREASE:
-                        case DeviceStateUpdate.UPDATE_SLAT_INCREASE:
-                        case DeviceStateUpdate.UPDATE_SLATPOSITION:
-                            percent = fromValueToPercent(deviceStateUpdate.getValueAsInteger(),
-                                    device.getMaxSlatPosition());
-                            break;
-                        case DeviceStateUpdate.UPDATE_OPEN_CLOSE:
-                            if (deviceStateUpdate.getValueAsInteger() > 0) {
-                                percent = 100;
-                            }
-                            break;
-                        case DeviceStateUpdate.UPDATE_OPEN_CLOSE_ANGLE:
-                            if (device.isBlind()) {
+                                break;
+                            default:
+                                return;
+                        }
+                    } else {
+                        int percent = 0;
+                        switch (deviceStateUpdate.getType()) {
+                            case DeviceStateUpdate.UPDATE_SLAT_DECREASE:
+                            case DeviceStateUpdate.UPDATE_SLAT_INCREASE:
+                            case DeviceStateUpdate.UPDATE_SLATPOSITION:
+                                percent = fromValueToPercent(deviceStateUpdate.getValueAsInteger(),
+                                        device.getMaxSlatPosition());
+                                break;
+                            case DeviceStateUpdate.UPDATE_OPEN_CLOSE:
                                 if (deviceStateUpdate.getValueAsInteger() > 0) {
-                                    updateState(new ChannelUID(getThing().getUID(), currentChannel),
-                                            PercentType.HUNDRED);
-                                } else {
-                                    updateState(new ChannelUID(getThing().getUID(), currentChannel), // CHANNEL_ID_SHADE_ANGLE
-                                            PercentType.ZERO);
+                                    percent = 100;
                                 }
-                            }
-                            return;
-                        case DeviceStateUpdate.UPDATE_SLAT_ANGLE_DECREASE:
-                        case DeviceStateUpdate.UPDATE_SLAT_ANGLE_INCREASE:
-                        case DeviceStateUpdate.UPDATE_SLAT_ANGLE:
-                            updateState(new ChannelUID(getThing().getUID(), currentChannel),
-                                    new PercentType(fromValueToPercent(deviceStateUpdate.getValueAsInteger(),
-                                            device.getMaxSlatAngle())));
-                            return;
-                        default:
-                            return;
+                                break;
+                            case DeviceStateUpdate.UPDATE_OPEN_CLOSE_ANGLE:
+                                if (device.isBlind()) {
+                                    if (deviceStateUpdate.getValueAsInteger() > 0) {
+                                        updateState(new ChannelUID(getThing().getUID(), currentChannel),
+                                                PercentType.HUNDRED);
+                                    } else {
+                                        updateState(new ChannelUID(getThing().getUID(), currentChannel), // CHANNEL_ID_SHADE_ANGLE
+                                                PercentType.ZERO);
+                                    }
+                                }
+                                return;
+                            case DeviceStateUpdate.UPDATE_SLAT_ANGLE_DECREASE:
+                            case DeviceStateUpdate.UPDATE_SLAT_ANGLE_INCREASE:
+                            case DeviceStateUpdate.UPDATE_SLAT_ANGLE:
+                                updateState(new ChannelUID(getThing().getUID(), currentChannel),
+                                        new PercentType(fromValueToPercent(deviceStateUpdate.getValueAsInteger(),
+                                                device.getMaxSlatAngle())));
+                                return;
+                            default:
+                                return;
+                        }
+                        if (!device.getHWinfo().equals("GR-KL210")) {
+                            percent = 100 - percent;
+                        }
+                        updateState(new ChannelUID(getThing().getUID(), DsChannelTypeProvider.SHADE),
+                                new PercentType(percent));
                     }
-                    if (!device.getHWinfo().equals("GR-KL210")) {
-                        percent = 100 - percent;
-                    }
-                    updateState(new ChannelUID(getThing().getUID(), DsChannelTypeProvider.SHADE),
-                            new PercentType(percent));
+                    logger.debug("Update ESH-State");
                 }
             }
         }
@@ -586,7 +596,7 @@ public class DeviceHandler extends BaseThingHandler implements DeviceStatusListe
             while (channelInter.hasNext()) {
                 Channel channel = channelInter.next();
                 try {
-                    SensorEnum sensorType = SensorEnum.valueOf(channel.getUID().getId());
+                    SensorEnum sensorType = SensorEnum.valueOf(channel.getUID().getId().toUpperCase());
                     if (SensorEnum.isPowerSensor(sensorType)) {
                         if (device.checkPowerSensorRefreshPriorityNever(sensorType)) {
                             logger.debug("remove {} sensor channel", sensorType.toString());
@@ -635,7 +645,7 @@ public class DeviceHandler extends BaseThingHandler implements DeviceStatusListe
 
     private Channel getSensorChannel(SensorEnum sensorType) {
         return ChannelBuilder.create(getSensorChannelUID(sensorType), "Number")
-                .withType(new ChannelTypeUID(BINDING_ID, sensorType.toString())).build();
+                .withType(new ChannelTypeUID(BINDING_ID, sensorType.toString().toLowerCase())).build();
     }
 
     private void checkOutputChannel() {
@@ -703,14 +713,14 @@ public class DeviceHandler extends BaseThingHandler implements DeviceStatusListe
     }
 
     private ChannelUID getSensorChannelUID(SensorEnum sensorType) {
-        return new ChannelUID(getThing().getUID(), sensorType.toString());
+        return new ChannelUID(getThing().getUID(), sensorType.toString().toLowerCase());
     }
 
     @Override
     public void channelLinked(ChannelUID channelUID) {
         if (device != null) {
             try {
-                SensorEnum sensorType = SensorEnum.valueOf(channelUID.getId());
+                SensorEnum sensorType = SensorEnum.valueOf(channelUID.getId().toUpperCase());
                 Float val = device.getFloatSensorValue(sensorType);
                 if (val != null) {
                     updateState(channelUID, new DecimalType(val));

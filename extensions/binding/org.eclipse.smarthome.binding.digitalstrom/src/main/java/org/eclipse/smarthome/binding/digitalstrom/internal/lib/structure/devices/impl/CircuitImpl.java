@@ -39,8 +39,8 @@ public class CircuitImpl extends AbstractGeneralDeviceInformations implements Ci
     CachedMeteringValue consumption = null;
     CachedMeteringValue energyWh = null;
     CachedMeteringValue energyWs = null;
-    CachedMeteringValue energyDeltaWh = null;
-    CachedMeteringValue energyDeltaWs = null;
+    // CachedMeteringValue energyDeltaWh = null;
+    // CachedMeteringValue energyDeltaWs = null;
 
     public CircuitImpl(JsonObject jObject) {
         super(jObject);
@@ -357,7 +357,7 @@ public class CircuitImpl extends AbstractGeneralDeviceInformations implements Ci
 
     @Override
     public List<CachedMeteringValue> getAllCachedMeteringValues() {
-        return Lists.newArrayList(consumption, energyDeltaWh, energyDeltaWs, energyWh, energyWs);
+        return Lists.newArrayList(consumption, /* energyDeltaWh, energyDeltaWs, */ energyWh, energyWs);
     }
 
     /*

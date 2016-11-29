@@ -7,6 +7,7 @@
  */
 package org.eclipse.smarthome.binding.digitalstrom.internal.providers;
 
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedList;
@@ -72,10 +73,11 @@ public class DsChannelTypeProvider implements ChannelTypeProvider {
     public final static String GENERAL = "general";
     public final static String SCENE = "scene";
     // channel extended item type
-    public final static String WIPE = "Wipe";
-    public final static String ANGLE = "Angle";
-    public final static String STAGE = "Stage"; // pre stageses e.g. 2+STAGE_SWITCH
-    public final static String TEMPERATURE_CONTROLLED = "TemperatureControlled";
+    public final static String WIPE = "wipe";
+    public final static String ANGLE = "angle";
+    public final static String STAGE = "stage"; // pre stageses e.g. 2+STAGE_SWITCH
+    // benötigt?
+    public final static String TEMPERATURE_CONTROLED = "temperature_controled";
 
     // item types
     public final static String DIMMER = "Dimmer";
@@ -148,7 +150,7 @@ public class DsChannelTypeProvider implements ChannelTypeProvider {
         if (functionalGroup.equals(FunctionalColorGroupEnum.BLUE)) {
             channelPreID = HEATING;
             if (OutputModeEnum.outputModeIsTemperationControlled(outputMode)) {
-                return channelPreID + "_" + TEMPERATURE_CONTROLLED.toLowerCase();
+                return channelPreID + "_" + TEMPERATURE_CONTROLED.toLowerCase();
             }
         }
         if (OutputModeEnum.outputModeIsSwitch(outputMode)) {
@@ -168,10 +170,10 @@ public class DsChannelTypeProvider implements ChannelTypeProvider {
         return null;
     }
 
-    private static List<String> SUPPORTED_OUTPUT_CHANNEL_TYPES = new ArrayList<>();
+    private static List<String> supportedOutputChannelTypes = new ArrayList<>();
 
     public static boolean isOutputChannel(String channelTypeID) {
-        return SUPPORTED_OUTPUT_CHANNEL_TYPES.contains(channelTypeID);
+        return supportedOutputChannelTypes.contains(channelTypeID);
     }
 
     private void init() {
@@ -182,29 +184,19 @@ public class DsChannelTypeProvider implements ChannelTypeProvider {
             }
             if (i == 2) {
                 channelIDpre = HEATING;
-                SUPPORTED_OUTPUT_CHANNEL_TYPES.add(channelIDpre + "_" + TEMPERATURE_CONTROLLED.toLowerCase());
+                supportedOutputChannelTypes.add(channelIDpre + "_" + TEMPERATURE_CONTROLED.toLowerCase());
             }
-            SUPPORTED_OUTPUT_CHANNEL_TYPES.add(channelIDpre + "_" + SWITCH.toLowerCase());
-            SUPPORTED_OUTPUT_CHANNEL_TYPES.add(channelIDpre + "_" + DIMMER.toLowerCase());
+            supportedOutputChannelTypes.add(channelIDpre + "_" + SWITCH.toLowerCase());
+            supportedOutputChannelTypes.add(channelIDpre + "_" + DIMMER.toLowerCase());
             if (i < 2) {
-                SUPPORTED_OUTPUT_CHANNEL_TYPES.add(channelIDpre + "_2_" + STAGE.toLowerCase());
-                SUPPORTED_OUTPUT_CHANNEL_TYPES.add(channelIDpre + "_3_" + STAGE.toLowerCase());
+                supportedOutputChannelTypes.add(channelIDpre + "_2_" + STAGE.toLowerCase());
+                supportedOutputChannelTypes.add(channelIDpre + "_3_" + STAGE.toLowerCase());
             }
         }
         channelIDpre = SHADE;
-        SUPPORTED_OUTPUT_CHANNEL_TYPES.add(channelIDpre);
-        SUPPORTED_OUTPUT_CHANNEL_TYPES.add(channelIDpre + "_" + ANGLE.toLowerCase());
-        SUPPORTED_OUTPUT_CHANNEL_TYPES.add(SCENE);
-    }
-
-    /*
-     * LIGHT+SWITCH;
-     *
-     */
-    private StateDescription getSensorStateDescription(String shortcutUnit) {
-        return shortcutUnit.equals(SensorEnum.ELECTRIC_METER.getUnitShortcut())
-                ? new StateDescription(null, null, null, "%.3f " + shortcutUnit, true, null)
-                : new StateDescription(null, null, null, "%d " + shortcutUnit, true, null);
+        supportedOutputChannelTypes.add(channelIDpre);
+        supportedOutputChannelTypes.add(channelIDpre + "_" + ANGLE.toLowerCase());
+        supportedOutputChannelTypes.add(SCENE);
     }
 
     private String getSensorCategory(SensorEnum sensorType) {
@@ -229,7 +221,6 @@ public class DsChannelTypeProvider implements ChannelTypeProvider {
             case ROOM_TEMPERATION_SET_POINT:
                 break;
             case TEMPERATURE_INDOORS:
-                break;
             case TEMPERATURE_OUTDOORS:
                 return CATEGORY_TEMPERATURE;
             case WIND_DIRECTION:
@@ -264,8 +255,9 @@ public class DsChannelTypeProvider implements ChannelTypeProvider {
     private StateDescription getStageDescription(String channelID, Locale locale) {
         if (channelID.contains(STAGE.toLowerCase())) {
             List<StateOption> stateOptions = new ArrayList<StateOption>();
-            // if (isLight) {
             if (channelID.contains(LIGHT)) {
+                // TODO: DigitalSTROMBindingConstants.OPTION_COMBINED_BOTH_OFF hierhin? und "OPTION_BOTH_LIGHTS_OFF" als
+                // const? ... besser channelID + "_opt_"+val?
                 stateOptions.add(new StateOption(DigitalSTROMBindingConstants.OPTION_COMBINED_BOTH_OFF,
                         getText("OPTION_BOTH_LIGHTS_OFF", locale)));
                 stateOptions.add(new StateOption(DigitalSTROMBindingConstants.OPTION_COMBINED_BOTH_ON,
@@ -290,40 +282,25 @@ public class DsChannelTypeProvider implements ChannelTypeProvider {
             }
             return new StateDescription(null, null, null, null, false, stateOptions);
         }
+        if (channelID.contains(TEMPERATURE_CONTROLED)) {
+            return new StateDescription(new BigDecimal(0), new BigDecimal(50), new BigDecimal(0.1), "%.1f °C", false,
+                    null);
+        }
         return null;
     }
 
     private String getSesorDescription(SensorEnum sensorType, Locale locale) {
-        // the digitalSTROM resolution for temperature in kelvin is not correct but sensor-events and cached values are
-        // shown in °C so we will use this unit for temperature sensors
-        return getDescText(sensorType.toString().toLowerCase() + "_label",
-                locale);/*
-                         * sensorType.toString().contains("TEMPERATURE")
-                         * ? getText("sensor_desc_0", locale) + getText(sensorType.toString(), locale) + " "
-                         * + getText("sensor_desc_1", locale) + getText(sensorType.toString(), locale) + " "
-                         * + getText("sensor_desc_2", locale) + " " + getText("degrees_celsius", locale) + " (°C) "
-                         * + getText("sensor_desc_3", locale)
-                         * : getText("sensor_desc_0", locale) + getText(sensorType.toString(), locale) + " "
-                         * + getText("sensor_desc_1", locale) + getText(sensorType.toString(), locale) + " "
-                         * + getText("sensor_desc_2", locale) + " " + getText(sensorType.getUnit(), locale) + " ("
-                         * + sensorType.getUnitShortcut() + ") " + getText("sensor_desc_3", locale);
-                         */
+        return getDescText(sensorType.toString().toLowerCase(), locale);
     }
 
-    private String getSensorText(SensorEnum sensorType, Locale locale) {
-        return getText(sensorType.toString().toLowerCase() + "_desc", locale);
+    private String getSensorLabelText(SensorEnum sensorType, Locale locale) {
+        return getLabelText(sensorType.toString().toLowerCase(), locale);
     }
 
     @Override
     public Collection<ChannelType> getChannelTypes(Locale locale) {
         List<ChannelType> channelTypeList = new LinkedList<ChannelType>();
-        /*
-         * for (String channelTypeId : SUPPORTED_CHANNEL_TYPES) {
-         * channelTypeList.add(
-         * getChannelType(new ChannelTypeUID(DigitalSTROMBindingConstants.BINDING_ID, channelTypeId), locale));
-         * }
-         */
-        for (String channelTypeId : SUPPORTED_OUTPUT_CHANNEL_TYPES) {
+        for (String channelTypeId : supportedOutputChannelTypes) {
             channelTypeList.add(
                     getChannelType(new ChannelTypeUID(DigitalSTROMBindingConstants.BINDING_ID, channelTypeId), locale));
         }
@@ -364,6 +341,9 @@ public class DsChannelTypeProvider implements ChannelTypeProvider {
             }
             return ROLLERSHUTTER;
         }
+        if (channelID.contains(TEMPERATURE_CONTROLED)) {
+            return CATEGORY_TEMPERATURE;
+        }
         return null;
     }
 
@@ -387,9 +367,8 @@ public class DsChannelTypeProvider implements ChannelTypeProvider {
     }
 
     public static String getItemType(String channelID) {
-        // TODO: STAGE_SWITCH zu Stage umbenennen?
         if (channelID != null) {
-            if (channelID.contains(STAGE.toLowerCase()) || channelID.contains(TEMPERATURE_CONTROLLED.toLowerCase())) {
+            if (channelID.contains(STAGE.toLowerCase())) {
                 return STRING;
             }
             if (channelID.contains(SWITCH.toLowerCase()) || channelID.contains(SCENE)
@@ -398,6 +377,9 @@ public class DsChannelTypeProvider implements ChannelTypeProvider {
             }
             if (channelID.contains(DIMMER.toLowerCase()) || channelID.contains(ANGLE.toLowerCase())) {
                 return DIMMER;
+            }
+            if (channelID.contains(TEMPERATURE_CONTROLED.toLowerCase())) {
+                return NUMBER;
             }
             if (channelID.contains(SHADE)) {
                 return ROLLERSHUTTER;
@@ -411,42 +393,18 @@ public class DsChannelTypeProvider implements ChannelTypeProvider {
         if (channelTypeUID.getBindingId().equals(DigitalSTROMBindingConstants.BINDING_ID)) {
             try {
                 SensorEnum sensorType = SensorEnum.valueOf(channelTypeUID.getId().toUpperCase());
-                return new ChannelType(channelTypeUID, false, NUMBER, getSensorText(sensorType, locale),
+                return new ChannelType(channelTypeUID, false, NUMBER, getSensorLabelText(sensorType, locale),
                         getSesorDescription(sensorType, locale), getSensorCategory(sensorType),
-                        Sets.newHashSet(getSensorText(sensorType, locale), getText("DS", locale)),
+                        Sets.newHashSet(getSensorLabelText(sensorType, locale), getText("DS", locale)),
                         getSensorStateDescription(sensorType), null);
             } catch (IllegalArgumentException e) {
                 String channelID = channelTypeUID.getId();
-                if (SUPPORTED_OUTPUT_CHANNEL_TYPES.contains(channelID)) {
+                if (supportedOutputChannelTypes.contains(channelID)) {
                     // TODO:WIPE? config standby?
                     return new ChannelType(channelTypeUID, false, getItemType(channelID),
                             getLabelText(channelID, locale), getDescText(channelID, locale), getCategory(channelID),
                             getTags(channelID, locale), getStageDescription(channelID, locale), null);
-                } /*
-                   * switch (channelID) {
-                   * // TODO: auch autmatisch? auf alle erweitern?
-                   * case DigitalSTROMBindingConstants.CHANNEL_ID_TOTAL_ACTIVE_POWER:
-                   * return new ChannelType(channelTypeUID, false, NUMBER,
-                   * getText("CHANNEL_TOTAL_ACTIVE_POWER_LABEL", locale),
-                   * getText("CHANNEL_TOTAL_ACTIVE_POWER_DESCRIPTION", locale), CATEGORY_ENERGY,
-                   * Sets.newHashSet(getText("ACTIVE_POWER", locale), getText("POWER_CONSUMPTION", locale),
-                   * getText("DS", locale)),
-                   * getSensorStateDescription(SensorEnum.ACTIVE_POWER.getUnitShortcut()), null);
-                   * case DigitalSTROMBindingConstants.CHANNEL_ID_TOTAL_ELECTRIC_METER:
-                   * return new ChannelType(channelTypeUID, false, NUMBER,
-                   * getText("CHANNEL_TOTAL_ELECTRIC_METER_LABEL", locale),
-                   * getText("CHANNEL_TOTAL_ELECTRIC_METER_DESCRIPTION", locale), CATEGORY_ENERGY,
-                   * Sets.newHashSet(getText("ELECTRIC_METER", locale), getText("DS", locale)),
-                   * getSensorStateDescription(SensorEnum.ELECTRIC_METER.getUnitShortcut()), null);
-                   *
-                   * case DigitalSTROMBindingConstants.CHANNEL_ID_SCENE:
-                   * return new ChannelType(channelTypeUID, false, SWITCH, getText("CHANNEL_SCENE_LABEL", locale),
-                   * getText("CHANNEL_SCENE_DESCRIPTION", locale), null,
-                   * Sets.newHashSet(getText("SCENE", locale), getText("DS", locale)), null, null);
-                   * default:
-                   * break;
-                   * }
-                   */
+                }
                 try {
                     // check metering channel
                     String[] meteringChannelSplit = channelID.split("_");

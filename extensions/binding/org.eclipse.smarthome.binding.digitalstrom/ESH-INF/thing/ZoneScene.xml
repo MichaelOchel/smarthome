@@ -23,8 +23,8 @@
             </parameter>
             <!--zone id -->
             <parameter name="zoneID" type="text">
-                <label>@text/DS_SCENE_PARM_GROUP_ID_LABEL</label>
-                <description>@text/DS_SCENE_PARM_GROUP_ID_DESC</description>
+                <label>@text/DS_SCENE_PARM_ZONE_ID_LABEL</label>
+                <description>@text/DS_SCENE_PARM_ZONE_ID_DESC</description>
                 <required>false</required>
             </parameter>
             <!--scene id -->

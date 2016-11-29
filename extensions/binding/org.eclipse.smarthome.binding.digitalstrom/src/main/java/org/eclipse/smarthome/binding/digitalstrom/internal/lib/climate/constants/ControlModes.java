@@ -17,6 +17,16 @@ public enum ControlModes {
     private final Short ID;
     private final String KEY;
 
+    private final static ControlModes[] CONTROL_MODES = new ControlModes[5];
+
+    static {
+        CONTROL_MODES[0] = OFF;
+        CONTROL_MODES[1] = PID_CONTROL;
+        CONTROL_MODES[2] = ZONE_FOLLOWER;
+        CONTROL_MODES[3] = FIXED_VALUE;
+        CONTROL_MODES[4] = MANUAL;
+    }
+
     private ControlModes(short id, String key) {
         this.ID = id;
         this.KEY = key;
@@ -38,5 +48,14 @@ public enum ControlModes {
      */
     public Short getID() {
         return ID;
+    }
+
+    public static ControlModes getControlMode(short id) {
+        try {
+            return CONTROL_MODES[id];
+        } catch (IndexOutOfBoundsException e) {
+            // throw new IllegalArgumentException("The id dosen not exist, id have to be between 0 and 4.");
+            return null;
+        }
     }
 }

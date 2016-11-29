@@ -38,9 +38,7 @@ import com.google.common.collect.Sets;
 public class SceneDiscoveryService extends AbstractDiscoveryService {
 
     private final static Logger logger = LoggerFactory.getLogger(SceneDiscoveryService.class);
-
     private final BridgeHandler bridgeHandler;
-
     private final String sceneType;
 
     /**
@@ -62,7 +60,7 @@ public class SceneDiscoveryService extends AbstractDiscoveryService {
      */
     @Override
     public void deactivate() {
-        logger.debug("deactivate discovery service for scene type " + sceneType + " remove thing tyspes "
+        logger.debug("deactivate discovery service for scene type " + sceneType + " remove thing types "
                 + super.getSupportedThingTypes().toString());
         removeOlderResults(new Date().getTime());
     }
@@ -90,10 +88,9 @@ public class SceneDiscoveryService extends AbstractDiscoveryService {
                 ThingUID thingUID = getThingUID(scene);
                 if (thingUID != null) {
                     ThingUID bridgeUID = bridgeHandler.getThing().getUID();
-                    Map<String, Object> properties = new HashMap<>(5);
-                    properties.put(SCENE_NAME, scene.getSceneName());
-                    properties.put(SCENE_ZONE_ID, scene.getZoneID());
-                    properties.put(SCENE_GROUP_ID, scene.getGroupID());
+                    Map<String, Object> properties = new HashMap<>(4);
+                    properties.put(ZONE_ID, scene.getZoneID());
+                    properties.put(GROUP_ID, scene.getGroupID());
                     if (SceneEnum.containsScene(scene.getSceneID())) {
                         properties.put(SCENE_ID, SceneEnum.getScene(scene.getSceneID()).toString());
                     } else {

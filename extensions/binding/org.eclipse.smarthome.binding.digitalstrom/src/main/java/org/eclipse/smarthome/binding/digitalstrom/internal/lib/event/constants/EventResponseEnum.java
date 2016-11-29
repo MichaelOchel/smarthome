@@ -28,6 +28,7 @@ public enum EventResponseEnum {
     IS_APARTMENT("isApartment"),
     IS_GROUP("isGroup"),
     IS_DEVICE("isDevice"),
+    IS_SERVICE("isService"),
 
     // scene event
     FORCED("forced"),
@@ -41,7 +42,18 @@ public enum EventResponseEnum {
     SENSOR_VALUE_FLOAT("sensorValueFloat"),
     SENSOR_TYPE("sensorType"),
     SENSOR_VALUE("sensorValue"),
-    SENSOR_INDEX("sensorIndex");
+    SENSOR_INDEX("sensorIndex"),
+
+    // state changed
+    OLD_VALUE("oldvalue"),
+    STATE_NAME("statename"),
+    STATE("state"),
+    VALUE("value"),
+
+    // operation mode
+    ACTIONS("actions"),
+    OPERATION_MODE("operationMode"),
+    FORCED_UPDATE("forceUpdate");
 
     private final String ID;
     static final HashMap<String, EventResponseEnum> eventResponseFields = new HashMap<String, EventResponseEnum>();

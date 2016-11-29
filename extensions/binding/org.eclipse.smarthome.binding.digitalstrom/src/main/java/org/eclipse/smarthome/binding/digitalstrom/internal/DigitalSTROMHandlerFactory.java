@@ -18,6 +18,7 @@ import org.eclipse.smarthome.binding.digitalstrom.handler.BridgeHandler;
 import org.eclipse.smarthome.binding.digitalstrom.handler.CircuitHandler;
 import org.eclipse.smarthome.binding.digitalstrom.handler.DeviceHandler;
 import org.eclipse.smarthome.binding.digitalstrom.handler.SceneHandler;
+import org.eclipse.smarthome.binding.digitalstrom.handler.ZoneTemperatureControlHandler;
 import org.eclipse.smarthome.binding.digitalstrom.internal.discovery.DiscoveryServiceManager;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.manager.ConnectionManager;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.manager.impl.ConnectionManagerImpl;
@@ -47,7 +48,10 @@ public class DigitalSTROMHandlerFactory extends BaseThingHandlerFactory {
 
     public final static Set<ThingTypeUID> SUPPORTED_THING_TYPES = Sets.union(SceneHandler.SUPPORTED_THING_TYPES,
             Sets.union(BridgeHandler.SUPPORTED_THING_TYPES,
-                    Sets.union(DeviceHandler.SUPPORTED_THING_TYPES, CircuitHandler.SUPPORTED_THING_TYPES)));
+                    Sets.union(DeviceHandler.SUPPORTED_THING_TYPES,
+                            Sets.union(ZoneTemperatureControlHandler.SUPPORTED_THING_TYPES,
+                                    CircuitHandler.SUPPORTED_THING_TYPES))));
+
     private HashMap<ThingUID, BridgeHandler> bridgeHandlers = null;
 
     @Override
@@ -80,6 +84,11 @@ public class DigitalSTROMHandlerFactory extends BaseThingHandlerFactory {
         if (CircuitHandler.SUPPORTED_THING_TYPES.contains(thingTypeUID)) {
             ThingUID dsDeviceUID = getDeviceUID(thingTypeUID, thingUID, configuration, bridgeUID);
             return super.createThing(thingTypeUID, configuration, dsDeviceUID, bridgeUID);
+        }
+
+        if (ZoneTemperatureControlHandler.SUPPORTED_THING_TYPES.contains(thingTypeUID)) {
+            ThingUID zoneTempConUID = getZoneTemperatureControlUID(thingTypeUID, thingUID, configuration, bridgeUID);
+            return super.createThing(thingTypeUID, configuration, zoneTempConUID, bridgeUID);
         }
 
         if (SceneHandler.SUPPORTED_THING_TYPES.contains(thingTypeUID)) {
@@ -118,6 +127,10 @@ public class DigitalSTROMHandlerFactory extends BaseThingHandlerFactory {
             return new CircuitHandler(thing);
         }
 
+        if (ZoneTemperatureControlHandler.SUPPORTED_THING_TYPES.contains(thingTypeUID)) {
+            return new ZoneTemperatureControlHandler(thing);
+        }
+
         if (SceneHandler.SUPPORTED_THING_TYPES.contains(thingTypeUID)) {
             return new SceneHandler(thing);
         }
@@ -129,6 +142,12 @@ public class DigitalSTROMHandlerFactory extends BaseThingHandlerFactory {
         if (StringUtils.isNotBlank((String) configuration.get(DEVICE_DSID))) {
             thingUID = new ThingUID(thingTypeUID, bridgeUID, configuration.get(DEVICE_DSID).toString());
         }
+        return thingUID;
+    }
+
+    private ThingUID getZoneTemperatureControlUID(ThingTypeUID thingTypeUID, ThingUID thingUID,
+            Configuration configuration, ThingUID bridgeUID) {
+        thingUID = new ThingUID(thingTypeUID, bridgeUID, configuration.get(ZONE_ID).toString());
         return thingUID;
     }
 
@@ -145,11 +164,11 @@ public class DigitalSTROMHandlerFactory extends BaseThingHandlerFactory {
                         + "' does not exist or can not be used, please check your configuration.");
                 break;
             case SceneHandler.ZONE_WRONG:
-                logger.error("Configured zone '" + configuration.get(DigitalSTROMBindingConstants.SCENE_ZONE_ID)
+                logger.error("Configured zone '" + configuration.get(DigitalSTROMBindingConstants.ZONE_ID)
                         + "' does not exist, please check your configuration.");
                 break;
             case SceneHandler.GROUP_WRONG:
-                logger.error("Configured group '" + configuration.get(DigitalSTROMBindingConstants.SCENE_GROUP_ID)
+                logger.error("Configured group '" + configuration.get(DigitalSTROMBindingConstants.GROUP_ID)
                         + "' does not exist, please check your configuration.");
                 break;
             case SceneHandler.NO_STRUC_MAN:

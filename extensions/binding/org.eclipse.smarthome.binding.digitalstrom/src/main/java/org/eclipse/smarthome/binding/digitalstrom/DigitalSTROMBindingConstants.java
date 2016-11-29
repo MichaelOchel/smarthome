@@ -23,22 +23,28 @@ public class DigitalSTROMBindingConstants {
 
     // List of all Thing Type IDs
     public static final String THING_TYPE_ID_DSS_BRIDGE = "dssBridge";
-
-    public static final String THING_TYPE_ID_GE_DEVICE = "GE";
-    public static final String THING_TYPE_ID_SW_DEVICE = "SW";
-    public static final String THING_TYPE_ID_GR_DEVICE = "GR";
-    public static final String THING_TYPE_ID_BL_DEVICE = "BL";
-    public static final String THING_TYPE_ID_DS_I_SENSE_200_DEVICE = "dS-iSens200";
+    public static final String THING_TYPE_ID_ZONE_TEMERATURE_CONTROL = "zone_temperature_control";
+    /*
+     * public static final String THING_TYPE_ID_GE_DEVICE = "GE";
+     * public static final String THING_TYPE_ID_SW_DEVICE = "SW";
+     * public static final String THING_TYPE_ID_GR_DEVICE = "GR";
+     * public static final String THING_TYPE_ID_BL_DEVICE = "BL";
+     * public static final String THING_TYPE_ID_DS_I_SENSE_200_DEVICE = "dS-iSens200";
+     */
 
     // List of all Thing Type UIDs
     public final static ThingTypeUID THING_TYPE_DSS_BRIDGE = new ThingTypeUID(BINDING_ID, THING_TYPE_ID_DSS_BRIDGE);
+    public final static ThingTypeUID THING_TYPE_ZONE_TEMERATURE_CONTROL = new ThingTypeUID(BINDING_ID,
+            THING_TYPE_ID_ZONE_TEMERATURE_CONTROL);
 
-    public final static ThingTypeUID THING_TYPE_GE_DEVICE = new ThingTypeUID(BINDING_ID, THING_TYPE_ID_GE_DEVICE);
-    public final static ThingTypeUID THING_TYPE_SW_DEVICE = new ThingTypeUID(BINDING_ID, THING_TYPE_ID_SW_DEVICE);
-    public final static ThingTypeUID THING_TYPE_GR_DEVICE = new ThingTypeUID(BINDING_ID, THING_TYPE_ID_GR_DEVICE);
-    public final static ThingTypeUID THING_TYPE_BL_DEVICE = new ThingTypeUID(BINDING_ID, THING_TYPE_ID_BL_DEVICE);
-    public final static ThingTypeUID THING_TYPE_DS_I_SENSE_200_DEVICE = new ThingTypeUID(BINDING_ID,
-            THING_TYPE_ID_DS_I_SENSE_200_DEVICE);
+    /*
+     * public final static ThingTypeUID THING_TYPE_GE_DEVICE = new ThingTypeUID(BINDING_ID, THING_TYPE_ID_GE_DEVICE);
+     * public final static ThingTypeUID THING_TYPE_SW_DEVICE = new ThingTypeUID(BINDING_ID, THING_TYPE_ID_SW_DEVICE);
+     * public final static ThingTypeUID THING_TYPE_GR_DEVICE = new ThingTypeUID(BINDING_ID, THING_TYPE_ID_GR_DEVICE);
+     * public final static ThingTypeUID THING_TYPE_BL_DEVICE = new ThingTypeUID(BINDING_ID, THING_TYPE_ID_BL_DEVICE);
+     * public final static ThingTypeUID THING_TYPE_DS_I_SENSE_200_DEVICE = new ThingTypeUID(BINDING_ID,
+     * THING_TYPE_ID_DS_I_SENSE_200_DEVICE);
+     */
 
     public final static ThingTypeUID THING_TYPE_APP_SCENE = new ThingTypeUID(BINDING_ID, SceneTypes.APARTMENT_SCENE);
     public final static ThingTypeUID THING_TYPE_ZONE_SCENE = new ThingTypeUID(BINDING_ID, SceneTypes.ZONE_SCENE);
@@ -158,7 +164,8 @@ public class DigitalSTROMBindingConstants {
     /* Scene config */
     // TODO: scene name = property?
     public static final String SCENE_NAME = "sceneName";
-    public static final String SCENE_ZONE_ID = "zoneID";
-    public static final String SCENE_GROUP_ID = "groupID";
+    public static final String ZONE_ID = "zoneID";
+    public static final String GROUP_ID = "groupID";
     public static final String SCENE_ID = "sceneID";
+
 }

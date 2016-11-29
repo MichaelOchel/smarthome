@@ -15,6 +15,14 @@ public enum ControlStates {
 
     private final Short ID;
     private final String KEY;
+    private final static ControlStates[] CONTROL_STATES = new ControlStates[4];
+
+    static {
+        CONTROL_STATES[0] = INTERNAL;
+        CONTROL_STATES[1] = EXTERNAL;
+        CONTROL_STATES[2] = EXBACHUP;
+        CONTROL_STATES[3] = EMERGENCY;
+    }
 
     private ControlStates(short id, String key) {
         this.ID = id;
@@ -37,5 +45,14 @@ public enum ControlStates {
      */
     public Short getID() {
         return ID;
+    }
+
+    public static ControlStates getControlState(short id) {
+        try {
+            return CONTROL_STATES[id];
+        } catch (IndexOutOfBoundsException e) {
+            // throw new IllegalArgumentException("The id dosen not exist, id have to be between 0 and 4.");
+            return null;
+        }
     }
 }

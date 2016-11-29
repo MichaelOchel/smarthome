@@ -15,6 +15,7 @@ import org.eclipse.smarthome.binding.digitalstrom.handler.BridgeHandler;
 import org.eclipse.smarthome.binding.digitalstrom.handler.CircuitHandler;
 import org.eclipse.smarthome.binding.digitalstrom.handler.DeviceHandler;
 import org.eclipse.smarthome.binding.digitalstrom.handler.SceneHandler;
+import org.eclipse.smarthome.binding.digitalstrom.handler.ZoneTemperatureControlHandler;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.listener.DeviceStatusListener;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.listener.SceneStatusListener;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.AbstractGeneralDeviceInformations;
@@ -64,6 +65,9 @@ public class DiscoveryServiceManager implements SceneStatusListener, DeviceStatu
         for (ThingTypeUID type : CircuitHandler.SUPPORTED_THING_TYPES) {
             discoveryServices.put(type.getId(), new DeviceDiscoveryService(bridgeHandler, type));
         }
+        for (ThingTypeUID type : ZoneTemperatureControlHandler.SUPPORTED_THING_TYPES) {
+            discoveryServices.put(type.getId(), new ZoneTemperatureControlDiscoveryService(bridgeHandler, type));
+        }
         bridgeHandler.registerSceneStatusListener(this);
         bridgeHandler.registerDeviceStatusListener(this);
     }
@@ -91,6 +95,13 @@ public class DiscoveryServiceManager implements SceneStatusListener, DeviceStatu
                     serviceReg.unregister();
                     discoveryServiceRegs.remove(bridgeUID + devDisServ.getID());
                 }
+                if (service instanceof ZoneTemperatureControlDiscoveryService) {
+                    ZoneTemperatureControlDiscoveryService devDisServ = (ZoneTemperatureControlDiscoveryService) service;
+                    ServiceRegistration<?> serviceReg = this.discoveryServiceRegs.get(bridgeUID + devDisServ.getID());
+                    devDisServ.deactivate();
+                    serviceReg.unregister();
+                    discoveryServiceRegs.remove(bridgeUID + devDisServ.getID());
+                }
             }
         }
     }
@@ -111,6 +122,12 @@ public class DiscoveryServiceManager implements SceneStatusListener, DeviceStatu
                 }
                 if (service instanceof DeviceDiscoveryService) {
                     this.discoveryServiceRegs.put(bridgeUID + ((DeviceDiscoveryService) service).getID(),
+                            bundleContext.registerService(DiscoveryService.class.getName(), service,
+                                    new Hashtable<String, Object>()));
+                }
+                if (service instanceof ZoneTemperatureControlDiscoveryService) {
+                    this.discoveryServiceRegs.put(
+                            bridgeUID + ((ZoneTemperatureControlDiscoveryService) service).getID(),
                             bundleContext.registerService(DiscoveryService.class.getName(), service,
                                     new Hashtable<String, Object>()));
                 }
