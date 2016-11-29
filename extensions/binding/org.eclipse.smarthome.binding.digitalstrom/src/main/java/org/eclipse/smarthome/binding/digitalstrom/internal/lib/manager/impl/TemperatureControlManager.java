@@ -17,7 +17,7 @@ import org.eclipse.smarthome.binding.digitalstrom.internal.lib.listener.Temperat
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.manager.ConnectionManager;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.manager.TemperatureSensorTransreciver;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.serverConnection.DsAPI;
-import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.constants.FunctionalNameAndColorGroupEnum;
+import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.constants.FuncNameAndColorGroupEnum;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.constants.SensorEnum;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -305,7 +305,7 @@ public class TemperatureControlManager implements EventHandler, TemperatureSenso
     public boolean pushControlValue(Integer zoneID, Float newValue) {
         if (checkAndGetTemperatureControlStatus(zoneID) != null) {
             if (dSapi.pushZoneSensorValue(connectionMananager.getSessionToken(), zoneID, null,
-                    FunctionalNameAndColorGroupEnum.TEMPERATION_CONTROL.getFunctionalColorGroup(), null, newValue,
+                    FuncNameAndColorGroupEnum.TEMPERATION_CONTROL.getFunctionalColorGroup(), null, newValue,
                     SensorEnum.ROOM_TEMPERATION_CONTROL_VARIABLE)) {
                 addEcho(zoneID, SensorEnum.ROOM_TEMPERATION_CONTROL_VARIABLE, newValue);
                 return true;
