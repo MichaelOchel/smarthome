@@ -31,6 +31,7 @@ import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.scene.constants.Scene;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.scene.constants.SceneEnum;
 
+import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 
 /**
@@ -743,12 +744,104 @@ public interface DsAPI {
      * all device from zone4 would look like this: ’/apartment/zones/zone4/*(ZoneID,name)’.
      * More complex combinations (see example below) are also possible.
      *
-     * @param token
-     * @param query
+     * @param token required
+     * @param query required
      * @return response as {@link JsonObject}
      */
     public JsonObject query(String token, String query);
 
+    /**
+     * <b>Description taken form digitalSTROM JSON-API:</b><br>
+     * Differs from query(1) only in the format of the the returned json struct.<br>
+     * <br>
+     * <i>Folder selects the nodes to descend, Property declares which attributes
+     * we are extracting from the current node. If no properties are declared for a
+     * folder, nothing is extracted, and the node will not show up in the resulting
+     * json structure.</i>
+     *
+     * @param token required
+     * @param query required
+     * @return response as {@link JsonObject}
+     */
     public JsonObject query2(String token, String query);
+
+    /**
+     * <b>Description taken form digitalSTROM JSON-API:</b><br>
+     * Set the output value of a group of devices in a zone to a given value. <br>
+     * <br>
+     * <b>Notice:</b> Setting output values directly bypasses the group state machine
+     * and is not recommended.<br>
+     * <br>
+     * If the group parameters are omitted the command is sent as broadcast
+     * to all devices in the selected zone. <br>
+     * <br>
+     * <b>Notice:</b> Setting output values without a group identification is strongly
+     * unrecommended.<br>
+     *
+     * @param sessionToken required
+     * @param zoneID or zoneName are required
+     * @param zoneName or zoneID are required
+     * @param groupID optional
+     * @param groupName optional
+     * @param value required
+     * @return true, if request was successful, otherwise false
+     */
+    public boolean setZoneOutputValue(String sessionToken, Integer zoneID, String zoneName, Short groupID,
+            String groupName, Integer value);
+
+    /**
+     * <b>Description taken form digitalSTROM JSON-API:</b><br>
+     * Executes the ”blink” function on a group of devices in a zone for identification
+     * purposes.
+     *
+     * @param sessionToken required
+     * @param zoneID or zoneName are required
+     * @param zoneName or zoneID are required
+     * @param groupID optional
+     * @param groupName optional
+     * @return true, if request was successful, otherwise false
+     */
+    public boolean zoneBlink(String sessionToken, Integer zoneID, String zoneName, Short groupID, String groupName);
+
+    /**
+     * <b>Description taken form digitalSTROM JSON-API:</b><br>
+     * Send a sensor value to a group of devices in a zone.<br>
+     * If the group parameter is omitted the command is sent as broadcast to
+     * all devices in the selected zone. The reference for the sensor type definitions
+     * can be found in the ds-basics document.
+     *
+     * @param sessionToken required
+     * @param zoneID or zoneName are required
+     * @param zoneName or zoneID are required
+     * @param groupID optional
+     * @param sourceDSUID optional
+     * @param sensorValue required
+     * @param sensorType required
+     * @return true, if request was successful, otherwise false
+     */
+    public boolean pushZoneSensorValue(String sessionToken, Integer zoneID, String zoneName, Short groupID,
+            String sourceDSUID, Float sensorValue, SensorEnum sensorType);
+
+    /**
+     * <b>Description taken form digitalSTROM JSON-API:</b><br>
+     * Returns the string value of the property, this call will fail if the property is
+     * not of type ’string’.
+     *
+     * @param token required
+     * @param path to property required
+     * @return string value of the property
+     */
+    public String propertyTreeGetString(String token, String path);
+
+    /**
+     * <b>Description taken form digitalSTROM JSON-API:</b><br>
+     * Sets the string value of the property, this call will fail if the property is not
+     * of type ’string’.
+     *
+     * @param token required
+     * @param path to property required
+     * @return {@link JsonArray} of child nodes
+     */
+    public JsonArray propertyTreeGetChildren(String token, String path);
 
 }

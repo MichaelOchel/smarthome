@@ -124,12 +124,12 @@ public class SceneHandler extends BaseThingHandler implements SceneStatusListene
                         break;
                     case ZONE_WRONG:
                         updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.CONFIGURATION_ERROR,
-                                "Configured zone '" + getConfig().get(DigitalSTROMBindingConstants.SCENE_ZONE_ID)
+                                "Configured zone '" + getConfig().get(DigitalSTROMBindingConstants.ZONE_ID)
                                         + "' does not exist, please check the configuration.");
                         break;
                     case GROUP_WRONG:
                         updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.CONFIGURATION_ERROR,
-                                "Configured group '" + getConfig().get(DigitalSTROMBindingConstants.SCENE_GROUP_ID)
+                                "Configured group '" + getConfig().get(DigitalSTROMBindingConstants.GROUP_ID)
                                         + "' does not exist, please check the configuration.");
                         break;
                     case NO_STRUC_MAN:
@@ -184,13 +184,13 @@ public class SceneHandler extends BaseThingHandler implements SceneStatusListene
         int zoneID;
         short groupID;
 
-        if (configuration.get(DigitalSTROMBindingConstants.SCENE_ZONE_ID) != null) {
-            configZoneID = configuration.get(DigitalSTROMBindingConstants.SCENE_ZONE_ID).toString();
+        if (configuration.get(DigitalSTROMBindingConstants.ZONE_ID) != null) {
+            configZoneID = configuration.get(DigitalSTROMBindingConstants.ZONE_ID).toString();
         } else {
             configZoneID = "";
         }
-        if (configuration.get(DigitalSTROMBindingConstants.SCENE_GROUP_ID) != null) {
-            configGroupID = configuration.get(DigitalSTROMBindingConstants.SCENE_GROUP_ID).toString();
+        if (configuration.get(DigitalSTROMBindingConstants.GROUP_ID) != null) {
+            configGroupID = configuration.get(DigitalSTROMBindingConstants.GROUP_ID).toString();
         } else {
             configGroupID = "";
         }

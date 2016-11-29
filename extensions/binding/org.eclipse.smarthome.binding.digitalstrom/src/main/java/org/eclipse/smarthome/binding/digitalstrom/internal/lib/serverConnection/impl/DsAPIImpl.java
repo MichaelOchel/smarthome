@@ -94,6 +94,10 @@ public class DsAPIImpl implements DsAPI {
         return arg != null && arg > -1 ? arg.toString() : null;
     }
 
+    private String convertFloatToString(Float arg) {
+        return arg != null ? arg.toString() : null;
+    }
+
     private String getDsidString(DSID dsid) {
         return dsid != null ? dsid.getValue() : null;
     }
@@ -530,7 +534,7 @@ public class DsAPIImpl implements DsAPI {
 
     @Override
     public String getEvent(String token, Integer subscriptionID, Integer timeout) {
-        if (convertIntegerToString(subscriptionID) != null && convertIntegerToString(timeout) != null) {
+        if (convertIntegerToString(subscriptionID) != null) {
             try {
                 return transport.execute(SimpleRequestBuilder.buildNewRequest(InterfaceKeys.JSON)
                         .addRequestClass(ClassKeys.EVENT).addFunction(FunctionKeys.GET)
@@ -1246,6 +1250,78 @@ public class DsAPIImpl implements DsAPI {
     }
 
     @Override
+    public boolean setZoneOutputValue(String sessionToken, Integer zoneID, String zoneName, Short groupID,
+            String groupName, Integer value) {
+        if (value != null && checkManutoryZone(zoneID, zoneName)) {
+            try {
+                String response = transport.execute(SimpleRequestBuilder.buildNewRequest(InterfaceKeys.JSON)
+                        .addRequestClass(ClassKeys.ZONE).addFunction(FunctionKeys.SET_OUTPUT_VALUE)
+                        .addParameter(ParameterKeys.TOKEN, sessionToken).addParameter(ParameterKeys.NAME, zoneName)
+                        .addParameter(ParameterKeys.ID, convertIntegerToString(zoneID))
+                        .addParameter(ParameterKeys.GROUP_ID, convertShortToString(groupID))
+                        .addParameter(ParameterKeys.GROUP_NAME, groupName)
+                        .addParameter(ParameterKeys.VALUE, convertIntegerToString(value)).buildRequestString());
+                JsonObject responseObj = JSONResponseHandler.toJsonObject(response);
+
+                if (JSONResponseHandler.checkResponse(responseObj)) {
+                    return true;
+                }
+            } catch (Exception e) {
+                logger.debug("An exception occurred", e);
+            }
+        }
+        return false;
+    }
+
+    private boolean checkManutoryZone(Integer zoneID, String zoneName) {
+        return zoneID != null && zoneID > -1 || StringUtils.isNotBlank(zoneName);
+    }
+
+    @Override
+    public boolean zoneBlink(String sessionToken, Integer zoneID, String zoneName, Short groupID, String groupName) {
+        if (checkManutoryZone(zoneID, zoneName)) {
+            try {
+                String response = transport.execute(SimpleRequestBuilder.buildNewRequest(InterfaceKeys.JSON)
+                        .addRequestClass(ClassKeys.ZONE).addFunction(FunctionKeys.BLINK)
+                        .addParameter(ParameterKeys.TOKEN, sessionToken).addParameter(ParameterKeys.NAME, zoneName)
+                        .addParameter(ParameterKeys.ID, convertIntegerToString(zoneID))
+                        .addParameter(ParameterKeys.GROUP_ID, convertShortToString(groupID))
+                        .addParameter(ParameterKeys.GROUP_NAME, groupName).buildRequestString());
+                JsonObject responseObj = JSONResponseHandler.toJsonObject(response);
+
+                if (JSONResponseHandler.checkResponse(responseObj)) {
+                    return true;
+                }
+            } catch (Exception e) {
+                logger.debug("An exception occurred", e);
+            }
+        }
+        return false;
+    }
+
+    @Override
+    public boolean pushZoneSensorValue(String sessionToken, Integer zoneID, String zoneName, Short groupID,
+            String sourceDSUID, Float sensorValue, SensorEnum sensorType) {
+        if (checkManutoryZone(zoneID, zoneName) && sensorType != null && sensorValue != null) {
+            try {
+                String response = transport.execute(SimpleRequestBuilder.buildNewRequest(InterfaceKeys.JSON)
+                        .addRequestClass(ClassKeys.ZONE).addFunction(FunctionKeys.PUSH_SENSOR_VALUE)
+                        .addParameter(ParameterKeys.TOKEN, sessionToken).addParameter(ParameterKeys.NAME, zoneName)
+                        .addParameter(ParameterKeys.ID, convertIntegerToString(zoneID))
+                        .addParameter(ParameterKeys.GROUP_ID, convertShortToString(groupID))
+                        .addParameter(ParameterKeys.SOURCE_DSUID, sourceDSUID)
+                        .addParameter(ParameterKeys.SENSOR_VALUE, convertFloatToString(sensorValue))
+                        .addParameter(ParameterKeys.SENSOR_TYPE, convertShortToString(sensorType.getSensorType()))
+                        .buildRequestString());
+                return JSONResponseHandler.checkResponse(JSONResponseHandler.toJsonObject(response));
+            } catch (Exception e) {
+                logger.debug("An exception occurred", e);
+            }
+        }
+        return false;
+    }
+
+    @Override
     public HashMap<Integer, TemperatureControlStatus> getApartmentTemperatureControlStatus(String sessionToken) {
         try {
             String response = transport.execute(SimpleRequestBuilder.buildNewRequest(InterfaceKeys.JSON)
@@ -1445,4 +1521,41 @@ public class DsAPIImpl implements DsAPI {
         return null;
     }
 
+    @Override
+    public String propertyTreeGetString(String token, String path) {
+        try {
+            String response = transport.execute(
+                    SimpleRequestBuilder.buildNewRequest(InterfaceKeys.JSON).addRequestClass(ClassKeys.PROPERTY_TREE)
+                            .addFunction(FunctionKeys.GET_STRING).addParameter(ParameterKeys.PATH, path)
+                            .addParameter(ParameterKeys.TOKEN, token).buildRequestString());
+
+            JsonObject responseObj = JSONResponseHandler.toJsonObject(response);
+            if (JSONResponseHandler.checkResponse(responseObj)) {
+                responseObj = JSONResponseHandler.getResultJsonObject(responseObj);
+                return responseObj.get(JSONApiResponseKeysEnum.VALUE.getKey()).getAsString();
+            }
+        } catch (Exception e) {
+            logger.debug("An exception occurred", e);
+        }
+        return null;
+    }
+
+    // TODO: erweitern
+    @Override
+    public JsonArray propertyTreeGetChildren(String token, String path) {
+        try {
+            String response = transport.execute(
+                    SimpleRequestBuilder.buildNewRequest(InterfaceKeys.JSON).addRequestClass(ClassKeys.PROPERTY_TREE)
+                            .addFunction(FunctionKeys.GET_CHILDREN).addParameter(ParameterKeys.PATH, path)
+                            .addParameter(ParameterKeys.TOKEN, token).buildRequestString());
+
+            JsonObject responseObj = JSONResponseHandler.toJsonObject(response);
+            if (JSONResponseHandler.checkResponse(responseObj)) {
+                return responseObj.get(JSONApiResponseKeysEnum.RESULT.getKey()).getAsJsonArray();
+            }
+        } catch (Exception e) {
+            logger.debug("An exception occurred", e);
+        }
+        return null;
+    }
 }

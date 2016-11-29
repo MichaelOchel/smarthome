@@ -73,7 +73,7 @@ public enum SensorEnum {
     private final Float max;
     private final Float resolution;
 
-    static final HashMap<Short, SensorEnum> sensorEnums = new HashMap<Short, SensorEnum>();
+    static final HashMap<Short, SensorEnum> SENSOR_ENUMS = new HashMap<Short, SensorEnum>();
 
     SensorEnum(Short sensorType, String unit, String unitShortcut, int min, float max, float resolution,
             String plattern) {
@@ -88,7 +88,7 @@ public enum SensorEnum {
 
     static {
         for (SensorEnum sensor : SensorEnum.values()) {
-            sensorEnums.put(sensor.getSensorType(), sensor);
+            SENSOR_ENUMS.put(sensor.getSensorType(), sensor);
         }
     }
 
@@ -99,7 +99,7 @@ public enum SensorEnum {
      * @return true, if contains otherwise false
      */
     public static boolean containsSensor(Short typeIndex) {
-        return sensorEnums.keySet().contains(typeIndex);
+        return SENSOR_ENUMS.keySet().contains(typeIndex);
     }
 
     public static boolean isClimateSensor(SensorEnum sensorType) {
@@ -150,7 +150,7 @@ public enum SensorEnum {
      * @return SensorEnum or null
      */
     public static SensorEnum getSensor(Short typeIndex) {
-        return sensorEnums.get(typeIndex);
+        return SENSOR_ENUMS.get(typeIndex);
     }
 
     /**

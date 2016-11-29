@@ -1,6 +1,5 @@
 package org.eclipse.smarthome.binding.digitalstrom.internal.lib.serverConnection;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -12,25 +11,92 @@ import org.eclipse.smarthome.binding.digitalstrom.internal.lib.climate.jsonRespo
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.climate.jsonResponseContainer.impl.TemperatureControlConfig;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.climate.jsonResponseContainer.impl.TemperatureControlStatus;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.climate.jsonResponseContainer.impl.TemperatureControlValues;
+import org.eclipse.smarthome.binding.digitalstrom.internal.lib.config.Config;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.event.EventHandler;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.event.EventListener;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.event.constants.EventNames;
+import org.eclipse.smarthome.binding.digitalstrom.internal.lib.event.types.Event;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.event.types.EventItem;
+import org.eclipse.smarthome.binding.digitalstrom.internal.lib.event.types.JSONEventImpl;
+import org.eclipse.smarthome.binding.digitalstrom.internal.lib.listener.DeviceStatusListener;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.manager.ConnectionManager;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.manager.impl.ConnectionManagerImpl;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.serverConnection.constants.JSONApiResponseKeysEnum;
+import org.eclipse.smarthome.binding.digitalstrom.internal.lib.serverConnection.impl.JSONResponseHandler;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.Device;
-import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.constants.FunctionalColorGroupEnum;
-import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.constants.OutputModeEnum;
+import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.CachedMeteringValue;
+import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.DeviceStateUpdate;
+import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.constants.ChangeableDeviceConfigEnum;
+import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.constants.MeteringTypeEnum;
+import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.constants.MeteringUnitsEnum;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.impl.JSONDeviceSceneSpecImpl;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.impl.DeviceImpl;
-import org.eclipse.smarthome.binding.digitalstrom.internal.providers.DsChannelTypeProvider;
+import org.eclipse.smarthome.core.library.types.DecimalType;
 
 import com.google.common.collect.Lists;
+import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 
 public class TestApi {
+
+    private static class DummyListener implements DeviceStatusListener {
+
+        private final String DSID;
+
+        public DummyListener(String dsid) {
+            this.DSID = dsid;
+        }
+
+        @Override
+        public void onDeviceStateChanged(DeviceStateUpdate deviceStateUpdate) {
+            System.out.println("State changed");
+            if (deviceStateUpdate != null
+                    && DeviceStateUpdate.UPDATE_CIRCUIT_METER.equals(deviceStateUpdate.getType())) {
+                if (deviceStateUpdate.getValue() instanceof CachedMeteringValue) {
+                    CachedMeteringValue cachedVal = (CachedMeteringValue) deviceStateUpdate.getValue();
+                    System.out.println(cachedVal.getMeteringType() + " " + cachedVal.getMeteringUnit() + " = "
+                            + (cachedVal.getMeteringType().equals(MeteringTypeEnum.energy)
+                                    && (cachedVal.getMeteringUnit() == null
+                                            || cachedVal.getMeteringUnit().equals(MeteringUnitsEnum.Wh))));
+                    if (cachedVal.getMeteringType().equals(MeteringTypeEnum.energy)
+                            && (cachedVal.getMeteringUnit() == null
+                                    || cachedVal.getMeteringUnit().equals(MeteringUnitsEnum.Wh))) {
+                        System.out.println("new Value = " + new DecimalType(cachedVal.getValue() * 0.001));
+                    }
+                    System.out.println("new Value = " + new DecimalType(cachedVal.getValue()));
+                }
+            }
+        }
+
+        @Override
+        public void onDeviceRemoved(Object device) {
+            System.out.println(device + " removed");
+        }
+
+        @Override
+        public void onDeviceAdded(Object device) {
+            System.out.println(device + " added");
+        }
+
+        @Override
+        public void onDeviceConfigChanged(ChangeableDeviceConfigEnum whatConfig) {
+            // TODO Auto-generated method stub
+
+        }
+
+        @Override
+        public void onSceneConfigAdded(short sceneID) {
+            // TODO Auto-generated method stub
+
+        }
+
+        @Override
+        public String getDeviceStatusListenerID() {
+            return DSID;
+        }
+
+    }
 
     public static void main(String[] args) {
         String host = "fsqdss1.inf.fh-koeln.de";
@@ -42,80 +108,188 @@ public class TestApi {
         final String EVENT_LISTENER = "eventListener";
         final String PARSE_TEST = "parseTest";
         final String DEVICE_QUERY2 = "devQ2";
-        String testType = DEVICE_QUERY2;
+        String testType = "";
 
-        ConnectionManager connMan = new ConnectionManagerImpl(host, user, pw, false);
+        final ConnectionManager connMan = new ConnectionManagerImpl(host, user, pw, false);
 
-        final String LAST_CALL_SCENE_QUERY = "/apartment/zones/*(*)/groups/*(*)/*(*)";
+        new Thread(new Runnable() {
+            boolean subscribed = false;
+            private List<String> subscribedEvents = Lists.newArrayList("deviceBinaryInputEvent");
 
-        List<String> SUPPORTED_OUTPUT_CHANNEL_TYPES = new ArrayList<>();
+            @Override
+            public void run() {
+                while (true) {
+                    if (connMan.checkConnection()) {
 
-        String channelIDpre = DsChannelTypeProvider.GENERAL;
-        for (short i = 0; i < 3; i++) {
-            if (i == 1) {
-                channelIDpre = DsChannelTypeProvider.LIGHT;
-            }
-            if (i == 2) {
-                channelIDpre = DsChannelTypeProvider.HEATING;
-                SUPPORTED_OUTPUT_CHANNEL_TYPES.add(channelIDpre + DsChannelTypeProvider.TEMPERATURE_CONTROLLED);
-            }
-            SUPPORTED_OUTPUT_CHANNEL_TYPES.add(channelIDpre + DsChannelTypeProvider.SWITCH);
-            SUPPORTED_OUTPUT_CHANNEL_TYPES.add(channelIDpre + DsChannelTypeProvider.DIMMER);
-            if (i < 2) {
-                SUPPORTED_OUTPUT_CHANNEL_TYPES.add(channelIDpre + 2 + DsChannelTypeProvider.STAGE);
-                SUPPORTED_OUTPUT_CHANNEL_TYPES.add(channelIDpre + 3 + DsChannelTypeProvider.STAGE);
-            }
-        }
-        channelIDpre = DsChannelTypeProvider.SHADE;
-        SUPPORTED_OUTPUT_CHANNEL_TYPES.add(channelIDpre);
-        SUPPORTED_OUTPUT_CHANNEL_TYPES.add(channelIDpre + DsChannelTypeProvider.ANGLE);
-        for (String channelID : SUPPORTED_OUTPUT_CHANNEL_TYPES) {
-            System.out.println(channelID);
-        }
+                        if (subscribed) {
+                            String response = connMan.getDigitalSTROMAPI().getEvent(connMan.getSessionToken(), 12, 500);
+                            System.out.println(response);
+                            JsonObject responseObj = JSONResponseHandler.toJsonObject(response);
 
-        System.out.println("");
+                            if (JSONResponseHandler.checkResponse(responseObj)) {
+                                JsonObject obj = JSONResponseHandler.getResultJsonObject(responseObj);
+                                if (obj != null && obj.get(JSONApiResponseKeysEnum.EVENTS.getKey()).isJsonArray()) {
+                                    JsonArray array = obj.get(JSONApiResponseKeysEnum.EVENTS.getKey()).getAsJsonArray();
+                                    try {
+                                        if (array.size() > 0) {
+                                            Event event = new JSONEventImpl(array);
+                                            for (EventItem item : event.getEventItems()) {
+                                                // for (EventHandler handler : eventHandlers) {
+                                                // if (handler.supportsEvent(item.getName())) {
+                                                System.out.println(
+                                                        ("inform handler with id {} about event {}" + item.toString()));
+                                                // Integer zoneID = Integer
+                                                // .parseInt(item.getProperties().get(EventResponseEnum.ZONEID));
+                                                // TemperatureControlStatus temperationControlStatus = connMan
+                                                // .getDigitalSTROMAPI().getZoneTemperatureControlStatus(
+                                                // connMan.getSessionToken(), zoneID, null);
+                                                // System.out.println(
+                                                // "readout new temperationControlStatus, new temperationControlStatus
+                                                // is: "
+                                                // + temperationControlStatus.toString());
+                                                // handler.handleEvent(item);
+                                                // }
+                                                // }
+                                            }
+                                        }
+                                    } catch (Exception e) {
+                                        System.out.printf("An Exception occurred", e);
+                                    }
+                                }
+                            } else {
+                                String errorStr = null;
+                                if (responseObj != null
+                                        && responseObj.get(JSONApiResponseKeysEnum.MESSAGE.getKey()) != null) {
+                                    errorStr = responseObj.get(JSONApiResponseKeysEnum.MESSAGE.getKey()).getAsString();
+                                }
+                                if (errorStr != null) {
+                                    // unsubscribe();
+                                    // subscribe();
+                                } else if (errorStr != null) {
+                                    // pollingScheduler.cancel(true);
+                                    System.out.println("Unknown error message at event response: " + errorStr);
+                                }
+                            }
+                        } else {
+                            if (connMan.checkConnection()) {
+                                connMan.getDigitalSTROMAPI().unsubscribeEvent(connMan.getSessionToken(), null, 12,
+                                        Config.DEFAULT_CONNECTION_TIMEOUT, Config.DEFAULT_READ_TIMEOUT);
+                                for (String eventName : this.subscribedEvents) {
+                                    subscribed = connMan.getDigitalSTROMAPI().subscribeEvent(connMan.getSessionToken(),
+                                            eventName, 12, Config.DEFAULT_CONNECTION_TIMEOUT,
+                                            Config.DEFAULT_READ_TIMEOUT);
+                                    System.out.println(eventName + " subscribe sucsess? " + subscribed);
+                                    try {
+                                        Thread.sleep(500);
+                                    } catch (InterruptedException e) {
+                                        // TODO Auto-generated catch block
+                                        e.printStackTrace();
+                                    }
+                                }
+                            }
+                        }
+                    } else {
+                        System.out.println("no connection");
+                    }
+                    try {
+                        Thread.sleep(1000);
+                    } catch (InterruptedException e) {
+                        // TODO Auto-generated catch block
+                        e.printStackTrace();
+                    }
+                }
 
-        FunctionalColorGroupEnum functionalGroup = FunctionalColorGroupEnum.YELLOW;
-        OutputModeEnum outputMode = OutputModeEnum.COMBINED_3_STAGE_SWITCH;
+            }
+        }).start();
 
-        String channelPreID = DsChannelTypeProvider.GENERAL;
-        System.out.println(FunctionalColorGroupEnum.YELLOW.equals(null));
-        if (FunctionalColorGroupEnum.YELLOW.equals(functionalGroup)) {
-            channelPreID = DsChannelTypeProvider.LIGHT;
-            System.out.println(channelPreID);
-        }
-        System.out.println(channelPreID);
-        if (functionalGroup.equals(FunctionalColorGroupEnum.GREY)) {
-            if (outputMode.equals(OutputModeEnum.POSITION_CON)) {
-                System.out.println(DsChannelTypeProvider.SHADE);
-            }
-            if (outputMode.equals(OutputModeEnum.POSITION_CON_US)) {
-                System.out.println(DsChannelTypeProvider.SHADE + DsChannelTypeProvider.ANGLE);
-            }
-        }
-        if (functionalGroup.equals(FunctionalColorGroupEnum.BLUE)) {
-            channelPreID = DsChannelTypeProvider.HEATING;
-            if (OutputModeEnum.outputModeIsTemperationControlled(outputMode)) {
-                System.out.println(channelPreID + DsChannelTypeProvider.TEMPERATURE_CONTROLLED);
-            }
-        }
-        if (OutputModeEnum.outputModeIsSwitch(outputMode)) {
-            System.out.println(channelPreID + DsChannelTypeProvider.SWITCH);
-        }
-        if (OutputModeEnum.outputModeIsDimmable(outputMode)) {
-            System.out.println(channelPreID + DsChannelTypeProvider.DIMMER);
-        }
-        System.out.println(!channelPreID.equals(DsChannelTypeProvider.HEATING));
-        if (!channelPreID.equals(DsChannelTypeProvider.HEATING)) {
-            if (outputMode.equals(OutputModeEnum.COMBINED_2_STAGE_SWITCH)) {
-                System.out.println(channelPreID + 2 + DsChannelTypeProvider.STAGE);
-            }
-            if (outputMode.equals(OutputModeEnum.COMBINED_2_STAGE_SWITCH)) {
-                System.out.println(channelPreID + 3 + DsChannelTypeProvider.STAGE);
-            }
-        }
+        // System.out.println(connMan.getDigitalSTROMAPI().getLatest(connMan.getSessionToken(),
+        // MeteringTypeEnum.energyDelta,
+        // ALL_METERS, MeteringUnitsEnum.Wh));
+        // System.out.println(connMan.getDigitalSTROMAPI().getLatest(connMan.getSessionToken(),
+        // MeteringTypeEnum.energyDelta,
+        // ALL_METERS, MeteringUnitsEnum.Ws));
 
-        System.out.println(DsChannelTypeProvider.getOutputChannelTypeID(functionalGroup, outputMode));
+        /*
+         * System.out.println(SimpleRequestBuilder.buildNewRequest(InterfaceKeys.JSON).addRequestClass(ClassKeys.
+         * APARTMENT)
+         * .addFunction(FunctionKeys.GET_CIRCUITS).addParameter(ParameterKeys.TOKEN, connMan.getSessionToken())
+         * .buildRequestString());
+         * System.out.println(connMan.getHttpTransport()
+         * .execute(SimpleRequestBuilder.buildNewRequest(InterfaceKeys.JSON).addRequestClass(ClassKeys.APARTMENT)
+         * .addFunction(FunctionKeys.GET_CIRCUITS)
+         * .addParameter(ParameterKeys.TOKEN, connMan.getSessionToken()).buildRequestString()));
+         * System.out.println(connMan.getDigitalSTROMAPI().getApartmentCircuits(connMan.getSessionToken()));
+         * final String LAST_CALL_SCENE_QUERY = "/apartment/zones/*(*)/groups/*(*)/*(*)";
+         *
+         * List<String> SUPPORTED_OUTPUT_CHANNEL_TYPES = new ArrayList<>();
+         *
+         * String channelIDpre = DsChannelTypeProvider.GENERAL;
+         * for (short i = 0; i < 3; i++) {
+         * if (i == 1) {
+         * channelIDpre = DsChannelTypeProvider.LIGHT;
+         * }
+         * if (i == 2) {
+         * channelIDpre = DsChannelTypeProvider.HEATING;
+         * SUPPORTED_OUTPUT_CHANNEL_TYPES.add(channelIDpre + DsChannelTypeProvider.TEMPERATURE_CONTROLLED);
+         * }
+         * SUPPORTED_OUTPUT_CHANNEL_TYPES.add(channelIDpre + DsChannelTypeProvider.SWITCH);
+         * SUPPORTED_OUTPUT_CHANNEL_TYPES.add(channelIDpre + DsChannelTypeProvider.DIMMER);
+         * if (i < 2) {
+         * SUPPORTED_OUTPUT_CHANNEL_TYPES.add(channelIDpre + 2 + DsChannelTypeProvider.STAGE);
+         * SUPPORTED_OUTPUT_CHANNEL_TYPES.add(channelIDpre + 3 + DsChannelTypeProvider.STAGE);
+         * }
+         * }
+         * channelIDpre = DsChannelTypeProvider.SHADE;
+         * SUPPORTED_OUTPUT_CHANNEL_TYPES.add(channelIDpre);
+         * SUPPORTED_OUTPUT_CHANNEL_TYPES.add(channelIDpre + DsChannelTypeProvider.ANGLE);
+         * for (String channelID : SUPPORTED_OUTPUT_CHANNEL_TYPES) {
+         * System.out.println(channelID);
+         * }
+         *
+         * System.out.println("");
+         *
+         * FunctionalColorGroupEnum functionalGroup = FunctionalColorGroupEnum.YELLOW;
+         * OutputModeEnum outputMode = OutputModeEnum.COMBINED_3_STAGE_SWITCH;
+         *
+         * String channelPreID = DsChannelTypeProvider.GENERAL;
+         * System.out.println(FunctionalColorGroupEnum.YELLOW.equals(null));
+         * if (FunctionalColorGroupEnum.YELLOW.equals(functionalGroup)) {
+         * channelPreID = DsChannelTypeProvider.LIGHT;
+         * System.out.println(channelPreID);
+         * }
+         * System.out.println(channelPreID);
+         * if (functionalGroup.equals(FunctionalColorGroupEnum.GREY)) {
+         * if (outputMode.equals(OutputModeEnum.POSITION_CON)) {
+         * System.out.println(DsChannelTypeProvider.SHADE);
+         * }
+         * if (outputMode.equals(OutputModeEnum.POSITION_CON_US)) {
+         * System.out.println(DsChannelTypeProvider.SHADE + DsChannelTypeProvider.ANGLE);
+         * }
+         * }
+         * if (functionalGroup.equals(FunctionalColorGroupEnum.BLUE)) {
+         * channelPreID = DsChannelTypeProvider.HEATING;
+         * if (OutputModeEnum.outputModeIsTemperationControlled(outputMode)) {
+         * System.out.println(channelPreID + DsChannelTypeProvider.TEMPERATURE_CONTROLLED);
+         * }
+         * }
+         * if (OutputModeEnum.outputModeIsSwitch(outputMode)) {
+         * System.out.println(channelPreID + DsChannelTypeProvider.SWITCH);
+         * }
+         * if (OutputModeEnum.outputModeIsDimmable(outputMode)) {
+         * System.out.println(channelPreID + DsChannelTypeProvider.DIMMER);
+         * }
+         * System.out.println(!channelPreID.equals(DsChannelTypeProvider.HEATING));
+         * if (!channelPreID.equals(DsChannelTypeProvider.HEATING)) {
+         * if (outputMode.equals(OutputModeEnum.COMBINED_2_STAGE_SWITCH)) {
+         * System.out.println(channelPreID + 2 + DsChannelTypeProvider.STAGE);
+         * }
+         * if (outputMode.equals(OutputModeEnum.COMBINED_2_STAGE_SWITCH)) {
+         * System.out.println(channelPreID + 3 + DsChannelTypeProvider.STAGE);
+         * }
+         * }
+         *
+         * System.out.println(DsChannelTypeProvider.getOutputChannelTypeID(functionalGroup, outputMode));
+         */
         /*
          * if (connMan.checkConnection()) {
          * JsonObject response = connMan.getDigitalSTROMAPI().query2(connMan.getSessionToken(), LAST_CALL_SCENE_QUERY);

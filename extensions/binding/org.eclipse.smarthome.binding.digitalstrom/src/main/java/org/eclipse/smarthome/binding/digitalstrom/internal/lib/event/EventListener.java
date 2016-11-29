@@ -9,6 +9,8 @@ package org.eclipse.smarthome.binding.digitalstrom.internal.lib.event;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
@@ -48,10 +50,11 @@ public class EventListener {
     private Logger logger = LoggerFactory.getLogger(EventListener.class);
     private final ScheduledExecutorService scheduler = ThreadPoolManager.getScheduledPool(Config.THREADPOOL_NAME);
     private ScheduledFuture<?> pollingScheduler = null;
+    private ScheduledFuture<?> subscriptionScheduler = null;
 
     private int subscriptionID = 15;
     private int timeout = 500;
-    private List<String> subscribedEvents = null;
+    private List<String> subscribedEvents = Collections.synchronizedList(new LinkedList<String>());;
     private boolean subscribed = false;
 
     // error message
@@ -113,7 +116,11 @@ public class EventListener {
         isStarted = false;
     }
 
-    public void internalStop() {
+    private void internalStop() {
+        if (subscriptionScheduler != null && !subscriptionScheduler.isCancelled()) {
+            subscriptionScheduler.cancel(true);
+            subscriptionScheduler = null;
+        }
         if (pollingScheduler != null && !pollingScheduler.isCancelled()) {
             pollingScheduler.cancel(true);
             pollingScheduler = null;
@@ -130,7 +137,7 @@ public class EventListener {
         isStarted = true;
     }
 
-    public void internalStart() {
+    private void internalStart() {
         if (eventHandlers != null && !eventHandlers.isEmpty()
                 && (pollingScheduler == null || pollingScheduler.isCancelled())) {
             pollingScheduler = scheduler.scheduleAtFixedRate(runableListener, 0,
@@ -166,7 +173,7 @@ public class EventListener {
     public void addEventHandler(EventHandler eventHandler) {
         if (eventHandler != null) {
             if (eventHandlers == null) {
-                eventHandlers = Collections.synchronizedList(new ArrayList<EventHandler>());
+                eventHandlers = Collections.synchronizedList(new LinkedList<EventHandler>());
             }
             boolean handlerExist = false;
             for (EventHandler handler : eventHandlers) {
@@ -176,9 +183,7 @@ public class EventListener {
             }
             if (!handlerExist) {
                 eventHandlers.add(eventHandler);
-                if (addSubscribeEvents(eventHandler.getSupportetEvents()) && subscribed) {
-                    subscribe();
-                }
+                addSubscribeEvents(eventHandler.getSupportetEvents());
                 logger.debug("eventHandler: " + eventHandler.getUID() + " added");
                 if (isStarted) {
                     internalStart();
@@ -229,60 +234,78 @@ public class EventListener {
         }
     }
 
-    private boolean addSubscribeEvents(List<String> subscribeEvents) {
-        boolean eventsAdded = false;
-        if (subscribedEvents == null) {
-            subscribedEvents = Collections.synchronizedList(new ArrayList<String>());
-        }
-        for (String eventName : subscribeEvents) {
-            if (!subscribedEvents.contains(eventName)) {
-                subscribedEvents.add(eventName);
-                logger.debug("subscibeEvent: " + eventName + " added");
-                eventsAdded = true;
+    public void addSubscribe(String subscribeEvent) {
+        if (!subscribedEvents.contains(subscribeEvent)) {
+            subscribedEvents.add(subscribeEvent);
+            logger.debug("subscibeEvent: " + subscribeEvent + " added");
+            if (subscribed) {
+                subscribe(subscribeEvent);
             }
         }
-        return eventsAdded;
     }
 
-    private void subscribe() {
+    public void addSubscribeEvents(List<String> subscribeEvents) {
+        for (String eventName : subscribeEvents) {
+            subscribe(eventName);
+        }
+    }
+
+    private void getSubscriptionID() {
+        boolean subscriptionIDavailable = false;
+        while (!subscriptionIDavailable) {
+            String response = connManager.getDigitalSTROMAPI().getEvent(connManager.getSessionToken(), subscriptionID,
+                    timeout);
+
+            JsonObject responseObj = JSONResponseHandler.toJsonObject(response);
+
+            if (JSONResponseHandler.checkResponse(responseObj)) {
+                subscriptionID++;
+            } else {
+                String errorStr = null;
+                if (responseObj != null && responseObj.get(JSONApiResponseKeysEnum.MESSAGE.getKey()) != null) {
+                    errorStr = responseObj.get(JSONApiResponseKeysEnum.MESSAGE.getKey()).getAsString();
+                }
+                if (errorStr != null && errorStr.contains(UNKNOWN_TOKEN)) {
+                    subscriptionIDavailable = true;
+                }
+            }
+        }
+    }
+
+    private boolean subscribe(String eventName) {
         if (connManager.checkConnection()) {
             if (!subscribed) {
-                boolean subscriptionIDavailable = false;
-                while (!subscriptionIDavailable) {
-                    String response = connManager.getDigitalSTROMAPI().getEvent(connManager.getSessionToken(),
-                            subscriptionID, timeout);
-                    JsonObject responseObj = JSONResponseHandler.toJsonObject(response);
-
-                    if (JSONResponseHandler.checkResponse(responseObj)) {
-                        subscriptionID++;
-                    } else {
-                        String errorStr = null;
-                        if (responseObj != null && responseObj.get(JSONApiResponseKeysEnum.MESSAGE.getKey()) != null) {
-                            errorStr = responseObj.get(JSONApiResponseKeysEnum.MESSAGE.getKey()).getAsString();
-                        }
-                        if (errorStr != null && errorStr.contains(UNKNOWN_TOKEN)) {
-                            subscriptionIDavailable = true;
-                        }
-                    }
-                }
+                getSubscriptionID();
             }
-            for (String eventName : this.subscribedEvents) {
-                subscribed = connManager.getDigitalSTROMAPI().subscribeEvent(this.connManager.getSessionToken(),
-                        eventName, this.subscriptionID, config.getConnectionTimeout(), config.getReadTimeout());
-                if (subscribed) {
-                    logger.debug("subscribed event: {} to subscriptionID: {}", eventName, subscriptionID);
-                }
-            }
+            subscribed = connManager.getDigitalSTROMAPI().subscribeEvent(connManager.getSessionToken(), eventName,
+                    subscriptionID, config.getConnectionTimeout(), config.getReadTimeout());
 
-            if (!subscribed) {
-                logger.error("Couldn't subscribe EventListener ... maybe timeout because system is to busy ...");
+            if (subscribed) {
+                logger.debug("subscribed event: {} to subscriptionID: {}", eventName, subscriptionID);
             } else {
-                logger.debug("subscribe successfull, subscription id is " + subscriptionID + " subscribed events are: "
-                        + subscribedEvents.toString());
+                logger.error(
+                        "Couldn't subscribe event {} ... maybe timeout because system is to busy ... event will subscribe later again ... ");
             }
+            return subscribed;
         } else {
             logger.error("Couldn't subscribe eventListener, because there is no token (no connection)");
         }
+        return false;
+    }
+
+    private void subscribe(final List<String> evetNames) {
+        final Iterator<String> eventNameIter = evetNames.iterator();
+        subscriptionScheduler = scheduler.scheduleAtFixedRate(new Runnable() {
+
+            @Override
+            public void run() {
+                while (eventNameIter.hasNext()) {
+                    subscribe(eventNameIter.next());
+                }
+                subscriptionScheduler.cancel(true);
+            }
+
+        }, 0, 500, TimeUnit.MILLISECONDS);
     }
 
     private Runnable runableListener = new Runnable() {
@@ -313,14 +336,14 @@ public class EventListener {
                         if (errorStr != null
                                 && (errorStr.equals(INVALID_SESSION) || errorStr.contains(UNKNOWN_TOKEN))) {
                             unsubscribe();
-                            subscribe();
+                            subscribe(subscribedEvents);
                         } else if (errorStr != null) {
                             pollingScheduler.cancel(true);
                             logger.error("Unknown error message at event response: " + errorStr);
                         }
                     }
                 } else {
-                    subscribe();
+                    subscribe(subscribedEvents);
                 }
             }
         }
@@ -339,8 +362,7 @@ public class EventListener {
         if (array.size() > 0) {
             Event event = new JSONEventImpl(array);
             for (EventItem item : event.getEventItems()) {
-                logger.debug("Detect Event: " + item.getName() + " properties: " + item.getProperties().toString()
-                        + ", source: " + item.getSource().toString());
+                logger.debug("detect event {}", item.toString());
                 for (EventHandler handler : eventHandlers) {
                     if (handler.supportsEvent(item.getName())) {
                         logger.debug("inform handler with id {} about event {}", handler.getUID(), item.toString());

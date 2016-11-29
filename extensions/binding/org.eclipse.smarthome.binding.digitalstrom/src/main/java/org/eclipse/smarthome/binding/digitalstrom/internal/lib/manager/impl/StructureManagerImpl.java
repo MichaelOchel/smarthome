@@ -35,6 +35,8 @@ import com.google.gson.JsonObject;
  */
 public class StructureManagerImpl implements StructureManager {
 
+    public final String ZONE_GROUP_NAMES = "/json/property/query?query=/apartment/zones/*(ZoneID,name)/groups/*(group,name)";
+
     private Map<Integer, HashMap<Short, List<Device>>> zoneGroupDeviceMap;
     private Map<DSID, Device> deviceMap;
     private Map<DSID, Circuit> circuitMap = null;
@@ -68,8 +70,6 @@ public class StructureManagerImpl implements StructureManager {
     public StructureManagerImpl() {
 
     }
-
-    private final String ZONE_GROUP_NAMES = "/json/property/query?query=/apartment/zones/*(ZoneID,name)/groups/*(group,name)";
 
     @Override
     public boolean generateZoneGroupNames(ConnectionManager connectionManager) {

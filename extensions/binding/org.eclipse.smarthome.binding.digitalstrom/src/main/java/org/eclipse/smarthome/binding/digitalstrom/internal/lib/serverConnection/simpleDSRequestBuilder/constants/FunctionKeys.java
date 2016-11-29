@@ -122,4 +122,6 @@ public class FunctionKeys {
     public static final String GET_TEMPERATURE_CONTROL_INTERNALS = "getTemperatureControlInternals";
     public static final String SET_TEMPERATION_CONTROL_CONFIG = "setTemperatureControlConfig";
     public static final String QUERY2 = "query2";
+    public static final String BLINK = "blink";
+    public static final String PUSH_SENSOR_VALUE = "pushSensorValue";
 }

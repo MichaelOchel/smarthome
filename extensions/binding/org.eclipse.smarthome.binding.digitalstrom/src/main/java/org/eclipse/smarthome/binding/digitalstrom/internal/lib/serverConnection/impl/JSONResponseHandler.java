@@ -71,7 +71,7 @@ public class JSONResponseHandler {
      */
     public static JsonObject getResultJsonObject(JsonObject jsonObject) {
         if (jsonObject != null) {
-            return (JsonObject) jsonObject.get(JSONApiResponseKeysEnum.RESULT.getKey());
+            return jsonObject.get(JSONApiResponseKeysEnum.RESULT.getKey()).getAsJsonObject();
         }
         return null;
     }

@@ -197,9 +197,9 @@ public class TemperatureControlStatus extends BaseTemperatureControl {
      */
     @Override
     public String toString() {
-        return "TemperatureControlStatus [controlState=" + controlState + ", operationMode=" + operationMode
-                + ", temperature=" + temperature + ", temperatureTime=" + temperatureTime + ", nominalValue="
-                + nominalValue + ", nominalValueTime=" + nominalValueTime + ", controlValue=" + controlValue
-                + ", controlValueTime=" + controlValueTime + "]";
+        return "TemperatureControlStatus [controlMode=" + controlMode + ", controlState=" + controlState
+                + ", operationMode=" + operationMode + ", temperature=" + temperature + ", temperatureTime="
+                + temperatureTime + ", nominalValue=" + nominalValue + ", nominalValueTime=" + nominalValueTime
+                + ", controlValue=" + controlValue + ", controlValueTime=" + controlValueTime + "]";
     }
 }

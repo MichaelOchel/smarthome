@@ -104,7 +104,7 @@ public class DeviceDiscoveryService extends AbstractDiscoveryService {
         boolean isSupported = false;
         if (device instanceof Device) {
             Device tempDevice = (Device) device;
-            if ((tempDevice.isSensorDevice() && deviceType.equals(tempDevice.getHWinfo()))
+            if ((tempDevice.isSensorDevice() && deviceType.equals(tempDevice.getHWinfo().replaceAll("-", "")))
                     || (deviceType.equals(tempDevice.getHWinfo().substring(0, 2)) && tempDevice.isDeviceWithOutput()
                             && tempDevice.isPresent())) {
                 isSupported = true;
@@ -153,8 +153,8 @@ public class DeviceDiscoveryService extends AbstractDiscoveryService {
         if (device instanceof Device) {
             Device tempDevice = (Device) device;
             thingTypeUID = new ThingTypeUID(BINDING_ID, tempDevice.getHWinfo().substring(0, 2));
-            if (tempDevice.isSensorDevice() && deviceType.equals(tempDevice.getHWinfo())) {
-                thingTypeUID = new ThingTypeUID(BINDING_ID, tempDevice.getHWinfo());
+            if (tempDevice.isSensorDevice() && deviceType.equals(tempDevice.getHWinfo().replaceAll("-", ""))) {
+                thingTypeUID = new ThingTypeUID(BINDING_ID, deviceType);
             }
         } else {
             thingTypeUID = new ThingTypeUID(BINDING_ID,

@@ -23,6 +23,7 @@ import org.eclipse.smarthome.binding.digitalstrom.internal.lib.listener.Connecti
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.listener.DeviceStatusListener;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.listener.ManagerStatusListener;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.listener.SceneStatusListener;
+import org.eclipse.smarthome.binding.digitalstrom.internal.lib.listener.TemperatureControlStatusListener;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.listener.TotalPowerConsumptionListener;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.listener.stateEnums.ManagerStates;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.listener.stateEnums.ManagerTypes;
@@ -34,6 +35,7 @@ import org.eclipse.smarthome.binding.digitalstrom.internal.lib.manager.impl.Conn
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.manager.impl.DeviceStatusManagerImpl;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.manager.impl.SceneManagerImpl;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.manager.impl.StructureManagerImpl;
+import org.eclipse.smarthome.binding.digitalstrom.internal.lib.manager.impl.TemperatureControlManager;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.Circuit;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.Device;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.DeviceStateUpdate;
@@ -89,11 +91,13 @@ public class BridgeHandler extends BaseBridgeHandler
     private StructureManager structMan;
     private SceneManager sceneMan;
     private DeviceStatusManager devStatMan;
+    private TemperatureControlManager tempContMan;
 
     private EventListener eventListener;
 
     private DeviceStatusListener deviceDiscovery = null;
     private SceneStatusListener sceneDiscovery = null;
+    private TemperatureControlStatusListener temperatureControlDiscovery = null;
     private Config config = null;
 
     List<SceneStatusListener> unregisterSceneStatusListeners = null;
@@ -136,11 +140,32 @@ public class BridgeHandler extends BaseBridgeHandler
             } else {
                 devStatMan.registerStatusListener(bridge);
             }
+
+            try {
+                if (TemperatureControlManager.isHeatingControllerInstallated(connMan)) {
+                    if (tempContMan == null) {
+                        tempContMan = new TemperatureControlManager(connMan, eventListener,
+                                temperatureControlDiscovery);
+                        temperatureControlDiscovery = null;
+                    } else {
+                        // tempContMan.registerSystemStateChangeListener(bridge);
+                        if (temperatureControlDiscovery != null) {
+                            tempContMan.registerTemperatureControlStatusListener(temperatureControlDiscovery);
+                        }
+                    }
+
+                }
+            } catch (Exception e) {
+                logger.error("Exeption: ", e);
+            }
+
             structMan.generateZoneGroupNames(connMan);
 
             devStatMan.registerTotalPowerConsumptionListener(bridge);
 
-            if (connMan.checkConnection()) {
+            if (connMan.checkConnection())
+
+            {
                 devStatMan.start();
             }
 
@@ -164,7 +189,9 @@ public class BridgeHandler extends BaseBridgeHandler
             if (configChanged) {
                 updateConfiguration(configuration);
             }
-            if (StringUtils.isBlank(getThing().getProperties().get(DigitalSTROMBindingConstants.SERVER_CERT))
+            if (StringUtils.isBlank(
+
+                    getThing().getProperties().get(DigitalSTROMBindingConstants.SERVER_CERT))
                     && StringUtils.isNotBlank(config.getCert())) {
                 updateProperty(DigitalSTROMBindingConstants.SERVER_CERT, config.getCert());
             }
@@ -483,7 +510,7 @@ public class BridgeHandler extends BaseBridgeHandler
      * @param scene or device id (must not be null)
      */
     public void childThingRemoved(String id) {
-        if (id.split("-").length == 3) {
+        if (id != null && id.split("-").length == 3) {
             InternalScene scene = sceneMan.getInternalScene(id);
             if (scene != null) {
                 sceneMan.removeInternalScene(id);
@@ -505,33 +532,22 @@ public class BridgeHandler extends BaseBridgeHandler
 
     @Override
     public void channelLinked(ChannelUID channelUID) {
-        String[] meteringChannelSplit = channelUID.getId().split("_");
-        if (meteringChannelSplit.length > 2) {
-            MeteringTypeEnum meteringType = MeteringTypeEnum.valueOf(meteringChannelSplit[1]);
-            MeteringUnitsEnum unitType = MeteringUnitsEnum.valueOf(meteringChannelSplit[2]);
-            if (meteringType.equals(MeteringTypeEnum.energy)) {
-                if (unitType == null || unitType.equals(MeteringUnitsEnum.Wh)) {
-                    onEnergyMeterValueChanged(devStatMan.getTotalEnergyMeterValue());
+        if (devStatMan != null) {
+            String[] meteringChannelSplit = channelUID.getId().split("_");
+            if (meteringChannelSplit.length > 2) {
+                MeteringTypeEnum meteringType = MeteringTypeEnum.valueOf(meteringChannelSplit[1]);
+                MeteringUnitsEnum unitType = MeteringUnitsEnum.valueOf(meteringChannelSplit[2]);
+                if (meteringType.equals(MeteringTypeEnum.energy)) {
+                    if (unitType == null || unitType.equals(MeteringUnitsEnum.Wh)) {
+                        onEnergyMeterValueChanged(devStatMan.getTotalEnergyMeterValue());
+                    } else {
+                        onEnergyMeterWsValueChanged(devStatMan.getTotalEnergyMeterWsValue());
+                    }
                 } else {
-                    onEnergyMeterWsValueChanged(devStatMan.getTotalEnergyMeterWsValue());
+                    onTotalPowerConsumptionChanged(devStatMan.getTotalPowerConsumption());
                 }
-            } else {
-                onTotalPowerConsumptionChanged(devStatMan.getTotalPowerConsumption());
             }
         }
-        /*
-         * switch (channelUID.getId()) {
-         * case CHANNEL_ID_TOTAL_ACTIVE_POWER:
-         * if (devStatMan != null) {
-         * onTotalPowerConsumptionChanged(devStatMan.getTotalPowerConsumption());
-         * }
-         * break;
-         * case CHANNEL_ID_TOTAL_ELECTRIC_METER:
-         * if (devStatMan != null) {
-         * onEnergyMeterValueChanged(devStatMan.getTotalEnergyMeterValue());
-         * }
-         * }
-         */
     }
 
     @Override
@@ -780,5 +796,25 @@ public class BridgeHandler extends BaseBridgeHandler
         logger.debug("circuits: " + this.structMan.getCircuitMap().values().toString());
         return this.structMan != null && this.structMan.getCircuitMap() != null
                 ? new LinkedList<Circuit>(this.structMan.getCircuitMap().values()) : null;
+    }
+
+    public TemperatureControlManager getTemperatureControlManager() {
+        return tempContMan;
+    }
+
+    public void registerTemperatureControlStatusListener(
+            TemperatureControlStatusListener temperatureControlStatusListener) {
+        if (tempContMan != null) {
+            tempContMan.registerTemperatureControlStatusListener(temperatureControlStatusListener);
+        } else if (TemperatureControlStatusListener.DISCOVERY.equals(temperatureControlStatusListener.getID())) {
+            this.temperatureControlDiscovery = temperatureControlStatusListener;
+        }
+    }
+
+    public void unregisterTemperatureControlStatusListener(
+            TemperatureControlStatusListener temperatureControlStatusListener) {
+        if (tempContMan != null) {
+            tempContMan.unregisterTemperatureControlStatusListener(temperatureControlStatusListener);
+        }
     }
 }
