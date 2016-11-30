@@ -10,18 +10,17 @@ public enum ControlStates {
 
     INTERNAL((short) 0, "internal"),
     EXTERNAL((short) 1, "external"),
-    EXBACHUP((short) 2, "exbackup"),
+    EXBACKUP((short) 2, "exbackup"),
     EMERGENCY((short) 3, "emergency");
 
     private final Short ID;
     private final String KEY;
-    private final static ControlStates[] CONTROL_STATES = new ControlStates[4];
+    private final static ControlStates[] CONTROL_STATES = new ControlStates[ControlStates.values().length];
 
     static {
-        CONTROL_STATES[0] = INTERNAL;
-        CONTROL_STATES[1] = EXTERNAL;
-        CONTROL_STATES[2] = EXBACHUP;
-        CONTROL_STATES[3] = EMERGENCY;
+        for (ControlStates controlState : ControlStates.values()) {
+            CONTROL_STATES[controlState.ID] = controlState;
+        }
     }
 
     private ControlStates(short id, String key) {

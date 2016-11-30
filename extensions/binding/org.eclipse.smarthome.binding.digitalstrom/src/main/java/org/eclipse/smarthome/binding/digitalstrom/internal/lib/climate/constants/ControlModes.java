@@ -17,14 +17,12 @@ public enum ControlModes {
     private final Short ID;
     private final String KEY;
 
-    private final static ControlModes[] CONTROL_MODES = new ControlModes[5];
+    private final static ControlModes[] CONTROL_MODES = new ControlModes[ControlModes.values().length];
 
     static {
-        CONTROL_MODES[0] = OFF;
-        CONTROL_MODES[1] = PID_CONTROL;
-        CONTROL_MODES[2] = ZONE_FOLLOWER;
-        CONTROL_MODES[3] = FIXED_VALUE;
-        CONTROL_MODES[4] = MANUAL;
+        for (ControlModes controlMode : ControlModes.values()) {
+            CONTROL_MODES[controlMode.ID] = controlMode;
+        }
     }
 
     private ControlModes(short id, String key) {

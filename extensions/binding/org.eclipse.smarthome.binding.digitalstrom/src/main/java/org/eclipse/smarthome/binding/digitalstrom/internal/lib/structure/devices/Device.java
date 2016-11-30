@@ -14,10 +14,12 @@ import org.eclipse.smarthome.binding.digitalstrom.internal.lib.config.Config;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.event.types.EventItem;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.DeviceSceneSpec;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.DeviceStateUpdate;
+import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.constants.DeviceBinarayInputEnum;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.constants.FunctionalColorGroupEnum;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.constants.OutputModeEnum;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.constants.SensorEnum;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.impl.DSID;
+import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.impl.DeviceBinaryInput;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.impl.DeviceSensorValue;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.scene.InternalScene;
 
@@ -635,4 +637,16 @@ public interface Device extends GeneralDeviceInformations {
     boolean containsSensorType(SensorEnum sensorType);
 
     boolean isTemperatureControlledDevice();
+
+    public boolean isBinaryInputDevice();
+
+    List<DeviceBinaryInput> getBinaryInputs();
+
+    DeviceBinaryInput getBinaryInput(DeviceBinarayInputEnum binaryInputType);
+
+    Short getBinaryInputState(DeviceBinarayInputEnum binaryInputType);
+
+    void setBinaryInputState(DeviceBinarayInputEnum binaryInputType, Short newState);
+
+    void setBinaryInputs(List<DeviceBinaryInput> newBinaryInputs);
 }

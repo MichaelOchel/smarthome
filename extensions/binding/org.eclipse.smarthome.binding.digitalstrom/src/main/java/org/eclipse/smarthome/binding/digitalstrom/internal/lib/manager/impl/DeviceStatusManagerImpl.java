@@ -47,6 +47,7 @@ import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.CachedMeteringValue;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.DeviceConstants;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.DeviceStateUpdate;
+import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.constants.DeviceBinarayInputEnum;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.constants.MeteringTypeEnum;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.constants.MeteringUnitsEnum;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.constants.SensorEnum;
@@ -73,7 +74,8 @@ import com.google.gson.JsonObject;
 public class DeviceStatusManagerImpl implements DeviceStatusManager, EventHandler {
 
     private Logger logger = LoggerFactory.getLogger(DeviceStatusManagerImpl.class);
-    public static final List<String> SUPPORTED_EVENTS = Lists.newArrayList(EventNames.DEVICE_SENSOR_VALUE);
+    public static final List<String> SUPPORTED_EVENTS = Lists.newArrayList(EventNames.DEVICE_SENSOR_VALUE,
+            EventNames.DEVICE_BINARY_INPUT_EVENT);
 
     private final ScheduledExecutorService scheduler = ThreadPoolManager.getScheduledPool(Config.THREADPOOL_NAME);
     private ScheduledFuture<?> pollingScheduler = null;
@@ -272,11 +274,12 @@ public class DeviceStatusManagerImpl implements DeviceStatusManager, EventHandle
                             }
                             if (deviceDiscovery != null) {
                                 // only inform discover, if the device is with output or a sensor device
-                                if (currentDevice.isDeviceWithOutput() || currentDevice.isSensorDevice()) {
-                                    deviceDiscovery.onDeviceAdded(currentDevice);
-                                    logger.debug("inform DeviceStatusListener: {} about removed device with dSID {}",
-                                            DeviceStatusListener.DEVICE_DISCOVERY, currentDevice.getDSID().getValue());
-                                }
+                                // TODO: quatsch, weg damit
+                                // if (currentDevice.isDeviceWithOutput() || currentDevice.isSensorDevice()) {
+                                deviceDiscovery.onDeviceAdded(currentDevice);
+                                logger.debug("inform DeviceStatusListener: {} about removed device with dSID {}",
+                                        DeviceStatusListener.DEVICE_DISCOVERY, currentDevice.getDSID().getValue());
+                                // }
                             } else {
                                 logger.debug(
                                         "The device discovery is not registrated, can't inform device discovery about found device.");
@@ -583,6 +586,9 @@ public class DeviceStatusManagerImpl implements DeviceStatusManager, EventHandle
         }
         if (newDevice.getOutputMode() != null && !newDevice.getOutputMode().equals(internalDevice.getOutputMode())) {
             internalDevice.setOutputMode(newDevice.getOutputMode());
+        }
+        if (!newDevice.getBinaryInputs().equals(internalDevice.getBinaryInputs())) {
+            internalDevice.setBinaryInputs(newDevice.getBinaryInputs());
         }
         strucMan.updateDevice(newDevice);
     }
@@ -1233,19 +1239,35 @@ public class DeviceStatusManagerImpl implements DeviceStatusManager, EventHandle
 
     @Override
     public void handleEvent(EventItem eventItem) {
-        if (eventItem.getName().equals(EventNames.DEVICE_SENSOR_VALUE)) {
-            logger.debug("Detect " + EventNames.DEVICE_SENSOR_VALUE + " eventItem=" + eventItem.toString());
-            if (eventItem.getSource().get(EventResponseEnum.DSID) != null) {
-                String dSID = eventItem.getSource().get(EventResponseEnum.DSID);
-                Device dev = strucMan.getDeviceByDSID(dSID);
-                if (dev == null) {
-                    dev = strucMan.getDeviceByDSUID(dSID);
-                }
-                if (dev != null) {
+        if (EventNames.DEVICE_SENSOR_VALUE.equals(eventItem.getName())
+                || EventNames.DEVICE_BINARY_INPUT_EVENT.equals(eventItem.getName())) {
+            logger.debug("Detect " + eventItem.getName() + " eventItem=" + eventItem.toString());
+            Device dev = getDeviceOfEvent(eventItem);
+            if (dev != null) {
+                if (EventNames.DEVICE_SENSOR_VALUE.equals(eventItem.getName())) {
                     dev.setDeviceSensorByEvent(eventItem);
+                } else {
+                    DeviceBinarayInputEnum binaryInputType = DeviceBinarayInputEnum.getdeviceBinarayInput(
+                            Short.parseShort(eventItem.getProperties().get(EventResponseEnum.INPUT_TYPE)));
+                    Short newState = Short.parseShort(eventItem.getProperties().get(EventResponseEnum.INPUT_STATE));
+                    if (binaryInputType != null) {
+                        dev.setBinaryInputState(binaryInputType, newState);
+                    }
                 }
             }
         }
+    }
+
+    private Device getDeviceOfEvent(EventItem eventItem) {
+        if (eventItem.getSource().get(EventResponseEnum.DSID) != null) {
+            String dSID = eventItem.getSource().get(EventResponseEnum.DSID);
+            Device dev = strucMan.getDeviceByDSID(dSID);
+            if (dev == null) {
+                dev = strucMan.getDeviceByDSUID(dSID);
+            }
+            return dev;
+        }
+        return null;
     }
 
     @Override

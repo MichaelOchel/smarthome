@@ -9,6 +9,7 @@ package org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.device
 
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.sensorJobExecutor.SensorJobExecutor;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.sensorJobExecutor.sensorJob.SensorJob;
+import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.constants.DeviceBinarayInputEnum;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.constants.SensorEnum;
 
 /**
@@ -47,6 +48,9 @@ public interface DeviceStateUpdate {
 
     // metering data
     public final static String UPDATE_CIRCUIT_METER = "circuitMeter";
+
+    // binary inputs
+    public static final String BINARY_INPUT = "binaryInput-";
 
     // scene
     /** A scene call can have the value between 0 and 127. */
@@ -107,4 +111,8 @@ public interface DeviceStateUpdate {
     Short getScenePriority();
 
     boolean isSceneUpdateType();
+
+    DeviceBinarayInputEnum getTypeAsDeviceBinarayInputEnum();
+
+    boolean isBinarayInputType();
 }

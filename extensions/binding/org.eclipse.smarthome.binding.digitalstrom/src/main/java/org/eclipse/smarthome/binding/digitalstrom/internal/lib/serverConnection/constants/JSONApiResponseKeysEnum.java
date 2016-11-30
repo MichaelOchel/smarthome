@@ -202,7 +202,8 @@ public enum JSONApiResponseKeysEnum {
     TIMESTAMP("timestamp"),
     SENSOR_INPUTS("sensorInputs"),
     GROUP("group"),
-    LAST_CALL_SCENE("lastCalledScene");
+    LAST_CALL_SCENE("lastCalledScene"),
+    BINARY_INPUTS("binaryInputs");
 
     private final String key;
 

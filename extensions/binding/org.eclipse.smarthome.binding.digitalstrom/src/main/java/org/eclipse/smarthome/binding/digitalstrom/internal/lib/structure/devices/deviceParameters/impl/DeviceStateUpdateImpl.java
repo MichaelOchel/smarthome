@@ -8,6 +8,7 @@
 package org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.impl;
 
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.DeviceStateUpdate;
+import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.constants.DeviceBinarayInputEnum;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.constants.SensorEnum;
 
 /**
@@ -29,6 +30,11 @@ public class DeviceStateUpdateImpl implements DeviceStateUpdate {
 
     public DeviceStateUpdateImpl(String updateType, Integer value) {
         this.UPDATE_TYPE = updateType;
+        this.VALUE = value;
+    }
+
+    public DeviceStateUpdateImpl(DeviceBinarayInputEnum updateDeviceBinary, Short value) {
+        this.UPDATE_TYPE = DeviceStateUpdate.BINARY_INPUT + updateDeviceBinary.getBinaryInputType();
         this.VALUE = value;
     }
 
@@ -165,6 +171,16 @@ public class DeviceStateUpdateImpl implements DeviceStateUpdate {
     @Override
     public boolean isSensorUpdateType() {
         return UPDATE_TYPE.startsWith(UPDATE_DEVICE_SENSOR);
+    }
+
+    @Override
+    public DeviceBinarayInputEnum getTypeAsDeviceBinarayInputEnum() {
+        return DeviceBinarayInputEnum.getdeviceBinarayInput(Short.parseShort(UPDATE_TYPE.split("-")[1]));
+    }
+
+    @Override
+    public boolean isBinarayInputType() {
+        return UPDATE_TYPE.startsWith(BINARY_INPUT);
     }
 
     @Override

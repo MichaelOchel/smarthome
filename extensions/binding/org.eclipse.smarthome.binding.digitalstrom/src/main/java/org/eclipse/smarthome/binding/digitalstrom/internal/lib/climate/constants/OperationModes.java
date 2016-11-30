@@ -20,6 +20,22 @@ public enum OperationModes {
     private final Short ID;
     private final String KEY;
 
+    private final static OperationModes[] OPERATION_MODES = new OperationModes[OperationModes.values().length];
+
+    static {
+        for (OperationModes operationMode : OperationModes.values()) {
+            OPERATION_MODES[operationMode.ID] = operationMode;
+        }
+    }
+
+    public static OperationModes getOperationMode(short id) {
+        try {
+            return OPERATION_MODES[id];
+        } catch (IndexOutOfBoundsException e) {
+            return null;
+        }
+    }
+
     private OperationModes(short id, String key) {
         this.ID = id;
         this.KEY = key;
