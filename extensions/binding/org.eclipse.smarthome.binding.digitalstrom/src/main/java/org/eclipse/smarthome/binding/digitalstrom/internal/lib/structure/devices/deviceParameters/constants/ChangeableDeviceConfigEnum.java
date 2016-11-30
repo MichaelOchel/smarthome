@@ -20,5 +20,6 @@ public enum ChangeableDeviceConfigEnum {
     ZONE_ID,
     GROUPS,
     FUNCTIONAL_GROUP,
-    OUTPUT_MODE;
+    OUTPUT_MODE,
+    BINARAY_INPUTS;
 }

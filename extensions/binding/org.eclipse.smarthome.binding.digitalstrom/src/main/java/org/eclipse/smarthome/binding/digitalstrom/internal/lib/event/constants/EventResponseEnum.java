@@ -53,7 +53,12 @@ public enum EventResponseEnum {
     // operation mode
     ACTIONS("actions"),
     OPERATION_MODE("operationMode"),
-    FORCED_UPDATE("forceUpdate");
+    FORCED_UPDATE("forceUpdate"),
+
+    // binary input
+    INPUT_TYPE("inputType"),
+    INPUT_STATE("inputState"),
+    INPUT_INDEX("inputIndex");
 
     private final String ID;
     static final HashMap<String, EventResponseEnum> eventResponseFields = new HashMap<String, EventResponseEnum>();

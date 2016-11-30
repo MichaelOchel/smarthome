@@ -27,8 +27,10 @@ import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.CachedMeteringValue;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.DeviceStateUpdate;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.constants.ChangeableDeviceConfigEnum;
+import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.constants.DeviceBinarayInputEnum;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.constants.MeteringTypeEnum;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.constants.MeteringUnitsEnum;
+import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.impl.DeviceBinaryInput;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.impl.JSONDeviceSceneSpecImpl;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.impl.DeviceImpl;
 import org.eclipse.smarthome.core.library.types.DecimalType;
@@ -112,95 +114,25 @@ public class TestApi {
 
         final ConnectionManager connMan = new ConnectionManagerImpl(host, user, pw, false);
 
-        new Thread(new Runnable() {
-            boolean subscribed = false;
-            private List<String> subscribedEvents = Lists.newArrayList("deviceBinaryInputEvent");
+        for (short i = 0; i < 22; i++) {
+            System.out.println((i) + " = " + DeviceBinarayInputEnum.getdeviceBinarayInput(i));
+        }
 
-            @Override
-            public void run() {
-                while (true) {
-                    if (connMan.checkConnection()) {
+        JsonObject jObject = new JsonObject();
+        jObject.addProperty("targetGroupType", "0");
+        jObject.addProperty("targetGroup", "8");
+        jObject.addProperty("inputType", "11");
+        jObject.addProperty("inputId", "15");
+        jObject.addProperty("state", "1");
 
-                        if (subscribed) {
-                            String response = connMan.getDigitalSTROMAPI().getEvent(connMan.getSessionToken(), 12, 500);
-                            System.out.println(response);
-                            JsonObject responseObj = JSONResponseHandler.toJsonObject(response);
+        DeviceBinaryInput devBinInput = new DeviceBinaryInput(jObject);
+        DeviceBinaryInput devBinInput2 = new DeviceBinaryInput(jObject);
+        System.out.println(devBinInput.toString());
 
-                            if (JSONResponseHandler.checkResponse(responseObj)) {
-                                JsonObject obj = JSONResponseHandler.getResultJsonObject(responseObj);
-                                if (obj != null && obj.get(JSONApiResponseKeysEnum.EVENTS.getKey()).isJsonArray()) {
-                                    JsonArray array = obj.get(JSONApiResponseKeysEnum.EVENTS.getKey()).getAsJsonArray();
-                                    try {
-                                        if (array.size() > 0) {
-                                            Event event = new JSONEventImpl(array);
-                                            for (EventItem item : event.getEventItems()) {
-                                                // for (EventHandler handler : eventHandlers) {
-                                                // if (handler.supportsEvent(item.getName())) {
-                                                System.out.println(
-                                                        ("inform handler with id {} about event {}" + item.toString()));
-                                                // Integer zoneID = Integer
-                                                // .parseInt(item.getProperties().get(EventResponseEnum.ZONEID));
-                                                // TemperatureControlStatus temperationControlStatus = connMan
-                                                // .getDigitalSTROMAPI().getZoneTemperatureControlStatus(
-                                                // connMan.getSessionToken(), zoneID, null);
-                                                // System.out.println(
-                                                // "readout new temperationControlStatus, new temperationControlStatus
-                                                // is: "
-                                                // + temperationControlStatus.toString());
-                                                // handler.handleEvent(item);
-                                                // }
-                                                // }
-                                            }
-                                        }
-                                    } catch (Exception e) {
-                                        System.out.printf("An Exception occurred", e);
-                                    }
-                                }
-                            } else {
-                                String errorStr = null;
-                                if (responseObj != null
-                                        && responseObj.get(JSONApiResponseKeysEnum.MESSAGE.getKey()) != null) {
-                                    errorStr = responseObj.get(JSONApiResponseKeysEnum.MESSAGE.getKey()).getAsString();
-                                }
-                                if (errorStr != null) {
-                                    // unsubscribe();
-                                    // subscribe();
-                                } else if (errorStr != null) {
-                                    // pollingScheduler.cancel(true);
-                                    System.out.println("Unknown error message at event response: " + errorStr);
-                                }
-                            }
-                        } else {
-                            if (connMan.checkConnection()) {
-                                connMan.getDigitalSTROMAPI().unsubscribeEvent(connMan.getSessionToken(), null, 12,
-                                        Config.DEFAULT_CONNECTION_TIMEOUT, Config.DEFAULT_READ_TIMEOUT);
-                                for (String eventName : this.subscribedEvents) {
-                                    subscribed = connMan.getDigitalSTROMAPI().subscribeEvent(connMan.getSessionToken(),
-                                            eventName, 12, Config.DEFAULT_CONNECTION_TIMEOUT,
-                                            Config.DEFAULT_READ_TIMEOUT);
-                                    System.out.println(eventName + " subscribe sucsess? " + subscribed);
-                                    try {
-                                        Thread.sleep(500);
-                                    } catch (InterruptedException e) {
-                                        // TODO Auto-generated catch block
-                                        e.printStackTrace();
-                                    }
-                                }
-                            }
-                        }
-                    } else {
-                        System.out.println("no connection");
-                    }
-                    try {
-                        Thread.sleep(1000);
-                    } catch (InterruptedException e) {
-                        // TODO Auto-generated catch block
-                        e.printStackTrace();
-                    }
-                }
-
-            }
-        }).start();
+        List<DeviceBinaryInput> binaryInputList = Lists.newArrayList(devBinInput, devBinInput2);
+        List<DeviceBinaryInput> binaryInputList2 = Lists.newArrayList(devBinInput2, devBinInput);
+        int index = binaryInputList.indexOf(new Short((short) 11));
+        System.out.println(binaryInputList.equals(binaryInputList2));
 
         // System.out.println(connMan.getDigitalSTROMAPI().getLatest(connMan.getSessionToken(),
         // MeteringTypeEnum.energyDelta,
@@ -543,6 +475,100 @@ public class TestApi {
             EventListener eventListener = new EventListener(connMan, new DummyEventHandler(
                     Lists.newArrayList(EventNames.CALL_SCENE, EventNames.UNDO_SCENE, EventNames.DEVICE_SENSOR_VALUE)));
             eventListener.start();
+
+            new Thread(new Runnable() {
+                boolean subscribed = false;
+                private List<String> subscribedEvents = Lists.newArrayList("deviceBinaryInputEvent");
+
+                @Override
+                public void run() {
+                    while (true) {
+                        if (connMan.checkConnection()) {
+
+                            if (subscribed) {
+                                String response = connMan.getDigitalSTROMAPI().getEvent(connMan.getSessionToken(), 12,
+                                        500);
+                                System.out.println(response);
+                                JsonObject responseObj = JSONResponseHandler.toJsonObject(response);
+
+                                if (JSONResponseHandler.checkResponse(responseObj)) {
+                                    JsonObject obj = JSONResponseHandler.getResultJsonObject(responseObj);
+                                    if (obj != null && obj.get(JSONApiResponseKeysEnum.EVENTS.getKey()).isJsonArray()) {
+                                        JsonArray array = obj.get(JSONApiResponseKeysEnum.EVENTS.getKey())
+                                                .getAsJsonArray();
+                                        try {
+                                            if (array.size() > 0) {
+                                                Event event = new JSONEventImpl(array);
+                                                for (EventItem item : event.getEventItems()) {
+                                                    // for (EventHandler handler : eventHandlers) {
+                                                    // if (handler.supportsEvent(item.getName())) {
+                                                    System.out.println(("inform handler with id {} about event {}"
+                                                            + item.toString()));
+                                                    // Integer zoneID = Integer
+                                                    // .parseInt(item.getProperties().get(EventResponseEnum.ZONEID));
+                                                    // TemperatureControlStatus temperationControlStatus = connMan
+                                                    // .getDigitalSTROMAPI().getZoneTemperatureControlStatus(
+                                                    // connMan.getSessionToken(), zoneID, null);
+                                                    // System.out.println(
+                                                    // "readout new temperationControlStatus, new
+                                                    // temperationControlStatus
+                                                    // is: "
+                                                    // + temperationControlStatus.toString());
+                                                    // handler.handleEvent(item);
+                                                    // }
+                                                    // }
+                                                }
+                                            }
+                                        } catch (Exception e) {
+                                            System.out.printf("An Exception occurred", e);
+                                        }
+                                    }
+                                } else {
+                                    String errorStr = null;
+                                    if (responseObj != null
+                                            && responseObj.get(JSONApiResponseKeysEnum.MESSAGE.getKey()) != null) {
+                                        errorStr = responseObj.get(JSONApiResponseKeysEnum.MESSAGE.getKey())
+                                                .getAsString();
+                                    }
+                                    if (errorStr != null) {
+                                        // unsubscribe();
+                                        // subscribe();
+                                    } else if (errorStr != null) {
+                                        // pollingScheduler.cancel(true);
+                                        System.out.println("Unknown error message at event response: " + errorStr);
+                                    }
+                                }
+                            } else {
+                                if (connMan.checkConnection()) {
+                                    connMan.getDigitalSTROMAPI().unsubscribeEvent(connMan.getSessionToken(), null, 12,
+                                            Config.DEFAULT_CONNECTION_TIMEOUT, Config.DEFAULT_READ_TIMEOUT);
+                                    for (String eventName : this.subscribedEvents) {
+                                        subscribed = connMan.getDigitalSTROMAPI().subscribeEvent(
+                                                connMan.getSessionToken(), eventName, 12,
+                                                Config.DEFAULT_CONNECTION_TIMEOUT, Config.DEFAULT_READ_TIMEOUT);
+                                        System.out.println(eventName + " subscribe sucsess? " + subscribed);
+                                        try {
+                                            Thread.sleep(500);
+                                        } catch (InterruptedException e) {
+                                            // TODO Auto-generated catch block
+                                            e.printStackTrace();
+                                        }
+                                    }
+                                }
+                            }
+                        } else {
+                            System.out.println("no connection");
+                        }
+                        try {
+                            Thread.sleep(1000);
+                        } catch (InterruptedException e) {
+                            // TODO Auto-generated catch block
+                            e.printStackTrace();
+                        }
+                    }
+
+                }
+            }).start();
         }
         if (testType.equals(JSON_API_HEATING)) {
             DsAPI api = connMan.getDigitalSTROMAPI();

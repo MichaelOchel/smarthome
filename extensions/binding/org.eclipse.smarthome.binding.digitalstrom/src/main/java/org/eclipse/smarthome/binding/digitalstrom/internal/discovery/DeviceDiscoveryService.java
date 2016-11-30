@@ -105,7 +105,8 @@ public class DeviceDiscoveryService extends AbstractDiscoveryService {
         if (device instanceof Device) {
             Device tempDevice = (Device) device;
             if ((tempDevice.isSensorDevice() && deviceType.equals(tempDevice.getHWinfo().replaceAll("-", "")))
-                    || (deviceType.equals(tempDevice.getHWinfo().substring(0, 2)) && tempDevice.isDeviceWithOutput()
+                    || (deviceType.equals(tempDevice.getHWinfo().substring(0, 2))
+                            && (tempDevice.isDeviceWithOutput() || tempDevice.isBinaryInputDevice())
                             && tempDevice.isPresent())) {
                 isSupported = true;
             }

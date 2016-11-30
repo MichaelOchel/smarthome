@@ -147,6 +147,7 @@ public class DigitalSTROMBindingConstants {
     public static final String DEVICE_OUTPUT_MODE = "outputmode";
     public static final String DEVICE_FUNCTIONAL_COLOR_GROUP = "funcColorGroup";
     public static final String DEVICE_METER_ID = "meterDSID";
+    public static final String DEVICE_BINARAY_INPUTS = "binarayInputs";
 
     // Device properties scene
     public static final String DEVICE_SCENE = "scene"; // + number of scene

@@ -29,11 +29,13 @@ import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.DeviceSceneSpec;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.DeviceStateUpdate;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.constants.ChangeableDeviceConfigEnum;
+import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.constants.DeviceBinarayInputEnum;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.constants.FuncNameAndColorGroupEnum;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.constants.FunctionalColorGroupEnum;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.constants.OutputModeEnum;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.constants.SensorEnum;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.impl.DSID;
+import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.impl.DeviceBinaryInput;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.impl.DeviceSensorValue;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.impl.DeviceStateUpdateImpl;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.impl.JSONDeviceSceneSpecImpl;
@@ -85,6 +87,8 @@ public class DeviceImpl extends AbstractGeneralDeviceInformations implements Dev
 
     private List<DeviceSensorValue> deviceSensorValues = Collections
             .synchronizedList(new ArrayList<DeviceSensorValue>());
+    private List<DeviceBinaryInput> deviceBinaryInputs = Collections
+            .synchronizedList(new ArrayList<DeviceBinaryInput>());
     private List<SensorEnum> devicePowerSensorTypes = new ArrayList<SensorEnum>();
     private List<SensorEnum> deviceClimateSensorTypes = new ArrayList<SensorEnum>();
 
@@ -192,6 +196,16 @@ public class DeviceImpl extends AbstractGeneralDeviceInformations implements Dev
                 }
             }
         }
+        if (object.get(JSONApiResponseKeysEnum.BINARY_INPUTS.getKey()) != null
+                && object.get(JSONApiResponseKeysEnum.BINARY_INPUTS.getKey()).isJsonObject()) {
+            JsonObject jObj = object.get(JSONApiResponseKeysEnum.BINARY_INPUTS.getKey()).getAsJsonObject();
+            for (Entry<String, JsonElement> entry : jObj.entrySet()) {
+                if (entry.getValue().isJsonObject()) {
+                    JsonObject binaryInput = entry.getValue().getAsJsonObject();
+                    deviceBinaryInputs.add(new DeviceBinaryInput(binaryInput));
+                }
+            }
+        }
         init();
     }
 
@@ -231,9 +245,7 @@ public class DeviceImpl extends AbstractGeneralDeviceInformations implements Dev
     @Override
     public synchronized void setMeterDSID(String meterDSID) {
         this.meterDSID = new DSID(meterDSID);
-        if (listener != null) {
-            listener.onDeviceConfigChanged(ChangeableDeviceConfigEnum.METER_DSID);
-        }
+        informListenerAboutConfigChange(ChangeableDeviceConfigEnum.METER_DSID);
     }
 
     @Override
@@ -251,9 +263,7 @@ public class DeviceImpl extends AbstractGeneralDeviceInformations implements Dev
         if (!this.groupList.contains(groupID)) {
             this.groupList.add(groupID);
         }
-        if (listener != null) {
-            listener.onDeviceConfigChanged(ChangeableDeviceConfigEnum.GROUPS);
-        }
+        informListenerAboutConfigChange(ChangeableDeviceConfigEnum.GROUPS);
     }
 
     @Override
@@ -261,9 +271,7 @@ public class DeviceImpl extends AbstractGeneralDeviceInformations implements Dev
         if (newGroupList != null) {
             this.groupList = newGroupList;
         }
-        if (listener != null) {
-            listener.onDeviceConfigChanged(ChangeableDeviceConfigEnum.GROUPS);
-        }
+        informListenerAboutConfigChange(ChangeableDeviceConfigEnum.GROUPS);
     }
 
     @Override
@@ -274,9 +282,7 @@ public class DeviceImpl extends AbstractGeneralDeviceInformations implements Dev
     @Override
     public synchronized void setZoneId(int zoneID) {
         this.zoneId = zoneID;
-        if (listener != null) {
-            listener.onDeviceConfigChanged(ChangeableDeviceConfigEnum.ZONE_ID);
-        }
+        informListenerAboutConfigChange(ChangeableDeviceConfigEnum.ZONE_ID);
     }
 
     @Override
@@ -375,9 +381,7 @@ public class DeviceImpl extends AbstractGeneralDeviceInformations implements Dev
     @Override
     public synchronized void setFunctionalColorGroup(FunctionalColorGroupEnum fuctionalColorGroup) {
         this.functionalGroup = fuctionalColorGroup;
-        if (listener != null) {
-            listener.onDeviceConfigChanged(ChangeableDeviceConfigEnum.FUNCTIONAL_GROUP);
-        }
+        informListenerAboutConfigChange(ChangeableDeviceConfigEnum.FUNCTIONAL_GROUP);
     }
 
     @Override
@@ -388,9 +392,7 @@ public class DeviceImpl extends AbstractGeneralDeviceInformations implements Dev
     @Override
     public synchronized void setOutputMode(OutputModeEnum newOutputMode) {
         this.outputMode = newOutputMode;
-        if (listener != null) {
-            listener.onDeviceConfigChanged(ChangeableDeviceConfigEnum.OUTPUT_MODE);
-        }
+        informListenerAboutConfigChange(ChangeableDeviceConfigEnum.OUTPUT_MODE);
     }
 
     @Override
@@ -1664,6 +1666,13 @@ public class DeviceImpl extends AbstractGeneralDeviceInformations implements Dev
         }
     }
 
+    private void informListenerAboutConfigChange(ChangeableDeviceConfigEnum changedConfig) {
+        if (listener != null) {
+            listener.onDeviceConfigChanged(changedConfig);
+            logger.debug("Inform listener about device config {} changed" + changedConfig.toString());
+        }
+    }
+
     @SuppressWarnings("null")
     @Override
     public void saveConfigSceneSpecificationIntoDevice(Map<String, String> propertries) {
@@ -1800,6 +1809,53 @@ public class DeviceImpl extends AbstractGeneralDeviceInformations implements Dev
                     + ((String[]) powerSensorRefresh[i])[1] + " ";
         }
         return powSenRef;
+    }
+
+    @Override
+    public boolean isBinaryInputDevice() {
+        return !deviceBinaryInputs.isEmpty();
+    }
+
+    @Override
+    public List<DeviceBinaryInput> getBinaryInputs() {
+        return deviceBinaryInputs;
+    }
+
+    @Override
+    public DeviceBinaryInput getBinaryInput(DeviceBinarayInputEnum binaryInputType) {
+        if (binaryInputType != null) {
+            for (DeviceBinaryInput binInput : deviceBinaryInputs) {
+                if (binaryInputType.getBinaryInputType().equals(binInput.getInputType())) {
+                    return binInput;
+                }
+            }
+        }
+        return null;
+    }
+
+    @Override
+    public Short getBinaryInputState(DeviceBinarayInputEnum binaryInputType) {
+        DeviceBinaryInput devBinInput = getBinaryInput(binaryInputType);
+        if (devBinInput != null) {
+            return devBinInput.getState();
+        }
+        return null;
+    }
+
+    @Override
+    public void setBinaryInputState(DeviceBinarayInputEnum binaryInputType, Short newState) {
+        DeviceBinaryInput devBinInput = getBinaryInput(binaryInputType);
+        if (devBinInput != null) {
+            devBinInput.setState(newState);
+            informListenerAboutStateUpdate(new DeviceStateUpdateImpl(binaryInputType, newState));
+        }
+    }
+
+    @Override
+    public void setBinaryInputs(List<DeviceBinaryInput> newBinaryInputs) {
+        this.deviceBinaryInputs.clear();
+        this.deviceBinaryInputs.addAll(newBinaryInputs);
+        informListenerAboutConfigChange(ChangeableDeviceConfigEnum.BINARAY_INPUTS);
     }
 
     @Override

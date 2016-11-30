@@ -7,6 +7,8 @@
  */
 package org.eclipse.smarthome.binding.digitalstrom.internal.providers;
 
+import static org.eclipse.smarthome.binding.digitalstrom.DigitalSTROMBindingConstants.BINDING_ID;
+
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -16,6 +18,7 @@ import java.util.Locale;
 import java.util.Set;
 
 import org.eclipse.smarthome.binding.digitalstrom.DigitalSTROMBindingConstants;
+import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.constants.DeviceBinarayInputEnum;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.constants.FunctionalColorGroupEnum;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.constants.MeteringTypeEnum;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.constants.MeteringUnitsEnum;
@@ -87,6 +90,7 @@ public class DsChannelTypeProvider implements ChannelTypeProvider {
     public final static String NUMBER = "Number";
 
     public final static String TOTAL_PRE = "total_";
+    public static final String BINARY_INPUT_PRE = "binary_input_";
 
     // tags
     private final String GE = "GE";
@@ -103,12 +107,20 @@ public class DsChannelTypeProvider implements ChannelTypeProvider {
     private final String CATEGORY_CARBONE_DIOXIDE = "CarbonDioxide";
     private final String CATEGORY_ENERGY = "Energy";
     private final String CATEGORY_HUMIDITY = "Humidity";
+    private final String CATEGORY_BRIGHTNESS = "Brightness";
     private final String CATEGORY_LIGHT = "Light";
     private final String CATEGORY_PRESSURE = "Pressure";
     private final String CATEGORY_SOUND_VOLUME = "SoundVolume";
     private final String CATEGORY_TEMPERATURE = "Temperature";
     private final String CATEGORY_WIND = "Wind";
     private final String CATEGORY_RAIN = "Rain";
+    private final String CATEGORY_BATTERY = "Battery";
+    private final String CATEGORY_DOOR = "Door";
+    private final String CATEGORY_WINDOW = "Window";
+    private final String CATEGORY_GARAGE_DOOR = "GarageDoor";
+    private final String CATEGORY_SMOKE = "Smoke";
+    private final String CATEGORY_ALARM = "Alarm";
+    private final String CATEGORY_MOTION = "Motion";
 
     // rollershutter?
     // private final String CATEGORY_MOVE_CONTROL = "MoveControl";
@@ -228,10 +240,49 @@ public class DsChannelTypeProvider implements ChannelTypeProvider {
                 return CATEGORY_WIND;
             case SOUND_PRESSURE_LEVEL:
                 return CATEGORY_SOUND_VOLUME;
-            // missing category
             case BRIGHTNESS_INDOORS:
             case BRIGHTNESS_OUTDOORS:
+                return CATEGORY_BRIGHTNESS;
+            default:
                 break;
+
+        }
+        return null;
+    }
+
+    private String getBinaryInputCategory(DeviceBinarayInputEnum binaryInputType) {
+        switch (binaryInputType) {
+            case BATTERY_STATUS_IS_LOW:
+                return CATEGORY_BATTERY;
+            case SUN_RADIATION:
+            case SUN_PROTECTION:
+            case TWILIGHT:
+            case BRIGHTNESS:
+                return CATEGORY_BRIGHTNESS;
+            case HEATING_OPERATION_ON_OFF:
+            case CHANGE_OVER_HEATING_COOLING:
+            case TEMPERATION_BELOW_LIMIT:
+                return CATEGORY_TEMPERATURE;
+            case DOOR_IS_OPEN:
+                return CATEGORY_DOOR;
+            case GARAGE_DOOR_IS_OPEN:
+                return CATEGORY_GARAGE_DOOR;
+            case PRESENCE:
+            case PRESENCE_IN_DARKNESS:
+            case MOTION:
+            case MOTION_IN_DARKNESS:
+                return CATEGORY_MOTION;
+            case RAIN:
+                return CATEGORY_RAIN;
+            case SMOKE:
+                return CATEGORY_SMOKE;
+            case WINDOW_IS_OPEN:
+            case WINDOW_IS_TILTED:
+                return CATEGORY_WINDOW;
+            case WIND_STRENGHT_ABOVE_LIMIT:
+                return CATEGORY_WIND;
+            case FROST:
+                return CATEGORY_ALARM;
             default:
                 break;
 
@@ -289,14 +340,6 @@ public class DsChannelTypeProvider implements ChannelTypeProvider {
         return null;
     }
 
-    private String getSesorDescription(SensorEnum sensorType, Locale locale) {
-        return getDescText(sensorType.toString().toLowerCase(), locale);
-    }
-
-    private String getSensorLabelText(SensorEnum sensorType, Locale locale) {
-        return getLabelText(sensorType.toString().toLowerCase(), locale);
-    }
-
     @Override
     public Collection<ChannelType> getChannelTypes(Locale locale) {
         List<ChannelType> channelTypeList = new LinkedList<ChannelType>();
@@ -310,12 +353,17 @@ public class DsChannelTypeProvider implements ChannelTypeProvider {
                     locale));
         }
         for (MeteringTypeEnum meteringType : MeteringTypeEnum.values()) {
+            // TODO: UNIT weg lassen
             for (MeteringUnitsEnum meteringUnit : meteringType.getMeteringUnitList()) {
                 channelTypeList.add(getChannelType(new ChannelTypeUID(DigitalSTROMBindingConstants.BINDING_ID,
                         meteringType.toString() + "_" + meteringUnit.toString()), locale));
                 channelTypeList.add(getChannelType(new ChannelTypeUID(DigitalSTROMBindingConstants.BINDING_ID,
                         TOTAL_PRE + meteringType.toString() + "_" + meteringUnit.toString()), locale));
             }
+        }
+        for (DeviceBinarayInputEnum binaryInput : DeviceBinarayInputEnum.values()) {
+            channelTypeList.add(getChannelType(new ChannelTypeUID(DigitalSTROMBindingConstants.BINDING_ID,
+                    BINARY_INPUT_PRE + binaryInput.toString().toLowerCase()), locale));
         }
         return channelTypeList;
     }
@@ -366,13 +414,17 @@ public class DsChannelTypeProvider implements ChannelTypeProvider {
         return null;
     }
 
+    private Set<String> getSimpleTags(String channelID, Locale locale) {
+        return Sets.newHashSet(getText(channelID, locale), getText("SHADE", locale));
+    }
+
     public static String getItemType(String channelID) {
         if (channelID != null) {
             if (channelID.contains(STAGE.toLowerCase())) {
                 return STRING;
             }
             if (channelID.contains(SWITCH.toLowerCase()) || channelID.contains(SCENE)
-                    || channelID.contains(WIPE.toLowerCase())) {
+                    || channelID.contains(WIPE.toLowerCase()) || channelID.contains(BINARY_INPUT_PRE)) {
                 return SWITCH;
             }
             if (channelID.contains(DIMMER.toLowerCase()) || channelID.contains(ANGLE.toLowerCase())) {
@@ -391,14 +443,13 @@ public class DsChannelTypeProvider implements ChannelTypeProvider {
     @Override
     public ChannelType getChannelType(ChannelTypeUID channelTypeUID, Locale locale) {
         if (channelTypeUID.getBindingId().equals(DigitalSTROMBindingConstants.BINDING_ID)) {
+            String channelID = channelTypeUID.getId();
             try {
                 SensorEnum sensorType = SensorEnum.valueOf(channelTypeUID.getId().toUpperCase());
-                return new ChannelType(channelTypeUID, false, NUMBER, getSensorLabelText(sensorType, locale),
-                        getSesorDescription(sensorType, locale), getSensorCategory(sensorType),
-                        Sets.newHashSet(getSensorLabelText(sensorType, locale), getText("DS", locale)),
+                return new ChannelType(channelTypeUID, false, NUMBER, getLabelText(channelID, locale),
+                        getDescText(channelID, locale), getSensorCategory(sensorType), getSimpleTags(channelID, locale),
                         getSensorStateDescription(sensorType), null);
             } catch (IllegalArgumentException e) {
-                String channelID = channelTypeUID.getId();
                 if (supportedOutputChannelTypes.contains(channelID)) {
                     // TODO:WIPE? config standby?
                     return new ChannelType(channelTypeUID, false, getItemType(channelID),
@@ -433,7 +484,16 @@ public class DsChannelTypeProvider implements ChannelTypeProvider {
                                 new StateDescription(null, null, null, pattern, true, null), null);
                     }
                 } catch (IllegalArgumentException e1) {
-                    // ignore
+                    try {
+                        DeviceBinarayInputEnum binarayInputType = DeviceBinarayInputEnum
+                                .valueOf(channelTypeUID.getId().replaceAll(BINARY_INPUT_PRE, "").toUpperCase());
+                        return new ChannelType(channelTypeUID, false, getItemType(channelID),
+                                getLabelText(channelID, locale), getDescText(channelID, locale),
+                                getBinaryInputCategory(binarayInputType), getSimpleTags(channelTypeUID.getId(), locale),
+                                new StateDescription(null, null, null, null, true, null), null);
+                    } catch (IllegalArgumentException e2) {
+                        // ignore
+                    }
                 }
 
             }
@@ -449,5 +509,13 @@ public class DsChannelTypeProvider implements ChannelTypeProvider {
     @Override
     public Collection<ChannelGroupType> getChannelGroupTypes(Locale locale) {
         return null;
+    }
+
+    public static ChannelTypeUID getSensorChannelUID(SensorEnum sensorType) {
+        return new ChannelTypeUID(BINDING_ID, sensorType.toString().toLowerCase());
+    }
+
+    public static ChannelTypeUID getBinaryInputChannelUID(DeviceBinarayInputEnum binaryInputType) {
+        return new ChannelTypeUID(BINDING_ID, BINARY_INPUT_PRE + binaryInputType.toString().toLowerCase());
     }
 }

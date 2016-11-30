@@ -10,6 +10,7 @@ package org.eclipse.smarthome.binding.digitalstrom.handler;
 import static org.eclipse.smarthome.binding.digitalstrom.DigitalSTROMBindingConstants.*;
 
 import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -25,7 +26,9 @@ import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.DeviceSceneSpec;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.DeviceStateUpdate;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.constants.ChangeableDeviceConfigEnum;
+import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.constants.DeviceBinarayInputEnum;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.constants.SensorEnum;
+import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.impl.DeviceBinaryInput;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.impl.DeviceStateUpdateImpl;
 import org.eclipse.smarthome.binding.digitalstrom.internal.providers.DsChannelTypeProvider;
 import org.eclipse.smarthome.config.core.Configuration;
@@ -74,13 +77,10 @@ public class DeviceHandler extends BaseThingHandler implements DeviceStatusListe
     public static Set<ThingTypeUID> SUPPORTED_THING_TYPES = new HashSet<ThingTypeUID>();
 
     private String dSID = null;
-
     private Device device;
-
     private BridgeHandler dssBridgeHandler;
 
     private Command lastComand = null;
-
     private String currentChannel = null;
 
     public DeviceHandler(Thing thing) {
@@ -309,6 +309,15 @@ public class DeviceHandler extends BaseThingHandler implements DeviceStatusListe
                         logger.debug("Update ESH-State");
                         return;
                     }
+                    if (deviceStateUpdate.isBinarayInputType()) {
+                        if (deviceStateUpdate.getValueAsShort() == 1) {
+                            updateState(getBinaryInputChannelUID(deviceStateUpdate.getTypeAsDeviceBinarayInputEnum()),
+                                    OnOffType.ON);
+                        } else {
+                            updateState(getBinaryInputChannelUID(deviceStateUpdate.getTypeAsDeviceBinarayInputEnum()),
+                                    OnOffType.OFF);
+                        }
+                    }
                 }
                 if (currentChannel != null) {
                     if (!device.isShade()) {
@@ -503,10 +512,25 @@ public class DeviceHandler extends BaseThingHandler implements DeviceStatusListe
             properties.put(DigitalSTROMBindingConstants.DEVICE_METER_ID, device.getMeterDSID().toString());
             propertiesChanged = true;
         }
+        if (!device.getBinaryInputs().isEmpty()) {
+            properties.put(DigitalSTROMBindingConstants.DEVICE_BINARAY_INPUTS, getBinarayInputList());
+            propertiesChanged = true;
+        }
         if (propertiesChanged) {
             super.updateProperties(properties);
             propertiesChanged = false;
         }
+    }
+
+    private String getBinarayInputList() {
+        List<String> binarayInputs = new ArrayList<String>(device.getBinaryInputs().size());
+        for (DeviceBinaryInput binInput : device.getBinaryInputs()) {
+            DeviceBinarayInputEnum devBinInp = DeviceBinarayInputEnum.getdeviceBinarayInput(binInput.getInputType());
+            if (devBinInp != null) {
+                binarayInputs.add(devBinInp.toString().toLowerCase());
+            }
+        }
+        return binarayInputs.toString();
     }
 
     private void loadSensorChannels() {
@@ -561,28 +585,28 @@ public class DeviceHandler extends BaseThingHandler implements DeviceStatusListe
 
     private List<String> loadedSensorChannels = null;
 
-    private boolean addLoadedSensorChannel(SensorEnum sensorType) {
+    private boolean addLoadedSensorChannel(String sensorChannelType) {
         if (loadedSensorChannels == null) {
             loadedSensorChannels = new LinkedList<String>();
         }
-        if (!loadedSensorChannels.contains(sensorType.toString())) {
-            return loadedSensorChannels.add(sensorType.toString());
+        if (!loadedSensorChannels.contains(sensorChannelType.toString())) {
+            return loadedSensorChannels.add(sensorChannelType.toString());
         }
         return false;
     }
 
-    private boolean removeLoadedSensorChannel(SensorEnum sensorType) {
+    private boolean removeLoadedSensorChannel(String sensorChannelType) {
         if (loadedSensorChannels == null) {
             return false;
         }
-        return loadedSensorChannels.remove(sensorType.toString());
+        return loadedSensorChannels.remove(sensorChannelType);
     }
 
-    private boolean isSensorChannelLoaded(SensorEnum sensorType) {
+    private boolean isSensorChannelLoaded(String sensorChannelType) {
         if (loadedSensorChannels == null) {
             return false;
         }
-        return loadedSensorChannels.contains(sensorType.toString());
+        return loadedSensorChannels.contains(sensorChannelType);
     }
 
     private void checkSensorChannel() {
@@ -596,41 +620,68 @@ public class DeviceHandler extends BaseThingHandler implements DeviceStatusListe
             while (channelInter.hasNext()) {
                 Channel channel = channelInter.next();
                 try {
-                    SensorEnum sensorType = SensorEnum.valueOf(channel.getUID().getId().toUpperCase());
-                    if (SensorEnum.isPowerSensor(sensorType)) {
-                        if (device.checkPowerSensorRefreshPriorityNever(sensorType)) {
-                            logger.debug("remove {} sensor channel", sensorType.toString());
-                            channelInter.remove();
-                            channelListChanged = removeLoadedSensorChannel(sensorType);// true;
+                    String channelID = channel.getUID().getId();
+                    if (channelID.startsWith(DsChannelTypeProvider.BINARY_INPUT_PRE)) {
+                        DeviceBinarayInputEnum devBinInput = getBinaryInput(channelID);
+                        logger.debug("devBin input is: " + devBinInput + " devBinInput exist at device "
+                                + device.getBinaryInput(devBinInput));
+                        if (device.getBinaryInput(devBinInput) != null) {
+                            addLoadedSensorChannel(channelID);
                         } else {
-                            addLoadedSensorChannel(sensorType);
+                            channelInter.remove();
+                            channelListChanged = true;
+                            removeLoadedSensorChannel(channelID);
                         }
                     } else {
-                        if (device.containsSensorType(sensorType)) {
-                            addLoadedSensorChannel(sensorType);
+                        SensorEnum sensorType = getSensorEnum(channelID);
+                        if (SensorEnum.isPowerSensor(sensorType)) {
+                            if (device.checkPowerSensorRefreshPriorityNever(sensorType)) {
+                                logger.debug("remove {} sensor channel", sensorType.toString());
+                                channelInter.remove();
+                                channelListChanged = removeLoadedSensorChannel(channelID);
+                            } else {
+                                addLoadedSensorChannel(channelID);
+                            }
                         } else {
-                            removeLoadedSensorChannel(sensorType);
+                            if (device.containsSensorType(sensorType)) {
+                                addLoadedSensorChannel(channelID);
+                            } else {
+                                channelInter.remove();
+                                removeLoadedSensorChannel(channelID);
+                                channelListChanged = true;
+                            }
                         }
                     }
-
                 } catch (IllegalArgumentException e) {
                     // ignore
                 }
             }
         }
         for (SensorEnum sensorType : device.getPowerSensorTypes()) {
-            if (!device.checkPowerSensorRefreshPriorityNever(sensorType) && !isSensorChannelLoaded(sensorType)) {
+            if (!device.checkPowerSensorRefreshPriorityNever(sensorType)
+                    && !isSensorChannelLoaded(getSensorChannelID(sensorType))) {
                 logger.debug("create {} sensor channel", sensorType.toString());
                 channelList.add(getSensorChannel(sensorType));
-                channelListChanged = addLoadedSensorChannel(sensorType);
+                channelListChanged = addLoadedSensorChannel(getSensorChannelID(sensorType));
             }
         }
         if (device.hasClimateSensors()) {
             for (SensorEnum sensorType : device.getClimateSensorTypes()) {
-                if (!isSensorChannelLoaded(sensorType)) {
+                if (!isSensorChannelLoaded(getSensorChannelID(sensorType))) {
                     logger.debug("create {} sensor channel", sensorType.toString());
                     channelList.add(getSensorChannel(sensorType));
-                    channelListChanged = addLoadedSensorChannel(sensorType);
+                    channelListChanged = addLoadedSensorChannel(getSensorChannelID(sensorType));
+                }
+            }
+        }
+        if (device.isBinaryInputDevice()) {
+            for (DeviceBinaryInput binInput : device.getBinaryInputs()) {
+                DeviceBinarayInputEnum binInputType = DeviceBinarayInputEnum
+                        .getdeviceBinarayInput(binInput.getInputType());
+                if (binInputType != null && !isSensorChannelLoaded(getBinaryInputChannelID(binInputType))) {
+                    logger.debug("create {} sensor channel", binInputType.toString());
+                    channelList.add(getBinaryChannel(binInputType));
+                    channelListChanged = addLoadedSensorChannel(getBinaryInputChannelID(binInputType));
                 }
             }
         }
@@ -645,7 +696,12 @@ public class DeviceHandler extends BaseThingHandler implements DeviceStatusListe
 
     private Channel getSensorChannel(SensorEnum sensorType) {
         return ChannelBuilder.create(getSensorChannelUID(sensorType), "Number")
-                .withType(new ChannelTypeUID(BINDING_ID, sensorType.toString().toLowerCase())).build();
+                .withType(DsChannelTypeProvider.getSensorChannelUID(sensorType)).build();
+    }
+
+    private Channel getBinaryChannel(DeviceBinarayInputEnum binaryInputType) {
+        return ChannelBuilder.create(getBinaryInputChannelUID(binaryInputType), "Switch")
+                .withType(DsChannelTypeProvider.getBinaryInputChannelUID(binaryInputType)).build();
     }
 
     private void checkOutputChannel() {
@@ -670,6 +726,7 @@ public class DeviceHandler extends BaseThingHandler implements DeviceStatusListe
 
     private void loadOutputChannel(ChannelTypeUID channelTypeUID, String acceptedItemType) {
         if (channelTypeUID != null) {
+            // TODO: hier removen?
             currentChannel = channelTypeUID.getId();
 
             List<Channel> channelList = new LinkedList<Channel>(this.getThing().getChannels());
@@ -713,55 +770,92 @@ public class DeviceHandler extends BaseThingHandler implements DeviceStatusListe
     }
 
     private ChannelUID getSensorChannelUID(SensorEnum sensorType) {
-        return new ChannelUID(getThing().getUID(), sensorType.toString().toLowerCase());
+        return new ChannelUID(getThing().getUID(), getSensorChannelID(sensorType));
+    }
+
+    private String getSensorChannelID(SensorEnum sensorType) {
+        return sensorType.toString().toLowerCase();
+    }
+
+    private ChannelUID getBinaryInputChannelUID(DeviceBinarayInputEnum binaryInputType) {
+        return new ChannelUID(getThing().getUID(), getBinaryInputChannelID(binaryInputType));
+    }
+
+    private String getBinaryInputChannelID(DeviceBinarayInputEnum binaryInputType) {
+        return DsChannelTypeProvider.BINARY_INPUT_PRE + binaryInputType.toString().toLowerCase();
+    }
+
+    private DeviceBinarayInputEnum getBinaryInput(String channelID) {
+        try {
+            return DeviceBinarayInputEnum
+                    .valueOf(channelID.replace(DsChannelTypeProvider.BINARY_INPUT_PRE, "").toUpperCase());
+        } catch (IllegalArgumentException e) {
+            return null;
+        }
+    }
+
+    private SensorEnum getSensorEnum(String channelID) {
+        try {
+            return SensorEnum.valueOf(channelID.toUpperCase());
+        } catch (IllegalArgumentException e) {
+            return null;
+        }
     }
 
     @Override
     public void channelLinked(ChannelUID channelUID) {
         if (device != null) {
-            try {
-                SensorEnum sensorType = SensorEnum.valueOf(channelUID.getId().toUpperCase());
+            SensorEnum sensorType = getSensorEnum(channelUID.getId());
+            if (sensorType != null) {
                 Float val = device.getFloatSensorValue(sensorType);
                 if (val != null) {
                     updateState(channelUID, new DecimalType(val));
                 }
-            } catch (IllegalArgumentException e) {
-                if (channelUID.getId().contains(DsChannelTypeProvider.DIMMER)) {
-                    if (device.isOn()) {
-                        updateState(channelUID, new PercentType(
-                                fromValueToPercent(device.getOutputValue(), device.getMaxOutputValue())));
-                    } else {
-                        updateState(channelUID, new PercentType(0));
-                    }
-                    return;
+            }
+            Short val = device.getBinaryInputState(getBinaryInput(channelUID.getId()));
+            if (val != null) {
+                if (val == 1) {
+                    updateState(channelUID, OnOffType.ON);
+                } else {
+                    updateState(channelUID, OnOffType.OFF);
                 }
-                if (channelUID.getId().contains(DsChannelTypeProvider.SWITCH)) {
-                    if (device.isOn()) {
-                        updateState(channelUID, OnOffType.ON);
-                    } else {
-                        updateState(channelUID, OnOffType.OFF);
-                    }
-                    return;
-                }
-                if (channelUID.getId().contains(DsChannelTypeProvider.SHADE)) {
+            }
+
+            if (channelUID.getId().contains(DsChannelTypeProvider.DIMMER)) {
+                if (device.isOn()) {
                     updateState(channelUID,
-                            new PercentType(fromValueToPercent(device.getSlatPosition(), device.getMaxSlatPosition())));
+                            new PercentType(fromValueToPercent(device.getOutputValue(), device.getMaxOutputValue())));
+                } else {
+                    updateState(channelUID, new PercentType(0));
+                }
+                return;
+            }
+            if (channelUID.getId().contains(DsChannelTypeProvider.SWITCH)) {
+                if (device.isOn()) {
+                    updateState(channelUID, OnOffType.ON);
+                } else {
+                    updateState(channelUID, OnOffType.OFF);
+                }
+                return;
+            }
+            if (channelUID.getId().contains(DsChannelTypeProvider.SHADE)) {
+                updateState(channelUID,
+                        new PercentType(fromValueToPercent(device.getSlatPosition(), device.getMaxSlatPosition())));
+                return;
+            }
+            if (channelUID.getId().contains(DsChannelTypeProvider.ANGLE)) {
+                updateState(channelUID,
+                        new PercentType(fromValueToPercent(device.getAnglePosition(), device.getMaxSlatAngle())));
+                return;
+            }
+            if (channelUID.getId().contains(DsChannelTypeProvider.STAGE)) {
+                if (channelUID.getId().contains("2")) {
+                    updateState(channelUID, new StringType(convertStageValue((short) 2, device.getOutputValue())));
                     return;
                 }
-                if (channelUID.getId().contains(DsChannelTypeProvider.ANGLE)) {
-                    updateState(channelUID,
-                            new PercentType(fromValueToPercent(device.getAnglePosition(), device.getMaxSlatAngle())));
+                if (channelUID.getId().contains("2")) {
+                    updateState(channelUID, new StringType(convertStageValue((short) 3, device.getOutputValue())));
                     return;
-                }
-                if (channelUID.getId().contains(DsChannelTypeProvider.STAGE)) {
-                    if (channelUID.getId().contains("2")) {
-                        updateState(channelUID, new StringType(convertStageValue((short) 2, device.getOutputValue())));
-                        return;
-                    }
-                    if (channelUID.getId().contains("2")) {
-                        updateState(channelUID, new StringType(convertStageValue((short) 3, device.getOutputValue())));
-                        return;
-                    }
                 }
             }
         }
@@ -864,6 +958,12 @@ public class DeviceHandler extends BaseThingHandler implements DeviceStatusListe
             case OUTPUT_MODE:
                 super.updateProperty(DEVICE_OUTPUT_MODE, device.getOutputMode().toString());
                 checkOutputChannel();
+                break;
+            case BINARAY_INPUTS:
+                super.updateProperty(DEVICE_BINARAY_INPUTS, getBinarayInputList());
+                checkSensorChannel();
+                break;
+            default:
                 break;
         }
     }

@@ -168,9 +168,19 @@ public class DiscoveryServiceManager implements SceneStatusListener, DeviceStatu
     public void onDeviceRemoved(Object device) {
         if (device instanceof Device) {
             String id = ((Device) device).getHWinfo().substring(0, 2);
+            if (((Device) device).isSensorDevice()) {
+                id = ((Device) device).getHWinfo().replace("-", "");
+            }
             if (discoveryServices.get(id) != null) {
                 ((DeviceDiscoveryService) discoveryServices.get(id))
                         .onDeviceRemoved((AbstractGeneralDeviceInformations) device);
+            }
+        }
+        if (device instanceof Circuit) {
+            if (discoveryServices.get(DsDeviceThingTypeProvider.SupportedThingTypes.circuit.toString()) != null) {
+                ((DeviceDiscoveryService) discoveryServices
+                        .get(DsDeviceThingTypeProvider.SupportedThingTypes.circuit.toString()))
+                                .onDeviceRemoved((AbstractGeneralDeviceInformations) device);
             }
         }
     }
