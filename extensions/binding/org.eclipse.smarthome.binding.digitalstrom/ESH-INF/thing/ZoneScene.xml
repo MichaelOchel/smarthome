@@ -28,10 +28,10 @@
                 <description>@text/param_scene_id_desc</description>
                 <required>false</required>
                 <options>
-                    <option value="DEEP_OFF">@text/DEEP_OFF</option>
-                    <option value="STANDBY">@text/STANDBY</option>
-                    <option value="SLEEPING">@text/SLEEPING</option>
-                    <option value="WAKEUP">@text/WAKEUP</option>
+                    <option value="DEEP_OFF">@text/deep_off</option>
+                    <option value="STANDBY">@text/standby</option>
+                    <option value="SLEEPING">@text/sleeping</option>
+                    <option value="WAKEUP">@text/wakeup</option>
                 </options>
             </parameter>
         </config-description>
