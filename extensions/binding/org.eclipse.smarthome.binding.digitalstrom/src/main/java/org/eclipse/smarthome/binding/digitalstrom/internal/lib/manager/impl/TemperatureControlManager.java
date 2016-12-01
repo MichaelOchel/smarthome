@@ -80,41 +80,41 @@ public class TemperatureControlManager implements EventHandler, TemperatureSenso
     }
 
     public void checkZones() {
-        if (connectionMananager.checkConnection()) {
-            // TODO: dS-API getApartmentTemperatureControlStatus zu Liste ändern?
-            HashMap<Integer, TemperatureControlStatus> temperationControlStatus = dSapi
-                    .getApartmentTemperatureControlStatus(connectionMananager.getSessionToken());
-            if (!temperationControlStatus.isEmpty()) {
-                for (TemperatureControlStatus tempConStat : temperationControlStatus.values()) {
-                    /*
-                     * if (tempConStat.getIsConfigured()) {
-                     * isConfigured = true;
-                     * // TODO: heatingWaterSystemStateAbfragen
-                     * if (discovery != null) {
-                     * discovery.configChanged(tempConStat);
-                     * } else {
-                     * break;
-                     * }
-                     * }
-                     */
-                    addTemperatureControlStatus(tempConStat);
-                }
-                if (isConfigured && systemStateChangeListener != null) {
-                    currentHeatingWaterSystemStage = dSapi.propertyTreeGetString(connectionMananager.getSessionToken(),
-                            GET_HEATING_WATER_SYSTEM_STATE_PATH);
-                }
-                // this.temperationControlStatus = temperationControlStatus;
+        // if (connectionMananager.checkConnection()) {
+        // TODO: dS-API getApartmentTemperatureControlStatus zu Liste ändern?
+        HashMap<Integer, TemperatureControlStatus> temperationControlStatus = dSapi
+                .getApartmentTemperatureControlStatus(connectionMananager.getSessionToken());
+        if (!temperationControlStatus.isEmpty()) {
+            for (TemperatureControlStatus tempConStat : temperationControlStatus.values()) {
+                /*
+                 * if (tempConStat.getIsConfigured()) {
+                 * isConfigured = true;
+                 * // TODO: heatingWaterSystemStateAbfragen
+                 * if (discovery != null) {
+                 * discovery.configChanged(tempConStat);
+                 * } else {
+                 * break;
+                 * }
+                 * }
+                 */
+                addTemperatureControlStatus(tempConStat);
             }
+            if (isConfigured && systemStateChangeListener != null) {
+                currentHeatingWaterSystemStage = dSapi.propertyTreeGetString(connectionMananager.getSessionToken(),
+                        GET_HEATING_WATER_SYSTEM_STATE_PATH);
+            }
+            // this.temperationControlStatus = temperationControlStatus;
         }
+        // }
     }
 
     // TODO: static isHeatingControllerInstallated
     public static boolean isHeatingControllerInstallated(ConnectionManager connectionManager) {
-        if (connectionManager.checkConnection()) {
-            return connectionManager.getDigitalSTROMAPI().propertyTreeGetChildren(connectionManager.getSessionToken(),
-                    GET_HEATING_HEATING_CONTROLLER_CHILDREN_PATH) != null;
-        }
-        return false;
+        // if (connectionManager.checkConnection()) {
+        return connectionManager.getDigitalSTROMAPI().propertyTreeGetChildren(connectionManager.getSessionToken(),
+                GET_HEATING_HEATING_CONTROLLER_CHILDREN_PATH) != null;
+        // }
+        // return false;
     }
 
     public Collection<TemperatureControlStatus> getTemperatureControlStatusFromAllZones() {
@@ -215,14 +215,14 @@ public class TemperatureControlManager implements EventHandler, TemperatureSenso
 
             if (eventItem.getName().equals(EventNames.HEATING_CONTROL_OPERATION_MODE)) {
                 if (EVALUATE_REAL_ACTIVE_MODE.equals(eventItem.getProperties().get(EventResponseEnum.ACTIONS))) {
-                    if (connectionMananager.checkConnection()) {
-                        Integer zoneID = Integer.parseInt(eventItem.getProperties().get(EventResponseEnum.ZONEID));
-                        TemperatureControlStatus temperationControlStatus = dSapi
-                                .getZoneTemperatureControlStatus(connectionMananager.getSessionToken(), zoneID, null);
-                        if (temperationControlStatus != null) {
-                            addTemperatureControlStatus(temperationControlStatus);
-                        }
+                    // if (connectionMananager.checkConnection()) {
+                    Integer zoneID = Integer.parseInt(eventItem.getProperties().get(EventResponseEnum.ZONEID));
+                    TemperatureControlStatus temperationControlStatus = dSapi
+                            .getZoneTemperatureControlStatus(connectionMananager.getSessionToken(), zoneID, null);
+                    if (temperationControlStatus != null) {
+                        addTemperatureControlStatus(temperationControlStatus);
                     }
+                    // }
                 }
             }
 
@@ -290,13 +290,13 @@ public class TemperatureControlManager implements EventHandler, TemperatureSenso
     @Override
     public boolean pushTargetTemperature(Integer zoneID, Float newValue) {
         if (checkAndGetTemperatureControlStatus(zoneID) != null) {
-            if (connectionMananager.checkConnection()) {
-                if (dSapi.pushZoneSensorValue(connectionMananager.getSessionToken(), zoneID, null, (short) 0, null,
-                        newValue, SensorEnum.ROOM_TEMPERATION_SET_POINT)) {
-                    addEcho(zoneID, SensorEnum.ROOM_TEMPERATION_SET_POINT, newValue);
-                    return true;
-                }
+            // if (connectionMananager.checkConnection()) {
+            if (dSapi.pushZoneSensorValue(connectionMananager.getSessionToken(), zoneID, null, (short) 0, null,
+                    newValue, SensorEnum.ROOM_TEMPERATION_SET_POINT)) {
+                addEcho(zoneID, SensorEnum.ROOM_TEMPERATION_SET_POINT, newValue);
+                return true;
             }
+            // }
         }
         return false;
     }

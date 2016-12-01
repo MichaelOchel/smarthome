@@ -94,21 +94,21 @@ public class SceneDiscovery {
      * @return true, if successful otherwise false
      */
     public boolean generateNamedScenes(ConnectionManager connectionManager) {
-        if (connectionManager.checkConnection()) {
-            String response = connectionManager.getHttpTransport()
-                    .execute(query + "&token=" + connectionManager.getSessionToken());
-            if (response == null) {
-                return false;
-            } else {
-                JsonObject responsJsonObj = JSONResponseHandler.toJsonObject(response);
-                if (JSONResponseHandler.checkResponse(responsJsonObj)) {
-                    addScenesToList(JSONResponseHandler.getResultJsonObject(responsJsonObj));
-                    scenesGenerated[0] = '1';
-                    sceneManager.scenesGenerated(scenesGenerated);
-                    return true;
-                }
+        // if (connectionManager.checkConnection()) {
+        String response = connectionManager.getHttpTransport()
+                .execute(query + "&token=" + connectionManager.getSessionToken());
+        if (response == null) {
+            return false;
+        } else {
+            JsonObject responsJsonObj = JSONResponseHandler.toJsonObject(response);
+            if (JSONResponseHandler.checkResponse(responsJsonObj)) {
+                addScenesToList(JSONResponseHandler.getResultJsonObject(responsJsonObj));
+                scenesGenerated[0] = '1';
+                sceneManager.scenesGenerated(scenesGenerated);
+                return true;
             }
         }
+        // }
         scenesGenerated[0] = '2';
         sceneManager.scenesGenerated(scenesGenerated);
         return false;
@@ -259,7 +259,9 @@ public class SceneDiscovery {
                                 }
                                 if (zoneID != null) {
                                     if (groupIdInter != null) {
-                                        if (connectionManager.checkConnection()) {
+                                        // TODO:
+                                        // if (connectionManager.checkConnection()) {
+                                        if (connectionManager.connectionEstablished()) {
                                             Short groupID = null;
                                             if (groupIdInter.hasNext()) {
                                                 groupID = groupIdInter.next();
@@ -341,35 +343,35 @@ public class SceneDiscovery {
 
     private HashMap<Integer, List<Short>> getReachableGroups(ConnectionManager connectionManager) {
         HashMap<Integer, List<Short>> reachableGroupsMap = null;
-        if (connectionManager.checkConnection()) {
-            String response = connectionManager.getHttpTransport()
-                    .execute(this.reachableGroupsQuery + connectionManager.getSessionToken());
-            if (response == null) {
-                return null;
-            } else {
-                JsonObject responsJsonObj = JSONResponseHandler.toJsonObject(response);
-                if (JSONResponseHandler.checkResponse(responsJsonObj)) {
-                    JsonObject resultJsonObj = JSONResponseHandler.getResultJsonObject(responsJsonObj);
-                    if (resultJsonObj.get(JSONApiResponseKeysEnum.ZONES.getKey()) instanceof JsonArray) {
-                        JsonArray zones = (JsonArray) resultJsonObj.get(JSONApiResponseKeysEnum.ZONES.getKey());
-                        reachableGroupsMap = new HashMap<Integer, List<Short>>(zones.size());
-                        List<Short> groupList;
-                        for (int i = 0; i < zones.size(); i++) {
-                            if (((JsonObject) zones.get(i))
-                                    .get(JSONApiResponseKeysEnum.GROUPS.getKey()) instanceof JsonArray) {
-                                JsonArray groups = (JsonArray) ((JsonObject) zones.get(i))
-                                        .get(JSONApiResponseKeysEnum.GROUPS.getKey());
-                                groupList = new LinkedList<Short>();
-                                for (int k = 0; k < groups.size(); k++) {
-                                    groupList.add(groups.get(k).getAsShort());
-                                }
-                                reachableGroupsMap.put(((JsonObject) zones.get(i)).get("zoneID").getAsInt(), groupList);
+        // if (connectionManager.checkConnection()) {
+        String response = connectionManager.getHttpTransport()
+                .execute(this.reachableGroupsQuery + connectionManager.getSessionToken());
+        if (response == null) {
+            return null;
+        } else {
+            JsonObject responsJsonObj = JSONResponseHandler.toJsonObject(response);
+            if (JSONResponseHandler.checkResponse(responsJsonObj)) {
+                JsonObject resultJsonObj = JSONResponseHandler.getResultJsonObject(responsJsonObj);
+                if (resultJsonObj.get(JSONApiResponseKeysEnum.ZONES.getKey()) instanceof JsonArray) {
+                    JsonArray zones = (JsonArray) resultJsonObj.get(JSONApiResponseKeysEnum.ZONES.getKey());
+                    reachableGroupsMap = new HashMap<Integer, List<Short>>(zones.size());
+                    List<Short> groupList;
+                    for (int i = 0; i < zones.size(); i++) {
+                        if (((JsonObject) zones.get(i))
+                                .get(JSONApiResponseKeysEnum.GROUPS.getKey()) instanceof JsonArray) {
+                            JsonArray groups = (JsonArray) ((JsonObject) zones.get(i))
+                                    .get(JSONApiResponseKeysEnum.GROUPS.getKey());
+                            groupList = new LinkedList<Short>();
+                            for (int k = 0; k < groups.size(); k++) {
+                                groupList.add(groups.get(k).getAsShort());
                             }
+                            reachableGroupsMap.put(((JsonObject) zones.get(i)).get("zoneID").getAsInt(), groupList);
                         }
                     }
                 }
             }
         }
+        // }
         return reachableGroupsMap;
     }
 

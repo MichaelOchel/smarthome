@@ -221,7 +221,7 @@ public class DigitalSTROMHandlerFactory extends BaseThingHandlerFactory {
             ConnectionManager connMan = new ConnectionManagerImpl(host, user, pw, applicationToken, false, true);
             // Only to get sessionToken for server versions which returns the dSID of the server only, if a user is
             // logged in
-            connMan.checkConnection();
+            // connMan.checkConnection();
             dsID = connMan.getDigitalSTROMAPI().getDSID(connMan.getSessionToken());
         }
         return dsID;

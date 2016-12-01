@@ -273,24 +273,24 @@ public class EventListener {
     }
 
     private boolean subscribe(String eventName) {
-        if (connManager.checkConnection()) {
-            if (!subscribed) {
-                getSubscriptionID();
-            }
-            subscribed = connManager.getDigitalSTROMAPI().subscribeEvent(connManager.getSessionToken(), eventName,
-                    subscriptionID, config.getConnectionTimeout(), config.getReadTimeout());
-
-            if (subscribed) {
-                logger.debug("subscribed event: {} to subscriptionID: {}", eventName, subscriptionID);
-            } else {
-                logger.error(
-                        "Couldn't subscribe event {} ... maybe timeout because system is to busy ... event will subscribe later again ... ");
-            }
-            return subscribed;
-        } else {
-            logger.error("Couldn't subscribe eventListener, because there is no token (no connection)");
+        // if (connManager.checkConnection()) {
+        if (!subscribed) {
+            getSubscriptionID();
         }
-        return false;
+        subscribed = connManager.getDigitalSTROMAPI().subscribeEvent(connManager.getSessionToken(), eventName,
+                subscriptionID, config.getConnectionTimeout(), config.getReadTimeout());
+
+        if (subscribed) {
+            logger.debug("subscribed event: {} to subscriptionID: {}", eventName, subscriptionID);
+        } else {
+            logger.error(
+                    "Couldn't subscribe event {} ... maybe timeout because system is to busy ... event will subscribe later again ... ");
+        }
+        return subscribed;
+        // } else {
+        // logger.error("Couldn't subscribe eventListener, because there is no token (no connection)");
+        // }
+        // return false;
     }
 
     private void subscribe(final List<String> evetNames) {
@@ -312,50 +312,49 @@ public class EventListener {
 
         @Override
         public void run() {
-            if (connManager.checkConnection()) {
-                if (subscribed) {
-                    String response = connManager.getDigitalSTROMAPI().getEvent(connManager.getSessionToken(),
-                            subscriptionID, timeout);
-                    JsonObject responseObj = JSONResponseHandler.toJsonObject(response);
+            // if (connManager.checkConnection()) {
+            if (subscribed) {
+                String response = connManager.getDigitalSTROMAPI().getEvent(connManager.getSessionToken(),
+                        subscriptionID, timeout);
+                JsonObject responseObj = JSONResponseHandler.toJsonObject(response);
 
-                    if (JSONResponseHandler.checkResponse(responseObj)) {
-                        JsonObject obj = JSONResponseHandler.getResultJsonObject(responseObj);
-                        if (obj != null && obj.get(JSONApiResponseKeysEnum.EVENTS.getKey()).isJsonArray()) {
-                            JsonArray array = obj.get(JSONApiResponseKeysEnum.EVENTS.getKey()).getAsJsonArray();
-                            try {
-                                handleEvent(array);
-                            } catch (Exception e) {
-                                logger.error("An Exception occurred", e);
-                            }
-                        }
-                    } else {
-                        String errorStr = null;
-                        if (responseObj != null && responseObj.get(JSONApiResponseKeysEnum.MESSAGE.getKey()) != null) {
-                            errorStr = responseObj.get(JSONApiResponseKeysEnum.MESSAGE.getKey()).getAsString();
-                        }
-                        if (errorStr != null
-                                && (errorStr.equals(INVALID_SESSION) || errorStr.contains(UNKNOWN_TOKEN))) {
-                            unsubscribe();
-                            subscribe(subscribedEvents);
-                        } else if (errorStr != null) {
-                            pollingScheduler.cancel(true);
-                            logger.error("Unknown error message at event response: " + errorStr);
+                if (JSONResponseHandler.checkResponse(responseObj)) {
+                    JsonObject obj = JSONResponseHandler.getResultJsonObject(responseObj);
+                    if (obj != null && obj.get(JSONApiResponseKeysEnum.EVENTS.getKey()).isJsonArray()) {
+                        JsonArray array = obj.get(JSONApiResponseKeysEnum.EVENTS.getKey()).getAsJsonArray();
+                        try {
+                            handleEvent(array);
+                        } catch (Exception e) {
+                            logger.error("An Exception occurred", e);
                         }
                     }
                 } else {
-                    subscribe(subscribedEvents);
+                    String errorStr = null;
+                    if (responseObj != null && responseObj.get(JSONApiResponseKeysEnum.MESSAGE.getKey()) != null) {
+                        errorStr = responseObj.get(JSONApiResponseKeysEnum.MESSAGE.getKey()).getAsString();
+                    }
+                    if (errorStr != null && (errorStr.equals(INVALID_SESSION) || errorStr.contains(UNKNOWN_TOKEN))) {
+                        unsubscribe();
+                        subscribe(subscribedEvents);
+                    } else if (errorStr != null) {
+                        pollingScheduler.cancel(true);
+                        logger.error("Unknown error message at event response: " + errorStr);
+                    }
                 }
+            } else {
+                subscribe(subscribedEvents);
             }
         }
+        // }
     };
 
     private void unsubscribe() {
-        if (connManager.checkConnection()) {
-            for (String eventName : this.subscribedEvents) {
-                connManager.getDigitalSTROMAPI().unsubscribeEvent(this.connManager.getSessionToken(), eventName,
-                        this.subscriptionID, config.getConnectionTimeout(), config.getReadTimeout());
-            }
+        // if (connManager.checkConnection()) {
+        for (String eventName : this.subscribedEvents) {
+            connManager.getDigitalSTROMAPI().unsubscribeEvent(this.connManager.getSessionToken(), eventName,
+                    this.subscriptionID, config.getConnectionTimeout(), config.getReadTimeout());
         }
+        // }
     }
 
     private void handleEvent(JsonArray array) {

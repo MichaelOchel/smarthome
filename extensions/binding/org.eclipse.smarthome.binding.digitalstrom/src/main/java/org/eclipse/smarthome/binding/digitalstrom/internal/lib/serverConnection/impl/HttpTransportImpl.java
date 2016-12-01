@@ -38,7 +38,9 @@ import javax.xml.bind.DatatypeConverter;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.config.Config;
+import org.eclipse.smarthome.binding.digitalstrom.internal.lib.manager.ConnectionManager;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.serverConnection.HttpTransport;
+import org.eclipse.smarthome.binding.digitalstrom.internal.lib.serverConnection.simpleDSRequestBuilder.constants.ParameterKeys;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -74,7 +76,11 @@ public class HttpTransportImpl implements HttpTransport {
     private int connectTimeout;
     private int readTimeout;
 
+    // private long lastRequest = 0;
+
     private Config config = null;
+
+    private ConnectionManager connectionManager = null;
 
     private String cert = null;
     private SSLSocketFactory sslSocketFactory = null;
@@ -85,6 +91,12 @@ public class HttpTransportImpl implements HttpTransport {
             return arg0.equals(arg1.getPeerHost()) || arg0.contains("dss.local.");
         }
     };
+
+    public HttpTransportImpl(ConnectionManager connectionManager, boolean exeptAllCerts) {
+        this.connectionManager = connectionManager;
+        this.config = connectionManager.getConfig();
+        init(config.getHost(), config.getConnectionTimeout(), config.getReadTimeout(), exeptAllCerts);
+    }
 
     /**
      * Creates a new {@link HttpTransportImpl} with configurations of the given {@link Config} and set ignore all
@@ -198,6 +210,8 @@ public class HttpTransportImpl implements HttpTransport {
         return execute(request, this.connectTimeout, this.readTimeout);
     }
 
+    private short loginCounter = 0;
+
     @Override
     public String execute(String request, int connectTimeout, int readTimeout) {
         // NOTE: We will only show exceptions in the debug level, because they will be handled in the checkConnection()
@@ -206,19 +220,107 @@ public class HttpTransportImpl implements HttpTransport {
         // max 1 second.
         String response = null;
         try {
+            // String fixedRequest =
+            request = checkSessionToken(request);
+            // System.out.println(request + ", loginconter=" + loginCounter);
             HttpsURLConnection connection = getConnection(request, connectTimeout, readTimeout);
             if (connection != null) {
                 connection.connect();
                 if (connection.getResponseCode() == HttpURLConnection.HTTP_OK) {
                     response = IOUtils.toString(connection.getInputStream());
+                    // lastRequest = System.currentTimeMillis();
+                    if (!response.contains("Authentication failed")) {
+                        if (loginCounter > 0) {
+                            connectionManager.checkConnection(connection.getResponseCode());
+                        }
+                        loginCounter = 0;
+                    } else {
+                        connectionManager.checkConnection(-6);
+                        loginCounter++;
+                    }
+                    // System.out.println(response + ", responseCode=" + connection.getResponseCode() + ",
+                    // loginconter2="
+                    // + loginCounter);
                 }
                 connection.disconnect();
+                if (response == null && connectionManager != null && loginCounter < 2) {
+                    if (connection.getResponseCode() == HttpURLConnection.HTTP_FORBIDDEN) {
+                        System.out.println(HttpURLConnection.HTTP_FORBIDDEN + " get new SessionToken! loginconter="
+                                + loginCounter);
+                        execute(addSessionToken(request, connectionManager.getNewSessionToken()), connectTimeout,
+                                readTimeout);
+                        loginCounter++;
+                    } else {
+                        connectionManager.checkConnection(connection.getResponseCode());
+                        loginCounter++;
+                        return null;
+                    }
+                }
                 return response;
             }
+        } catch (SocketTimeoutException e) {
+            informConnectionManager(-4);
+        } catch (java.net.ConnectException e) {
+            informConnectionManager(-3);
         } catch (MalformedURLException e) {
+            informConnectionManager(-2);
         } catch (IOException e) {
+            if (e instanceof java.net.ConnectException) {
+                informConnectionManager(-3);
+            }
+            if (e instanceof java.net.UnknownHostException) {
+                informConnectionManager(-5);
+            }
+            if (connectionManager != null) {
+                logger.error("An IOException occurred by executing jsonRequest: " + request, e);
+            }
         }
         return null;
+    }
+
+    private void informConnectionManager(int code) {
+        if (connectionManager != null && loginCounter < 2) {
+            connectionManager.checkConnection(code);
+        }
+    }
+
+    // TODO: notwendig? oder nur per Forbidden? nach 61 sek war der sessionToken immer noch gültig
+    private String checkSessionToken(String request) {
+        if (!request.contains("login")) {
+            if (connectionManager != null) {
+                String sessionToken = connectionManager.getSessionToken();
+                if (sessionToken == null) {
+                    return addSessionToken(request, connectionManager.getNewSessionToken());
+                }
+                // if (lastRequest + 60000 < System.currentTimeMillis()) {
+                // System.out.println("Session is not valid, get new sessiontoken " + sessionToken);
+                // sessionToken = connectionManager.getNewSessionToken();
+                // } else {
+                // System.out.println("Session is valid, use existing sessiontoken " + sessionToken);
+                // }
+                request = addSessionToken(request, sessionToken);
+            }
+        }
+        return request;
+    }
+
+    private String addSessionToken(String request, String sessionToken) {
+        if (!request.contains(ParameterKeys.TOKEN)) {
+            if (request.contains("?")) {
+                request = request + "&" + ParameterKeys.TOKEN + "=" + sessionToken;
+            } else {
+                request = request + "?" + ParameterKeys.TOKEN + "=" + sessionToken;
+            }
+        } else {
+            int start = request.indexOf("token=");
+            int end = request.indexOf("&", start);
+            if (end == -1) {
+                request = request.substring(0, start + 6) + sessionToken;
+            } else {
+                request = request.substring(0, start + 6) + sessionToken + request.substring(end, request.length());
+            }
+        }
+        return request;
     }
 
     private HttpsURLConnection getConnection(String request, int connectTimeout, int readTimeout) throws IOException {
@@ -247,9 +349,15 @@ public class HttpTransportImpl implements HttpTransport {
             HttpsURLConnection connection = getConnection(testRequest, connectTimeout, readTimeout);
             if (connection != null) {
                 connection.connect();
+                if (connection.getResponseCode() == HttpURLConnection.HTTP_OK) {
+                    if (IOUtils.toString(connection.getInputStream()).contains("Authentication failed")) {
+                        return -6;
+                    }
+                }
                 connection.disconnect();
                 return connection.getResponseCode();
             }
+            // TODO: in execute einbauen
         } catch (SocketTimeoutException e) {
             return -4;
         } catch (java.net.ConnectException e) {

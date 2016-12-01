@@ -62,7 +62,7 @@ public interface ConnectionManager {
      *
      * @return Session-Token
      */
-    public String checkConnectionAndGetSessionToken();
+    // public String checkConnectionAndGetSessionToken();
 
     /**
      * Registers a {@link ConnectionListener} to this {@link ConnectionManager}.
@@ -112,4 +112,10 @@ public interface ConnectionManager {
      * Informs this {@link ConnectionManager} that the {@link Config} has been updated.
      */
     public void configHasBeenUpdated();
+
+    String getNewSessionToken();
+
+    boolean checkConnection(int code);
+
+    boolean connectionEstablished();
 }

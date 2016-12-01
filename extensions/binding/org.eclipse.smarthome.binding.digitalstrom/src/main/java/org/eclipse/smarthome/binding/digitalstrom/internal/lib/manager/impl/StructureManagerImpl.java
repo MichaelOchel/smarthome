@@ -73,51 +73,51 @@ public class StructureManagerImpl implements StructureManager {
 
     @Override
     public boolean generateZoneGroupNames(ConnectionManager connectionManager) {
-        if (connectionManager.checkConnection()) {
-            String response = connectionManager.getHttpTransport()
-                    .execute(this.ZONE_GROUP_NAMES + "&token=" + connectionManager.getSessionToken());
-            if (response == null) {
-                return false;
-            } else {
-                JsonObject responsJsonObj = JSONResponseHandler.toJsonObject(response);
-                if (JSONResponseHandler.checkResponse(responsJsonObj)) {
-                    JsonObject resultJsonObj = JSONResponseHandler.getResultJsonObject(responsJsonObj);
-                    if (resultJsonObj.get("zones") instanceof JsonArray) {
-                        JsonArray zones = (JsonArray) resultJsonObj.get("zones");
-                        if (this.zoneGroupIdNameMap == null) {
-                            this.zoneGroupIdNameMap = new HashMap<Integer, Object[]>(zones.size());
-                            this.zoneGroupNameIdMap = new HashMap<String, Object[]>(zones.size());
-                        }
-                        if (zones != null) {
-                            for (int i = 0; i < zones.size(); i++) {
-                                if (((JsonObject) zones.get(i)).get("groups") instanceof JsonArray) {
-                                    JsonArray groups = (JsonArray) ((JsonObject) zones.get(i)).get("groups");
-                                    if (groups.size() != 0) {
-                                        Object[] zoneIdNameGroups = new Object[2];
-                                        Object[] zoneNameIdGroups = new Object[2];
-                                        int zoneID = ((JsonObject) zones.get(i)).get("ZoneID").getAsInt();
-                                        String zoneName = ((JsonObject) zones.get(i)).get("name").getAsString();
-                                        zoneIdNameGroups[0] = zoneName;
-                                        zoneNameIdGroups[0] = zoneID;
-                                        HashMap<Short, String> groupIdNames = new HashMap<Short, String>();
-                                        HashMap<String, Short> groupNameIds = new HashMap<String, Short>();
-                                        for (int k = 0; k < groups.size(); k++) {
-                                            short groupID = ((JsonObject) groups.get(k)).get("group").getAsShort();
-                                            String groupName = ((JsonObject) groups.get(k)).get("name").getAsString();
-                                            groupIdNames.put(groupID, groupName);
-                                            groupNameIds.put(groupName, groupID);
-                                        }
-                                        zoneIdNameGroups[1] = groupIdNames;
-                                        zoneNameIdGroups[1] = groupNameIds;
-                                        this.zoneGroupIdNameMap.put(zoneID, zoneIdNameGroups);
-                                        this.zoneGroupNameIdMap.put(zoneName, zoneNameIdGroups);
+        // if (connectionManager.checkConnection()) {
+        String response = connectionManager.getHttpTransport()
+                .execute(this.ZONE_GROUP_NAMES + "&token=" + connectionManager.getSessionToken());
+        if (response == null) {
+            return false;
+        } else {
+            JsonObject responsJsonObj = JSONResponseHandler.toJsonObject(response);
+            if (JSONResponseHandler.checkResponse(responsJsonObj)) {
+                JsonObject resultJsonObj = JSONResponseHandler.getResultJsonObject(responsJsonObj);
+                if (resultJsonObj.get("zones") instanceof JsonArray) {
+                    JsonArray zones = (JsonArray) resultJsonObj.get("zones");
+                    if (this.zoneGroupIdNameMap == null) {
+                        this.zoneGroupIdNameMap = new HashMap<Integer, Object[]>(zones.size());
+                        this.zoneGroupNameIdMap = new HashMap<String, Object[]>(zones.size());
+                    }
+                    if (zones != null) {
+                        for (int i = 0; i < zones.size(); i++) {
+                            if (((JsonObject) zones.get(i)).get("groups") instanceof JsonArray) {
+                                JsonArray groups = (JsonArray) ((JsonObject) zones.get(i)).get("groups");
+                                if (groups.size() != 0) {
+                                    Object[] zoneIdNameGroups = new Object[2];
+                                    Object[] zoneNameIdGroups = new Object[2];
+                                    int zoneID = ((JsonObject) zones.get(i)).get("ZoneID").getAsInt();
+                                    String zoneName = ((JsonObject) zones.get(i)).get("name").getAsString();
+                                    zoneIdNameGroups[0] = zoneName;
+                                    zoneNameIdGroups[0] = zoneID;
+                                    HashMap<Short, String> groupIdNames = new HashMap<Short, String>();
+                                    HashMap<String, Short> groupNameIds = new HashMap<String, Short>();
+                                    for (int k = 0; k < groups.size(); k++) {
+                                        short groupID = ((JsonObject) groups.get(k)).get("group").getAsShort();
+                                        String groupName = ((JsonObject) groups.get(k)).get("name").getAsString();
+                                        groupIdNames.put(groupID, groupName);
+                                        groupNameIds.put(groupName, groupID);
                                     }
+                                    zoneIdNameGroups[1] = groupIdNames;
+                                    zoneNameIdGroups[1] = groupNameIds;
+                                    this.zoneGroupIdNameMap.put(zoneID, zoneIdNameGroups);
+                                    this.zoneGroupNameIdMap.put(zoneName, zoneNameIdGroups);
                                 }
                             }
                         }
                     }
                 }
             }
+            // }
         }
         return true;
     }
