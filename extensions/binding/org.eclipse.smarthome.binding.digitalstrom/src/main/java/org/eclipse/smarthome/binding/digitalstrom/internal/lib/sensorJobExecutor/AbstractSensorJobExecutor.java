@@ -64,7 +64,7 @@ public abstract class AbstractSensorJobExecutor {
         @Override
         public void run() {
             SensorJob sensorJob = circuit.getNextSensorJob();
-            if (sensorJob != null && connectionManager.checkConnection()) {
+            if (sensorJob != null /* && connectionManager.checkConnection() */) {
                 sensorJob.execute(dSAPI, connectionManager.getSessionToken());
             }
             if (circuit.noMoreJobs()) {

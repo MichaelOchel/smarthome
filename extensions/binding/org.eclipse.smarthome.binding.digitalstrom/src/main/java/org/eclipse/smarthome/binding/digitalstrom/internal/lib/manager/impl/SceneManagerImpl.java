@@ -290,10 +290,10 @@ public class SceneManagerImpl implements SceneManager, EventHandler {
             short groupID = Short.parseShort(sceneData[1]);
             short sceneNumber = Short.parseShort(sceneData[2]);
             String sceneName = null;
-            if (connectionManager.checkConnection()) {
-                sceneName = connectionManager.getDigitalSTROMAPI().getSceneName(connectionManager.getSessionToken(),
-                        zoneID, groupID, sceneNumber);
-            }
+            // if (connectionManager.checkConnection()) {
+            sceneName = connectionManager.getDigitalSTROMAPI().getSceneName(connectionManager.getSessionToken(), zoneID,
+                    groupID, sceneNumber);
+            // }
             InternalScene intScene = null;
             if (SceneEnum.getScene(sceneNumber) != null && structureManager.checkZoneGroupID(zoneID, groupID)) {
                 if (sceneName == null) {

@@ -116,84 +116,85 @@ public class BridgeHandler extends BaseBridgeHandler
 
         @Override
         public void run() {
-            logger.info("Checking connection");
-            if (connMan == null) {
-                connMan = new ConnectionManagerImpl(config, bridge, true);
-            } else {
-                connMan.registerConnectionListener(bridge);
-                connMan.configHasBeenUpdated();
-            }
-
-            logger.info("Initializing digitalSTROM Manager");
-            if (eventListener == null) {
-                eventListener = new EventListener(connMan);
-                eventListener.start();
-            }
-            if (structMan == null) {
-                structMan = new StructureManagerImpl();
-            }
-            if (sceneMan == null) {
-                sceneMan = new SceneManagerImpl(connMan, structMan, bridge, eventListener);
-            }
-            if (devStatMan == null) {
-                devStatMan = new DeviceStatusManagerImpl(connMan, structMan, sceneMan, bridge, eventListener);
-            } else {
-                devStatMan.registerStatusListener(bridge);
-            }
-
             try {
-                if (TemperatureControlManager.isHeatingControllerInstallated(connMan)) {
-                    if (tempContMan == null) {
-                        tempContMan = new TemperatureControlManager(connMan, eventListener,
-                                temperatureControlDiscovery);
-                        temperatureControlDiscovery = null;
-                    } else {
-                        // tempContMan.registerSystemStateChangeListener(bridge);
-                        if (temperatureControlDiscovery != null) {
-                            tempContMan.registerTemperatureControlStatusListener(temperatureControlDiscovery);
-                        }
-                    }
+                logger.info("Checking connection");
+                if (connMan == null) {
+                    connMan = new ConnectionManagerImpl(config, bridge, true);
+                } else {
+                    connMan.registerConnectionListener(bridge);
+                    connMan.configHasBeenUpdated();
+                }
 
+                logger.info("Initializing digitalSTROM Manager");
+                if (eventListener == null) {
+                    eventListener = new EventListener(connMan);
+                    eventListener.start();
+                }
+                if (structMan == null) {
+                    structMan = new StructureManagerImpl();
+                }
+                if (sceneMan == null) {
+                    sceneMan = new SceneManagerImpl(connMan, structMan, bridge, eventListener);
+                }
+                if (devStatMan == null) {
+                    devStatMan = new DeviceStatusManagerImpl(connMan, structMan, sceneMan, bridge, eventListener);
+                } else {
+                    devStatMan.registerStatusListener(bridge);
+                }
+
+                try {
+                    if (TemperatureControlManager.isHeatingControllerInstallated(connMan)) {
+                        if (tempContMan == null) {
+                            tempContMan = new TemperatureControlManager(connMan, eventListener,
+                                    temperatureControlDiscovery);
+                            temperatureControlDiscovery = null;
+                        } else {
+                            // tempContMan.registerSystemStateChangeListener(bridge);
+                            if (temperatureControlDiscovery != null) {
+                                tempContMan.registerTemperatureControlStatusListener(temperatureControlDiscovery);
+                            }
+                        }
+
+                    }
+                } catch (Exception e) {
+                    logger.error("Exeption: ", e);
+                }
+
+                structMan.generateZoneGroupNames(connMan);
+
+                devStatMan.registerTotalPowerConsumptionListener(bridge);
+
+                if (connMan.checkConnection()) {
+                    devStatMan.start();
+                }
+
+                boolean configChanged = false;
+                Configuration configuration = bridge.getConfig();
+                if (connMan.getApplicationToken() != null) {
+                    configuration.remove(USER_NAME);
+                    configuration.remove(PASSWORD);
+                    logger.debug("Application-Token is: " + connMan.getApplicationToken());
+                    configuration.put(APPLICATION_TOKEN, connMan.getApplicationToken());
+                    configChanged = true;
+                }
+                if (StringUtils.isNotBlank((String) configuration.get(DigitalSTROMBindingConstants.DS_NAME))) {
+                    String dSSname = connMan.getDigitalSTROMAPI().getInstallationName(connMan.getSessionToken());
+
+                    if (dSSname != null) {
+                        updateProperty(DS_NAME, dSSname);
+                    }
+                }
+                if (configChanged) {
+                    updateConfiguration(configuration);
+                }
+                if (StringUtils.isBlank(
+
+                        getThing().getProperties().get(DigitalSTROMBindingConstants.SERVER_CERT))
+                        && StringUtils.isNotBlank(config.getCert())) {
+                    updateProperty(DigitalSTROMBindingConstants.SERVER_CERT, config.getCert());
                 }
             } catch (Exception e) {
-                logger.error("Exeption: ", e);
-            }
-
-            structMan.generateZoneGroupNames(connMan);
-
-            devStatMan.registerTotalPowerConsumptionListener(bridge);
-
-            if (connMan.checkConnection())
-
-            {
-                devStatMan.start();
-            }
-
-            boolean configChanged = false;
-            Configuration configuration = bridge.getConfig();
-            if (connMan.getApplicationToken() != null) {
-                configuration.remove(USER_NAME);
-                configuration.remove(PASSWORD);
-                logger.debug("Application-Token is: " + connMan.getApplicationToken());
-                configuration.put(APPLICATION_TOKEN, connMan.getApplicationToken());
-                configChanged = true;
-            }
-            if (StringUtils.isNotBlank((String) configuration.get(DigitalSTROMBindingConstants.DS_NAME))
-                    && connMan.checkConnection()) {
-                String dSSname = connMan.getDigitalSTROMAPI().getInstallationName(connMan.getSessionToken());
-
-                if (dSSname != null) {
-                    updateProperty(DS_NAME, dSSname);
-                }
-            }
-            if (configChanged) {
-                updateConfiguration(configuration);
-            }
-            if (StringUtils.isBlank(
-
-                    getThing().getProperties().get(DigitalSTROMBindingConstants.SERVER_CERT))
-                    && StringUtils.isNotBlank(config.getCert())) {
-                updateProperty(DigitalSTROMBindingConstants.SERVER_CERT, config.getCert());
+                logger.debug("Exeption: ", e);
             }
         }
     };

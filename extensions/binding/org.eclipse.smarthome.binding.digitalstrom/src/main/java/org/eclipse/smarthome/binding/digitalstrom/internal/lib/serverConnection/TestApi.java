@@ -18,6 +18,7 @@ import org.eclipse.smarthome.binding.digitalstrom.internal.lib.event.constants.E
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.event.types.Event;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.event.types.EventItem;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.event.types.JSONEventImpl;
+import org.eclipse.smarthome.binding.digitalstrom.internal.lib.listener.ConnectionListener;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.listener.DeviceStatusListener;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.manager.ConnectionManager;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.manager.impl.ConnectionManagerImpl;
@@ -41,6 +42,20 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 
 public class TestApi {
+
+    private static class DummyConnectionListener implements ConnectionListener {
+
+        @Override
+        public void onConnectionStateChange(String newConnectionState) {
+            System.out.println(newConnectionState);
+        }
+
+        @Override
+        public void onConnectionStateChange(String newConnectionState, String reason) {
+            System.out.println(newConnectionState + ", " + reason);
+        }
+
+    }
 
     private static class DummyListener implements DeviceStatusListener {
 
@@ -113,6 +128,55 @@ public class TestApi {
         String testType = "";
 
         final ConnectionManager connMan = new ConnectionManagerImpl(host, user, pw, false);
+        connMan.registerConnectionListener(new DummyConnectionListener());
+        final DsAPI dSAPI = connMan.getDigitalSTROMAPI();
+        try {
+            System.out.println(dSAPI.getTime(null));
+        } catch (Exception e) {
+        }
+        System.out.println(System.currentTimeMillis() + 60000 + ">=" + System.currentTimeMillis() + "="
+                + (System.currentTimeMillis() + 60000 >= System.currentTimeMillis()));
+
+        System.out.println(dSAPI.getDSID(null));
+
+        String request = "/json/apartment/getName?token=null&token=null";
+        int start = request.indexOf("token=");
+        int end = request.indexOf("&", start);
+        System.err.println(start + " " + end);
+        if (end == -1) {
+            request = request.substring(0, start + 6) + "123";
+        } else {
+            request = request.substring(0, start + 6) + "123" + request.substring(end, request.length());
+        }
+
+        System.err.println(request);
+        connMan.checkConnection();
+        new Thread(new Runnable() {
+
+            @Override
+            public void run() {
+                int counter = 0;
+                long sleepTime = 175000;
+                while (true) {
+                    // if (counter++ > 0) {
+                    // connMan.getConfig().setUserName("dssadmin");
+                    // }
+                    System.out.println("request was sucsessfull? " + (dSAPI.getInstallationName(null)) + " " + counter);
+                    // new SecureRandom().nextInt(65000);
+                    System.out.println("sleep for: " + sleepTime / 1000 + " seconds");
+
+                    try {
+                        Thread.sleep(sleepTime);
+                        sleepTime += 1000;
+                    } catch (InterruptedException e) {
+                        // TODO Auto-generated catch block
+                        e.printStackTrace();
+                    }
+                }
+
+            }
+
+        }).start();
 
         for (short i = 0; i < 22; i++) {
             System.out.println((i) + " = " + DeviceBinarayInputEnum.getdeviceBinarayInput(i));
@@ -308,34 +372,34 @@ public class TestApi {
          */
         if (testType.equals(DEVICE_QUERY2)) {
             final String GET_DETAILD_DEVICES = "/apartment/zones/zone0(*)/devices/*(*)/*(*)/*(*)";
-            if (connMan.checkConnection()) {
-                JsonObject result = connMan.getDigitalSTROMAPI().query2(connMan.getSessionToken(), GET_DETAILD_DEVICES);
-                // System.out.println(result.toString());
-                if (result.isJsonObject()) {
-                    if (result.getAsJsonObject().get("zone0").isJsonObject()) {
-                        result = result.getAsJsonObject().get("zone0").getAsJsonObject();
-                        for (Entry<String, JsonElement> entry : result.entrySet()) {
-                            if (!(entry.getKey().equals(JSONApiResponseKeysEnum.ZONE_ID.getKey())
-                                    && entry.getKey().equals(JSONApiResponseKeysEnum.NAME.getKey()))
-                                    && entry.getValue().isJsonObject()) {
-                                Device device = new DeviceImpl(entry.getValue().getAsJsonObject());
-                                // device.setSensorDataRefreshPriority(Config.REFRESH_PRIORITY_HIGH,
-                                // Config.REFRESH_PRIORITY_LOW, Config.REFRESH_PRIORITY_MEDIUM);
-                                /*
-                                 * if ((device.isSensorDevice()
-                                 * && DigitalSTROMBindingConstants.THING_TYPE_ID_DS_I_SENSE_200_DEVICE
-                                 * .equals(device.getHWinfo()))
-                                 * || (DigitalSTROMBindingConstants.THING_TYPE_ID_DS_I_SENSE_200_DEVICE
-                                 * .equals(device.getHWinfo().substring(0, 2))
-                                 * && device.isDeviceWithOutput() && device.isPresent())) {
-                                 */
-                                System.out.println(device.toString());
-                                // }
-                            }
+            // if (connMan.checkConnection()) {
+            JsonObject result = connMan.getDigitalSTROMAPI().query2(connMan.getSessionToken(), GET_DETAILD_DEVICES);
+            // System.out.println(result.toString());
+            if (result.isJsonObject()) {
+                if (result.getAsJsonObject().get("zone0").isJsonObject()) {
+                    result = result.getAsJsonObject().get("zone0").getAsJsonObject();
+                    for (Entry<String, JsonElement> entry : result.entrySet()) {
+                        if (!(entry.getKey().equals(JSONApiResponseKeysEnum.ZONE_ID.getKey())
+                                && entry.getKey().equals(JSONApiResponseKeysEnum.NAME.getKey()))
+                                && entry.getValue().isJsonObject()) {
+                            Device device = new DeviceImpl(entry.getValue().getAsJsonObject());
+                            // device.setSensorDataRefreshPriority(Config.REFRESH_PRIORITY_HIGH,
+                            // Config.REFRESH_PRIORITY_LOW, Config.REFRESH_PRIORITY_MEDIUM);
+                            /*
+                             * if ((device.isSensorDevice()
+                             * && DigitalSTROMBindingConstants.THING_TYPE_ID_DS_I_SENSE_200_DEVICE
+                             * .equals(device.getHWinfo()))
+                             * || (DigitalSTROMBindingConstants.THING_TYPE_ID_DS_I_SENSE_200_DEVICE
+                             * .equals(device.getHWinfo().substring(0, 2))
+                             * && device.isDeviceWithOutput() && device.isPresent())) {
+                             */
+                            System.out.println(device.toString());
+                            // }
                         }
                     }
                 }
             }
+            // }
 
         }
 
@@ -483,82 +547,78 @@ public class TestApi {
                 @Override
                 public void run() {
                     while (true) {
-                        if (connMan.checkConnection()) {
+                        // if (connMan.checkConnection()) {
 
-                            if (subscribed) {
-                                String response = connMan.getDigitalSTROMAPI().getEvent(connMan.getSessionToken(), 12,
-                                        500);
-                                System.out.println(response);
-                                JsonObject responseObj = JSONResponseHandler.toJsonObject(response);
+                        if (subscribed) {
+                            String response = connMan.getDigitalSTROMAPI().getEvent(connMan.getSessionToken(), 12, 500);
+                            System.out.println(response);
+                            JsonObject responseObj = JSONResponseHandler.toJsonObject(response);
 
-                                if (JSONResponseHandler.checkResponse(responseObj)) {
-                                    JsonObject obj = JSONResponseHandler.getResultJsonObject(responseObj);
-                                    if (obj != null && obj.get(JSONApiResponseKeysEnum.EVENTS.getKey()).isJsonArray()) {
-                                        JsonArray array = obj.get(JSONApiResponseKeysEnum.EVENTS.getKey())
-                                                .getAsJsonArray();
-                                        try {
-                                            if (array.size() > 0) {
-                                                Event event = new JSONEventImpl(array);
-                                                for (EventItem item : event.getEventItems()) {
-                                                    // for (EventHandler handler : eventHandlers) {
-                                                    // if (handler.supportsEvent(item.getName())) {
-                                                    System.out.println(("inform handler with id {} about event {}"
-                                                            + item.toString()));
-                                                    // Integer zoneID = Integer
-                                                    // .parseInt(item.getProperties().get(EventResponseEnum.ZONEID));
-                                                    // TemperatureControlStatus temperationControlStatus = connMan
-                                                    // .getDigitalSTROMAPI().getZoneTemperatureControlStatus(
-                                                    // connMan.getSessionToken(), zoneID, null);
-                                                    // System.out.println(
-                                                    // "readout new temperationControlStatus, new
-                                                    // temperationControlStatus
-                                                    // is: "
-                                                    // + temperationControlStatus.toString());
-                                                    // handler.handleEvent(item);
-                                                    // }
-                                                    // }
-                                                }
+                            if (JSONResponseHandler.checkResponse(responseObj)) {
+                                JsonObject obj = JSONResponseHandler.getResultJsonObject(responseObj);
+                                if (obj != null && obj.get(JSONApiResponseKeysEnum.EVENTS.getKey()).isJsonArray()) {
+                                    JsonArray array = obj.get(JSONApiResponseKeysEnum.EVENTS.getKey()).getAsJsonArray();
+                                    try {
+                                        if (array.size() > 0) {
+                                            Event event = new JSONEventImpl(array);
+                                            for (EventItem item : event.getEventItems()) {
+                                                // for (EventHandler handler : eventHandlers) {
+                                                // if (handler.supportsEvent(item.getName())) {
+                                                System.out.println(
+                                                        ("inform handler with id {} about event {}" + item.toString()));
+                                                // Integer zoneID = Integer
+                                                // .parseInt(item.getProperties().get(EventResponseEnum.ZONEID));
+                                                // TemperatureControlStatus temperationControlStatus = connMan
+                                                // .getDigitalSTROMAPI().getZoneTemperatureControlStatus(
+                                                // connMan.getSessionToken(), zoneID, null);
+                                                // System.out.println(
+                                                // "readout new temperationControlStatus, new
+                                                // temperationControlStatus
+                                                // is: "
+                                                // + temperationControlStatus.toString());
+                                                // handler.handleEvent(item);
+                                                // }
+                                                // }
                                             }
-                                        } catch (Exception e) {
-                                            System.out.printf("An Exception occurred", e);
                                         }
-                                    }
-                                } else {
-                                    String errorStr = null;
-                                    if (responseObj != null
-                                            && responseObj.get(JSONApiResponseKeysEnum.MESSAGE.getKey()) != null) {
-                                        errorStr = responseObj.get(JSONApiResponseKeysEnum.MESSAGE.getKey())
-                                                .getAsString();
-                                    }
-                                    if (errorStr != null) {
-                                        // unsubscribe();
-                                        // subscribe();
-                                    } else if (errorStr != null) {
-                                        // pollingScheduler.cancel(true);
-                                        System.out.println("Unknown error message at event response: " + errorStr);
+                                    } catch (Exception e) {
+                                        System.out.printf("An Exception occurred", e);
                                     }
                                 }
                             } else {
-                                if (connMan.checkConnection()) {
-                                    connMan.getDigitalSTROMAPI().unsubscribeEvent(connMan.getSessionToken(), null, 12,
-                                            Config.DEFAULT_CONNECTION_TIMEOUT, Config.DEFAULT_READ_TIMEOUT);
-                                    for (String eventName : this.subscribedEvents) {
-                                        subscribed = connMan.getDigitalSTROMAPI().subscribeEvent(
-                                                connMan.getSessionToken(), eventName, 12,
-                                                Config.DEFAULT_CONNECTION_TIMEOUT, Config.DEFAULT_READ_TIMEOUT);
-                                        System.out.println(eventName + " subscribe sucsess? " + subscribed);
-                                        try {
-                                            Thread.sleep(500);
-                                        } catch (InterruptedException e) {
-                                            // TODO Auto-generated catch block
-                                            e.printStackTrace();
-                                        }
-                                    }
+                                String errorStr = null;
+                                if (responseObj != null
+                                        && responseObj.get(JSONApiResponseKeysEnum.MESSAGE.getKey()) != null) {
+                                    errorStr = responseObj.get(JSONApiResponseKeysEnum.MESSAGE.getKey()).getAsString();
+                                }
+                                if (errorStr != null) {
+                                    // unsubscribe();
+                                    // subscribe();
+                                } else if (errorStr != null) {
+                                    // pollingScheduler.cancel(true);
+                                    System.out.println("Unknown error message at event response: " + errorStr);
                                 }
                             }
                         } else {
-                            System.out.println("no connection");
+                            // if (connMan.checkConnection()) {
+                            connMan.getDigitalSTROMAPI().unsubscribeEvent(connMan.getSessionToken(), null, 12,
+                                    Config.DEFAULT_CONNECTION_TIMEOUT, Config.DEFAULT_READ_TIMEOUT);
+                            for (String eventName : this.subscribedEvents) {
+                                subscribed = connMan.getDigitalSTROMAPI().subscribeEvent(connMan.getSessionToken(),
+                                        eventName, 12, Config.DEFAULT_CONNECTION_TIMEOUT, Config.DEFAULT_READ_TIMEOUT);
+                                System.out.println(eventName + " subscribe sucsess? " + subscribed);
+                                try {
+                                    Thread.sleep(500);
+                                } catch (InterruptedException e) {
+                                    // TODO Auto-generated catch block
+                                    e.printStackTrace();
+                                }
+                            }
+                            // }
                         }
+                        // } else {
+                        // System.out.println("no connection");
+                        // }
                         try {
                             Thread.sleep(1000);
                         } catch (InterruptedException e) {
@@ -573,74 +633,74 @@ public class TestApi {
         if (testType.equals(JSON_API_HEATING)) {
             DsAPI api = connMan.getDigitalSTROMAPI();
             HttpTransport transport = connMan.getHttpTransport();
-            if (connMan.checkConnection()) {
-                System.out.println("APARTMENT:");
-                System.out.println("getTemperatureControlStatus");
-                List<TemperatureControlStatus> tempContStatList = new LinkedList<TemperatureControlStatus>(
-                        api.getApartmentTemperatureControlStatus(connMan.getSessionToken()).values());
-                for (TemperatureControlStatus tempContStat : tempContStatList) {
-                    if (tempContStat.getIsConfigured()) {
-                        System.out.println(tempContStat);
-                    }
+            // if (connMan.checkConnection()) {
+            System.out.println("APARTMENT:");
+            System.out.println("getTemperatureControlStatus");
+            List<TemperatureControlStatus> tempContStatList = new LinkedList<TemperatureControlStatus>(
+                    api.getApartmentTemperatureControlStatus(connMan.getSessionToken()).values());
+            for (TemperatureControlStatus tempContStat : tempContStatList) {
+                if (tempContStat.getIsConfigured()) {
+                    System.out.println(tempContStat);
                 }
-                System.out.println("getTemperatureControlConfiguration");
-                List<TemperatureControlConfig> tempContConfList = new LinkedList<TemperatureControlConfig>(
-                        api.getApartmentTemperatureControlConfig(connMan.getSessionToken()).values());
-                for (TemperatureControlConfig tempContConf : tempContConfList) {
-                    if (tempContConf.getIsConfigured()) {
-                        System.out.println(tempContConf);
-                    }
-                }
-                System.out.println("getTemperatureControlValues");
-                List<TemperatureControlValues> tempContValList = new LinkedList<TemperatureControlValues>(
-                        api.getApartmentTemperatureControlValues(connMan.getSessionToken()).values());
-                for (TemperatureControlValues tempContVal : tempContValList) {
-                    if (tempContVal.getIsConfigured()) {
-                        System.out.println(tempContVal);
-                    }
-                }
-                System.out.println("getAssignedSensors");
-                List<AssignedSensors> assignedSensorList = new LinkedList<AssignedSensors>(
-                        api.getApartmentAssignedSensors(connMan.getSessionToken()).values());
-                // System.out.println(assignedSensorList);
-                for (AssignedSensors assignedSensor : assignedSensorList) {
-                    if (assignedSensor.existsAssignedSensors()) {
-                        System.out.println(assignedSensor);
-                    }
-                }
-                System.out.println("getSensorValues");
-                List<BaseSensorValues> sensorValuesList = new LinkedList<BaseSensorValues>(
-                        api.getApartmentSensorValues(connMan.getSessionToken()).values());
-                for (BaseSensorValues sensorValues : sensorValuesList) {
-                    if (sensorValues.existSensorValues()) {
-                        System.out.println(sensorValues);
-                        System.out.println("Classname: " + sensorValues.getClass().getSimpleName());
-
-                    }
-                }
-
-                System.out.println("\nZONE:");
-                Integer zoneID = 25105;
-
-                System.out.println("getTemperatureControlStatus");
-                System.out.println(api.getZoneTemperatureControlStatus(connMan.getSessionToken(), zoneID, null));
-
-                System.out.println("getTemperatureControlConfiguration");
-                System.out.println(api.getZoneTemperatureControlConfig(connMan.getSessionToken(), zoneID, null));
-
-                System.out.println("getTemperatureControlValues");
-                System.out.println(api.getZoneTemperatureControlValues(connMan.getSessionToken(), zoneID, null));
-
-                System.out.println("getTemperatureControlInternals");
-                System.out.println(api.getZoneTemperatureControlInternals(connMan.getSessionToken(), zoneID, null));
-
-                System.out.println("getAssignedSensors");
-                System.out.println(api.getZoneAssignedSensors(connMan.getSessionToken(), zoneID, null));
-
-                System.out.println("getSensorValues");
-                System.out.println(api.getZoneSensorValues(connMan.getSessionToken(), zoneID, null));
-
             }
+            System.out.println("getTemperatureControlConfiguration");
+            List<TemperatureControlConfig> tempContConfList = new LinkedList<TemperatureControlConfig>(
+                    api.getApartmentTemperatureControlConfig(connMan.getSessionToken()).values());
+            for (TemperatureControlConfig tempContConf : tempContConfList) {
+                if (tempContConf.getIsConfigured()) {
+                    System.out.println(tempContConf);
+                }
+            }
+            System.out.println("getTemperatureControlValues");
+            List<TemperatureControlValues> tempContValList = new LinkedList<TemperatureControlValues>(
+                    api.getApartmentTemperatureControlValues(connMan.getSessionToken()).values());
+            for (TemperatureControlValues tempContVal : tempContValList) {
+                if (tempContVal.getIsConfigured()) {
+                    System.out.println(tempContVal);
+                }
+            }
+            System.out.println("getAssignedSensors");
+            List<AssignedSensors> assignedSensorList = new LinkedList<AssignedSensors>(
+                    api.getApartmentAssignedSensors(connMan.getSessionToken()).values());
+            // System.out.println(assignedSensorList);
+            for (AssignedSensors assignedSensor : assignedSensorList) {
+                if (assignedSensor.existsAssignedSensors()) {
+                    System.out.println(assignedSensor);
+                }
+            }
+            System.out.println("getSensorValues");
+            List<BaseSensorValues> sensorValuesList = new LinkedList<BaseSensorValues>(
+                    api.getApartmentSensorValues(connMan.getSessionToken()).values());
+            for (BaseSensorValues sensorValues : sensorValuesList) {
+                if (sensorValues.existSensorValues()) {
+                    System.out.println(sensorValues);
+                    System.out.println("Classname: " + sensorValues.getClass().getSimpleName());
+
+                }
+            }
+
+            System.out.println("\nZONE:");
+            Integer zoneID = 25105;
+
+            System.out.println("getTemperatureControlStatus");
+            System.out.println(api.getZoneTemperatureControlStatus(connMan.getSessionToken(), zoneID, null));
+
+            System.out.println("getTemperatureControlConfiguration");
+            System.out.println(api.getZoneTemperatureControlConfig(connMan.getSessionToken(), zoneID, null));
+
+            System.out.println("getTemperatureControlValues");
+            System.out.println(api.getZoneTemperatureControlValues(connMan.getSessionToken(), zoneID, null));
+
+            System.out.println("getTemperatureControlInternals");
+            System.out.println(api.getZoneTemperatureControlInternals(connMan.getSessionToken(), zoneID, null));
+
+            System.out.println("getAssignedSensors");
+            System.out.println(api.getZoneAssignedSensors(connMan.getSessionToken(), zoneID, null));
+
+            System.out.println("getSensorValues");
+            System.out.println(api.getZoneSensorValues(connMan.getSessionToken(), zoneID, null));
+
+            // }
         }
 
     }

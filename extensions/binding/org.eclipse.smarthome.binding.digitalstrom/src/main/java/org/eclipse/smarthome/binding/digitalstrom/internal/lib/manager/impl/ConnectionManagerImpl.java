@@ -119,9 +119,11 @@ public class ConnectionManagerImpl implements ConnectionManager {
     }
 
     private void init(Config config, boolean aceptAllCerts) {
-        this.transport = new HttpTransportImpl(config, aceptAllCerts);
-        this.digitalSTROMClient = new DsAPIImpl(transport);
+        // this.transport = new HttpTransportImpl(config, aceptAllCerts);
         this.config = config;
+        this.transport = new HttpTransportImpl(this, aceptAllCerts);
+        this.digitalSTROMClient = new DsAPIImpl(transport);
+
         if (this.genAppToken) {
             this.onNotAuthenticated();
         }
@@ -142,20 +144,41 @@ public class ConnectionManagerImpl implements ConnectionManager {
         return this.sessionToken;
     }
 
+    /*
+     * @Override
+     * public String checkConnectionAndGetSessionToken() {
+     * if (checkConnection()) {
+     * return this.sessionToken;
+     * }
+     * return null;
+     * }
+     */
+
     @Override
-    public String checkConnectionAndGetSessionToken() {
-        if (checkConnection()) {
-            return this.sessionToken;
+    public String getNewSessionToken() {
+        if (this.genAppToken) {
+            if (StringUtils.isNotBlank(config.getAppToken())) {
+                sessionToken = this.digitalSTROMClient.loginApplication(config.getAppToken());
+            } else {
+                onNotAuthenticated();
+            }
+        } else {
+            sessionToken = this.digitalSTROMClient.login(this.config.getUserName(), this.config.getPassword());
         }
-        return null;
+        return sessionToken;
     }
 
     @Override
     public synchronized boolean checkConnection() {
-        int code = this.digitalSTROMClient.checkConnection(sessionToken);
+        return checkConnection(this.digitalSTROMClient.checkConnection(null));
+    }
+
+    @Override
+    public boolean checkConnection(int code) {
         switch (code) {
             case HttpURLConnection.HTTP_OK:
                 if (!lostConnectionState) {
+                    // TODO:var umbennen
                     lostConnectionState = true;
                     onConnectionResumed();
                 }
@@ -164,15 +187,7 @@ public class ConnectionManagerImpl implements ConnectionManager {
                 lostConnectionState = false;
                 break;
             case HttpURLConnection.HTTP_FORBIDDEN:
-                if (this.genAppToken) {
-                    if (StringUtils.isNotBlank(config.getAppToken())) {
-                        sessionToken = this.digitalSTROMClient.loginApplication(config.getAppToken());
-                    } else {
-                        this.onNotAuthenticated();
-                    }
-                } else {
-                    sessionToken = this.digitalSTROMClient.login(this.config.getUserName(), this.config.getPassword());
-                }
+                getNewSessionToken();
                 if (sessionToken != null) {
                     if (!lostConnectionState) {
                         onConnectionResumed();
@@ -204,11 +219,27 @@ public class ConnectionManagerImpl implements ConnectionManager {
                     onConnectionLost(ConnectionListener.UNKNOWN_HOST);
                 }
                 break;
+            case -6:
+                if (connListener != null) {
+                    if (config.getAppToken() != null) {
+                        connListener.onConnectionStateChange(ConnectionListener.NOT_AUTHENTICATED,
+                                ConnectionListener.WRONG_APP_TOKEN);
+                    } else {
+                        connListener.onConnectionStateChange(ConnectionListener.NOT_AUTHENTICATED,
+                                ConnectionListener.WRONG_USER_OR_PASSWORD);
+                    }
+                }
+                break;
             case HttpURLConnection.HTTP_NOT_FOUND:
                 onConnectionLost(ConnectionListener.HOST_NOT_FOUND);
                 lostConnectionState = false;
                 break;
         }
+        return lostConnectionState;
+    }
+
+    @Override
+    public boolean connectionEstablished() {
         return lostConnectionState;
     }
 
@@ -344,10 +375,10 @@ public class ConnectionManagerImpl implements ConnectionManager {
     @Override
     public boolean removeApplicationToken() {
         if (StringUtils.isNotBlank(config.getAppToken())) {
-            if (checkConnection()) {
-                return digitalSTROMClient.revokeToken(config.getAppToken(), getSessionToken());
-            }
-            return false;
+            // if (checkConnection()) {
+            return digitalSTROMClient.revokeToken(config.getAppToken(), null);// getSessionToken());
+            // }
+            // return false;
         }
         return true;
     }
