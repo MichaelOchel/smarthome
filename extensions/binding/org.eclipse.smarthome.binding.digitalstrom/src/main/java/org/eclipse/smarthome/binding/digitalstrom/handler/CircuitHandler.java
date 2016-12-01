@@ -79,13 +79,15 @@ public class CircuitHandler extends BaseThingHandler implements DeviceStatusList
         circuit = null;
     }
 
-    @Override
-    public void handleRemoval() {
-        if (getDssBridgeHandler() != null) {
-            this.dssBridgeHandler.childThingRemoved(dSID);
-        }
-        updateStatus(ThingStatus.REMOVED);
-    }
+    /*
+     * @Override
+     * public void handleRemoval() {
+     * if (getDssBridgeHandler() != null) {
+     * this.dssBridgeHandler.childThingRemoved(dSID);
+     * }
+     * updateStatus(ThingStatus.REMOVED);
+     * }
+     */
 
     private synchronized BridgeHandler getDssBridgeHandler() {
         if (this.dssBridgeHandler == null) {

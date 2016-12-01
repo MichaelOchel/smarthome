@@ -123,7 +123,6 @@ public class ConnectionManagerImpl implements ConnectionManager {
         this.config = config;
         this.transport = new HttpTransportImpl(this, aceptAllCerts);
         this.digitalSTROMClient = new DsAPIImpl(transport);
-
         if (this.genAppToken) {
             this.onNotAuthenticated();
         }

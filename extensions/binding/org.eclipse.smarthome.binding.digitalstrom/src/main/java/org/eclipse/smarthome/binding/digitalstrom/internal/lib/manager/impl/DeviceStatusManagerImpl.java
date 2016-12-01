@@ -1070,7 +1070,7 @@ public class DeviceStatusManagerImpl implements DeviceStatusManager, EventHandle
                     if (intCircuit != null) {
                         intCircuit.unregisterDeviceStatusListener();
                         if (deviceDiscovery != null) {
-                            deviceListener.onDeviceAdded(intCircuit);
+                            deviceDiscovery.onDeviceAdded(intCircuit);
                         }
                     }
                 }
