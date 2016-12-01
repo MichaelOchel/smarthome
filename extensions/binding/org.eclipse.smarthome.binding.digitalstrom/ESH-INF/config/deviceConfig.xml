@@ -8,16 +8,16 @@
     <!-- yellow/black Device -->
     <config-description uri="binding:digitalstrom:deviceWithPowerSensors">
         <parameter-group name="devInfo">
-            <label>@text/DS_DEVICE_PARM_GROUP_INFO_LABEL</label>
-            <description>@text/DS_DEVICE_PARM_GROUP_INFO_DESC</description>
+            <label>@text/device_param_group_info_label</label>
+            <description>@text/device_param_group_info_desc</description>
         </parameter-group>
         <parameter-group name="sensorSetup">
-            <label>@text/DS_DEVICE_PARM_GROUP_SENSOR_LABEL</label>
-            <description>@text/DS_DEVICE_PARM_GROUP_SENSOR_DESC</description>
+            <label>@text/device_param_group_sensor_label</label>
+            <description>@text/device_param_group_sensor_desc</description>
         </parameter-group>
         <parameter name="activePowerRefreshPriority" type="text" groupName='sensorSetup'>
-            <label>@text/DS_DEVICE_PARM_ACTIVE_POWER_LABEL</label>
-            <description>@text/DS_DEVICE_PARM_ACTIVE_POWER_DESC</description>
+            <label>@text/device_param_active_power_label</label>
+            <description>@text/device_param_active_power_desc</description>
             <options>
                 <option value="never">@text/DS_SENSOR_OPTION1</option>
                 <option value="high">@text/DS_SENSOR_OPTION4</option>
@@ -28,8 +28,8 @@
             <required>false</required>
         </parameter>
         <parameter name="electricMeterRefreshPriority" type="text" groupName='sensorSetup'>
-            <label>@text/DS_DEVICE_PARM_ELECTRIC_METER_LABEL</label>
-            <description>@text/DS_DEVICE_PARM_ELECTRIC_METER_DESC</description>
+            <label>@text/device_param_electric_meter_label</label>
+            <description>@text/device_param_electric_meter_desc</description>
             <options>
                 <option value="never">@text/DS_SENSOR_OPTION1</option>
                 <option value="high">@text/DS_SENSOR_OPTION4</option>
@@ -40,8 +40,8 @@
             <required>false</required>
         </parameter>
         <parameter name="outputCurrentRefreshPriority" type="text" groupName='sensorSetup'>
-            <label>@text/DS_DEVICE_PARM_OUTPUT_CURRENT_LABEL</label>
-            <description>@text/DS_DEVICE_PARM_OUTPUT_CURRENT_DESC</description>
+            <label>@text/device_param_output_current_label</label>
+            <description>@text/device_param_output_current_desc</description>
             <options>
                 <option value="never">@text/DS_SENSOR_OPTION1</option>
                 <option value="high">@text/DS_SENSOR_OPTION4</option>
@@ -53,8 +53,8 @@
         </parameter>
         <!--deviceID -->
         <parameter name="dSID" type="text" readOnly="true" groupName="devInfo">
-            <label>@text/DS_DEVICE_PARM_DSID_LABEL</label>
-            <description>@text/DS_DEVICE_PARM_DSID_DESC</description>
+            <label>@text/device_param_dsid_label</label>
+            <description>@text/device_param_dsid_desc</description>
             <required>true</required>
         </parameter>
     </config-description>
