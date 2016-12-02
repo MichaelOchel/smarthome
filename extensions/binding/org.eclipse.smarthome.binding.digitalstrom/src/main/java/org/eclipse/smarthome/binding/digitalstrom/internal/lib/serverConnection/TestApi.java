@@ -31,9 +31,9 @@ import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.constants.DeviceBinarayInputEnum;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.constants.MeteringTypeEnum;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.constants.MeteringUnitsEnum;
-import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.impl.DeviceBinaryInput;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.impl.JSONDeviceSceneSpecImpl;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.impl.DeviceImpl;
+import org.eclipse.smarthome.binding.digitalstrom.internal.providers.DsChannelTypeProvider;
 import org.eclipse.smarthome.core.library.types.DecimalType;
 
 import com.google.common.collect.Lists;
@@ -176,27 +176,16 @@ public class TestApi {
 
             }
 
-        }).start();
+        });// .start();
 
-        for (short i = 0; i < 22; i++) {
-            System.out.println((i) + " = " + DeviceBinarayInputEnum.getdeviceBinarayInput(i));
+        for (short i = 1; i < 21; i++) {
+            String type = DeviceBinarayInputEnum.getdeviceBinarayInput(i).toString();
+            System.out.println(DsChannelTypeProvider
+                    .getBinaryInputChannelUID(DeviceBinarayInputEnum.getdeviceBinarayInput(i)).getId() + "_label = "
+                    + type.charAt(0) + type.substring(1, type.length()).toLowerCase().replace("_", " ") + " sensor");
+            System.out.println(DsChannelTypeProvider
+                    .getBinaryInputChannelUID(DeviceBinarayInputEnum.getdeviceBinarayInput(i)).getId() + "_desc = \n");
         }
-
-        JsonObject jObject = new JsonObject();
-        jObject.addProperty("targetGroupType", "0");
-        jObject.addProperty("targetGroup", "8");
-        jObject.addProperty("inputType", "11");
-        jObject.addProperty("inputId", "15");
-        jObject.addProperty("state", "1");
-
-        DeviceBinaryInput devBinInput = new DeviceBinaryInput(jObject);
-        DeviceBinaryInput devBinInput2 = new DeviceBinaryInput(jObject);
-        System.out.println(devBinInput.toString());
-
-        List<DeviceBinaryInput> binaryInputList = Lists.newArrayList(devBinInput, devBinInput2);
-        List<DeviceBinaryInput> binaryInputList2 = Lists.newArrayList(devBinInput2, devBinInput);
-        int index = binaryInputList.indexOf(new Short((short) 11));
-        System.out.println(binaryInputList.equals(binaryInputList2));
 
         // System.out.println(connMan.getDigitalSTROMAPI().getLatest(connMan.getSessionToken(),
         // MeteringTypeEnum.energyDelta,
