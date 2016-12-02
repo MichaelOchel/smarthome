@@ -189,7 +189,7 @@ public class BridgeHandler extends BaseBridgeHandler
                 }
                 if (StringUtils.isBlank(
 
-                        getThing().getProperties().get(DigitalSTROMBindingConstants.SERVER_CERT))
+                getThing().getProperties().get(DigitalSTROMBindingConstants.SERVER_CERT))
                         && StringUtils.isNotBlank(config.getCert())) {
                     updateProperty(DigitalSTROMBindingConstants.SERVER_CERT, config.getCert());
                 }
@@ -635,7 +635,8 @@ public class BridgeHandler extends BaseBridgeHandler
                     break;
                 case CONNECTON_TIMEOUT:
                     // ignore the first connection timeout
-                    if (connectionTimeoutCounter++ > 0) {
+                    if (connectionTimeoutCounter++ > 20) {
+                        // TODO: + connection tracker starten /implementieren
                         updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.COMMUNICATION_ERROR,
                                 "Connection lost because connection timeout to Server.");
                     }

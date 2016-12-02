@@ -11,7 +11,7 @@ public class DeviceBinaryInput {
     private Short targetGroup = null;
     private Short inputType = null;
     private Short inputId = null;
-    private Short state = null;
+    private Short stateValue = null;
 
     // TODO: exeption in logger
     public DeviceBinaryInput(JsonObject jsonObject) {
@@ -41,14 +41,14 @@ public class DeviceBinaryInput {
      * @return the state
      */
     public Short getState() {
-        return state;
+        return stateValue;
     }
 
     /**
      * @param state the state to set
      */
     public void setState(Short state) {
-        this.state = state;
+        this.stateValue = state;
     }
 
     /**
@@ -81,7 +81,7 @@ public class DeviceBinaryInput {
 
     /*
      * (non-Javadoc)
-     * 
+     *
      * @see java.lang.Object#hashCode()
      */
     @Override
@@ -94,7 +94,7 @@ public class DeviceBinaryInput {
 
     /*
      * (non-Javadoc)
-     * 
+     *
      * @see java.lang.Object#equals(java.lang.Object)
      */
     @Override
@@ -127,7 +127,7 @@ public class DeviceBinaryInput {
     @Override
     public String toString() {
         return "DeviceBinaryInput [targetGroupType=" + targetGroupType + ", targetGroup=" + targetGroup + ", inputType="
-                + inputType + ", inputId=" + inputId + ", state=" + state + "]";
+                + inputType + ", inputId=" + inputId + ", state=" + stateValue + "]";
     }
 
 }

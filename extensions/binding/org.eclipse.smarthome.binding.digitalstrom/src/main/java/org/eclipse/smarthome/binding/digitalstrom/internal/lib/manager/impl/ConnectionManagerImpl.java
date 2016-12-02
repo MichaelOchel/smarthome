@@ -268,9 +268,9 @@ public class ConnectionManagerImpl implements ConnectionManager {
                 // if an application-token for the application exists, use this application-token and test host is
                 // reachable
                 logger.info("check existing application-tokens");
-                JsonObject jObj = digitalSTROMClient.query(
-                        digitalSTROMClient.login(config.getUserName(), config.getPassword()),
-                        QUERY_GET_ENABLED_APPLICATION_TOKENS);
+                sessionToken = digitalSTROMClient.login(config.getUserName(), config.getPassword());
+                JsonObject jObj = digitalSTROMClient.query(sessionToken, QUERY_GET_ENABLED_APPLICATION_TOKENS);
+
                 if (jObj != null) {
                     if (jObj.get("enabled") != null && jObj.get("enabled").isJsonArray()) {
                         JsonArray jArray = jObj.get("enabled").getAsJsonArray();
