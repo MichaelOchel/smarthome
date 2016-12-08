@@ -80,7 +80,7 @@ public class DsChannelTypeProvider implements ChannelTypeProvider {
     public final static String ANGLE = "angle";
     public final static String STAGE = "stage"; // pre stageses e.g. 2+STAGE_SWITCH
     // benötigt?
-    public final static String TEMPERATURE_CONTROLED = "temperature_controled";
+    public final static String TEMPERATURE_CONTROLLED = "temperature_controled";
 
     // item types
     public final static String DIMMER = "Dimmer";
@@ -162,7 +162,7 @@ public class DsChannelTypeProvider implements ChannelTypeProvider {
         if (functionalGroup.equals(FunctionalColorGroupEnum.BLUE)) {
             channelPreID = HEATING;
             if (OutputModeEnum.outputModeIsTemperationControlled(outputMode)) {
-                return channelPreID + "_" + TEMPERATURE_CONTROLED.toLowerCase();
+                return channelPreID + "_" + TEMPERATURE_CONTROLLED.toLowerCase();
             }
         }
         if (OutputModeEnum.outputModeIsSwitch(outputMode)) {
@@ -196,7 +196,7 @@ public class DsChannelTypeProvider implements ChannelTypeProvider {
             }
             if (i == 2) {
                 channelIDpre = HEATING;
-                supportedOutputChannelTypes.add(channelIDpre + "_" + TEMPERATURE_CONTROLED.toLowerCase());
+                supportedOutputChannelTypes.add(channelIDpre + "_" + TEMPERATURE_CONTROLLED.toLowerCase());
             }
             supportedOutputChannelTypes.add(channelIDpre + "_" + SWITCH.toLowerCase());
             supportedOutputChannelTypes.add(channelIDpre + "_" + DIMMER.toLowerCase());
@@ -333,7 +333,7 @@ public class DsChannelTypeProvider implements ChannelTypeProvider {
             }
             return new StateDescription(null, null, null, null, false, stateOptions);
         }
-        if (channelID.contains(TEMPERATURE_CONTROLED)) {
+        if (channelID.contains(TEMPERATURE_CONTROLLED)) {
             return new StateDescription(new BigDecimal(0), new BigDecimal(50), new BigDecimal(0.1), "%.1f °C", false,
                     null);
         }
@@ -389,7 +389,7 @@ public class DsChannelTypeProvider implements ChannelTypeProvider {
             }
             return ROLLERSHUTTER;
         }
-        if (channelID.contains(TEMPERATURE_CONTROLED)) {
+        if (channelID.contains(TEMPERATURE_CONTROLLED)) {
             return CATEGORY_TEMPERATURE;
         }
         return null;
@@ -430,7 +430,7 @@ public class DsChannelTypeProvider implements ChannelTypeProvider {
             if (channelID.contains(DIMMER.toLowerCase()) || channelID.contains(ANGLE.toLowerCase())) {
                 return DIMMER;
             }
-            if (channelID.contains(TEMPERATURE_CONTROLED.toLowerCase())) {
+            if (channelID.contains(TEMPERATURE_CONTROLLED.toLowerCase())) {
                 return NUMBER;
             }
             if (channelID.contains(SHADE)) {
