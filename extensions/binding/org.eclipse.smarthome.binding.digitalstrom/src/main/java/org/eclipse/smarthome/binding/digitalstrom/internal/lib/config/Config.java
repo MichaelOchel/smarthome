@@ -13,6 +13,7 @@ import org.eclipse.smarthome.binding.digitalstrom.internal.lib.sensorJobExecutor
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.serverConnection.impl.HttpTransportImpl;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.Device;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.constants.OutputModeEnum;
+import org.eclipse.smarthome.core.common.ThreadPoolManager;
 
 /**
  * The {@link Config} contains all configurations for the digitalSTROM-Library.
@@ -28,6 +29,9 @@ public class Config {
      * The default application name to generate the application token.
      */
     public static final String DEFAULT_APPLICATION_NAME = "ESH";
+    /**
+     * Defines the used tread pool name to get a thread pool from {@link ThreadPoolManager}.
+     */
     public static final String THREADPOOL_NAME = "digitalSTROM";
 
     private String applicationName = DEFAULT_APPLICATION_NAME;
@@ -107,9 +111,21 @@ public class Config {
     private int sensorReadingWaitTime = DEFAULT_SENSOR_READING_WAIT_TIME;
 
     // sensor data Prioritys
+    /**
+     * Priority for never refresh the sensor value.
+     */
     public static final String REFRESH_PRIORITY_NEVER = "never";
+    /**
+     * Priority for refresh the sensor value with low priority.
+     */
     public static final String REFRESH_PRIORITY_LOW = "low";
+    /**
+     * Priority for refresh the sensor value with medium priority.
+     */
     public static final String REFRESH_PRIORITY_MEDIUM = "medium";
+    /**
+     * Priority for refresh the sensor value with high priority.
+     */
     public static final String REFRESH_PRIORITY_HIGH = "high";
 
     // max sensor reading cyclic to wait
@@ -178,7 +194,7 @@ public class Config {
      * If the host dosen't use the default port (8080), the port has to be set after the host name. e.g.
      * <i>my-digitalSTROM-Server.com:58080</i>
      *
-     * @param the hostAddress
+     * @param hostAddress
      */
     public void setHost(String hostAddress) {
         this.host = hostAddress;
@@ -250,7 +266,7 @@ public class Config {
     /**
      * Sets the connection timeout.
      *
-     * @param the connectionTimeout
+     * @param connectionTimeout
      */
     public void setConnectionTimeout(int connectionTimeout) {
         this.connectionTimeout = connectionTimeout;
@@ -304,7 +320,7 @@ public class Config {
     /**
      * Sets the connection timeout for sensor readings from devices.
      *
-     * @param readSensordataTimeout
+     * @param sensordataReadTimeout
      */
     public void setSensordataReadTimeout(int sensordataReadTimeout) {
         this.sensordataReadTimeout = sensordataReadTimeout;

@@ -1,3 +1,10 @@
+/**
+ * Copyright (c) 2014-2016 by the respective copyright holders.
+ * All rights reserved. This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License v1.0
+ * which accompanies this distribution, and is available at
+ * http://www.eclipse.org/legal/epl-v10.html
+ */
 package org.eclipse.smarthome.binding.digitalstrom.internal.lib.climate.constants;
 
 /**
@@ -28,6 +35,12 @@ public enum OperationModes {
         }
     }
 
+    /**
+     * Returns the {@link OperationModes} of the given operation mode id.
+     * 
+     * @param id
+     * @return operation mode
+     */
     public static OperationModes getOperationMode(short id) {
         try {
             return OPERATION_MODES[id];

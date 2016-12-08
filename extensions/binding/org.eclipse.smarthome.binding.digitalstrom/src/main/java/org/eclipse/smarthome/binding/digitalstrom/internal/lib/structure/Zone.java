@@ -14,7 +14,7 @@ import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices
 /**
  * The {@link Zone} represents a digitalSTROM-Zone.
  *
- * @author Alexander Betker
+ * @author Alexander Betker - initial contributer
  *
  * @author Michael Ochel - add java-doc
  * @author Matthias Siegele - add java-doc
@@ -30,6 +30,8 @@ public interface Zone {
 
     /**
      * Sets the zone id of this {@link Zone}.
+     *
+     * @param id
      */
     public void setZoneId(int id);
 
@@ -42,6 +44,8 @@ public interface Zone {
 
     /**
      * Sets the zone name of this {@link Zone}.
+     *
+     * @param name
      */
     public void setName(String name);
 

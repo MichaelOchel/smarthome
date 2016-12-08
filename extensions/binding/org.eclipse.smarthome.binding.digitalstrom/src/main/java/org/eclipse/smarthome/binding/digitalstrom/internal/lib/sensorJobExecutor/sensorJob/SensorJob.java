@@ -61,5 +61,10 @@ public interface SensorJob {
      */
     public void setInitalisationTime(long time);
 
+    /**
+     * Returns the id of this {@link SensorJob}.
+     *
+     * @return id
+     */
     public String getID();
 }

@@ -38,6 +38,13 @@ public class JSONCachedMeteringValueImpl implements CachedMeteringValue {
     private MeteringUnitsEnum meteringUnit = null;
     private Logger logger = LoggerFactory.getLogger(CachedSensorValue.class);
 
+    /**
+     * Creates a new {@link JSONCachedMeteringValueImpl}.
+     *
+     * @param jObject
+     * @param meteringType
+     * @param meteringUnit
+     */
     public JSONCachedMeteringValueImpl(JsonObject jObject, MeteringTypeEnum meteringType,
             MeteringUnitsEnum meteringUnit) {
         this.meteringType = meteringType;

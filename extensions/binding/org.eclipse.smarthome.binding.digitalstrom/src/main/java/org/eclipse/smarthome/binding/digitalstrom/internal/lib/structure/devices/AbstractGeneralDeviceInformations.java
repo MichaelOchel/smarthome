@@ -1,3 +1,10 @@
+/**
+ * Copyright (c) 2014-2016 by the respective copyright holders.
+ * All rights reserved. This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License v1.0
+ * which accompanies this distribution, and is available at
+ * http://www.eclipse.org/legal/epl-v10.html
+ */
 package org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices;
 
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.listener.DeviceStatusListener;
@@ -7,6 +14,14 @@ import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices
 
 import com.google.gson.JsonObject;
 
+/**
+ * The {@link AbstractGeneralDeviceInformations} is a abstract implementation of {@link GeneralDeviceInformations} and
+ * can be implement by subclasses which contains the same device informations like dSID and/or mechanismen like the
+ * {@link DeviceStatusListener}.
+ *
+ * @author Michael Ochel - initial contributer
+ * @author Matthias Siegele - initial contributer
+ */
 public abstract class AbstractGeneralDeviceInformations implements GeneralDeviceInformations {
 
     protected DSID dsid = null;
@@ -17,6 +32,12 @@ public abstract class AbstractGeneralDeviceInformations implements GeneralDevice
     protected String displayID = null;
     protected DeviceStatusListener listener = null;
 
+    /**
+     * Creates a new {@link AbstractGeneralDeviceInformations} through the digitalSTROM json response as
+     * {@link JsonObject}.
+     * 
+     * @param jsonDeviceObject
+     */
     public AbstractGeneralDeviceInformations(JsonObject jsonDeviceObject) {
         if (jsonDeviceObject.get(JSONApiResponseKeysEnum.NAME.getKey()) != null) {
             name = jsonDeviceObject.get(JSONApiResponseKeysEnum.NAME.getKey()).getAsString();
@@ -85,12 +106,12 @@ public abstract class AbstractGeneralDeviceInformations implements GeneralDevice
     }
 
     @Override
-    public Boolean isValide() {
+    public Boolean isValid() {
         return isValide;
     }
 
     @Override
-    public void setIsValide(boolean isValide) {
+    public void setIsValid(boolean isValide) {
         this.isValide = isValide;
     }
 

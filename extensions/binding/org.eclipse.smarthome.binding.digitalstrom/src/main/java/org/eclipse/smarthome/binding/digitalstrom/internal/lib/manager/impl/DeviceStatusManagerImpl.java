@@ -66,7 +66,7 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 
 /**
- * The {@link DeviceStatusManagerImpl} is the implementation of the the {@link DeviceStatusManager}.
+ * The {@link DeviceStatusManagerImpl} is the implementation of the {@link DeviceStatusManager}.
  *
  * @author Michael Ochel - Initial contribution
  * @author Matthias Siegele - Initial contribution
@@ -74,13 +74,26 @@ import com.google.gson.JsonObject;
 public class DeviceStatusManagerImpl implements DeviceStatusManager, EventHandler {
 
     private Logger logger = LoggerFactory.getLogger(DeviceStatusManagerImpl.class);
+
+    /**
+     * Contains all supported event-types.
+     */
     public static final List<String> SUPPORTED_EVENTS = Lists.newArrayList(EventNames.DEVICE_SENSOR_VALUE,
             EventNames.DEVICE_BINARY_INPUT_EVENT);
 
     private final ScheduledExecutorService scheduler = ThreadPoolManager.getScheduledPool(Config.THREADPOOL_NAME);
     private ScheduledFuture<?> pollingScheduler = null;
 
+    /**
+     * Query to get all {@link Device}'s with more informations than {@link DsAPI#getApartmentDevices(String)}. Can be
+     * executed with {@link DsAPI#query(String, String)} or {@link DsAPI#query2(String, String)}.
+     */
     public static final String GET_DETAILD_DEVICES = "/apartment/zones/zone0(*)/devices/*(*)/*(*)/*(*)";
+    /**
+     * Query to get the last called scenes of all groups in digitalSTROM. Can be executed with
+     * {@link DsAPI#query(String, String)} or
+     * {@link DsAPI#query2(String, String)}.
+     */
     public static final String LAST_CALL_SCENE_QUERY = "/apartment/zones/*(*)/groups/*(*)/*(*)";
 
     private ConnectionManager connMan;
@@ -93,44 +106,95 @@ public class DeviceStatusManagerImpl implements DeviceStatusManager, EventHandle
     private SceneReadingJobExecutor sceneJobExecutor = null;
     private EventListener eventListener = null;
 
-    // private List<String> meters = null;
     private List<TrashDevice> trashDevices = new LinkedList<TrashDevice>();
 
     private long lastBinCheck = 0;
     private ManagerStates state = ManagerStates.STOPPED;
 
     private int tempConsumption = 0;
-    // private int totalPowerConsumption = 0;
     private int tempEnergyMeter = 0;
     private int tempEnergyMeterWs = 0;
-    // private int totalEnergyMeter = 0;
 
     private DeviceStatusListener deviceDiscovery = null;
     private TotalPowerConsumptionListener totalPowerConsumptionListener = null;
     private ManagerStatusListener statusListener = null;
 
+    /**
+     * Creates a new {@link DeviceStatusManagerImpl} through the given {@link Config} object, which has to be contains
+     * all needed parameters like host address, authentication data and so on. This constructor the
+     * {@link DeviceStatusManagerImpl} will be create all needed managers itself.
+     *
+     * @param config (must not be null)
+     */
     public DeviceStatusManagerImpl(Config config) {
         init(new ConnectionManagerImpl(config), null, null, null, null);
     }
 
+    /**
+     * Creates a new {@link DeviceStatusManagerImpl}. The given fields needed to create {@link ConnectionManager}
+     * through the constructor {@link ConnectionManagerImpl#ConnectionManagerImpl(String, String, String, String)}. All
+     * other needed manager will be automatically created, too.
+     *
+     * @param hostAddress (must not be null)
+     * @param user (can be null, if appToken is set)
+     * @param password (can be null, if appToken is set)
+     * @param appToken (can be null, if user and password is set)
+     */
     public DeviceStatusManagerImpl(String hostAddress, String user, String password, String appToken) {
         init(new ConnectionManagerImpl(hostAddress, user, password, false), null, null, null, null);
     }
 
+    /**
+     * Creates a new {@link DeviceStatusManagerImpl} with the given managers. If the {@link StructureManager} or
+     * {@link SceneManager} is null, they will be automatically created.
+     *
+     * @param connMan (must not be null)
+     * @param strucMan (can be null)
+     * @param sceneMan (can be null)
+     */
     public DeviceStatusManagerImpl(ConnectionManager connMan, StructureManager strucMan, SceneManager sceneMan) {
         init(connMan, strucMan, sceneMan, null, null);
     }
 
+    /**
+     * Same constructor like {@link #DeviceStatusManagerImpl(ConnectionManager, StructureManager, SceneManager)}, but a
+     * {@link ManagerStatusListener} can be set, too.
+     *
+     * @param connMan (must not be null)
+     * @param strucMan (can be null)
+     * @param sceneMan (can be null)
+     * @param statusListener (can be null)
+     * @see #DeviceStatusManagerImpl(ConnectionManager, StructureManager, SceneManager)
+     */
     public DeviceStatusManagerImpl(ConnectionManager connMan, StructureManager strucMan, SceneManager sceneMan,
             ManagerStatusListener statusListener) {
         init(connMan, strucMan, sceneMan, statusListener, null);
     }
 
+    /**
+     * Same constructor like
+     * {@link #DeviceStatusManagerImpl(ConnectionManager, StructureManager, SceneManager, ManagerStatusListener)}, but a
+     * {@link EventListener} can be set, too.
+     *
+     * @param connMan (must not be null)
+     * @param strucMan (can be null)
+     * @param sceneMan (can be null)
+     * @param statusListener (can be null)
+     * @param eventListener (can be null)
+     * @see #DeviceStatusManagerImpl(ConnectionManager, StructureManager, SceneManager, ManagerStatusListener)
+     */
     public DeviceStatusManagerImpl(ConnectionManager connMan, StructureManager strucMan, SceneManager sceneMan,
             ManagerStatusListener statusListener, EventListener eventListener) {
         init(connMan, strucMan, sceneMan, statusListener, eventListener);
     }
 
+    /**
+     * Creates a new {@link DeviceStatusManagerImpl} with the given {@link ConnectionManager}. The
+     * {@link StructureManager} and
+     * {@link SceneManager} will be automatically created.
+     *
+     * @param connMan (must not be null)
+     */
     public DeviceStatusManagerImpl(ConnectionManager connMan) {
         init(connMan, null, null, null, null);
     }
@@ -161,7 +225,6 @@ public class DeviceStatusManagerImpl implements DeviceStatusManager, EventHandle
         @Override
         public void run() {
             try {
-                // if (connMan.checkConnection()) {
                 if (!getManagerState().equals(ManagerStates.RUNNING)) {
                     logger.debug("Thread started");
                     if (devicesLoaded) {
@@ -180,8 +243,7 @@ public class DeviceStatusManagerImpl implements DeviceStatusManager, EventHandle
                 List<Device> currentDeviceList = getDetailedDevices();
 
                 // update the current total power consumption
-                if (/* totalPowerConsumptionListener != null && */nextSensorUpdate <= System.currentTimeMillis()) {
-                    // TODO:
+                if (nextSensorUpdate <= System.currentTimeMillis()) {
                     // check circuits
                     List<Circuit> circuits = digitalSTROMClient.getApartmentCircuits(connMan.getSessionToken());
                     for (Circuit circuit : circuits) {
@@ -197,11 +259,6 @@ public class DeviceStatusManagerImpl implements DeviceStatusManager, EventHandle
                         }
                     }
                     getMeterData();
-                    /*
-                     * meters = digitalSTROMClient.getMeterList(connMan.getSessionToken());
-                     * totalPowerConsumptionListener.onTotalPowerConsumptionChanged(getTotalPowerConsumption());
-                     * totalPowerConsumptionListener.onEnergyMeterValueChanged(getTotalEnergyMeterValue());
-                     */
                     nextSensorUpdate = System.currentTimeMillis() + config.getTotalPowerUpdateInterval();
                 }
 
@@ -274,12 +331,9 @@ public class DeviceStatusManagerImpl implements DeviceStatusManager, EventHandle
                         }
                         if (deviceDiscovery != null) {
                             // only inform discover, if the device is with output or a sensor device
-                            // TODO: quatsch, weg damit
-                            // if (currentDevice.isDeviceWithOutput() || currentDevice.isSensorDevice()) {
                             deviceDiscovery.onDeviceAdded(currentDevice);
                             logger.debug("inform DeviceStatusListener: {} about removed device with dSID {}",
                                     DeviceStatusListener.DEVICE_DISCOVERY, currentDevice.getDSID().getValue());
-                            // }
                         } else {
                             logger.debug(
                                     "The device discovery is not registrated, can't inform device discovery about found device.");
@@ -298,13 +352,9 @@ public class DeviceStatusManagerImpl implements DeviceStatusManager, EventHandle
                     }
                 }
 
-                // TODO:
-                // if (sceneMan.getManagerState().equals(ManagerStates.STOPPED)
-                // && !getManagerState().equals(ManagerStates.STOPPED)) {
                 if (!sceneMan.scenesGenerated() && devicesLoaded
                         && !sceneMan.getManagerState().equals(ManagerStates.GENERATING_SCENES)) {
                     logger.debug(sceneMan.getManagerState().toString());
-                    // sceneMan.start();
                     sceneMan.generateScenes();
                 }
 
@@ -339,7 +389,6 @@ public class DeviceStatusManagerImpl implements DeviceStatusManager, EventHandle
                     }
                     lastBinCheck = System.currentTimeMillis();
                 }
-                // }
             } catch (Exception e) {
                 logger.error("An exception occurred: ", e);
             }
@@ -470,12 +519,9 @@ public class DeviceStatusManagerImpl implements DeviceStatusManager, EventHandle
         if (pollingScheduler == null || pollingScheduler.isCancelled()) {
             pollingScheduler = scheduler.scheduleAtFixedRate(new PollingRunnable(), 0, config.getPollingFrequency(),
                     TimeUnit.MILLISECONDS);
-            // sceneMan.start();
             logger.debug("start pollingScheduler");
         }
-        // if (sceneMan.scenesGenerated()) {
         sceneMan.start();
-        // }
         if (sceneJobExecutor != null) {
             this.sceneJobExecutor.startExecutor();
         }
@@ -606,7 +652,6 @@ public class DeviceStatusManagerImpl implements DeviceStatusManager, EventHandle
                     logger.error("An exception occurred", e);
                 }
             }
-            // if (this.connMan.checkConnection()) {
             lastSceneCall = System.currentTimeMillis();
             boolean requestSuccsessfull = false;
             if (scene.getZoneID() == 0) {
@@ -639,7 +684,6 @@ public class DeviceStatusManagerImpl implements DeviceStatusManager, EventHandle
                     scene.deactivateScene();
                 }
             }
-            // }
         }
     }
 
@@ -649,8 +693,6 @@ public class DeviceStatusManagerImpl implements DeviceStatusManager, EventHandle
 
             @Override
             public void run() {
-                // if (connMan.checkConnection()) {
-                // }
                 if (digitalSTROMClient.callDeviceScene(connMan.getSessionToken(), device.getDSID(), null,
                         SceneEnum.STOP, true)) {
                     sceneMan.addEcho(device.getDSID().getValue(), SceneEnum.STOP.getSceneNumber());
@@ -685,6 +727,12 @@ public class DeviceStatusManagerImpl implements DeviceStatusManager, EventHandle
         }
     }
 
+    /**
+     * Updates the {@link Device} status of the given {@link Device} with handling outstanding commands, which are saved
+     * as {@link DeviceStateUpdate}'s.
+     *
+     * @param eshDevice
+     */
     public synchronized void updateDevice(Device eshDevice) {
         logger.debug("Check device updates");
         // check device state updates
@@ -778,20 +826,16 @@ public class DeviceStatusManagerImpl implements DeviceStatusManager, EventHandle
 
     @Override
     public synchronized void sendComandsToDSS(Device device, DeviceStateUpdate deviceStateUpdate) {
-        // if (connMan.checkConnection()) {
         boolean requestSuccsessful = false;
         boolean commandHaveNoEffect = false;
         if (deviceStateUpdate != null) {
             if (deviceStateUpdate.isSensorUpdateType()) {
                 SensorEnum sensorType = deviceStateUpdate.getTypeAsSensorEnum();
                 if (deviceStateUpdate.getValueAsInteger() == 0) {
-                    logger.debug("Device need " + sensorType + " SensorData update");
-                    // TODO:
                     updateSensorData(new DeviceConsumptionSensorJob(device, sensorType),
                             device.getPowerSensorRefreshPriority(sensorType));
                     return;
                 } else if (deviceStateUpdate.getValueAsInteger() < 0) {
-                    // TODO:
                     removeSensorJob(device, deviceStateUpdate);
                     return;
                 } else {
@@ -856,9 +900,6 @@ public class DeviceStatusManagerImpl implements DeviceStatusManager, EventHandle
                                 if (requestSuccsessful) {
                                     sceneMan.addEcho(device.getDSID().getValue(), SceneEnum.MINIMUM.getSceneNumber());
                                 }
-                                // if (sensorJobExecutor != null) {
-                                // sensorJobExecutor.removeSensorJobs(device);
-                                // }
                             } else {
                                 commandHaveNoEffect = true;
                             }
@@ -980,18 +1021,6 @@ public class DeviceStatusManagerImpl implements DeviceStatusManager, EventHandle
                         return;
                     }
             }
-            /*
-             * if (priority.contains(Config.REFRESH_PRIORITY_HIGH)) {
-             * sensorJobExecutor.addHighPriorityJob(sensorJob);
-             * } else if (priority.contains(Config.REFRESH_PRIORITY_MEDIUM)) {
-             * sensorJobExecutor.addMediumPriorityJob(sensorJob);
-             * } else if (priority.contains(Config.REFRESH_PRIORITY_LOW)) {
-             * sensorJobExecutor.addLowPriorityJob(sensorJob);
-             * } else {
-             * System.err.println("Sensor data update priority do not exist! Please check the input!");
-             * return;
-             * }
-             */
             logger.debug("Add new sensorJob {} with priority: {} to sensorJobExecuter", sensorJob.toString(), priority);
         }
     }
@@ -1129,12 +1158,10 @@ public class DeviceStatusManagerImpl implements DeviceStatusManager, EventHandle
         this.connMan.unregisterConnectionListener();
     }
 
-    public final static String ALL_METERS = ".meters(all)";
-
     @Override
     public int getTotalPowerConsumption() {
         List<CachedMeteringValue> cachedConsumptionMeteringValues = digitalSTROMClient
-                .getLatest(connMan.getSessionToken(), MeteringTypeEnum.consumption, ALL_METERS, null);
+                .getLatest(connMan.getSessionToken(), MeteringTypeEnum.consumption, DsAPI.ALL_METERS, null);
         if (cachedConsumptionMeteringValues != null) {
             tempConsumption = 0;
             for (CachedMeteringValue value : cachedConsumptionMeteringValues) {
@@ -1165,7 +1192,7 @@ public class DeviceStatusManagerImpl implements DeviceStatusManager, EventHandle
     @Override
     public int getTotalEnergyMeterValue() {
         List<CachedMeteringValue> cachedEnergyMeteringValues = digitalSTROMClient.getLatest(connMan.getSessionToken(),
-                MeteringTypeEnum.energy, ALL_METERS, MeteringUnitsEnum.Wh);
+                MeteringTypeEnum.energy, DsAPI.ALL_METERS, MeteringUnitsEnum.Wh);
         if (cachedEnergyMeteringValues != null) {
             tempEnergyMeter = 0;
             for (CachedMeteringValue value : cachedEnergyMeteringValues) {
@@ -1181,7 +1208,7 @@ public class DeviceStatusManagerImpl implements DeviceStatusManager, EventHandle
     @Override
     public int getTotalEnergyMeterWsValue() {
         List<CachedMeteringValue> cachedEnergyMeteringValues = digitalSTROMClient.getLatest(connMan.getSessionToken(),
-                MeteringTypeEnum.energy, ALL_METERS, MeteringUnitsEnum.Ws);
+                MeteringTypeEnum.energy, DsAPI.ALL_METERS, MeteringUnitsEnum.Ws);
         if (cachedEnergyMeteringValues != null) {
             tempEnergyMeterWs = 0;
             for (CachedMeteringValue value : cachedEnergyMeteringValues) {
@@ -1195,7 +1222,7 @@ public class DeviceStatusManagerImpl implements DeviceStatusManager, EventHandle
     }
 
     private void setInizialStateWithLastCallScenes() {
-        if (sceneMan != null /* && connMan.checkConnection() */) {
+        if (sceneMan != null) {
             JsonObject response = connMan.getDigitalSTROMAPI().query2(connMan.getSessionToken(), LAST_CALL_SCENE_QUERY);
             if (response.isJsonObject()) {
                 for (Entry<String, JsonElement> entry : response.entrySet()) {

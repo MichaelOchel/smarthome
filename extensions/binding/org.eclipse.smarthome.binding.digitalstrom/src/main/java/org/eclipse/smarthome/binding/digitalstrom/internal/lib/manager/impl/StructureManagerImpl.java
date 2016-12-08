@@ -16,6 +16,7 @@ import java.util.Set;
 
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.manager.ConnectionManager;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.manager.StructureManager;
+import org.eclipse.smarthome.binding.digitalstrom.internal.lib.serverConnection.DsAPI;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.serverConnection.impl.JSONResponseHandler;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.AbstractGeneralDeviceInformations;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.Circuit;
@@ -31,10 +32,13 @@ import com.google.gson.JsonObject;
  *
  * @author Michael Ochel - Initial contribution
  * @author Matthias Siegele - Initial contribution
- *
  */
 public class StructureManagerImpl implements StructureManager {
 
+    /**
+     * Query to get all zone and group names. Can be executed with {@link DsAPI#query(String, String)} or
+     * {@link DsAPI#query2(String, String)}.
+     */
     public final String ZONE_GROUP_NAMES = "/json/property/query?query=/apartment/zones/*(ZoneID,name)/groups/*(group,name)";
 
     private Map<Integer, HashMap<Short, List<Device>>> zoneGroupDeviceMap;
@@ -58,6 +62,7 @@ public class StructureManagerImpl implements StructureManager {
      * Creates a new {@link StructureManagerImpl} with the {@link Device}s of the given referenceDeviceList.
      *
      * @param referenceDeviceList
+     * @param referenceCircuitList
      */
     public StructureManagerImpl(List<Device> referenceDeviceList, List<Circuit> referenceCircuitList) {
         handleStructure(referenceDeviceList);
@@ -200,7 +205,7 @@ public class StructureManagerImpl implements StructureManager {
      * and an {@link HashMap} as value. This {@link HashMap} has the group id as key and a {@link List}
      * with all digitalSTROM {@link Device}s.<br>
      * <br>
-     * <b>Note:</b> the zone id 0 is the broadcast address and the group id 0 too.
+     * <b>Note:</b> the zone id 0 is the broadcast address and the group id 0, too.
      */
     private void handleStructure(List<Device> deviceList) {
         HashMap<Short, List<Device>> groupXHashMap = new HashMap<Short, List<Device>>();

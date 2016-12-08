@@ -75,8 +75,8 @@ public enum FunctionalColorGroupEnum {
     /**
      * Returns the {@link FunctionalColorGroupEnum} of the given color id.
      *
-     * @param modeID
-     * @return mode
+     * @param functionalColorGroupID
+     * @return {@link FunctionalColorGroupEnum} of the id
      */
     public static FunctionalColorGroupEnum getColorGroup(Short functionalColorGroupID) {
         return colorGroups.get(functionalColorGroupID);
@@ -87,9 +87,9 @@ public enum FunctionalColorGroupEnum {
     }
 
     /**
-     * Returns the functional color group id form this Object.
+     * Returns the functional color group id's as {@link List} of this {@link FunctionalColorGroupEnum}.
      *
-     * @return functional color group id
+     * @return functional color group id's
      */
     public List<Short> getFunctionalColorGroup() {
         return colorGroup;

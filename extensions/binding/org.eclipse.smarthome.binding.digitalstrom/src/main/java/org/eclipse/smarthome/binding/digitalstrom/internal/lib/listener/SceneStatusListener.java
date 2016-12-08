@@ -27,6 +27,9 @@ import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.scene.I
  */
 public interface SceneStatusListener {
 
+    /**
+     * The {@link SceneStatusListener} id for the discovery implementation.
+     */
     public final static String SCENE_DISCOVERY = "SceneDiscovery";
 
     /**

@@ -1,3 +1,10 @@
+/**
+ * Copyright (c) 2014-2016 by the respective copyright holders.
+ * All rights reserved. This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License v1.0
+ * which accompanies this distribution, and is available at
+ * http://www.eclipse.org/legal/epl-v10.html
+ */
 package org.eclipse.smarthome.binding.digitalstrom.internal.lib.climate.jsonResponseContainer.impl;
 
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.climate.jsonResponseContainer.BaseTemperatureControl;
@@ -8,8 +15,7 @@ import com.google.gson.JsonObject;
 /**
  * The {@link TemperatureControlInternals} acts as container for the digitalSTROM json-method
  * <i>getTemperatureControlInternals</i>. So the {@link TemperatureControlInternals} contains all internal heating
- * control
- * configurations of a zone.
+ * control configurations of a zone.
  *
  * @author Michael Ochel - Initial contribution
  * @author Matthias Siegele - Initial contribution

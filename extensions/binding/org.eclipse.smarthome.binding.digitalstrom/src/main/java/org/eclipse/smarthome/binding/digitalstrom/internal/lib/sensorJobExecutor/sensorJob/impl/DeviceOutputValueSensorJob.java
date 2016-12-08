@@ -130,6 +130,12 @@ public class DeviceOutputValueSensorJob implements SensorJob {
         return getID(device);
     }
 
+    /**
+     * Returns the id for a {@link DeviceOutputValueSensorJob} with the given {@link Device}.
+     *
+     * @param device
+     * @return id
+     */
     public static String getID(Device device) {
         return DeviceOutputValueSensorJob.class.getSimpleName() + "-" + device.getDSID().getValue();
     }

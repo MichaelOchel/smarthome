@@ -37,23 +37,29 @@ import com.google.gson.JsonObject;
 /**
  * digitalSTROM-API based on dSS-Version higher then 1.14.5
  *
- * @author Alexander Betker
+ * @author Alexander Betker - initial contributer
  * @see http://developer.digitalstrom.org/download/dss/dss-1.14.5-doc/dss-1.14.5-json_api.html
  *
- * @author Michael Ochel - add missing java-doc, update digitalSTROM-JSON-API as far as possible to the pfd version from
- *         June 19, 2014 and add checkConnection method
- * @author Matthias Siegele - add missing java-doc, update digitalSTROM-JSON-API as far as possible to the pfd version
- *         from
- *         June 19, 2014 and add checkConnection method
+ * @author Michael Ochel - add missing java-doc, update digitalSTROM-JSON-API as far as possible to the pdf version from
+ *         June 19, 2014 and add checkConnection method and ALL_METERS constant
+ * @author Matthias Siegele - add missing java-doc, update digitalSTROM-JSON-API as far as possible to the pdf version
+ *         from June 19, 2014 and add checkConnection method and ALL_METERS constant
  * @see http://developer.digitalstrom.org/Architecture/v1.1/dss-json.pdf
  */
 public interface DsAPI {
+
+    /**
+     * Meter field to get all meters by calling {@link #getLatest(String, MeteringTypeEnum, String, MeteringUnitsEnum)}.
+     * It has to be set by meterDSIDs.
+     */
+    public final static String ALL_METERS = ".meters(all)";
 
     /**
      * Calls the scene sceneNumber on all devices of the apartment. If groupID
      * or groupName are specified. Only devices contained in this group will be
      * addressed.
      *
+     * @param sessionToken
      * @param groupID not required
      * @param groupName not required
      * @param sceneNumber required
@@ -66,6 +72,7 @@ public interface DsAPI {
     /**
      * Returns all zones
      *
+     * @param sessionToken
      * @return Apartment
      */
     public Apartment getApartmentStructure(String sessionToken);
@@ -74,7 +81,7 @@ public interface DsAPI {
      * Returns the list of devices in the apartment. If unassigned is true,
      * only devices that are not assigned to a zone will be returned.
      *
-     * @param unassigned not required
+     * @param sessionToken
      * @return List of devices
      */
     public List<Device> getApartmentDevices(String sessionToken);
@@ -90,6 +97,7 @@ public interface DsAPI {
     /**
      * Returns a list of dSID's of all meters(dSMs)
      *
+     * @param sessionToken
      * @return String-List with dSID's
      */
     public List<String> getMeterList(String sessionToken);
@@ -98,6 +106,7 @@ public interface DsAPI {
      * Calls the sceneNumber on all devices in the given zone. If groupID or groupName
      * are specified only devices contained in this group will be addressed.
      *
+     * @param sessionToken
      * @param zoneID needs either id or name
      * @param zoneName needs either id or name
      * @param groupID not required
@@ -112,7 +121,8 @@ public interface DsAPI {
     /**
      * Turns the device on. This will call the scene "max" on the device.
      *
-     * @param dSIDneeds either dSIDid or name
+     * @param sessionToken
+     * @param dSID needs either dSIDid or name
      * @param deviceName needs either dSIDid or name
      * @return true, if successful
      */
@@ -121,6 +131,7 @@ public interface DsAPI {
     /**
      * Turns the device off. This will call the scene "min" on the device.
      *
+     * @param sessionToken
      * @param dSID needs either dSID or name
      * @param deviceName needs either dSID or name
      * @return true, if successful
@@ -130,6 +141,7 @@ public interface DsAPI {
     /**
      * Sets the output value of device.
      *
+     * @param sessionToken
      * @param dSID needs either dSID or name
      * @param deviceName needs either dSID or name
      * @param value required (0 - 255)
@@ -140,6 +152,7 @@ public interface DsAPI {
     /**
      * Gets the value of configuration class at offset index.
      *
+     * @param sessionToken
      * @param dSID needs either dSID or name
      * @param deviceName needs either dSID or name
      * @param clazz required
@@ -154,6 +167,7 @@ public interface DsAPI {
      * The available parameters and offsets depend on the features of the
      * hardware components.
      *
+     * @param sessionToken
      * @param dSID needs either dSID or name
      * @param deviceName needs either dSID or name
      * @param offset required (known offset f.e. 0)
@@ -165,7 +179,8 @@ public interface DsAPI {
      * Sets the device output value at the given offset. The available
      * parameters and offsets depend on the features of the hardware components.
      *
-     * @param dSIDneeds either dSID or name
+     * @param sessionToken
+     * @param dSID needs either dSID or name
      * @param deviceName needs either dSID or name
      * @param offset required
      * @param value required (0 - 65535)
@@ -176,16 +191,18 @@ public interface DsAPI {
     /**
      * Gets the device configuration for a specific scene command.
      *
+     * @param sessionToken
      * @param dSID needs either dSID or name
      * @param deviceName needs either dSID or name
      * @param sceneID required (0 .. 255)
      * @return scene configuration
      */
-    public DeviceSceneSpec getDeviceSceneMode(String sessionTokens, DSID dSID, String deviceName, Short sceneID);
+    public DeviceSceneSpec getDeviceSceneMode(String sessionToken, DSID dSID, String deviceName, Short sceneID);
 
     /**
      * Requests the sensor value for a given index.
      *
+     * @param sessionToken
      * @param dSID needs either dSID or name
      * @param deviceName needs either dSID or name
      * @param sensorIndex required
@@ -196,6 +213,7 @@ public interface DsAPI {
     /**
      * Calls scene sceneNumber on the device.
      *
+     * @param sessionToken
      * @param dSID needs either dSID or name
      * @param deviceName needs either dSID or name
      * @param sceneNumber required
@@ -210,8 +228,11 @@ public interface DsAPI {
      * using the same subscription id, this allows to retrieve a grouped output of the
      * events (i.e. get output of all subscribed by the given id).
      *
+     * @param sessionToken
      * @param eventName required
      * @param subscriptionID required
+     * @param connectionTimeout
+     * @param readTimeout
      * @return true on success
      */
     public boolean subscribeEvent(String sessionToken, String eventName, Integer subscriptionID, int connectionTimeout,
@@ -221,8 +242,11 @@ public interface DsAPI {
      * Unsubscribes from an event given by the name. The subscriptionID is a unique
      * id that was used in the subscribe call.
      *
+     * @param sessionToken
      * @param eventName required
      * @param subscriptionID required
+     * @param connectionTimeout
+     * @param readTimeout
      * @return true on success
      */
     public boolean unsubscribeEvent(String sessionToken, String eventName, Integer subscriptionID,
@@ -235,6 +259,7 @@ public interface DsAPI {
      * are taken place, can be specified (in ms). By default the timeout
      * is disabled: 0 (zero), if no events occur the call will block.
      *
+     * @param sessionToken
      * @param subscriptionID required
      * @param timeout optional
      * @return Event-String
@@ -244,6 +269,7 @@ public interface DsAPI {
     /**
      * Returns the dSS time in UTC seconds since epoch.
      *
+     * @param sessionToken
      * @return time
      */
     public int getTime(String sessionToken);
@@ -257,15 +283,18 @@ public interface DsAPI {
     public String loginApplication(String applicationToken);
 
     /**
-     * Creates a new session
+     * Creates a new session.
      *
      * @param user required
      * @param password required
+     * @return new session token
      */
     public String login(String user, String password);
 
     /**
      * Destroys the session and signs out the user
+     *
+     * @return true, if logout was successful, otherwise false
      */
     public boolean logout();
 
@@ -289,20 +318,25 @@ public interface DsAPI {
     /**
      * Revokes an application token, caller must be logged in.
      *
+     * @param sessionToken
      * @param applicationToken
+     * @return true, if successful, otherwise false
      */
     public boolean revokeToken(String applicationToken, String sessionToken);
 
     /**
      * Enables an application token, caller must be logged in.
      *
+     * @param sessionToken
      * @param applicationToken required
+     * @return true, if successful, otherwise false
      */
     public boolean enableApplicationToken(String applicationToken, String sessionToken);
 
     /**
      * Returns all resolutions stored on this dSS
      *
+     * @param sessionToken
      * @return List of resolutions
      */
     public List<Integer> getResolutions(String sessionToken);
@@ -316,6 +350,7 @@ public interface DsAPI {
      * the
      * set-syntax, currently it supports: .meters(dsid1,dsid2,...) and .meters(all)
      *
+     * @param sessionToken
      * @param type required
      * @param meterDSIDs required
      * @param unit optional
@@ -332,6 +367,7 @@ public interface DsAPI {
      * units: 'Wh' (default) and 'Ws' you can also see at {@link MeteringUnitsEnum}. <br>
      * The meterDSIDs parameter you can directly pass a {@link List} of the digitalSTROM-Meter dSID's as {@link String}.
      *
+     * @param sessionToken
      * @param type required
      * @param meterDSIDs required
      * @param unit optional
@@ -399,7 +435,7 @@ public interface DsAPI {
      * successful.
      *
      * @param sessionToken required
-     * @param dSID required
+     * @param dsid required
      * @param sceneNumber required
      * @return success true otherwise false
      *
@@ -441,22 +477,6 @@ public interface DsAPI {
      */
     public boolean undoZoneScene(String sessionToken, Integer zoneID, String zoneName, Short groupID, String groupName,
             SceneEnum sceneNumber);
-
-    /**
-     * Returns the digitalSTROM-device sensor value for the digitalSTROM-device with the given dSID or deviceName and
-     * the given sensorType. If the sensorType is supports from the device and the request was successful it returns
-     * the sensor value otherwise -1.
-     *
-     * @param sessionToken required
-     * @param dSID needs either dSID or deviceName
-     * @param name
-     * @param sensortype required
-     * @return success sensor value otherwise -1
-     *
-     * @author Michael Ochel
-     * @author Matthias Siegele
-     */
-    // public short getDeviceSensorValue(String sessionToken, DSID dSID, String deviceName, SensorEnum sensorType);
 
     /**
      * Returns user defined name of the digitalSTROM installation.
@@ -508,7 +528,8 @@ public interface DsAPI {
      * Returns the temperature control status to the given zone.
      *
      * @param sessionToken required
-     * @param zoneID
+     * @param zoneID required or zoneName
+     * @param zoneName required or zoneID
      * @return temperature control status to the given zone
      *
      * @author Michael Ochel
@@ -533,7 +554,8 @@ public interface DsAPI {
      * CtrlKeepFloorWarm = Control mode with higher priority on comfort: 0=inactive, 1=active
      *
      * @param sessionToken required
-     * @param zoneID required
+     * @param zoneID required or zoneName
+     * @param zoneName required or zoneID
      * @return temperature control status with configuration parameters
      *
      * @author Michael Ochel
@@ -557,7 +579,8 @@ public interface DsAPI {
      *
      *
      * @param sessionToken required
-     * @param zoneID required
+     * @param zoneID required or zoneName
+     * @param zoneName required or zoneID
      * @return temperature control values of control modes
      *
      * @author Michael Ochel
@@ -573,9 +596,9 @@ public interface DsAPI {
      * @param zoneID (required alternative zoneName)
      * @param zoneName (required alternative zoneID)
      * @param controlDSUID dSUID of the meter or service that runs the control algorithm for this zone (optional)
-     * @param ControlMode Control mode, can be one of: 0=off; 1=pid-control; 2=zone-follower; 3=fixed-value; 4=manual
+     * @param controlMode Control mode, can be one of: 0=off; 1=pid-control; 2=zone-follower; 3=fixed-value; 4=manual
      *            (Optional)
-     * @param ReferenceZone Zone number of the reference zone (Optional for ControlMode 2)
+     * @param referenceZone Zone number of the reference zone (Optional for ControlMode 2)
      * @param ctrlOffset Control value offset (Optional for ControlMode 2)
      * @param emergencyValue Fixed control value in case of malfunction (Optional for ControlMode 1)
      * @param manualValue Control value for manual mode (Optional for ControlMode 1)
@@ -586,7 +609,7 @@ public interface DsAPI {
      * @param ctrlImin Control minimum integrator value (Optional for ControlMode 1)
      * @param ctrlImax Control maximum integrator value (Optional for ControlMode 1)
      * @param ctrlYmin Control minimum control value (Optional for ControlMode 1)
-     * @param ctrlYmay Control maximum control value (Optional for ControlMode 1)
+     * @param ctrlYmax Control maximum control value (Optional for ControlMode 1)
      * @param ctrlAntiWindUp Control integrator anti wind up (Optional for ControlMode 1)
      * @param ctrlKeepFloorWarm Control mode with higher priority on comfort (Optional for ControlMode 1)
      * @return
@@ -601,7 +624,8 @@ public interface DsAPI {
      *
      *
      * @param sessionToken required
-     * @param zoneID required
+     * @param zoneID required or zoneName
+     * @param zoneName required or zoneID
      * @return assigned Sensor dSUID of the given zone.
      *
      * @author Michael Ochel
@@ -614,11 +638,14 @@ public interface DsAPI {
      * Control states: 0=internal; 1=external; 2=exbackup; 3=emergency
      *
      * @param sessionToken required
-     * @param zoneID required
+     * @param zoneID required or zoneName
+     * @param zoneName required or zoneID
+     * @param controlState required
      * @return success true otherwise false
      *
      * @author Michael Ochel
      * @author Matthias Siegele
+     *
      */
     public boolean setZoneTemperatureControlState(String sessionToken, Integer zoneID, String zoneName,
             String controlState);
@@ -627,7 +654,8 @@ public interface DsAPI {
      * Sets the wished temperature for a controlValue
      *
      * @param sessionToken
-     * @param zoneID
+     * @param zoneID required or zoneName
+     * @param zoneName required or zoneID
      * @param controlValue
      * @param temperature
      * @return success true otherwise false
@@ -641,7 +669,8 @@ public interface DsAPI {
      *
      *
      * @param sessionToken required
-     * @param zoneID required
+     * @param zoneID required or zoneName
+     * @param zoneName required or zoneID
      * @return value of a Sensor of the given zone
      *
      * @author Michael Ochel
@@ -653,6 +682,8 @@ public interface DsAPI {
      * Set the source of a sensor in a zone to a given device source address.
      *
      * @param sessionToken
+     * @param zoneID required or zoneName
+     * @param zoneName required or zoneID
      * @param sensorType
      * @param dSID
      * @return success true otherwise false
@@ -664,8 +695,9 @@ public interface DsAPI {
      * Remove all assignments for a particular sensor type in a zone.
      *
      * @param sessionToken
+     * @param zoneID required or zoneName
+     * @param zoneName required or zoneID
      * @param sensorType
-     * @param zoneID
      * @return success true otherwise false
      *
      */
@@ -675,7 +707,8 @@ public interface DsAPI {
      * Returns internal status information of the temperature control of a zone.
      *
      * @param sessionToken
-     * @param zoneID
+     * @param zoneID required or zoneName
+     * @param zoneName required or zoneID
      * @return internal status information of the temperature control of a zone
      */
     public TemperatureControlInternals getZoneTemperatureControlInternals(String sessionToken, Integer zoneID,
@@ -690,7 +723,7 @@ public interface DsAPI {
      * @author Michael Ochel
      * @author Matthias Siegele
      */
-    public HashMap<Integer, TemperatureControlStatus> getApartmentTemperatureControlStatus(String sessionToken);
+    public List<TemperatureControlStatus> getApartmentTemperatureControlStatus(String sessionToken);
 
     /**
      * Returns the temperature control status of all zones.

@@ -15,7 +15,7 @@ import com.google.gson.JsonObject;
 /**
  * The {@link JSONDeviceConfigImpl} is the implementation of the {@link DeviceConfig}.
  *
- * @author Alexander Betker
+ * @author Alexander Betker - initial contributer
  * @author Michael Ochel - change from SimpleJSON to GSON
  * @author Matthias Siegele - change from SimpleJSON to GSON
  */
@@ -25,6 +25,11 @@ public class JSONDeviceConfigImpl implements DeviceConfig {
     private int index = -1;
     private int value = -1;
 
+    /**
+     * Creates a new {@link JSONDeviceConfigImpl}.
+     * 
+     * @param object
+     */
     public JSONDeviceConfigImpl(JsonObject object) {
         if (object.get(JSONApiResponseKeysEnum.CLASS.getKey()) != null) {
             class_ = object.get(JSONApiResponseKeysEnum.CLASS.getKey()).getAsInt();

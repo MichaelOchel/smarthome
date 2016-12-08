@@ -1,5 +1,19 @@
+/**
+ * Copyright (c) 2014-2016 by the respective copyright holders.
+ * All rights reserved. This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License v1.0
+ * which accompanies this distribution, and is available at
+ * http://www.eclipse.org/legal/epl-v10.html
+ */
 package org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.constants;
 
+/**
+ * This enum contains all binary inputs with they id.
+ *
+ * @author Michael Ochel - initial contributer
+ * @author Matthias Siegele - initial contributer
+ * @see {@link http://developer.digitalstrom.org/Architecture/ds-basics.pdf#5f}
+ */
 public enum DeviceBinarayInputEnum {
 
     /*
@@ -69,10 +83,22 @@ public enum DeviceBinarayInputEnum {
         this.binaryInputType = binaryInputType;
     }
 
+    /**
+     * Returns the id of this {@link DeviceBinarayInputEnum}.
+     *
+     * @return id
+     */
     public Short getBinaryInputType() {
         return binaryInputType;
     }
 
+    /**
+     * Returns the {@link DeviceBinarayInputEnum} of the given id or null, if no {@link DeviceBinarayInputEnum} exist
+     * for the id.
+     *
+     * @param binaryInputTypeID
+     * @return the {@link DeviceBinarayInputEnum} of the id
+     */
     public static DeviceBinarayInputEnum getdeviceBinarayInput(Short binaryInputTypeID) {
         try {
             return deviceBinarayInputs[binaryInputTypeID - 1];

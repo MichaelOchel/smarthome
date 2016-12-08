@@ -29,6 +29,11 @@ public class JSONDetailedGroupInfoImpl implements DetailedGroupInfo {
     private short groupId = 0;
     private List<String> deviceList = null;
 
+    /**
+     * Creates a new {@link JSONDetailedGroupInfoImpl} through the {@link JsonObject}.
+     *
+     * @param jObject
+     */
     public JSONDetailedGroupInfoImpl(JsonObject jObject) {
         this.deviceList = new LinkedList<String>();
         if (jObject.get(JSONApiResponseKeysEnum.NAME.getKey()) != null) {

@@ -44,6 +44,9 @@ import com.google.common.collect.Lists;
  */
 public class SceneManagerImpl implements SceneManager, EventHandler {
 
+    /**
+     * Contains all supported event-types.
+     */
     public static final List<String> SUPPORTED_EVENTS = Lists.newArrayList(EventNames.CALL_SCENE,
             EventNames.UNDO_SCENE);
 
@@ -62,12 +65,27 @@ public class SceneManagerImpl implements SceneManager, EventHandler {
     private ManagerStates state = ManagerStates.STOPPED;
     private boolean scenesGenerated = false;
 
+    /**
+     * Creates a new {@link SceneManagerImpl} through the given managers.
+     *
+     * @param connectionManager (must not be null)
+     * @param structureManager (must not be null)
+     */
     public SceneManagerImpl(ConnectionManager connectionManager, StructureManager structureManager) {
         this.structureManager = structureManager;
         this.connectionManager = connectionManager;
         this.discovery = new SceneDiscovery(this);
     }
 
+    /**
+     * Same constructor like {@link #SceneManagerImpl(ConnectionManager, StructureManager)}, but a
+     * {@link ManagerStatusListener} can be set, too.
+     *
+     * @param connectionManager (must not be null)
+     * @param structureManager (must not be null)
+     * @param statusListener (can be null)
+     * @see #SceneManagerImpl(ConnectionManager, StructureManager)
+     */
     public SceneManagerImpl(ConnectionManager connectionManager, StructureManager structureManager,
             ManagerStatusListener statusListener) {
         this.structureManager = structureManager;
@@ -76,6 +94,16 @@ public class SceneManagerImpl implements SceneManager, EventHandler {
         this.statusListener = statusListener;
     }
 
+    /**
+     * Same constructor like {@link #SceneManagerImpl(ConnectionManager, StructureManager, ManagerStatusListener)}, but
+     * a {@link EventListener} can be set, too.
+     *
+     * @param connectionManager (must not be null)
+     * @param structureManager (must not be null)
+     * @param statusListener (can be null)
+     * @param eventListener (can be null)
+     * @see #SceneManagerImpl(ConnectionManager, StructureManager, ManagerStatusListener)
+     */
     public SceneManagerImpl(ConnectionManager connectionManager, StructureManager structureManager,
             ManagerStatusListener statusListener, EventListener eventListener) {
         this.structureManager = structureManager;
