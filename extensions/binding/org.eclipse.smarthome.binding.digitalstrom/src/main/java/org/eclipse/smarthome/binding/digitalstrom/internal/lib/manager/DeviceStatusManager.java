@@ -223,11 +223,16 @@ public interface DeviceStatusManager {
     public int getTotalPowerConsumption();
 
     /**
-     * Reads the current total energy meter value out and returns it.
+     * Reads the current total energy meter value in Wh out and returns it.
      *
-     * @return the current total energy meter value
+     * @return the current total energy meter value Wh
      */
     public int getTotalEnergyMeterValue();
 
-    int getTotalEnergyMeterWsValue();
+    /**
+     * Reads the current total energy meter value in Ws out and returns it.
+     *
+     * @return the current total energy meter value in Ws
+     */
+    public int getTotalEnergyMeterWsValue();
 }

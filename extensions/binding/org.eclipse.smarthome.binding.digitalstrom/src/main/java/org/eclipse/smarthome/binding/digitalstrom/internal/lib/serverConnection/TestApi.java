@@ -626,7 +626,7 @@ public class TestApi {
             System.out.println("APARTMENT:");
             System.out.println("getTemperatureControlStatus");
             List<TemperatureControlStatus> tempContStatList = new LinkedList<TemperatureControlStatus>(
-                    api.getApartmentTemperatureControlStatus(connMan.getSessionToken()).values());
+                    api.getApartmentTemperatureControlStatus(connMan.getSessionToken()));
             for (TemperatureControlStatus tempContStat : tempContStatList) {
                 if (tempContStat.getIsConfigured()) {
                     System.out.println(tempContStat);

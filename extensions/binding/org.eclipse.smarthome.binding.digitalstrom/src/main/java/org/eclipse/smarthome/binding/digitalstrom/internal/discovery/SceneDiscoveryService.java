@@ -15,6 +15,7 @@ import java.util.Map;
 
 import org.eclipse.smarthome.binding.digitalstrom.handler.BridgeHandler;
 import org.eclipse.smarthome.binding.digitalstrom.handler.SceneHandler;
+import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.constants.FuncNameAndColorGroupEnum;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.scene.InternalScene;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.scene.constants.SceneEnum;
 import org.eclipse.smarthome.config.discovery.AbstractDiscoveryService;
@@ -84,7 +85,7 @@ public class SceneDiscoveryService extends AbstractDiscoveryService {
 
     private void onSceneAddedInternal(InternalScene scene) {
         if (scene != null && scene.getSceneType().equals(sceneType)) {
-            if (!ignoredScene(scene.getSceneID())) {
+            if (!ignoredScene(scene.getSceneID()) && !ignoreGroup(scene.getGroupID())) {
                 ThingUID thingUID = getThingUID(scene);
                 if (thingUID != null) {
                     ThingUID bridgeUID = bridgeHandler.getThing().getUID();
@@ -107,6 +108,15 @@ public class SceneDiscoveryService extends AbstractDiscoveryService {
                             scene.getID());
                 }
             }
+        }
+    }
+
+    private boolean ignoreGroup(short groupID) {
+        switch (FuncNameAndColorGroupEnum.getMode(groupID)) {
+            case TEMPERATION_CONTROL:
+                return true;
+            default:
+                return false;
         }
     }
 

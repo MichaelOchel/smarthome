@@ -21,12 +21,14 @@ import java.util.Set;
 
 import org.apache.commons.lang.StringUtils;
 import org.eclipse.smarthome.binding.digitalstrom.DigitalSTROMBindingConstants;
+import org.eclipse.smarthome.binding.digitalstrom.internal.lib.config.Config;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.listener.DeviceStatusListener;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.Device;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.DeviceSceneSpec;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.DeviceStateUpdate;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.constants.ChangeableDeviceConfigEnum;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.constants.DeviceBinarayInputEnum;
+import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.constants.OutputModeEnum;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.constants.SensorEnum;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.impl.DeviceBinaryInput;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.impl.DeviceStateUpdateImpl;
@@ -67,13 +69,14 @@ import org.slf4j.LoggerFactory;
  *
  * @author Michael Ochel - Initial contribution
  * @author Matthias Siegele - Initial contribution
- *
  */
 public class DeviceHandler extends BaseThingHandler implements DeviceStatusListener {
 
     private Logger logger = LoggerFactory.getLogger(DeviceHandler.class);
 
-    // will be filled by DsDeviceThingTypeProvider
+    /**
+     * Contains all supported thing types of this handler, will be filled by DsDeviceThingTypeProvider.
+     */
     public static Set<ThingTypeUID> SUPPORTED_THING_TYPES = new HashSet<ThingTypeUID>();
 
     private String dSID = null;
@@ -82,7 +85,13 @@ public class DeviceHandler extends BaseThingHandler implements DeviceStatusListe
 
     private Command lastComand = null;
     private String currentChannel = null;
+    private List<String> loadedSensorChannels = null;
 
+    /**
+     * Creates a new {@link DeviceHandler}.
+     *
+     * @param thing
+     */
     public DeviceHandler(Thing thing) {
         super(thing);
     }
@@ -113,7 +122,8 @@ public class DeviceHandler extends BaseThingHandler implements DeviceStatusListe
             }
         }
         if (device != null) {
-            device.setSensorDataRefreshPriority(REFRESH_PRIORITY_NEVER, REFRESH_PRIORITY_NEVER, REFRESH_PRIORITY_NEVER);
+            device.setSensorDataRefreshPriority(Config.REFRESH_PRIORITY_NEVER, Config.REFRESH_PRIORITY_NEVER,
+                    Config.REFRESH_PRIORITY_NEVER);
         }
         device = null;
     }
@@ -152,8 +162,8 @@ public class DeviceHandler extends BaseThingHandler implements DeviceStatusListe
                 if (getDssBridgeHandler() != null && device == null) {
                     updateStatus(ThingStatus.ONLINE, ThingStatusDetail.CONFIGURATION_PENDING,
                             "waiting for listener registration");
-                    // TODO: testen obs klappt .. ist schon in getDssBridgeHandler() drin
-                    // dssBridgeHandler.registerDeviceStatusListener(this);
+                } else {
+                    updateStatus(ThingStatus.ONLINE);
                 }
             } else {
                 updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.CONFIGURATION_ERROR, "No dSID is set!");
@@ -282,7 +292,6 @@ public class DeviceHandler extends BaseThingHandler implements DeviceStatusListe
             if (handler instanceof BridgeHandler) {
                 dssBridgeHandler = (BridgeHandler) handler;
                 if (device == null) {
-                    // TODO: testen
                     dssBridgeHandler.registerDeviceStatusListener(this);
                 }
             } else {
@@ -540,31 +549,34 @@ public class DeviceHandler extends BaseThingHandler implements DeviceStatusListe
             Configuration config = getThing().getConfiguration();
             logger.debug("Add sensor priorities to the device");
 
-            // TODO: Output-Mode = Wipe = active power prio = low
-            String activePowerPrio = DigitalSTROMBindingConstants.REFRESH_PRIORITY_NEVER;
+            String activePowerPrio = Config.REFRESH_PRIORITY_NEVER;
             if (config.get(DigitalSTROMBindingConstants.ACTIVE_POWER_REFRESH_PRIORITY) != null) {
                 activePowerPrio = config.get(DigitalSTROMBindingConstants.ACTIVE_POWER_REFRESH_PRIORITY).toString();
             } else {
-                config.put(DigitalSTROMBindingConstants.ACTIVE_POWER_REFRESH_PRIORITY,
-                        DigitalSTROMBindingConstants.REFRESH_PRIORITY_NEVER);
+                config.put(DigitalSTROMBindingConstants.ACTIVE_POWER_REFRESH_PRIORITY, Config.REFRESH_PRIORITY_NEVER);
+                configChanged = true;
+            }
+            // By devices with output mode WIPE the active power always will be read out to check, if the device is not
+            // in standby any more.
+            if (OutputModeEnum.WIPE.equals(device.getOutputMode())
+                    && activePowerPrio.equals(Config.REFRESH_PRIORITY_NEVER)) {
+                config.put(DigitalSTROMBindingConstants.ACTIVE_POWER_REFRESH_PRIORITY, Config.REFRESH_PRIORITY_LOW);
                 configChanged = true;
             }
 
-            String outputCurrentPrio = DigitalSTROMBindingConstants.REFRESH_PRIORITY_NEVER;
+            String outputCurrentPrio = Config.REFRESH_PRIORITY_NEVER;
             if (config.get(DigitalSTROMBindingConstants.OUTPUT_CURRENT_REFRESH_PRIORITY) != null) {
                 outputCurrentPrio = config.get(DigitalSTROMBindingConstants.OUTPUT_CURRENT_REFRESH_PRIORITY).toString();
             } else {
-                config.put(DigitalSTROMBindingConstants.OUTPUT_CURRENT_REFRESH_PRIORITY,
-                        DigitalSTROMBindingConstants.REFRESH_PRIORITY_NEVER);
+                config.put(DigitalSTROMBindingConstants.OUTPUT_CURRENT_REFRESH_PRIORITY, Config.REFRESH_PRIORITY_NEVER);
                 configChanged = true;
             }
 
-            String electricMeterPrio = DigitalSTROMBindingConstants.REFRESH_PRIORITY_NEVER;
+            String electricMeterPrio = Config.REFRESH_PRIORITY_NEVER;
             if (config.get(DigitalSTROMBindingConstants.ELECTRIC_METER_REFRESH_PRIORITY) != null) {
                 electricMeterPrio = config.get(DigitalSTROMBindingConstants.ELECTRIC_METER_REFRESH_PRIORITY).toString();
             } else {
-                config.put(DigitalSTROMBindingConstants.ELECTRIC_METER_REFRESH_PRIORITY,
-                        DigitalSTROMBindingConstants.REFRESH_PRIORITY_NEVER);
+                config.put(DigitalSTROMBindingConstants.ELECTRIC_METER_REFRESH_PRIORITY, Config.REFRESH_PRIORITY_NEVER);
                 configChanged = true;
             }
 
@@ -582,8 +594,6 @@ public class DeviceHandler extends BaseThingHandler implements DeviceStatusListe
             checkSensorChannel();
         }
     }
-
-    private List<String> loadedSensorChannels = null;
 
     private boolean addLoadedSensorChannel(String sensorChannelType) {
         if (loadedSensorChannels == null) {
@@ -643,7 +653,7 @@ public class DeviceHandler extends BaseThingHandler implements DeviceStatusListe
                                 addLoadedSensorChannel(channelID);
                             }
                         } else {
-                            if (device.containsSensorType(sensorType)) {
+                            if (device.supportsSensorType(sensorType)) {
                                 addLoadedSensorChannel(channelID);
                             } else {
                                 channelInter.remove();
@@ -726,7 +736,6 @@ public class DeviceHandler extends BaseThingHandler implements DeviceStatusListe
 
     private void loadOutputChannel(ChannelTypeUID channelTypeUID, String acceptedItemType) {
         if (channelTypeUID != null) {
-            // TODO: hier removen?
             currentChannel = channelTypeUID.getId();
 
             List<Channel> channelList = new LinkedList<Channel>(this.getThing().getChannels());

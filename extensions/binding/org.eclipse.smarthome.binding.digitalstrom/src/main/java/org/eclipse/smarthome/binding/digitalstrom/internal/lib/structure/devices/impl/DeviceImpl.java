@@ -134,56 +134,57 @@ public class DeviceImpl extends AbstractGeneralDeviceInformations implements Dev
     /**
      * Creates a new {@link DeviceImpl} from the given DigitalSTROM-Device {@link JsonObject}.
      *
-     * @param group json object
+     * @param deviceJsonObject
      */
-    public DeviceImpl(JsonObject object) {
-        super(object);
-        if (object.get(JSONApiResponseKeysEnum.METER_DSID.getKey()) != null) {
-            this.meterDSID = new DSID(object.get(JSONApiResponseKeysEnum.METER_DSID.getKey()).getAsString());
-        } else if (object.get(JSONApiResponseKeysEnum.DS_METER_DSID.getKey()) != null) {
-            this.meterDSID = new DSID(object.get(JSONApiResponseKeysEnum.DS_METER_DSID.getKey()).getAsString());
+    public DeviceImpl(JsonObject deviceJsonObject) {
+        super(deviceJsonObject);
+        if (deviceJsonObject.get(JSONApiResponseKeysEnum.METER_DSID.getKey()) != null) {
+            this.meterDSID = new DSID(deviceJsonObject.get(JSONApiResponseKeysEnum.METER_DSID.getKey()).getAsString());
+        } else if (deviceJsonObject.get(JSONApiResponseKeysEnum.DS_METER_DSID.getKey()) != null) {
+            this.meterDSID = new DSID(
+                    deviceJsonObject.get(JSONApiResponseKeysEnum.DS_METER_DSID.getKey()).getAsString());
         }
-        if (object.get(JSONApiResponseKeysEnum.HW_INFO.getKey()) != null) {
-            this.hwInfo = object.get(JSONApiResponseKeysEnum.HW_INFO.getKey()).getAsString();
-        } else if (object.get(JSONApiResponseKeysEnum.HW_INFO_UPPER_HW.getKey()) != null) {
-            this.hwInfo = object.get(JSONApiResponseKeysEnum.HW_INFO_UPPER_HW.getKey()).getAsString();
+        if (deviceJsonObject.get(JSONApiResponseKeysEnum.HW_INFO.getKey()) != null) {
+            this.hwInfo = deviceJsonObject.get(JSONApiResponseKeysEnum.HW_INFO.getKey()).getAsString();
+        } else if (deviceJsonObject.get(JSONApiResponseKeysEnum.HW_INFO_UPPER_HW.getKey()) != null) {
+            this.hwInfo = deviceJsonObject.get(JSONApiResponseKeysEnum.HW_INFO_UPPER_HW.getKey()).getAsString();
         }
-        if (object.get(JSONApiResponseKeysEnum.ON.getKey()) != null) {
+        if (deviceJsonObject.get(JSONApiResponseKeysEnum.ON.getKey()) != null) {
             if (!isShade()) {
-                this.isOn = object.get(JSONApiResponseKeysEnum.ON.getKey()).getAsBoolean();
+                this.isOn = deviceJsonObject.get(JSONApiResponseKeysEnum.ON.getKey()).getAsBoolean();
             } else {
-                this.isOpen = object.get(JSONApiResponseKeysEnum.ON.getKey()).getAsBoolean();
+                this.isOpen = deviceJsonObject.get(JSONApiResponseKeysEnum.ON.getKey()).getAsBoolean();
             }
         }
-        if (object.get(JSONApiResponseKeysEnum.ZONE_ID.getKey()) != null) {
-            zoneId = object.get(JSONApiResponseKeysEnum.ZONE_ID.getKey()).getAsInt();
-        } else if (object.get(JSONApiResponseKeysEnum.ZONE_ID_Lower_Z.getKey()) != null) {
-            zoneId = object.get(JSONApiResponseKeysEnum.ZONE_ID_Lower_Z.getKey()).getAsInt();
+        if (deviceJsonObject.get(JSONApiResponseKeysEnum.ZONE_ID.getKey()) != null) {
+            zoneId = deviceJsonObject.get(JSONApiResponseKeysEnum.ZONE_ID.getKey()).getAsInt();
+        } else if (deviceJsonObject.get(JSONApiResponseKeysEnum.ZONE_ID_Lower_Z.getKey()) != null) {
+            zoneId = deviceJsonObject.get(JSONApiResponseKeysEnum.ZONE_ID_Lower_Z.getKey()).getAsInt();
         }
-        if (object.get(JSONApiResponseKeysEnum.GROUPS.getKey()).isJsonArray()) {
-            JsonArray array = object.get(JSONApiResponseKeysEnum.GROUPS.getKey()).getAsJsonArray();
+        if (deviceJsonObject.get(JSONApiResponseKeysEnum.GROUPS.getKey()).isJsonArray()) {
+            JsonArray array = deviceJsonObject.get(JSONApiResponseKeysEnum.GROUPS.getKey()).getAsJsonArray();
             for (int i = 0; i < array.size(); i++) {
                 if (array.get(i) != null) {
                     initAddGroup(array.get(i).getAsShort());
                 }
             }
-        } else if (object.get(JSONApiResponseKeysEnum.GROUPS.getKey()).isJsonObject()) {
-            for (Entry<String, JsonElement> entry : object.get(JSONApiResponseKeysEnum.GROUPS.getKey())
+        } else if (deviceJsonObject.get(JSONApiResponseKeysEnum.GROUPS.getKey()).isJsonObject()) {
+            for (Entry<String, JsonElement> entry : deviceJsonObject.get(JSONApiResponseKeysEnum.GROUPS.getKey())
                     .getAsJsonObject().entrySet()) {
                 initAddGroup(entry.getValue().getAsJsonObject().get(JSONApiResponseKeysEnum.ID.getKey()).getAsShort());
             }
         }
-        if (object.get(JSONApiResponseKeysEnum.OUTPUT_MODE.getKey()) != null) {
-            int tmp = object.get(JSONApiResponseKeysEnum.OUTPUT_MODE.getKey()).getAsInt();
+        if (deviceJsonObject.get(JSONApiResponseKeysEnum.OUTPUT_MODE.getKey()) != null) {
+            int tmp = deviceJsonObject.get(JSONApiResponseKeysEnum.OUTPUT_MODE.getKey()).getAsInt();
             if (tmp != -1) {
                 if (OutputModeEnum.containsMode(tmp)) {
                     outputMode = OutputModeEnum.getMode(tmp);
                 }
             }
         }
-        if (object.get(JSONApiResponseKeysEnum.SENSOR_INPUTS.getKey()) != null
-                && object.get(JSONApiResponseKeysEnum.SENSOR_INPUTS.getKey()).isJsonObject()) {
-            JsonObject jObj = object.get(JSONApiResponseKeysEnum.SENSOR_INPUTS.getKey()).getAsJsonObject();
+        if (deviceJsonObject.get(JSONApiResponseKeysEnum.SENSOR_INPUTS.getKey()) != null
+                && deviceJsonObject.get(JSONApiResponseKeysEnum.SENSOR_INPUTS.getKey()).isJsonObject()) {
+            JsonObject jObj = deviceJsonObject.get(JSONApiResponseKeysEnum.SENSOR_INPUTS.getKey()).getAsJsonObject();
             for (Entry<String, JsonElement> entry : jObj.entrySet()) {
                 if (entry.getValue().isJsonObject()) {
                     JsonObject sensorType = entry.getValue().getAsJsonObject();
@@ -196,9 +197,9 @@ public class DeviceImpl extends AbstractGeneralDeviceInformations implements Dev
                 }
             }
         }
-        if (object.get(JSONApiResponseKeysEnum.BINARY_INPUTS.getKey()) != null
-                && object.get(JSONApiResponseKeysEnum.BINARY_INPUTS.getKey()).isJsonObject()) {
-            JsonObject jObj = object.get(JSONApiResponseKeysEnum.BINARY_INPUTS.getKey()).getAsJsonObject();
+        if (deviceJsonObject.get(JSONApiResponseKeysEnum.BINARY_INPUTS.getKey()) != null
+                && deviceJsonObject.get(JSONApiResponseKeysEnum.BINARY_INPUTS.getKey()).isJsonObject()) {
+            JsonObject jObj = deviceJsonObject.get(JSONApiResponseKeysEnum.BINARY_INPUTS.getKey()).getAsJsonObject();
             for (Entry<String, JsonElement> entry : jObj.entrySet()) {
                 if (entry.getValue().isJsonObject()) {
                     JsonObject binaryInput = entry.getValue().getAsJsonObject();
@@ -938,6 +939,7 @@ public class DeviceImpl extends AbstractGeneralDeviceInformations implements Dev
         return this.getDSID().hashCode();
     }
 
+    @Override
     public boolean isPowerSensorUpToDate(SensorEnum powerSensorType) {
         if (powerSensorType != null && SensorEnum.isPowerSensor(powerSensorType)) {
             boolean isUpToDate = true;
@@ -1169,6 +1171,7 @@ public class DeviceImpl extends AbstractGeneralDeviceInformations implements Dev
     }
 
     // Device sensors
+    @Override
     public List<SensorEnum> getSensorTypes() {
         List<SensorEnum> list = Lists.newArrayList(devicePowerSensorTypes);
         list.addAll(deviceClimateSensorTypes);
@@ -1191,7 +1194,7 @@ public class DeviceImpl extends AbstractGeneralDeviceInformations implements Dev
     }
 
     @Override
-    public boolean containsSensorType(SensorEnum sensorType) {
+    public boolean supportsSensorType(SensorEnum sensorType) {
         if (sensorType != null) {
             return getSensorTypes().contains(sensorType);
         }
@@ -1751,7 +1754,8 @@ public class DeviceImpl extends AbstractGeneralDeviceInformations implements Dev
         String[] scenes = propertries.split("\n");
         for (int i = 0; i < scenes.length; i++) {
             logger.debug("Find saved scene configuration for device with dSID {} and sceneID {}", dsid, i);
-            String[] sceneParm = scenes[i].replace(" ", "").split(",");
+            String[] sceneIdToConfig = scenes[i].replaceAll(" ", "").split("=");
+            String[] sceneParm = sceneIdToConfig[1].split(",");
             JSONDeviceSceneSpecImpl sceneSpecNew = null;
             int sceneValue = -1;
             int sceneAngle = -1;
@@ -1843,12 +1847,14 @@ public class DeviceImpl extends AbstractGeneralDeviceInformations implements Dev
     }
 
     @Override
-    public void setBinaryInputState(DeviceBinarayInputEnum binaryInputType, Short newState) {
+    public boolean setBinaryInputState(DeviceBinarayInputEnum binaryInputType, Short newState) {
         DeviceBinaryInput devBinInput = getBinaryInput(binaryInputType);
         if (devBinInput != null) {
             devBinInput.setState(newState);
             informListenerAboutStateUpdate(new DeviceStateUpdateImpl(binaryInputType, newState));
+            return true;
         }
+        return false;
     }
 
     @Override
@@ -1863,7 +1869,7 @@ public class DeviceImpl extends AbstractGeneralDeviceInformations implements Dev
         return "DeviceImpl [meterDSID=" + meterDSID + ", zoneId=" + zoneId + ", groupList=" + groupList
                 + ", functionalGroup=" + functionalGroup + ", functionalName=" + functionalName + ", hwInfo=" + hwInfo
                 + ", getName()=" + getName() + ", getDSID()=" + getDSID() + ", getDSUID()=" + getDSUID()
-                + ", isPresent()=" + isPresent() + ", isValide()=" + isValide() + ", getDisplayID()=" + getDisplayID()
+                + ", isPresent()=" + isPresent() + ", isValide()=" + isValid() + ", getDisplayID()=" + getDisplayID()
                 + ", outputMode=" + outputMode + ", getSensorTypes()=" + getSensorTypes() + ", getDeviceSensorValues()="
                 + getDeviceSensorValues() + ", powerSensorRefresh=" + powerSensorRefreshToString() + "]";
     }

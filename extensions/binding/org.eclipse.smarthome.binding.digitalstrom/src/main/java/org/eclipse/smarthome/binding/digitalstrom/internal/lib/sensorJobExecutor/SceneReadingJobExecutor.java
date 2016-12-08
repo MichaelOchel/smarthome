@@ -36,6 +36,11 @@ public class SceneReadingJobExecutor extends AbstractSensorJobExecutor {
 
     private Logger logger = LoggerFactory.getLogger(SceneReadingJobExecutor.class);
 
+    /**
+     * Creates a new {@link SceneReadingJobExecutor}.
+     * 
+     * @param connectionManager
+     */
     public SceneReadingJobExecutor(ConnectionManager connectionManager) {
         super(connectionManager);
     }

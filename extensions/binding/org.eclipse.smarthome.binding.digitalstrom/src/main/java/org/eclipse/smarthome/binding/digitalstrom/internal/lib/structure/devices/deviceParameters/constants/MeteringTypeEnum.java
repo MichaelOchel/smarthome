@@ -14,7 +14,7 @@ import com.google.common.collect.Lists;
 /**
  * The {@link MeteringTypeEnum} lists all available digitalSTROM metering types.
  *
- * @author Alexander Betker
+ * @author Alexander Betker - initial contributer
  * @author Michael Ochel - add MeteringUnitEnum list
  * @author Matthias Siegele - add MeteringUnitEnum list
  */
@@ -24,12 +24,17 @@ public enum MeteringTypeEnum {
     // energyDelta(Lists.newArrayList(MeteringUnitsEnum.Wh, MeteringUnitsEnum.Ws)),
     consumption(Lists.newArrayList(MeteringUnitsEnum.Wh));
 
-    public final List<MeteringUnitsEnum> meteringUnits;
+    private final List<MeteringUnitsEnum> meteringUnits;
 
     private MeteringTypeEnum(List<MeteringUnitsEnum> meteringUnits) {
         this.meteringUnits = meteringUnits;
     }
 
+    /**
+     * Returns the available units as {@link List} for this {@link MeteringTypeEnum}.
+     *
+     * @return units
+     */
     public List<MeteringUnitsEnum> getMeteringUnitList() {
         return meteringUnits;
     }

@@ -106,6 +106,13 @@ public class SceneConfigReadingJob implements SensorJob {
         return getID(device, sceneID);
     }
 
+    /**
+     * Returns the id for a {@link SceneConfigReadingJob} with the given {@link Device} and sceneID.
+     *
+     * @param device
+     * @param sceneID
+     * @return id
+     */
     public static String getID(Device device, Short sceneID) {
         return SceneConfigReadingJob.class.getSimpleName() + "-" + device.getDSID().getValue() + "-" + sceneID;
     }

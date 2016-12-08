@@ -1,3 +1,10 @@
+/**
+ * Copyright (c) 2014-2016 by the respective copyright holders.
+ * All rights reserved. This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License v1.0
+ * which accompanies this distribution, and is available at
+ * http://www.eclipse.org/legal/epl-v10.html
+ */
 package org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.impl;
 
 import java.util.List;
@@ -14,6 +21,12 @@ import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices
 import com.google.common.collect.Lists;
 import com.google.gson.JsonObject;
 
+/**
+ * The {@link CircuitImpl} is the implementation of the {@link Circuit} and represent a digitalSTROM circuit.
+ *
+ * @author Michael Ochel - initial contributer
+ * @author Matthias Siegele - initial contributer
+ */
 public class CircuitImpl extends AbstractGeneralDeviceInformations implements Circuit {
 
     // Config
@@ -42,6 +55,11 @@ public class CircuitImpl extends AbstractGeneralDeviceInformations implements Ci
     // CachedMeteringValue energyDeltaWh = null;
     // CachedMeteringValue energyDeltaWs = null;
 
+    /**
+     * Creates a new {@link CircuitImpl} through the digitalSTROM json response as {@link JsonObject}.
+     * 
+     * @param jObject
+     */
     public CircuitImpl(JsonObject jObject) {
         super(jObject);
         if (jObject.get(JSONApiResponseKeysEnum.HW_VERSION.getKey()) != null) {

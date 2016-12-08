@@ -10,7 +10,9 @@ package org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure;
 /**
  * The {@link Group} represents a digitalSTROM-Group.
  *
- * @author Alexander Betker
+ * @author Alexander Betker - initial contributer
+ * @author Michael Ochel - add java-doc
+ * @author Matthias Siegele - add java-doc
  */
 public interface Group {
 

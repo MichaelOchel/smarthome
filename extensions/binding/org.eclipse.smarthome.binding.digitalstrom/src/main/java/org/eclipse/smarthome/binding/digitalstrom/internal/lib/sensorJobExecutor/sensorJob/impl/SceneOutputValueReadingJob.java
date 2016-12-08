@@ -109,6 +109,13 @@ public class SceneOutputValueReadingJob implements SensorJob {
         return getID(device, sceneID);
     }
 
+    /**
+     * Returns the id for a {@link SceneOutputValueReadingJob} with the given {@link Device} and sceneID.
+     *
+     * @param device
+     * @param sceneID
+     * @return id
+     */
     public static String getID(Device device, Short sceneID) {
         return DeviceOutputValueSensorJob.class.getSimpleName() + "-" + device.getDSID().getValue() + "-" + sceneID;
     }

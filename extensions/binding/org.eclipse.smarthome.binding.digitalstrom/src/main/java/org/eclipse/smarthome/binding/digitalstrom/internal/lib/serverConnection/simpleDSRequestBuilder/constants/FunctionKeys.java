@@ -10,8 +10,8 @@ package org.eclipse.smarthome.binding.digitalstrom.internal.lib.serverConnection
 /**
  * The {@link FunctionKeys} contains digitalSTROM-JSON function keys.
  *
- * @author Michael Ochel
- * @author Matthias Siegele
+ * @author Michael Ochel - initial contributer
+ * @author Matthias Siegele - initial contributer
  */
 public class FunctionKeys {
 

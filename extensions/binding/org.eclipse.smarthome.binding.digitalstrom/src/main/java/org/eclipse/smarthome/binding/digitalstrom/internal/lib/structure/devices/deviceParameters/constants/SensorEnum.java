@@ -107,6 +107,12 @@ public enum SensorEnum {
         return SENSOR_ENUMS.keySet().contains(typeIndex);
     }
 
+    /**
+     * Return true, if the given {@link SensorEnum} is a climate sensor, otherwise false.
+     *
+     * @param sensorType
+     * @return true, if {@link SensorEnum} is climate sensor, otherwise false.
+     */
     public static boolean isClimateSensor(SensorEnum sensorType) {
         if (sensorType != null) {
             switch (sensorType) {
@@ -132,6 +138,18 @@ public enum SensorEnum {
         return false;
     }
 
+    /**
+     * Return true, if the given {@link SensorEnum} is a power sensor, otherwise false.<br>
+     * <b>Power sensors are:</b><br>
+     * - {@link #ACTIVE_POWER}<br>
+     * - {@link #OUTPUT_CURRENT}<br>
+     * - {@link #ELECTRIC_METER}<br>
+     * - {@link #OUTPUT_CURRENT_H}<br>
+     * - {@link #POWER_CONSUMPTION}
+     *
+     * @param sensorType
+     * @return true, if {@link SensorEnum} is power sensor, otherwise false.
+     */
     public static boolean isPowerSensor(SensorEnum sensorType) {
         if (sensorType != null) {
             switch (sensorType) {

@@ -18,8 +18,10 @@ import com.google.gson.JsonObject;
  * The {@link JSONDeviceSceneSpecImpl} is the implementation of the {@link DeviceSceneSpec}.
  *
  * @author Alexander Betker - Initial contribution
- * @author Michael Ochel - change from SimpleJSON to GSON
- * @author Matthias Siegele - change from SimpleJSON to GSON
+ * @author Michael Ochel - change from SimpleJSON to GSON, add constructor JSONDeviceSceneSpecImpl(Short sceneID) and
+ *         JSONDeviceSceneSpecImpl(String sceneName)
+ * @author Matthias Siegele - change from SimpleJSON to GSON, add constructor JSONDeviceSceneSpecImpl(Short sceneID) and
+ *         JSONDeviceSceneSpecImpl(String sceneName)
  */
 public class JSONDeviceSceneSpecImpl implements DeviceSceneSpec {
 
@@ -29,6 +31,11 @@ public class JSONDeviceSceneSpecImpl implements DeviceSceneSpec {
     private boolean specialMode = false;
     private boolean flashMode = false;
 
+    /**
+     * Creates a new {@link JSONDeviceSceneSpecImpl} through the digitalSTROM json response as {@link JsonObject}.
+     *
+     * @param jObject
+     */
     public JSONDeviceSceneSpecImpl(JsonObject jObject) {
         if (jObject.get(JSONApiResponseKeysEnum.SCENE_ID.getKey()) != null) {
             short val = -1;
@@ -52,10 +59,20 @@ public class JSONDeviceSceneSpecImpl implements DeviceSceneSpec {
         }
     }
 
+    /**
+     * Creates a new {@link JSONDeviceSceneSpecImpl} through the given sceneID.
+     *
+     * @param sceneID
+     */
     public JSONDeviceSceneSpecImpl(Short sceneID) {
         this.scene = SceneEnum.getScene(sceneID);
     }
 
+    /**
+     * Creates a new {@link JSONDeviceSceneSpecImpl} through the given sceneName.
+     *
+     * @param sceneName
+     */
     public JSONDeviceSceneSpecImpl(String sceneName) {
         try {
             this.scene = SceneEnum.valueOf(sceneName);

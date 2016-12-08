@@ -12,8 +12,8 @@ import org.eclipse.smarthome.binding.digitalstrom.internal.lib.serverConnection.
 /**
  * The {@link ExeptionConstants} contains the {@link SimpleRequestBuilder} exception strings.
  *
- * @author Michael Ochel
- * @author Matthias Siegele
+ * @author Michael Ochel - initial contributer
+ * @author Matthias Siegele - initial contributer
  */
 public class ExeptionConstants {
     public static final String NO_CLASS_ADDED = "No class added! Please add a class first!";

@@ -10,7 +10,7 @@ package org.eclipse.smarthome.binding.digitalstrom.internal.lib.serverConnection
 /**
  * The {@link JSONApiResponseKeysEnum} contains digitalSTROM-JSON response keys.
  *
- * @author Alexander Betker
+ * @author Alexander Betker - initial contributer
  * @author Michael Ochel completely changed and updated only methods remained
  * @author Matthias Siegele completely changed and updated only methods remained
  */
@@ -203,7 +203,8 @@ public enum JSONApiResponseKeysEnum {
     SENSOR_INPUTS("sensorInputs"),
     GROUP("group"),
     LAST_CALL_SCENE("lastCalledScene"),
-    BINARY_INPUTS("binaryInputs");
+    BINARY_INPUTS("binaryInputs"),
+    STATE("state");
 
     private final String key;
 

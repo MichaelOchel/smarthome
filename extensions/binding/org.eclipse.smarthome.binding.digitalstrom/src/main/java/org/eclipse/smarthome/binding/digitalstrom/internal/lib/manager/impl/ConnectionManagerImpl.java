@@ -31,74 +31,209 @@ import com.google.gson.JsonObject;
  */
 public class ConnectionManagerImpl implements ConnectionManager {
 
-    private final String QUERY_GET_ENABLED_APPLICATION_TOKENS = "/system/security/applicationTokens/enabled/*(*)";
+    /**
+     * Query to get all enabled application tokens. Can be executed with {@link DsAPI#query(String, String)} or
+     * {@link DsAPI#query2(String, String)}.
+     */
+    public final String QUERY_GET_ENABLED_APPLICATION_TOKENS = "/system/security/applicationTokens/enabled/*(*)";
     private static final Logger logger = LoggerFactory.getLogger(ConnectionManagerImpl.class);
 
     private Config config;
     private ConnectionListener connListener = null;
     private HttpTransport transport;
     private String sessionToken;
-    private Boolean lostConnectionState = false;
+    private Boolean connectionEstablished = false;
     private boolean genAppToken = true;
     private DsAPI digitalSTROMClient;
 
+    /**
+     * The same constructor like {@link #ConnectionManagerImpl(String, String, String, String)}, but the connection
+     * timeout and read timeout can be set, too.
+     *
+     * @param hostArddress (must not be null)
+     * @param connectTimeout (if connectTimeout < 0 the {@link Config#DEFAULT_CONNECTION_TIMEOUT} will be set)
+     * @param readTimeout (if readTimeout < 0 the {@link Config#DEFAULT_CONNECTION_TIMEOUT} will be set)
+     * @param username (can be null, if application token is set)
+     * @param password (can be null, if application token is set
+     * @param applicationToken (can be null, if username and password is set)
+     * @see #ConnectionManagerImpl(String, String, String, String)
+     */
     public ConnectionManagerImpl(String hostArddress, int connectTimeout, int readTimeout, String username,
             String password, String applicationToken) {
         init(hostArddress, connectTimeout, readTimeout, username, password, applicationToken, false);
     }
 
+    /**
+     * Creates a new {@link ConnectionManagerImpl} through a {@link Config} object, which has all configurations set.
+     *
+     * @param config (must not be null)
+     */
     public ConnectionManagerImpl(Config config) {
         init(config, false);
     }
 
+    /**
+     * The same constructor like {@link #ConnectionManagerImpl(Config)}, but a {@link ConnectionListener} can be
+     * registered, too.
+     *
+     * @param config (must not be null)
+     * @param connectionListener (can be null)
+     * @see #ConnectionManagerImpl(Config)
+     */
     public ConnectionManagerImpl(Config config, ConnectionListener connectionListener) {
         this.connListener = connectionListener;
         init(config, false);
     }
 
+    /**
+     * The same constructor like {@link #ConnectionManagerImpl(Config, ConnectionListener)}, but through genApToken it
+     * can be set, if a application token will be automatically generated.
+     *
+     * @param config (must not be null)
+     * @param connectionListener (can be null)
+     * @param genAppToken (true = application token will be generated, otherwise false)
+     * @see #ConnectionManagerImpl(Config, ConnectionListener)
+     */
     public ConnectionManagerImpl(Config config, ConnectionListener connectionListener, boolean genAppToken) {
         this.connListener = connectionListener;
         this.genAppToken = genAppToken;
         init(config, false);
     }
 
+    /**
+     * Creates a new {@link ConnectionManagerImpl} with the given parameters, which are needed to create the
+     * {@link HttpTransport} and to login into the digitalSTROM server. If the application token is null and the
+     * username and password are valid, a application token will be automatically generated or a existing application
+     * token for the at {@link Config#getApplicationName()} set application name will be set.
+     *
+     * @param hostAddress (must not be null)
+     * @param username (can be null, if application token is set)
+     * @param password (can be null, if application token is set
+     * @param applicationToken (can be null, if username and password is set)
+     */
     public ConnectionManagerImpl(String hostAddress, String username, String password, String applicationToken) {
         init(hostAddress, -1, -1, username, password, applicationToken, false);
     }
 
+    /**
+     * The same constructor like {@link #ConnectionManagerImpl(String, String, String, String)}, but without username
+     * and password.
+     *
+     * @param hostAddress (must not be null)
+     * @param applicationToken (must not be null)
+     */
     public ConnectionManagerImpl(String hostAddress, String applicationToken) {
         init(hostAddress, -1, -1, null, null, applicationToken, false);
     }
 
+    /**
+     * The same constructor like {@link #ConnectionManagerImpl(String, String, String, String)}, but without application
+     * token.
+     *
+     * @param hostAddress (must not be null)
+     * @param username (must not be null)
+     * @param password (must not be null)
+     * @see #ConnectionManagerImpl(String, String, String, String)
+     */
+    public ConnectionManagerImpl(String hostAddress, String username, String password) {
+        init(hostAddress, -1, -1, username, password, null, false);
+    }
+
+    /**
+     * The same constructor like {@link #ConnectionManagerImpl(String, String, String)}, but a
+     * {@link ConnectionListener} can be set, too.
+     *
+     * @param hostAddress (must not be null)
+     * @param username (must not be null)
+     * @param password (must not be null)
+     * @param connectionListener (can be null)
+     * @see #ConnectionManagerImpl(String, String, String)
+     */
     public ConnectionManagerImpl(String hostAddress, String username, String password,
             ConnectionListener connectionListener) {
         this.connListener = connectionListener;
         init(hostAddress, -1, -1, username, password, null, false);
     }
 
+    /**
+     * The same constructor like {@link #ConnectionManagerImpl(String, String, String, String)}, but a
+     * {@link ConnectionListener} can be set, too.
+     *
+     * @param hostAddress (must not be null)
+     * @param username (can be null, if application token is set)
+     * @param password (can be null, if application token is set)
+     * @param applicationToken (can be null, if username and password is set)
+     * @param connectionListener (can be null)
+     * @see #ConnectionManagerImpl(String, String, String, String)
+     */
     public ConnectionManagerImpl(String hostAddress, String username, String password, String applicationToken,
             ConnectionListener connectionListener) {
         this.connListener = connectionListener;
         init(hostAddress, -1, -1, username, password, null, false);
     }
 
+    /**
+     * The same constructor like {@link #ConnectionManagerImpl(String, String, String)}, but through genApToken it
+     * can be set, if a application token will be automatically generated.
+     *
+     * @param hostAddress (must not be null)
+     * @param username (must not be null)
+     * @param password (must not be null)
+     * @param genAppToken (true = application token will be generated, otherwise false)
+     * @see #ConnectionManagerImpl(String, String, String, String)
+     */
     public ConnectionManagerImpl(String hostAddress, String username, String password, boolean genAppToken) {
         this.genAppToken = genAppToken;
         init(hostAddress, -1, -1, username, password, null, false);
     }
 
+    /**
+     * The same constructor like {@link #ConnectionManagerImpl(String, String, String, String)}, but through genApToken
+     * it can be set, if a application token will be automatically generated.
+     *
+     * @param hostAddress (must not be null)
+     * @param username (can be null, if application token is set)
+     * @param password (can be null, if application token is set)
+     * @param applicationToken (can be null, if username and password is set)
+     * @param genAppToken (true = application token will be generated, otherwise false)
+     * @see #ConnectionManagerImpl(String, String, String, String)
+     */
     public ConnectionManagerImpl(String hostAddress, String username, String password, String applicationToken,
             boolean genAppToken) {
         this.genAppToken = genAppToken;
         init(hostAddress, -1, -1, username, password, applicationToken, false);
     }
 
+    /**
+     * The same constructor like {@link #ConnectionManagerImpl(String, String, String, String, boolean)}, but through
+     * acceptAllCerts it can be set, if all SSL-Certificates will be accept.
+     *
+     * @param hostAddress (must not be null)
+     * @param username (can be null, if application token is set)
+     * @param password (can be null, if application token is set)
+     * @param applicationToken (can be null, if username and password is set)
+     * @param genAppToken (true = application token will be generated, otherwise false)
+     * @param acceptAllCerts (true = all SSL-Certificates will be accept, otherwise false)
+     * @see #ConnectionManagerImpl(String, String, String, String, boolean)
+     */
     public ConnectionManagerImpl(String hostAddress, String username, String password, String applicationToken,
-            boolean genAppToken, boolean aceptAllCerts) {
+            boolean genAppToken, boolean acceptAllCerts) {
         this.genAppToken = genAppToken;
-        init(hostAddress, -1, -1, username, password, applicationToken, aceptAllCerts);
+        init(hostAddress, -1, -1, username, password, applicationToken, acceptAllCerts);
     }
 
+    /**
+     * The same constructor like {@link #ConnectionManagerImpl(String, String, String, String, boolean)}, but a
+     * {@link ConnectionListener} can be set, too.
+     *
+     * @param hostAddress (must not be null)
+     * @param username (can be null, if application token is set)
+     * @param password (can be null, if application token is set)
+     * @param applicationToken (can be null, if username and password is set)
+     * @param genAppToken (true = application token will be generated, otherwise false)
+     * @param connectionListener (can be null)
+     * @see #ConnectionManagerImpl(String, String, String, String, boolean)
+     */
     public ConnectionManagerImpl(String hostAddress, String username, String password, String applicationToken,
             boolean genAppToken, ConnectionListener connectionListener) {
         this.connListener = connectionListener;
@@ -107,7 +242,7 @@ public class ConnectionManagerImpl implements ConnectionManager {
     }
 
     private void init(String hostAddress, int connectionTimeout, int readTimeout, String username, String password,
-            String applicationToken, boolean aceptAllCerts) {
+            String applicationToken, boolean acceptAllCerts) {
         config = new Config(hostAddress, username, password, applicationToken);
         if (connectionTimeout >= 0) {
             config.setConnectionTimeout(connectionTimeout);
@@ -115,13 +250,13 @@ public class ConnectionManagerImpl implements ConnectionManager {
         if (readTimeout >= 0) {
             config.setReadTimeout(readTimeout);
         }
-        init(config, aceptAllCerts);
+        init(config, acceptAllCerts);
     }
 
-    private void init(Config config, boolean aceptAllCerts) {
-        // this.transport = new HttpTransportImpl(config, aceptAllCerts);
+    private void init(Config config, boolean acceptAllCerts) {
+        // this.transport = new HttpTransportImpl(config, acceptAllCerts);
         this.config = config;
-        this.transport = new HttpTransportImpl(this, aceptAllCerts);
+        this.transport = new HttpTransportImpl(this, acceptAllCerts);
         this.digitalSTROMClient = new DsAPIImpl(transport);
         if (this.genAppToken) {
             this.onNotAuthenticated();
@@ -142,16 +277,6 @@ public class ConnectionManagerImpl implements ConnectionManager {
     public String getSessionToken() {
         return this.sessionToken;
     }
-
-    /*
-     * @Override
-     * public String checkConnectionAndGetSessionToken() {
-     * if (checkConnection()) {
-     * return this.sessionToken;
-     * }
-     * return null;
-     * }
-     */
 
     @Override
     public String getNewSessionToken() {
@@ -176,37 +301,36 @@ public class ConnectionManagerImpl implements ConnectionManager {
     public boolean checkConnection(int code) {
         switch (code) {
             case HttpURLConnection.HTTP_OK:
-                if (!lostConnectionState) {
-                    // TODO:var umbennen
-                    lostConnectionState = true;
+                if (!connectionEstablished) {
+                    connectionEstablished = true;
                     onConnectionResumed();
                 }
                 break;
             case HttpURLConnection.HTTP_UNAUTHORIZED:
-                lostConnectionState = false;
+                connectionEstablished = false;
                 break;
             case HttpURLConnection.HTTP_FORBIDDEN:
                 getNewSessionToken();
                 if (sessionToken != null) {
-                    if (!lostConnectionState) {
+                    if (!connectionEstablished) {
                         onConnectionResumed();
-                        lostConnectionState = true;
+                        connectionEstablished = true;
                     }
                 } else {
                     if (this.genAppToken) {
                         onNotAuthenticated();
                     }
-                    lostConnectionState = false;
+                    connectionEstablished = false;
                 }
                 break;
             case -2:
                 onConnectionLost(ConnectionListener.INVALID_URL);
-                lostConnectionState = false;
+                connectionEstablished = false;
                 break;
             case -3:
             case -4:
                 onConnectionLost(ConnectionListener.CONNECTON_TIMEOUT);
-                lostConnectionState = false;
+                connectionEstablished = false;
                 break;
             case -1:
                 if (connListener != null) {
@@ -231,15 +355,15 @@ public class ConnectionManagerImpl implements ConnectionManager {
                 break;
             case HttpURLConnection.HTTP_NOT_FOUND:
                 onConnectionLost(ConnectionListener.HOST_NOT_FOUND);
-                lostConnectionState = false;
+                connectionEstablished = false;
                 break;
         }
-        return lostConnectionState;
+        return connectionEstablished;
     }
 
     @Override
     public boolean connectionEstablished() {
-        return lostConnectionState;
+        return connectionEstablished;
     }
 
     /**

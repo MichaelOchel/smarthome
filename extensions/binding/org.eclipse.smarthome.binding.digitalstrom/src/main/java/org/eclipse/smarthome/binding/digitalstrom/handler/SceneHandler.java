@@ -44,7 +44,9 @@ import com.google.common.collect.Sets;
 public class SceneHandler extends BaseThingHandler implements SceneStatusListener {
 
     private Logger logger = LoggerFactory.getLogger(SceneHandler.class);
-
+    /**
+     * Contains all supported thing types of this handler.
+     */
     public final static Set<ThingTypeUID> SUPPORTED_THING_TYPES = Sets.newHashSet(
             DigitalSTROMBindingConstants.THING_TYPE_APP_SCENE, DigitalSTROMBindingConstants.THING_TYPE_GROUP_SCENE,
             DigitalSTROMBindingConstants.THING_TYPE_ZONE_SCENE, DigitalSTROMBindingConstants.THING_TYPE_NAMED_SCENE);
@@ -78,6 +80,11 @@ public class SceneHandler extends BaseThingHandler implements SceneStatusListene
     private InternalScene scene;
     private String sceneThingID = null;
 
+    /**
+     * Creates a new {@link SceneHandler}.
+     * 
+     * @param thing
+     */
     public SceneHandler(Thing thing) {
         super(thing);
     }
@@ -146,10 +153,17 @@ public class SceneHandler extends BaseThingHandler implements SceneStatusListene
                         logger.debug("Set status on {}", getThing().getStatus());
                         this.bridgeHandler.registerSceneStatusListener(this);
                 }
+            } else {
+                updateStatus(ThingStatus.ONLINE);
             }
-        } else {
+        }
+        if (bridgeStatusInfo.getStatus().equals(ThingStatus.OFFLINE)) {
             updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.BRIDGE_OFFLINE);
         }
+        if (bridgeStatusInfo.getStatus().equals(ThingStatus.REMOVED)) {
+            updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.NONE, "Bridge has been removed.");
+        }
+        logger.debug("Set status to {}", getThing().getStatusInfo());
     }
 
     /**

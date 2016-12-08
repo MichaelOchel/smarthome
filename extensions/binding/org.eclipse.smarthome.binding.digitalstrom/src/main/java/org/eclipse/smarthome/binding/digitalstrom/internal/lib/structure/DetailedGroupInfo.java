@@ -13,7 +13,9 @@ import java.util.List;
  * The {@link DetailedGroupInfo} represents a digitalSTROM-Group with a list of all dSUID's of the included
  * digitalSTROM-Devices.
  *
- * @author Alexander Betker
+ * @author Alexander Betker - initial contributer
+ * @author Michael Ochel - add java-doc
+ * @author Matthias Siegele - add java-doc
  */
 public interface DetailedGroupInfo extends Group {
 

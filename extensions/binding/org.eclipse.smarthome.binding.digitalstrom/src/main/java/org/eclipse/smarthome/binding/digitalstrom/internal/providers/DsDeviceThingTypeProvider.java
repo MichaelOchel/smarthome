@@ -1,3 +1,10 @@
+/**
+ * Copyright (c) 2014-2016 by the respective copyright holders.
+ * All rights reserved. This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License v1.0
+ * which accompanies this distribution, and is available at
+ * http://www.eclipse.org/legal/epl-v10.html
+ */
 package org.eclipse.smarthome.binding.digitalstrom.internal.providers;
 
 import java.net.URI;
@@ -11,6 +18,7 @@ import java.util.Locale;
 import org.eclipse.smarthome.binding.digitalstrom.DigitalSTROMBindingConstants;
 import org.eclipse.smarthome.binding.digitalstrom.handler.CircuitHandler;
 import org.eclipse.smarthome.binding.digitalstrom.handler.DeviceHandler;
+import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.GeneralDeviceInformations;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.constants.MeteringTypeEnum;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.constants.MeteringUnitsEnum;
 import org.eclipse.smarthome.core.i18n.I18nProvider;
@@ -26,8 +34,25 @@ import org.slf4j.LoggerFactory;
 
 import com.google.common.collect.Lists;
 
+/**
+ * The {@link DsDeviceThingTypeProvider} creates the {@link ThingType}'s for the subclasses of the
+ * {@link GeneralDeviceInformations}. It also adds the {@link ThingTypeUID}'s to the related handlers. So only the
+ * {@link SupportedThingTypes} enum has to be adjusted, if new device types of digitalSTROM should be supported.
+ * Provided the new digitalSTROM devices uses the same mechanism like now.
+ *
+ * @author Michael Ochel - initial contributer
+ * @author Matthias Siegele - initial contributer
+ */
 public class DsDeviceThingTypeProvider implements ThingTypeProvider {
 
+    /**
+     * Through the {@link SupportedThingTypes} the {@link ThingType}'s will be created. For that the enum name will be
+     * used as thing type id, the first field will set the responsible handler and the last enum field will set the
+     * supporting of the power sensor refresh configurations (config-description with refresh priority setting or not).
+     *
+     * @author Michael Ochel - initial contributer
+     * @author Matthias Siegele - initial contributer
+     */
     public static enum SupportedThingTypes {
         // ThingType, responsible ThingHanlder, Device config-description with power-sensors
         GE(DeviceHandler.class.getSimpleName(), true),

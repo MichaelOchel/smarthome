@@ -1,3 +1,10 @@
+/**
+ * Copyright (c) 2014-2016 by the respective copyright holders.
+ * All rights reserved. This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License v1.0
+ * which accompanies this distribution, and is available at
+ * http://www.eclipse.org/legal/epl-v10.html
+ */
 package org.eclipse.smarthome.binding.digitalstrom.internal.discovery;
 
 import static org.eclipse.smarthome.binding.digitalstrom.DigitalSTROMBindingConstants.BINDING_ID;
@@ -9,9 +16,9 @@ import java.util.Map;
 import org.apache.commons.lang.StringUtils;
 import org.eclipse.smarthome.binding.digitalstrom.DigitalSTROMBindingConstants;
 import org.eclipse.smarthome.binding.digitalstrom.handler.BridgeHandler;
+import org.eclipse.smarthome.binding.digitalstrom.internal.lib.climate.TemperatureControlSensorTransmitter;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.climate.jsonResponseContainer.impl.TemperatureControlStatus;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.listener.TemperatureControlStatusListener;
-import org.eclipse.smarthome.binding.digitalstrom.internal.lib.manager.TemperatureSensorTransreciver;
 import org.eclipse.smarthome.config.discovery.AbstractDiscoveryService;
 import org.eclipse.smarthome.config.discovery.DiscoveryResult;
 import org.eclipse.smarthome.config.discovery.DiscoveryResultBuilder;
@@ -22,18 +29,32 @@ import org.slf4j.LoggerFactory;
 
 import com.google.common.collect.Sets;
 
+/**
+ * The {@link ZoneTemperatureControlDiscoveryService} discovers all digitalSTROM zones which have temperature control
+ * configured. The thing-type has to be given to the
+ * {@link #ZoneTemperatureControlDiscoveryService(BridgeHandler, ThingTypeUID)} as {@link ThingTypeUID}. The supported
+ * {@link ThingTypeUID} can be found at {@link ZoneTemperatureControlDiscoveryService#SUPPORTED_THING_TYPES}
+ *
+ * @author Michael Ochel
+ * @author Matthias Siegele
+ */
 public class ZoneTemperatureControlDiscoveryService extends AbstractDiscoveryService
         implements TemperatureControlStatusListener {
 
     private Logger logger = LoggerFactory.getLogger(ZoneTemperatureControlDiscoveryService.class);
-    // private TemperatureControlManager tempConMan;
     BridgeHandler bridgeHandler;
     private final ThingUID BRIDGE_UID;
 
+    /**
+     * Creates a new {@link ZoneTemperatureControlDiscoveryService}.
+     *
+     * @param bridgeHandler
+     * @param supportedThingType
+     * @throws IllegalArgumentException
+     */
     public ZoneTemperatureControlDiscoveryService(BridgeHandler bridgeHandler, ThingTypeUID supportedThingType)
             throws IllegalArgumentException {
         super(Sets.newHashSet(supportedThingType), 10, false);
-        // tempConMan = bridgeHandler.getTemperatureControlManager();
         BRIDGE_UID = bridgeHandler.getThing().getUID();
         this.bridgeHandler = bridgeHandler;
         bridgeHandler.registerTemperatureControlStatusListener(this);
@@ -107,7 +128,7 @@ public class ZoneTemperatureControlDiscoveryService extends AbstractDiscoverySer
     }
 
     @Override
-    public void registerTemperatureSensorTransreciver(TemperatureSensorTransreciver temperatureSensorTransreciver) {
+    public void registerTemperatureSensorTransreciver(TemperatureControlSensorTransmitter temperatureSensorTransreciver) {
         // nothing to do
     }
 

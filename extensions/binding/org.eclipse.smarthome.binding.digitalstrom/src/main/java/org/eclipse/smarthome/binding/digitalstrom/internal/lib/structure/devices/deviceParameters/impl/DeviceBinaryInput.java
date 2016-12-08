@@ -1,11 +1,34 @@
+/**
+ * Copyright (c) 2014-2016 by the respective copyright holders.
+ * All rights reserved. This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License v1.0
+ * which accompanies this distribution, and is available at
+ * http://www.eclipse.org/legal/epl-v10.html
+ */
 package org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.impl;
 
 import java.util.Map.Entry;
 
+import org.eclipse.smarthome.binding.digitalstrom.internal.lib.serverConnection.constants.JSONApiResponseKeysEnum;
+import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.constants.DeviceBinarayInputEnum;
+import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.impl.DeviceImpl;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 
+/**
+ * The {@link DeviceBinaryInput} contains all information of an device binary input, e.g. binary input type id (see
+ * {@link DeviceBinarayInputEnum}, state and so on.
+ *
+ * @author Michael Ochel - initial contributer
+ * @author Matthias Siegele - initial contributer
+ *
+ */
 public class DeviceBinaryInput {
+
+    private Logger logger = LoggerFactory.getLogger(DeviceBinaryInput.class);
 
     private Short targetGroupType = null;
     private Short targetGroup = null;
@@ -13,7 +36,13 @@ public class DeviceBinaryInput {
     private Short inputId = null;
     private Short stateValue = null;
 
-    // TODO: exeption in logger
+    /**
+     * Creates a new {@link DeviceBinarayInputEnum} through the {@link JsonObject} of the binary inputs at json response
+     * from digitalSTROM JSON-API or property-tree. Will be automatically added to a {@link DeviceImpl}, if binary
+     * inputs exists.
+     *
+     * @param jsonObject
+     */
     public DeviceBinaryInput(JsonObject jsonObject) {
         try {
             for (Entry<String, JsonElement> entry : jsonObject.entrySet()) {
@@ -25,19 +54,21 @@ public class DeviceBinaryInput {
                     // ignore
                 }
             }
+            if (stateValue == null && jsonObject.get(JSONApiResponseKeysEnum.STATE.getKey()) != null) {
+                stateValue = jsonObject.get(JSONApiResponseKeysEnum.STATE.getKey()).getAsShort();
+            }
         } catch (IllegalArgumentException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
+            logger.error("A IllegalArgumentException occurred: ", e);
         } catch (IllegalAccessException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
+            logger.error("A IllegalAccessException occurred: ", e);
         } catch (SecurityException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
+            logger.error("A SecurityException occurred: ", e);
         }
     }
 
     /**
+     * Returns the current state of this {@link DeviceBinaryInput}.
+     *
      * @return the state
      */
     public Short getState() {
@@ -45,6 +76,8 @@ public class DeviceBinaryInput {
     }
 
     /**
+     * Sets the state of this {@link DeviceBinaryInput}.
+     * 
      * @param state the state to set
      */
     public void setState(Short state) {
@@ -52,6 +85,8 @@ public class DeviceBinaryInput {
     }
 
     /**
+     * Returns the target group type id of this {@link DeviceBinaryInput}.
+     * 
      * @return the targetGroupType
      */
     public Short getTargetGroupType() {
@@ -59,6 +94,8 @@ public class DeviceBinaryInput {
     }
 
     /**
+     * Returns the target group id of this {@link DeviceBinaryInput}.
+     * 
      * @return the targetGroup
      */
     public Short getTargetGroup() {
@@ -66,6 +103,9 @@ public class DeviceBinaryInput {
     }
 
     /**
+     * Returns the input type id of this {@link DeviceBinaryInput}. Available input types see
+     * {@link DeviceBinarayInputEnum}.
+     * 
      * @return the inputType
      */
     public Short getInputType() {
@@ -73,6 +113,8 @@ public class DeviceBinaryInput {
     }
 
     /**
+     * Returns the input id of this {@link DeviceBinaryInput}.
+     * 
      * @return the inputId
      */
     public Short getInputId() {
