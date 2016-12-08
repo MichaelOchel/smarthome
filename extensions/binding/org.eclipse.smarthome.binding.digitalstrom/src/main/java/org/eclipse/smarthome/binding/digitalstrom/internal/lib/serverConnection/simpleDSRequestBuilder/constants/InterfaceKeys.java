@@ -10,8 +10,8 @@ package org.eclipse.smarthome.binding.digitalstrom.internal.lib.serverConnection
 /**
  * The {@link InterfaceKeys} contains digitalSTROM-JSON interface keys.
  *
- * @author Michael Ochel
- * @author Matthias Siegele
+ * @author Michael Ochel - initial contributer
+ * @author Matthias Siegele - initial contributer
  */
 public class InterfaceKeys {
     public static final String JSON = "json";

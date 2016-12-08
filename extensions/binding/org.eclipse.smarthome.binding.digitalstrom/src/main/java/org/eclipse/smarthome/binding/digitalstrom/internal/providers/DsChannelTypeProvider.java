@@ -47,23 +47,6 @@ import com.google.common.collect.Sets;
  */
 public class DsChannelTypeProvider implements ChannelTypeProvider {
 
-    // private final List<String> SUPPORTED_CHANNEL_TYPES = Lists
-    // .newArrayList(DigitalSTROMBindingConstants.CHANNEL_ID_SCENE
-    // , DigitalSTROMBindingConstants.CHANNEL_ID_TOTAL_ACTIVE_POWER,
-    // DigitalSTROMBindingConstants.CHANNEL_ID_TOTAL_ELECTRIC_METER
-    // );
-
-    /*
-     * output channels dynamic?
-     * dimmer / light, general, heating
-     * switch / light, general, heating
-     * 2/3 stage / light, general
-     * scene
-     * shade / shade
-     * shade angle / shade
-     * temperature controlled
-     * wipe / general
-     */
     private I18nProvider i18n = null;
     private Bundle bundle = null;
 
@@ -146,37 +129,48 @@ public class DsChannelTypeProvider implements ChannelTypeProvider {
         return i18n != null ? i18n.getText(bundle, key, i18n.getText(bundle, key, key, Locale.ENGLISH), locale) : key;
     }
 
+    /**
+     * Returns the output channel type id as {@link String} for the given {@link FunctionalColorGroupEnum} and
+     * {@link OutputModeEnum} or null, if no channel type exists for the given {@link FunctionalColorGroupEnum} and
+     * {@link OutputModeEnum}.
+     *
+     * @param functionalGroup
+     * @param outputMode
+     * @return the output channel type id or null
+     */
     public static String getOutputChannelTypeID(FunctionalColorGroupEnum functionalGroup, OutputModeEnum outputMode) {
-        String channelPreID = GENERAL;
-        if (functionalGroup.equals(FunctionalColorGroupEnum.YELLOW)) {
-            channelPreID = LIGHT;
-        }
-        if (functionalGroup.equals(FunctionalColorGroupEnum.GREY)) {
-            if (outputMode.equals(OutputModeEnum.POSITION_CON)) {
-                return SHADE;
+        if (functionalGroup != null && outputMode != null) {
+            String channelPreID = GENERAL;
+            if (functionalGroup.equals(FunctionalColorGroupEnum.YELLOW)) {
+                channelPreID = LIGHT;
             }
-            if (outputMode.equals(OutputModeEnum.POSITION_CON_US)) {
-                return SHADE + "_" + ANGLE.toLowerCase();
+            if (functionalGroup.equals(FunctionalColorGroupEnum.GREY)) {
+                if (outputMode.equals(OutputModeEnum.POSITION_CON)) {
+                    return SHADE;
+                }
+                if (outputMode.equals(OutputModeEnum.POSITION_CON_US)) {
+                    return SHADE + "_" + ANGLE.toLowerCase();
+                }
             }
-        }
-        if (functionalGroup.equals(FunctionalColorGroupEnum.BLUE)) {
-            channelPreID = HEATING;
-            if (OutputModeEnum.outputModeIsTemperationControlled(outputMode)) {
-                return channelPreID + "_" + TEMPERATURE_CONTROLED.toLowerCase();
+            if (functionalGroup.equals(FunctionalColorGroupEnum.BLUE)) {
+                channelPreID = HEATING;
+                if (OutputModeEnum.outputModeIsTemperationControlled(outputMode)) {
+                    return channelPreID + "_" + TEMPERATURE_CONTROLED.toLowerCase();
+                }
             }
-        }
-        if (OutputModeEnum.outputModeIsSwitch(outputMode)) {
-            return channelPreID + "_" + SWITCH.toLowerCase();
-        }
-        if (OutputModeEnum.outputModeIsDimmable(outputMode)) {
-            return channelPreID + "_" + DIMMER.toLowerCase();
-        }
-        if (!channelPreID.equals(HEATING)) {
-            if (outputMode.equals(OutputModeEnum.COMBINED_2_STAGE_SWITCH)) {
-                return channelPreID + "_2_" + STAGE.toLowerCase();
+            if (OutputModeEnum.outputModeIsSwitch(outputMode)) {
+                return channelPreID + "_" + SWITCH.toLowerCase();
             }
-            if (outputMode.equals(OutputModeEnum.COMBINED_3_STAGE_SWITCH)) {
-                return channelPreID + "_3_" + STAGE.toLowerCase();
+            if (OutputModeEnum.outputModeIsDimmable(outputMode)) {
+                return channelPreID + "_" + DIMMER.toLowerCase();
+            }
+            if (!channelPreID.equals(HEATING)) {
+                if (outputMode.equals(OutputModeEnum.COMBINED_2_STAGE_SWITCH)) {
+                    return channelPreID + "_2_" + STAGE.toLowerCase();
+                }
+                if (outputMode.equals(OutputModeEnum.COMBINED_3_STAGE_SWITCH)) {
+                    return channelPreID + "_3_" + STAGE.toLowerCase();
+                }
             }
         }
         return null;
@@ -184,6 +178,12 @@ public class DsChannelTypeProvider implements ChannelTypeProvider {
 
     private static List<String> supportedOutputChannelTypes = new ArrayList<>();
 
+    /**
+     * Returns true, if the given channel type id is a output channel.
+     *
+     * @param channelTypeID
+     * @return true, if channel type id is output channel
+     */
     public static boolean isOutputChannel(String channelTypeID) {
         return supportedOutputChannelTypes.contains(channelTypeID);
     }
@@ -418,22 +418,28 @@ public class DsChannelTypeProvider implements ChannelTypeProvider {
         return Sets.newHashSet(getText(channelID, locale), getText("SHADE", locale));
     }
 
-    public static String getItemType(String channelID) {
-        if (channelID != null) {
-            if (channelID.contains(STAGE.toLowerCase())) {
+    /**
+     * Returns the supported item type for the given channel type id or null, if the channel type does not exist.
+     *
+     * @param channelTypeID
+     * @return item type or null
+     */
+    public static String getItemType(String channelTypeID) {
+        if (channelTypeID != null) {
+            if (channelTypeID.contains(STAGE.toLowerCase())) {
                 return STRING;
             }
-            if (channelID.contains(SWITCH.toLowerCase()) || channelID.contains(SCENE)
-                    || channelID.contains(WIPE.toLowerCase()) || channelID.contains(BINARY_INPUT_PRE)) {
+            if (channelTypeID.contains(SWITCH.toLowerCase()) || channelTypeID.contains(SCENE)
+                    || channelTypeID.contains(WIPE.toLowerCase()) || channelTypeID.contains(BINARY_INPUT_PRE)) {
                 return SWITCH;
             }
-            if (channelID.contains(DIMMER.toLowerCase()) || channelID.contains(ANGLE.toLowerCase())) {
+            if (channelTypeID.contains(DIMMER.toLowerCase()) || channelTypeID.contains(ANGLE.toLowerCase())) {
                 return DIMMER;
             }
-            if (channelID.contains(TEMPERATURE_CONTROLED.toLowerCase())) {
+            if (channelTypeID.contains(TEMPERATURE_CONTROLED.toLowerCase())) {
                 return NUMBER;
             }
-            if (channelID.contains(SHADE)) {
+            if (channelTypeID.contains(SHADE)) {
                 return ROLLERSHUTTER;
             }
         }
@@ -451,7 +457,6 @@ public class DsChannelTypeProvider implements ChannelTypeProvider {
                         getSensorStateDescription(sensorType), null);
             } catch (IllegalArgumentException e) {
                 if (supportedOutputChannelTypes.contains(channelID)) {
-                    // TODO:WIPE? config standby?
                     return new ChannelType(channelTypeUID, false, getItemType(channelID),
                             getLabelText(channelID, locale), getDescText(channelID, locale), getCategory(channelID),
                             getTags(channelID, locale), getStageDescription(channelID, locale), null);
@@ -511,10 +516,22 @@ public class DsChannelTypeProvider implements ChannelTypeProvider {
         return null;
     }
 
+    /**
+     * Returns the {@link ChannelGroupTypeUID} for the given {@link SensorEnum}.
+     * 
+     * @param sensorType (must not be null)
+     * @return the channel type uid
+     */
     public static ChannelTypeUID getSensorChannelUID(SensorEnum sensorType) {
         return new ChannelTypeUID(BINDING_ID, sensorType.toString().toLowerCase());
     }
 
+    /**
+     * Returns the {@link ChannelGroupTypeUID} for the given {@link DeviceBinarayInputEnum}.
+     * 
+     * @param binaryInputType (must not be null)
+     * @return the channel type uid
+     */
     public static ChannelTypeUID getBinaryInputChannelUID(DeviceBinarayInputEnum binaryInputType) {
         return new ChannelTypeUID(BINDING_ID, BINARY_INPUT_PRE + binaryInputType.toString().toLowerCase());
     }

@@ -10,7 +10,7 @@ package org.eclipse.smarthome.binding.digitalstrom.internal.lib.event.constants;
 import java.util.HashMap;
 
 /**
- * The {@link EventResponseEnum} contains digitalSTROM-Event properties.
+ * The {@link EventResponseEnum} contains digitalSTROM-Event properties of the events at {@link EventNames}.
  *
  * @author Michael Ochel
  * @author Mathias Siegele
@@ -98,7 +98,6 @@ public enum EventResponseEnum {
      *
      * @return id of this {@link EventResponseEnum}
      */
-
     public String getId() {
         return ID;
     }

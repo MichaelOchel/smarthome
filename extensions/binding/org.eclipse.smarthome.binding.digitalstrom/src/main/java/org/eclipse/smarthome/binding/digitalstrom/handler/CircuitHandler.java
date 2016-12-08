@@ -35,11 +35,23 @@ import org.eclipse.smarthome.core.types.Command;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/**
+ * The {@link CircuitHandler} is responsible for handling the configuration and updating the metering channels of a
+ * digitalStrom circuit. <br>
+ * <br>
+ * For that it uses the {@link BridgeHandler} to register this class as a {@link DeviceStatusListener} to get informed
+ * about changes from the accompanying {@link Circuit}.
+ *
+ * @author Michael Ochel
+ * @author Matthias Siegele
+ */
 public class CircuitHandler extends BaseThingHandler implements DeviceStatusListener {
 
     private Logger logger = LoggerFactory.getLogger(CircuitHandler.class);
 
-    // will be filled by DsDeviceThingTypeProvider
+    /**
+     * Contains all supported thing types of this handler, will be filled by DsDeviceThingTypeProvider.
+     */
     public static Set<ThingTypeUID> SUPPORTED_THING_TYPES = new HashSet<ThingTypeUID>();
 
     private String dSID = null;
@@ -47,6 +59,11 @@ public class CircuitHandler extends BaseThingHandler implements DeviceStatusList
 
     private BridgeHandler dssBridgeHandler;
 
+    /**
+     * Creates a new {@link CircuitHandler}.
+     *
+     * @param thing
+     */
     public CircuitHandler(Thing thing) {
         super(thing);
     }
@@ -78,16 +95,6 @@ public class CircuitHandler extends BaseThingHandler implements DeviceStatusList
         }
         circuit = null;
     }
-
-    /*
-     * @Override
-     * public void handleRemoval() {
-     * if (getDssBridgeHandler() != null) {
-     * this.dssBridgeHandler.childThingRemoved(dSID);
-     * }
-     * updateStatus(ThingStatus.REMOVED);
-     * }
-     */
 
     private synchronized BridgeHandler getDssBridgeHandler() {
         if (this.dssBridgeHandler == null) {
@@ -123,7 +130,9 @@ public class CircuitHandler extends BaseThingHandler implements DeviceStatusList
                 if (getDssBridgeHandler() != null && circuit == null) {
                     updateStatus(ThingStatus.ONLINE, ThingStatusDetail.CONFIGURATION_PENDING,
                             "waiting for listener registration");
-                    dssBridgeHandler.registerDeviceStatusListener(this);
+                    // dssBridgeHandler.registerDeviceStatusListener(this);
+                } else {
+                    updateStatus(ThingStatus.ONLINE);
                 }
             } else {
                 updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.CONFIGURATION_ERROR, "No dSID is set!");
@@ -189,10 +198,10 @@ public class CircuitHandler extends BaseThingHandler implements DeviceStatusList
                 updateStatus(statusInfo.getStatus(), statusInfo.getStatusDetail(), statusInfo.getDescription());
                 logger.debug("Set status to {}", getThing().getStatus());
 
-                checkDeviceInfoProperties(this.circuit);
+                checkCircuitInfoProperties(this.circuit);
 
                 // load first channel values
-                onDeviceStateInitial(this.circuit);
+                onCircuitStateInitial(this.circuit);
 
             } else {
                 onDeviceRemoved(device);
@@ -200,7 +209,7 @@ public class CircuitHandler extends BaseThingHandler implements DeviceStatusList
         }
     }
 
-    private void checkDeviceInfoProperties(Circuit device) {
+    private void checkCircuitInfoProperties(Circuit device) {
         boolean propertiesChanged = false;
         Map<String, String> properties = editProperties();
         // check device info
@@ -212,14 +221,37 @@ public class CircuitHandler extends BaseThingHandler implements DeviceStatusList
             properties.put(DigitalSTROMBindingConstants.DEVICE_UID, device.getDSUID());
             propertiesChanged = true;
         }
-        // TODO:füllen
+        if (device.getHwName() != null) {
+            properties.put(DigitalSTROMBindingConstants.HW_NAME, device.getHwName());
+            propertiesChanged = true;
+        }
+        if (device.getHwVersionString() != null) {
+            properties.put(DigitalSTROMBindingConstants.HW_VERSION, device.getHwVersionString());
+            propertiesChanged = true;
+        }
+        if (device.getSwVersion() != null) {
+            properties.put(DigitalSTROMBindingConstants.SW_VERSION, device.getSwVersion());
+            propertiesChanged = true;
+        }
+        if (device.getApiVersion() != null) {
+            properties.put(DigitalSTROMBindingConstants.API_VERSION, device.getApiVersion().toString());
+            propertiesChanged = true;
+        }
+        if (device.getDspSwVersion() != null) {
+            properties.put(DigitalSTROMBindingConstants.DSP_SW_VERSION, device.getDspSwVersion().toString());
+            propertiesChanged = true;
+        }
+        if (device.getArmSwVersion() != null) {
+            properties.put(DigitalSTROMBindingConstants.ARM_SW_VERSION, device.getArmSwVersion().toString());
+            propertiesChanged = true;
+        }
         if (propertiesChanged) {
             super.updateProperties(properties);
             propertiesChanged = false;
         }
     }
 
-    private void onDeviceStateInitial(Circuit circuit) {
+    private void onCircuitStateInitial(Circuit circuit) {
         if (circuit != null) {
             for (CachedMeteringValue cachedMeterValue : circuit.getAllCachedMeteringValues()) {
                 if (cachedMeterValue != null) {

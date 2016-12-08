@@ -92,6 +92,14 @@ public class HttpTransportImpl implements HttpTransport {
         }
     };
 
+    /**
+     * Creates a new {@link HttpTransportImpl} with registration of the given {@link ConnectionManager} and set ignore
+     * all SSL-Certificates. The {@link Config} will be automatically added from the configurations of the given
+     * {@link ConnectionManager}.
+     *
+     * @param connectionManager
+     * @param exeptAllCerts (true = all will ignore)
+     */
     public HttpTransportImpl(ConnectionManager connectionManager, boolean exeptAllCerts) {
         this.connectionManager = connectionManager;
         this.config = connectionManager.getConfig();
@@ -150,6 +158,14 @@ public class HttpTransportImpl implements HttpTransport {
         init(uri, connectTimeout, readTimeout, false);
     }
 
+    /**
+     * Creates a new {@link HttpTransportImpl} and set ignore all SSL-Certificates..
+     *
+     * @param uri
+     * @param connectTimeout
+     * @param readTimeout
+     * @param exeptAllCerts (true = all will ignore)
+     */
     public HttpTransportImpl(String uri, int connectTimeout, int readTimeout, boolean exeptAllCerts) {
         init(uri, connectTimeout, readTimeout, exeptAllCerts);
     }
@@ -219,11 +235,12 @@ public class HttpTransportImpl implements HttpTransport {
         // execute the next time, by TimeOutExceptions. By other exceptions the checkConnection() method handles it in
         // max 1 second.
         String response = null;
+        HttpsURLConnection connection = null;
         try {
             // String fixedRequest =
             request = checkSessionToken(request);
             // System.out.println(request + ", loginconter=" + loginCounter);
-            HttpsURLConnection connection = getConnection(request, connectTimeout, readTimeout);
+            connection = getConnection(request, connectTimeout, readTimeout);
             if (connection != null) {
                 connection.connect();
                 if (connection.getResponseCode() == HttpURLConnection.HTTP_OK) {
@@ -273,6 +290,11 @@ public class HttpTransportImpl implements HttpTransport {
             }
             if (connectionManager != null) {
                 logger.error("An IOException occurred by executing jsonRequest: " + request, e);
+                informConnectionManager(-1);
+            }
+        } finally {
+            if (connection != null) {
+                connection.disconnect();
             }
         }
         return null;

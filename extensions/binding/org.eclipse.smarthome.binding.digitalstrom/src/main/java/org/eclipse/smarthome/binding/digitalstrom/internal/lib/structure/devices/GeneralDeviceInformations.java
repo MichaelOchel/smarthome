@@ -1,8 +1,23 @@
+/**
+ * Copyright (c) 2014-2016 by the respective copyright holders.
+ * All rights reserved. This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License v1.0
+ * which accompanies this distribution, and is available at
+ * http://www.eclipse.org/legal/epl-v10.html
+ */
 package org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices;
 
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.listener.DeviceStatusListener;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.impl.DSID;
 
+/**
+ * The {@link GeneralDeviceInformations} interface contains all informations of digitalSTROM devices, which are
+ * identical for all device types. It also contains the methods to implement the mechanism of the
+ * {@link DeviceStatusListener}.
+ *
+ * @author Michael Ochel - initial contributer
+ * @author Matthias Siegele - initial contributer
+ */
 public interface GeneralDeviceInformations {
 
     /**
@@ -70,11 +85,31 @@ public interface GeneralDeviceInformations {
      */
     public boolean isListenerRegisterd();
 
-    public Boolean isValide();
+    /**
+     * Returns true, if this device is valid, otherwise false.
+     *
+     * @return true, if valid
+     */
+    public Boolean isValid();
 
-    public void setIsValide(boolean isPresent);
+    /**
+     * Sets the valid state.
+     * 
+     * @param isValid the new valid state
+     */
+    public void setIsValid(boolean isValid);
 
+    /**
+     * Returns the in the digitalSTROM web interface displayed dSID.
+     * 
+     * @return displayed dSID
+     */
     public String getDisplayID();
 
-    DeviceStatusListener getDeviceStatusListener();
+    /**
+     * Returns the registered {@link DeviceStatusListener} or null, if no {@link DeviceStatusListener} is registered
+     * 
+     * @return the registered {@link DeviceStatusListener} or null
+     */
+    public DeviceStatusListener getDeviceStatusListener();
 }

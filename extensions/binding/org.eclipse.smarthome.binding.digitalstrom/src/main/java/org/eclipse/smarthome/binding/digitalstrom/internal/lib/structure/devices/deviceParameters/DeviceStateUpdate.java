@@ -21,7 +21,8 @@ import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices
 public interface DeviceStateUpdate {
 
     // Update types
-
+    // TODO: UPDATE löschen, ggf. UPDATE_BRIGHTNESS zu output oder main_output ändern, u.U. UPDATE_SLATPOSITION
+    // ebenfalls hierdurch ersetzen
     // light
     public final static String UPDATE_BRIGHTNESS = "brightness";
     public final static String UPDATE_ON_OFF = "OnOff";
@@ -85,14 +86,48 @@ public interface DeviceStateUpdate {
      */
     public Object getValue();
 
+    /**
+     * Returns the value as {@link Integer}.
+     *
+     * @return integer value
+     * @see #getValue()
+     * @throws {@link ClassCastException}, if the value is not in a cast or parsable format.
+     */
     public Integer getValueAsInteger();
 
+    /**
+     * Returns the value as {@link String}.
+     *
+     * @return string value
+     * @see #getValue()
+     */
     public String getValueAsString();
 
+    /**
+     * Returns the value as {@link Short}.
+     *
+     * @return short value
+     * @see #getValue()
+     * @throws {@link ClassCastException}, if the value is not in a cast or parsable format.
+     */
     public Short getValueAsShort();
 
+    /**
+     * Returns the value as {@link Float}.
+     *
+     * @return float value
+     * @see #getValue()
+     * @throws {@link ClassCastException}, if the value is not in a cast or parsable format.
+     */
     public Float getValueAsFloat();
 
+    /**
+     * Returns the value as {@link Short[]}.
+     *
+     * @return short[] value
+     * @see #getValue()
+     * @throws {@link ClassCastException}, if the value is not in a cast or parsable format.
+     */
     public Short[] getValueAsShortArray();
 
     /**
@@ -102,17 +137,56 @@ public interface DeviceStateUpdate {
      */
     public String getType();
 
-    SensorEnum getTypeAsSensorEnum();
+    /**
+     * Returns the update type as {@link SensorEnum} or null, if the type is not a {@link #UPDATE_DEVICE_SENSOR} type.
+     *
+     * @return type as {@link SensorEnum} or null
+     */
+    public SensorEnum getTypeAsSensorEnum();
 
-    boolean isSensorUpdateType();
+    /**
+     * Returns true, if this {@link DeviceStateUpdate} is a {@link #UPDATE_DEVICE_SENSOR} type, otherwise false.
+     *
+     * @return true, if it is a sensor type
+     */
+    public boolean isSensorUpdateType();
 
-    Short getSceneId();
+    /**
+     * Returns the scene id of this {@link DeviceStateUpdate}, if this {@link DeviceStateUpdate} is a scene update type,
+     * otherwise it will be returned -1.
+     *
+     * @return the scene id or -1
+     */
+    public Short getSceneId();
 
-    Short getScenePriority();
+    /**
+     * Returns the scene configuration or output reading priority, if this {@link DeviceStateUpdate} is a
+     * {@link #UPDATE_SCENE_CONFIG} or {@link #UPDATE_SCENE_OUTPUT} type.
+     *
+     * @return scene reading priority
+     */
+    public Short getScenePriority();
 
-    boolean isSceneUpdateType();
+    /**
+     * Returns true, if this {@link DeviceStateUpdate} is a {@link #UPDATE_SCENE_CONFIG} or {@link #UPDATE_SCENE_OUTPUT}
+     * type, otherwise false.
+     *
+     * @return true, if it is a scene reading type
+     */
+    public boolean isSceneUpdateType();
 
-    DeviceBinarayInputEnum getTypeAsDeviceBinarayInputEnum();
+    /**
+     * Returns the update type as {@link DeviceBinarayInputEnum} or null, if the type is not a {@link #BINARY_INPUT}
+     * type.
+     *
+     * @return type as {@link DeviceBinarayInputEnum} or null
+     */
+    public DeviceBinarayInputEnum getTypeAsDeviceBinarayInputEnum();
 
-    boolean isBinarayInputType();
+    /**
+     * Returns true, if this {@link DeviceStateUpdate} is a {@link #BINARY_INPUT} type, otherwise false.
+     *
+     * @return true, if it is a binary input type
+     */
+    public boolean isBinarayInputType();
 }

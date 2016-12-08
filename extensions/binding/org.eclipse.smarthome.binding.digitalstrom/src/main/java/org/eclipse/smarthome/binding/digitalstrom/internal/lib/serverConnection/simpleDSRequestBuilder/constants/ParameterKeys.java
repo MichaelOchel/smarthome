@@ -10,8 +10,8 @@ package org.eclipse.smarthome.binding.digitalstrom.internal.lib.serverConnection
 /**
  * The {@link ParameterKeys} contains digitalSTROM-JSON parameter keys.
  *
- * @author Michael Ochel
- * @author Matthias Siegele
+ * @author Michael Ochel - initial contributer
+ * @author Matthias Siegele - initial contributer
  */
 public class ParameterKeys {
     public final static String TOKEN = "token";

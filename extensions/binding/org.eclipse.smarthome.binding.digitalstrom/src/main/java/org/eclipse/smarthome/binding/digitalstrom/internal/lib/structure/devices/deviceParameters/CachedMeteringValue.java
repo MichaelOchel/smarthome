@@ -37,15 +37,30 @@ public interface CachedMeteringValue {
     public double getValue();
 
     /**
-     * Returns the time stamp when the sensor value was read out.
+     * Returns the timestamp when the sensor value was read out as {@link String}.
      *
-     * @return read out time stamp
+     * @return read out timestamp
      */
     public String getDate();
 
+    /**
+     * Returns the timestamp when the sensor value was read out as {@link Date}.
+     *
+     * @return read out timestamp
+     */
     public Date getDateAsDate();
 
+    /**
+     * Returns the {@link MeteringTypeEnum} of this {@link CachedMeteringValue}.
+     *
+     * @return metering type as {@link MeteringTypeEnum}
+     */
     public MeteringTypeEnum getMeteringType();
 
+    /**
+     * Returns the {@link MeteringUnitsEnum} of this {@link CachedMeteringValue}.
+     *
+     * @return metering unit as {@link MeteringUnitsEnum}
+     */
     public MeteringUnitsEnum getMeteringUnit();
 }

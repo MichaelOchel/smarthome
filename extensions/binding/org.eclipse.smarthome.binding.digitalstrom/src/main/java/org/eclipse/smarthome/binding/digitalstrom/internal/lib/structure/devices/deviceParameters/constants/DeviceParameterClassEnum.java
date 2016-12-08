@@ -10,7 +10,7 @@ package org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.device
 /**
  * The {@link DeviceParameterClassEnum} lists all digitalSTROM-device parameter classes.
  *
- * @author Alexander Betker
+ * @author Alexander Betker - initial contributer
  * @version digitalSTROM-API 1.14.5
  */
 public enum DeviceParameterClassEnum {

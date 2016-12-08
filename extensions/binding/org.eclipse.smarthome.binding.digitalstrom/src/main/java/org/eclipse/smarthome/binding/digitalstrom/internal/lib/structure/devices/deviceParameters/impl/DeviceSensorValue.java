@@ -1,3 +1,10 @@
+/**
+ * Copyright (c) 2014-2016 by the respective copyright holders.
+ * All rights reserved. This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License v1.0
+ * which accompanies this distribution, and is available at
+ * http://www.eclipse.org/legal/epl-v10.html
+ */
 package org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.impl;
 
 import java.text.DateFormat;
@@ -7,7 +14,9 @@ import java.time.Instant;
 import java.util.Date;
 import java.util.Map;
 
+import org.eclipse.smarthome.binding.digitalstrom.internal.lib.event.constants.EventNames;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.event.constants.EventResponseEnum;
+import org.eclipse.smarthome.binding.digitalstrom.internal.lib.serverConnection.DsAPI;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.serverConnection.constants.JSONApiResponseKeysEnum;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.constants.SensorEnum;
 import org.slf4j.Logger;
@@ -15,6 +24,15 @@ import org.slf4j.LoggerFactory;
 
 import com.google.gson.JsonObject;
 
+/**
+ * The {@link DeviceSensorValue} contains all needed information of an device sensor, e.g. the sensor type, to detect
+ * which kind of sensor it is (see {@link SensorEnum}), the sensor index to read out sensor at the digitalSTROM device
+ * by calling {@link DsAPI#getDeviceSensorValue(String, DSID, String, Short)} and as well as of course the value and
+ * timestamp of the last sensor update.
+ *
+ * @author Michael Ochel - initial contributer
+ * @author Matthias Siegele - initial contributer
+ */
 public class DeviceSensorValue {
 
     private Logger logger = LoggerFactory.getLogger(DeviceSensorValue.class);
@@ -28,6 +46,12 @@ public class DeviceSensorValue {
     private Date timestamp = null;
     private boolean valid = false;
 
+    /**
+     * Creates a new {@link DeviceSensorValue} through the {@link JsonObject} of the digitalSTROM json response for a
+     * device.
+     *
+     * @param sensorValue
+     */
     public DeviceSensorValue(JsonObject sensorValue) {
         if (sensorValue.get(JSONApiResponseKeysEnum.TYPE.getKey()) != null) {
             sensorType = SensorEnum.getSensor(sensorValue.get(JSONApiResponseKeysEnum.TYPE.getKey()).getAsShort());
@@ -55,6 +79,12 @@ public class DeviceSensorValue {
         }
     }
 
+    /**
+     * Creates a new {@link DeviceSensorValue} through the properties of a digitalSTROM
+     * {@link EventNames#DEVICE_SENSOR_VALUE} event.
+     *
+     * @param eventPropertie
+     */
     public DeviceSensorValue(Map<EventResponseEnum, String> eventPropertie) {
         if (eventPropertie.get(EventResponseEnum.SENSOR_VALUE_FLOAT) != null) {
             floatValue = Float.parseFloat(eventPropertie.get(EventResponseEnum.SENSOR_VALUE_FLOAT));
@@ -72,12 +102,20 @@ public class DeviceSensorValue {
         valid = true;
     }
 
+    /**
+     * Creates a new {@link DeviceSensorValue} through the {@link SensorEnum} and the sensor index.
+     *
+     * @param sensorType
+     * @param sensorIndex
+     */
     public DeviceSensorValue(SensorEnum sensorType, Short sensorIndex) {
         this.sensorType = sensorType;
         this.sensorIndex = sensorIndex;
     }
 
     /**
+     * Returns the {@link Float} value of this {@link DeviceSensorValue}.
+     *
      * @return the floatValue
      */
     public Float getFloatValue() {
@@ -85,7 +123,11 @@ public class DeviceSensorValue {
     }
 
     /**
-     * @param floatValue the floatValue to set
+     * Sets a new sensor value as {@link Float}. The internal digitalSTROM value will be changed through the resolution
+     * at {@link SensorEnum} automatically, too.
+     *
+     * @param floatValue the new float sensor value
+     * @return true, if set was successful
      */
     public boolean setFloatValue(Float floatValue) {
         if (floatValue > -1) {
@@ -103,6 +145,9 @@ public class DeviceSensorValue {
     }
 
     /**
+     * Returns the internal digitalSTROM value as {@link Integer}. The resolution can be found at {@link SensorEnum},
+     * but float sensor value will be changed through the resolution at {@link SensorEnum} automatically, too.
+     *
      * @return the dsValue
      */
     public Integer getDsValue() {
@@ -110,7 +155,10 @@ public class DeviceSensorValue {
     }
 
     /**
-     * @param dsValue the dsValue to set
+     * Sets a new internal digitalSTROM value as {@link Integer}.
+     *
+     * @param dsValue the internal digitalSTROM value to set
+     * @return true, if set was successful
      */
     public boolean setDsValue(Integer dsValue) {
         if (dsValue > -1) {
@@ -127,6 +175,13 @@ public class DeviceSensorValue {
         return false;
     }
 
+    /**
+     * Sets a new internal digitalSTROM value as {@link Integer} and a new sensor value as {@link Float}.
+     *
+     * @param floatValue
+     * @param dSvalue
+     * @return true, if set was successful
+     */
     public boolean setValues(Float floatValue, Integer dSvalue) {
         if (dsValue > -1 && floatValue > -1) {
             this.floatValue = floatValue;
@@ -139,6 +194,8 @@ public class DeviceSensorValue {
     }
 
     /**
+     * Returns the sensor type as {@link SensorEnum} of this {@link DeviceSensorValue}.
+     *
      * @return the sensorType
      */
     public SensorEnum getSensorType() {
@@ -146,6 +203,9 @@ public class DeviceSensorValue {
     }
 
     /**
+     * Returns the sensor index to read the sensor value out though
+     * {@link DsAPI#getDeviceSensorValue(String, DSID, String, Short)}.
+     *
      * @return the sensorIndex
      */
     public Short getSensorIndex() {
@@ -153,6 +213,8 @@ public class DeviceSensorValue {
     }
 
     /**
+     * Returns the timestamp of the last set value as {@link Date}.
+     * 
      * @return the timestamp
      */
     public Date getTimestamp() {
@@ -160,6 +222,8 @@ public class DeviceSensorValue {
     }
 
     /**
+     * Returns true if the sensor value is valid.
+     * 
      * @return the valid
      */
     public boolean getValid() {

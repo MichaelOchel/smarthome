@@ -74,6 +74,11 @@ public abstract class AbstractSensorJobExecutor {
         }
     };
 
+    /**
+     * Creates a new {@link AbstractSensorJobExecutor}.
+     *
+     * @param connectionManager
+     */
     public AbstractSensorJobExecutor(ConnectionManager connectionManager) {
         this.connectionManager = connectionManager;
         config = connectionManager.getConfig();
@@ -206,6 +211,12 @@ public abstract class AbstractSensorJobExecutor {
         }
     }
 
+    /**
+     * Removes the {@link SensorJob} with the given ID.
+     * 
+     * @param device needed for the meterDSID
+     * @param ID
+     */
     public void removeSensorJob(Device device, String ID) {
         if (device != null && ID != null) {
             CircuitScheduler circuit = getCircuitScheduler(device.getMeterDSID());

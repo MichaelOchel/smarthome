@@ -7,6 +7,7 @@
  */
 package org.eclipse.smarthome.binding.digitalstrom.internal.lib.serverConnection.impl;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -58,30 +59,51 @@ import com.google.gson.JsonObject;
 /**
  * The {@link DsAPIImpl} is the implementation of the {@link DsAPI}.
  *
- * @author Alexander Betker
- * @author Alex Maier
+ * @author Alexander Betker - initial contributer
+ * @author Alex Maier - initial contributer
  * @author Michael Ochel - implements new methods, API updates and change SimpleJSON to GSON, add helper methods and
- *         requests building with
- *         constants to SimpleDSRequestBuilder
+ *         requests building with constants to {@link SimpleRequestBuilder}
  * @author Matthias Siegele - implements new methods, API updates and change SimpleJSON to GSON, add helper methods and
- *         requests building
- *         with constants to SimpleDSRequestBuilder
+ *         requests building with constants to {@link SimpleRequestBuilder}
  */
 public class DsAPIImpl implements DsAPI {
 
+    // TODO: checken ob bei zone abfragen check zoneXY abfrage drin ist (von wegen null und so)
     private Logger logger = LoggerFactory.getLogger(DsAPIImpl.class);
     private HttpTransport transport = null;
 
     private final String QUERY_GET_METERLIST = "/apartment/dSMeters/*(dSID)";
 
+    /**
+     * Create a new {@link DsAPIImpl} with the given {@link HttpTransport}.
+     *
+     * @param transport
+     */
     public DsAPIImpl(HttpTransport transport) {
         this.transport = transport;
     }
 
+    /**
+     * Creates a new {@link DsAPIImpl} with creating a new {@link HttpTransport}, parameters see
+     * {@link HttpTransportImpl#HttpTransportImpl(String, int, int)}.
+     *
+     * @param uri
+     * @param connectTimeout
+     * @param readTimeout
+     */
     public DsAPIImpl(String uri, int connectTimeout, int readTimeout) {
         this.transport = new HttpTransportImpl(uri, connectTimeout, readTimeout);
     }
 
+    /**
+     * Creates a new {@link DsAPIImpl} with creating a new {@link HttpTransport}, parameters see
+     * {@link HttpTransportImpl#HttpTransportImpl(String, int, int, boolean)}.
+     *
+     * @param uri
+     * @param connectTimeout
+     * @param readTimeout
+     * @param aceptAllCerts
+     */
     public DsAPIImpl(String uri, int connectTimeout, int readTimeout, boolean aceptAllCerts) {
         this.transport = new HttpTransportImpl(uri, connectTimeout, readTimeout, aceptAllCerts);
     }
@@ -1322,7 +1344,7 @@ public class DsAPIImpl implements DsAPI {
     }
 
     @Override
-    public HashMap<Integer, TemperatureControlStatus> getApartmentTemperatureControlStatus(String sessionToken) {
+    public List<TemperatureControlStatus> getApartmentTemperatureControlStatus(String sessionToken) {
         try {
             String response = transport.execute(SimpleRequestBuilder.buildNewRequest(InterfaceKeys.JSON)
                     .addRequestClass(ClassKeys.APARTMENT).addFunction(FunctionKeys.GET_TEMPERATURE_CONTROL_STATUS)
@@ -1334,17 +1356,16 @@ public class DsAPIImpl implements DsAPI {
                 if (obj.get(JSONApiResponseKeysEnum.ZONES.getKey()).isJsonArray()) {
                     JsonArray jArray = obj.get(JSONApiResponseKeysEnum.ZONES.getKey()).getAsJsonArray();
                     if (jArray.size() != 0) {
-                        HashMap<Integer, TemperatureControlStatus> map = new HashMap<Integer, TemperatureControlStatus>(
-                                jArray.size());
+                        List<TemperatureControlStatus> list = new ArrayList<TemperatureControlStatus>(jArray.size());
                         Iterator<JsonElement> iter = jArray.iterator();
                         while (iter.hasNext()) {
                             TemperatureControlStatus tContStat = new TemperatureControlStatus(
                                     iter.next().getAsJsonObject());
                             if (tContStat != null) {
-                                map.put(tContStat.getZoneID(), tContStat);
+                                list.add(tContStat);
                             }
                         }
-                        return map;
+                        return list;
                     }
                 }
             }

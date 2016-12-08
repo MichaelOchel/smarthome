@@ -34,29 +34,34 @@ public class JSONZoneImpl implements Zone {
     private List<DetailedGroupInfo> groupList = null;
     private List<Device> deviceList = null;
 
-    public JSONZoneImpl(JsonObject object) {
+    /**
+     * Creates a new {@link JSONZoneImpl} through the {@link JsonObject}.
+     *
+     * @param jObject
+     */
+    public JSONZoneImpl(JsonObject jObject) {
         this.groupList = new LinkedList<DetailedGroupInfo>();
         this.deviceList = new LinkedList<Device>();
 
-        if (object.get(JSONApiResponseKeysEnum.NAME.getKey()) != null) {
-            this.name = object.get(JSONApiResponseKeysEnum.NAME.getKey()).getAsString();
+        if (jObject.get(JSONApiResponseKeysEnum.NAME.getKey()) != null) {
+            this.name = jObject.get(JSONApiResponseKeysEnum.NAME.getKey()).getAsString();
         }
-        if (object.get(JSONApiResponseKeysEnum.ID.getKey()) != null) {
-            zoneId = object.get(JSONApiResponseKeysEnum.ID.getKey()).getAsInt();
+        if (jObject.get(JSONApiResponseKeysEnum.ID.getKey()) != null) {
+            zoneId = jObject.get(JSONApiResponseKeysEnum.ID.getKey()).getAsInt();
         }
         if (zoneId == -1) {
-            if (object.get(JSONApiResponseKeysEnum.ZONE_ID.getKey()) != null) {
-                zoneId = object.get(JSONApiResponseKeysEnum.ZONE_ID.getKey()).getAsInt();
+            if (jObject.get(JSONApiResponseKeysEnum.ZONE_ID.getKey()) != null) {
+                zoneId = jObject.get(JSONApiResponseKeysEnum.ZONE_ID.getKey()).getAsInt();
             }
         }
-        if (object.get(JSONApiResponseKeysEnum.DEVICES.getKey()) instanceof JsonArray) {
-            JsonArray list = (JsonArray) object.get(JSONApiResponseKeysEnum.DEVICES.getKey());
+        if (jObject.get(JSONApiResponseKeysEnum.DEVICES.getKey()) instanceof JsonArray) {
+            JsonArray list = (JsonArray) jObject.get(JSONApiResponseKeysEnum.DEVICES.getKey());
             for (int i = 0; i < list.size(); i++) {
                 this.deviceList.add(new DeviceImpl((JsonObject) list.get(i)));
             }
         }
-        if (object.get(JSONApiResponseKeysEnum.GROUPS.getKey()) instanceof JsonArray) {
-            JsonArray groupList = (JsonArray) object.get(JSONApiResponseKeysEnum.GROUPS.getKey());
+        if (jObject.get(JSONApiResponseKeysEnum.GROUPS.getKey()) instanceof JsonArray) {
+            JsonArray groupList = (JsonArray) jObject.get(JSONApiResponseKeysEnum.GROUPS.getKey());
             for (int i = 0; i < groupList.size(); i++) {
                 this.groupList.add(new JSONDetailedGroupInfoImpl((JsonObject) groupList.get(i)));
             }

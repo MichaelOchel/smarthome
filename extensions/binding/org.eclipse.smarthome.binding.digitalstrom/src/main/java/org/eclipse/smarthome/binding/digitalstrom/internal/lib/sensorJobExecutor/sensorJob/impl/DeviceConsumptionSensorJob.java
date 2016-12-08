@@ -36,7 +36,7 @@ public class DeviceConsumptionSensorJob implements SensorJob {
      * updates automatically.
      *
      * @param device
-     * @param sensor type
+     * @param type
      * @param updateDevice (true = automatically device, otherwise false)
      * @see #DeviceConsumptionSensorJob(Device, SensorEnum)
      */
@@ -53,7 +53,7 @@ public class DeviceConsumptionSensorJob implements SensorJob {
      * and automatically {@link Device} update.
      *
      * @param device
-     * @param sensor type
+     * @param type
      */
     public DeviceConsumptionSensorJob(Device device, SensorEnum type) {
         this.device = device;
@@ -124,6 +124,13 @@ public class DeviceConsumptionSensorJob implements SensorJob {
         return getID(device, sensorType);
     }
 
+    /**
+     * Returns the id for a {@link DeviceConsumptionSensorJob} with the given {@link Device} and {@link SensorEnum}.
+     *
+     * @param device
+     * @param sensorType
+     * @return id
+     */
     public static String getID(Device device, SensorEnum sensorType) {
         return DeviceConsumptionSensorJob.class.getSimpleName() + "-" + device.getDSID().getValue() + "-"
                 + sensorType.toString();

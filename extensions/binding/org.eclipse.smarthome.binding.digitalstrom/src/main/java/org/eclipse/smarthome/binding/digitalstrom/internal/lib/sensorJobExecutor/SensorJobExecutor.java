@@ -40,6 +40,11 @@ public class SensorJobExecutor extends AbstractSensorJobExecutor {
     private long mediumFactor = super.config.getSensorReadingWaitTime() * super.config.getMediumPriorityFactor();
     private long lowFactor = super.config.getSensorReadingWaitTime() * super.config.getLowPriorityFactor();
 
+    /**
+     * Creates a new {@link SensorJobExecutor}.
+     * 
+     * @param connectionManager
+     */
     public SensorJobExecutor(ConnectionManager connectionManager) {
         super(connectionManager);
     }

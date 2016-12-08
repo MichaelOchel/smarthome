@@ -10,7 +10,9 @@ package org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.device
 /**
  * The {@link MeteringUnitsEnum} lists all available digitalSTROM metering units.
  *
- * @author Alexander Betker
+ * @author Alexander Betker - initial contributer
+ * @author Michael Ochel - remove W, because it does not exist any more
+ * @author Matthias Siegele - remove W, because it does not exist any more
  */
 public enum MeteringUnitsEnum {
     Wh,

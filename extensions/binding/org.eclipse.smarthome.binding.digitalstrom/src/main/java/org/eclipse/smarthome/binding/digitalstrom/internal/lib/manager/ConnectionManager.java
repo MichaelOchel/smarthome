@@ -113,9 +113,37 @@ public interface ConnectionManager {
      */
     public void configHasBeenUpdated();
 
-    String getNewSessionToken();
+    /**
+     * Generates and returns a new session token.
+     *
+     * @return new session token
+     */
+    public String getNewSessionToken();
 
-    boolean checkConnection(int code);
+    /**
+     * Checks the connection through the given HTTP-Response-Code or exception code. If a {@link ConnectionListener} is
+     * registered this method also informs the registered {@link ConnectionListener} if the connection state has
+     * changed. <br>
+     * <br>
+     * <b>Exception-Codes:</b><br>
+     * <b>-1</b> general exception<br>
+     * <b>-2</b> MalformedURLException<br>
+     * <b>-3</b> java.net.ConnectException<br>
+     * <b>-4</b> SocketTimeoutException<br>
+     * <b>-5</b> java.net.UnknownHostException<br>
+     * <br>
+     * <b>Code for authentication problems:</b> -6<br>
+     *
+     *
+     * @param code exception or HTTP-Response-Code
+     * @return true, if connection is valid
+     */
+    public boolean checkConnection(int code);
 
-    boolean connectionEstablished();
+    /**
+     * Returns true, if connection is established, otherwise false.
+     *
+     * @return true, if connection is established, otherwise false
+     */
+    public boolean connectionEstablished();
 }

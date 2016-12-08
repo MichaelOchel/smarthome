@@ -46,6 +46,9 @@ public class DigitalSTROMHandlerFactory extends BaseThingHandlerFactory {
     private Logger logger = LoggerFactory.getLogger(DigitalSTROMHandlerFactory.class);
     private HashMap<String, DiscoveryServiceManager> discoveryServiceManagers = new HashMap<String, DiscoveryServiceManager>();
 
+    /**
+     * Contains all supported {@link ThingTypeUID}'s.
+     */
     public final static Set<ThingTypeUID> SUPPORTED_THING_TYPES = Sets.union(SceneHandler.SUPPORTED_THING_TYPES,
             Sets.union(BridgeHandler.SUPPORTED_THING_TYPES,
                     Sets.union(DeviceHandler.SUPPORTED_THING_TYPES,

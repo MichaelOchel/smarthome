@@ -84,6 +84,9 @@ public class BridgeHandler extends BaseBridgeHandler
 
     private Logger logger = LoggerFactory.getLogger(BridgeHandler.class);
 
+    /**
+     * Contains all supported thing types of this handler
+     */
     public final static Set<ThingTypeUID> SUPPORTED_THING_TYPES = Collections.singleton(THING_TYPE_DSS_BRIDGE);
 
     /* DS-Manager */
@@ -101,7 +104,6 @@ public class BridgeHandler extends BaseBridgeHandler
     private Config config = null;
 
     List<SceneStatusListener> unregisterSceneStatusListeners = null;
-    // private boolean generatingScenes = true;
     private int connectionTimeoutCounter = 0;
 
     private class Initializer implements Runnable {
@@ -149,7 +151,6 @@ public class BridgeHandler extends BaseBridgeHandler
                                     temperatureControlDiscovery);
                             temperatureControlDiscovery = null;
                         } else {
-                            // tempContMan.registerSystemStateChangeListener(bridge);
                             if (temperatureControlDiscovery != null) {
                                 tempContMan.registerTemperatureControlStatusListener(temperatureControlDiscovery);
                             }
@@ -189,7 +190,7 @@ public class BridgeHandler extends BaseBridgeHandler
                 }
                 if (StringUtils.isBlank(
 
-                getThing().getProperties().get(DigitalSTROMBindingConstants.SERVER_CERT))
+                        getThing().getProperties().get(DigitalSTROMBindingConstants.SERVER_CERT))
                         && StringUtils.isNotBlank(config.getCert())) {
                     updateProperty(DigitalSTROMBindingConstants.SERVER_CERT, config.getCert());
                 }
@@ -199,6 +200,11 @@ public class BridgeHandler extends BaseBridgeHandler
         }
     };
 
+    /**
+     * Creates a new {@link BridgeHandler}.
+     *
+     * @param bridge
+     */
     public BridgeHandler(Bridge bridge) {
         super(bridge);
     }
@@ -334,7 +340,6 @@ public class BridgeHandler extends BaseBridgeHandler
         logger.debug("Handler disposed");
         if (eventListener != null) {
             eventListener.stop();
-            // eventListener = null;
         }
         if (devStatMan != null) {
             devStatMan.unregisterTotalPowerConsumptionListener();
@@ -350,19 +355,6 @@ public class BridgeHandler extends BaseBridgeHandler
     public void handleCommand(ChannelUID channelUID, Command command) {
         if (command instanceof RefreshType) {
             channelLinked(channelUID);
-            /*
-             * switch (channelUID.getId()) {
-             * case CHANNEL_ID_TOTAL_ACTIVE_POWER:
-             * updateState(channelUID, new DecimalType(devStatMan.getTotalPowerConsumption()));
-             * break;
-             * case CHANNEL_ID_TOTAL_ELECTRIC_METER:
-             * updateState(channelUID, new DecimalType(devStatMan.getTotalEnergyMeterValue()));
-             * break;
-             * default:
-             * logger.debug("Command received for an unknown channel: {}", channelUID.getId());
-             * break;
-             * }
-             */
         } else {
             logger.debug("Command {} is not supported for channel: {}", command, channelUID.getId());
         }
@@ -419,17 +411,6 @@ public class BridgeHandler extends BaseBridgeHandler
             if (deviceStatusListener.getDeviceStatusListenerID().equals(DeviceStatusListener.DEVICE_DISCOVERY)) {
                 deviceDiscovery = deviceStatusListener;
             }
-            /*
-             * if (devListener == null) {
-             * devListener = new LinkedList<DeviceStatusListener>();
-             * }
-             * if (deviceStatusListener.getDeviceStatusListenerID().equals(DeviceStatusListener.DEVICE_DISCOVERY)
-             * && !devListener.contains(deviceStatusListener)) {
-             * logger.debug("list={} contains listenerID={} ? {}", devListener,
-             * deviceStatusListener.getDeviceStatusListenerID(), devListener.contains(deviceStatusListener));
-             * devListener.add(deviceStatusListener);
-             * }
-             */
         }
 
     }
@@ -437,7 +418,7 @@ public class BridgeHandler extends BaseBridgeHandler
     /**
      * Unregisters a new {@link DeviceStatusListener} on the {@link BridgeHandler}.
      *
-     * @param devicetatusListener (must not be null)
+     * @param deviceStatusListener (must not be null)
      */
     public void unregisterDeviceStatusListener(DeviceStatusListener deviceStatusListener) {
         if (this.devStatMan != null) {
@@ -452,7 +433,7 @@ public class BridgeHandler extends BaseBridgeHandler
     /**
      * Registers a new {@link SceneStatusListener} on the {@link BridgeHandler}.
      *
-     * @param deviceStatusListener (must not be null)
+     * @param sceneStatusListener (must not be null)
      */
     public synchronized void registerSceneStatusListener(SceneStatusListener sceneStatusListener) {
         if (this.sceneMan != null /* && !generatingScenes */) {
@@ -469,16 +450,6 @@ public class BridgeHandler extends BaseBridgeHandler
             if (sceneStatusListener.getSceneStatusListenerID().equals(SceneStatusListener.SCENE_DISCOVERY)) {
                 sceneDiscovery = sceneStatusListener;
             }
-            /*
-             * if (sceneListeners == null) {
-             * sceneListeners = new LinkedList<SceneStatusListener>();
-             * }
-             * if (!sceneListeners.contains(sceneStatusListener)) {
-             * logger.debug("list={} contains listenerID={} ? {}", sceneListeners.toString(),
-             * sceneStatusListener.getSceneStatusListenerID(), sceneListeners.contains(sceneStatusListener));
-             * sceneListeners.add(sceneStatusListener);
-             * }
-             */
         }
 
     }
@@ -495,20 +466,13 @@ public class BridgeHandler extends BaseBridgeHandler
             } else {
                 throw new IllegalArgumentException("It's not allowed to pass a SceneStatusListener with ID = null..");
             }
-        } /*
-           * else {
-           * if (unregisterSceneStatusListeners == null) {
-           * unregisterSceneStatusListeners = new LinkedList<SceneStatusListener>();
-           * }
-           * unregisterSceneStatusListeners.add(sceneStatusListener);
-           * }
-           */
+        }
     }
 
     /**
      * Has to be called from a removed Thing-Child to rediscovers the Thing.
      *
-     * @param scene or device id (must not be null)
+     * @param id = scene or device id (must not be null)
      */
     public void childThingRemoved(String id) {
         if (id != null && id.split("-").length == 3) {
@@ -635,7 +599,7 @@ public class BridgeHandler extends BaseBridgeHandler
                     break;
                 case CONNECTON_TIMEOUT:
                     // ignore the first connection timeout
-                    if (connectionTimeoutCounter++ > 20) {
+                    if (connectionTimeoutCounter++ > 1) {
                         // TODO: + connection tracker starten /implementieren
                         updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.COMMUNICATION_ERROR,
                                 "Connection lost because connection timeout to Server.");
@@ -688,7 +652,7 @@ public class BridgeHandler extends BaseBridgeHandler
      * Delegates a scene command of a Thing to the
      * {@link DeviceStatusManager#sendSceneComandsToDSS(InternalScene, boolean)}
      *
-     * @param the called scene
+     * @param scene the called scene
      * @param call_undo (true = call scene | false = undo scene)
      */
     public void sendSceneComandToDSS(InternalScene scene, boolean call_undo) {
@@ -741,14 +705,6 @@ public class BridgeHandler extends BaseBridgeHandler
                     break;
                 case RUNNING:
                     updateStatus(ThingStatus.ONLINE);
-                    /*
-                     * if (devListener != null) {
-                     * for (DeviceStatusListener deviceListener : devListener) {
-                     * devStatMan.registerDeviceListener(deviceListener);
-                     * }
-                     * devListener = null;
-                     * }
-                     */
                     break;
                 case STOPPED:
                     if (!getThing().getStatusInfo().equals(ThingStatusDetail.COMMUNICATION_ERROR)
@@ -772,21 +728,6 @@ public class BridgeHandler extends BaseBridgeHandler
                     break;
                 case RUNNING:
                     logger.debug("SceneManager reports that he is running");
-                    /*
-                     * if (unregisterSceneStatusListeners != null) {
-                     * for (SceneStatusListener sceneListener : this.unregisterSceneStatusListeners) {
-                     * sceneMan.unregisterSceneListener(sceneListener);
-                     * }
-                     * unregisterSceneStatusListeners = null;
-                     * }
-                     * if (sceneListeners != null) {
-                     * for (SceneStatusListener sceneListener : this.sceneListeners) {
-                     * sceneMan.registerSceneListener(sceneListener);
-                     * }
-                     * sceneListeners = null;
-                     * }
-                     */
-                    // generatingScenes = false;
                     break;
                 default:
                     break;
@@ -794,16 +735,31 @@ public class BridgeHandler extends BaseBridgeHandler
         }
     }
 
+    /**
+     * Returns a {@link List} of all {@link Circuit}'s.
+     *
+     * @return circuit list
+     */
     public List<Circuit> getCircuits() {
         logger.debug("circuits: " + this.structMan.getCircuitMap().values().toString());
         return this.structMan != null && this.structMan.getCircuitMap() != null
                 ? new LinkedList<Circuit>(this.structMan.getCircuitMap().values()) : null;
     }
 
+    /**
+     * Returns the {@link TemperatureControlManager} or null if no one exist.
+     *
+     * @return {@link TemperatureControlManager}
+     */
     public TemperatureControlManager getTemperatureControlManager() {
         return tempContMan;
     }
 
+    /**
+     * Registers the given {@link TemperatureControlStatusListener} to the {@link TemperatureControlManager}.
+     *
+     * @param temperatureControlStatusListener
+     */
     public void registerTemperatureControlStatusListener(
             TemperatureControlStatusListener temperatureControlStatusListener) {
         if (tempContMan != null) {
@@ -813,6 +769,11 @@ public class BridgeHandler extends BaseBridgeHandler
         }
     }
 
+    /**
+     * Unregisters the given {@link TemperatureControlStatusListener} from the {@link TemperatureControlManager}.
+     *
+     * @param temperatureControlStatusListener
+     */
     public void unregisterTemperatureControlStatusListener(
             TemperatureControlStatusListener temperatureControlStatusListener) {
         if (tempContMan != null) {

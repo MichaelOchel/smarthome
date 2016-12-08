@@ -1,3 +1,10 @@
+/**
+ * Copyright (c) 2014-2016 by the respective copyright holders.
+ * All rights reserved. This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License v1.0
+ * which accompanies this distribution, and is available at
+ * http://www.eclipse.org/legal/epl-v10.html
+ */
 package org.eclipse.smarthome.binding.digitalstrom.internal.lib.manager.impl;
 
 import java.util.Collection;
@@ -6,6 +13,7 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 
+import org.eclipse.smarthome.binding.digitalstrom.internal.lib.climate.TemperatureControlSensorTransmitter;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.climate.jsonResponseContainer.impl.TemperatureControlStatus;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.event.EventHandler;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.event.EventListener;
@@ -15,7 +23,6 @@ import org.eclipse.smarthome.binding.digitalstrom.internal.lib.event.types.Event
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.listener.SystemStateChangeListener;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.listener.TemperatureControlStatusListener;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.manager.ConnectionManager;
-import org.eclipse.smarthome.binding.digitalstrom.internal.lib.manager.TemperatureSensorTransreciver;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.serverConnection.DsAPI;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.constants.FuncNameAndColorGroupEnum;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.constants.SensorEnum;
@@ -24,9 +31,31 @@ import org.slf4j.LoggerFactory;
 
 import com.google.common.collect.Lists;
 
-public class TemperatureControlManager implements EventHandler, TemperatureSensorTransreciver {
+/**
+ * The {@link TemperatureControlManager} is responsible for handling the zone temperature control of the digitalSTROM
+ * zones. For that it implements a {@link EventHandler} to get informed by control changes, like the target temperature.
+ * It also implement the {@link TemperatureControlSensorTransmitter}, so the zone temperature can be set through this
+ * class. <br>
+ * <br>
+ * To check, if the heating-control-app is installed at the digitalSTROM server the static method
+ * {@link #isHeatingControllerInstallated(ConnectionManager)} can be used.<br>
+ * <br>
+ * To get informed by status changes tow listener types can be registered to the {@link TemperatureControlManager}:<br>
+ * {@link TemperatureControlStatusListener}, to get informed by configuration and status changes or as discovery.<br>
+ * {@link SystemStateChangeListener}, to get informed by heating water system changes. The heating system states are
+ * {@link #STATE_HEATING_WATER_SYSTEM_OFF}, {@link #STATE_HEATING_WATER_SYSTEM_COLD_WATER} and
+ * {@link #STATE_HEATING_WATER_SYSTEM_COLD_WATER}<br>
+ * <br>
+ * The {@link TemperatureControlManager} also contains some helpful static constants, like
+ * {@link #GET_HEATING_WATER_SYSTEM_STATE_PATH} to get the current heating water system state through
+ * {@link DsAPI#propertyTreeGetString(String, String)}.
+ *
+ * @author Michael Ochel - initial contributer
+ * @author Matthias Siegele - initial contributer
+ */
+public class TemperatureControlManager implements EventHandler, TemperatureControlSensorTransmitter {
 
-    public List<String> SUPPORTED_EVENTS = Lists.newArrayList(EventNames.HEATING_CONTROL_OPERATION_MODE);
+    private List<String> SUPPORTED_EVENTS = Lists.newArrayList(EventNames.HEATING_CONTROL_OPERATION_MODE);
 
     private Logger logger = LoggerFactory.getLogger(TemperatureControlManager.class);
 
@@ -40,26 +69,74 @@ public class TemperatureControlManager implements EventHandler, TemperatureSenso
     private TemperatureControlStatusListener discovery = null;
     private SystemStateChangeListener systemStateChangeListener = null;
 
+    /**
+     * Name of the digitalSTROM heating water system state.
+     */
     public static final String STATE_NAME_HEATING_WATER_SYSTEM = "heating_water_system";
+    /**
+     * digitalSTROM heating water system state as string for off.
+     */
     public static final String STATE_HEATING_WATER_SYSTEM_OFF = "off"; // val=0
+    /**
+     * digitalSTROM heating water system state as string for hot water.
+     */
     public static final String STATE_HEATING_WATER_SYSTEM_HOT_WATER = "hot water"; // val=1
+    /**
+     * digitalSTROM heating water system state as string for cold water.
+     */
     public static final String STATE_HEATING_WATER_SYSTEM_COLD_WATER = "cold water"; // val=2
 
+    /**
+     * Path to get the current digitalSTROM heating water system state through
+     * {@link DsAPI#propertyTreeGetString(String, String)}.
+     */
     public static final String GET_HEATING_WATER_SYSTEM_STATE_PATH = "/usr/states/heating_water_system/state";
+    /**
+     * Path to get the current digitalSTROM heating controller nodes through
+     * {@link DsAPI#propertyTreeGetString(String, String)}.
+     * Can be used e.g. to check, if the digitalSTROM heating controller app is installed at the digitalSTROM server.
+     */
     public static final String GET_HEATING_HEATING_CONTROLLER_CHILDREN_PATH = "/scripts/heating-controller/";
 
+    /**
+     * Action for set operation mode at {@link EventNames#HEATING_CONTROL_OPERATION_MODE}.
+     */
     public static final String SET_OPERATION_MODE = "setOperationMode";
+    /**
+     * Action for evaluate real active mode at {@link EventNames#HEATING_CONTROL_OPERATION_MODE}. Will be called after
+     * {@link #SET_OPERATION_MODE} or if the configuration of a zone temperature control status has changed.
+     */
     public static final String EVALUATE_REAL_ACTIVE_MODE = "evaluateRealActiveMode";
 
     private String currentHeatingWaterSystemStage = null;
 
     private List<String> echoBox = Collections.synchronizedList(new LinkedList<String>());
 
+    /**
+     * Creates a new {@link TemperatureControlManager}. The {@link ConnectionManager} is needed. The other fields are
+     * only needed, if you want to get automatically informed by status changes through the {@link EventListener} and/or
+     * get informed by new configured zones as discovery.
+     *
+     * @param connectionMananager (must not be null)
+     * @param eventListener (can be null)
+     * @param discovery (can be null)
+     */
     public TemperatureControlManager(ConnectionManager connectionMananager, EventListener eventListener,
             TemperatureControlStatusListener discovery) {
         this(connectionMananager, eventListener, discovery, null);
     }
 
+    /**
+     * Same constructor like
+     * {@link #TemperatureControlManager(ConnectionManager, EventListener, TemperatureControlStatusListener)}, but it
+     * can be set a {@link SystemStateChangeListener}, too.
+     *
+     * @param connectionMananager (must not be null)
+     * @param eventListener (can be null)
+     * @param discovery (can be null)
+     * @param systemStateChangeListener (can be null)
+     * @see #TemperatureControlManager(ConnectionManager, EventListener, TemperatureControlStatusListener)
+     */
     public TemperatureControlManager(ConnectionManager connectionMananager, EventListener eventListener,
             TemperatureControlStatusListener discovery, SystemStateChangeListener systemStateChangeListener) {
         this.connectionMananager = connectionMananager;
@@ -79,48 +156,53 @@ public class TemperatureControlManager implements EventHandler, TemperatureSenso
         }
     }
 
+    /**
+     * Checks all digitalSTROM zones, if temperature control is configured. If a zone with configured temperature
+     * control is found, it will be stored, the flag for {@link #isConfigured()} will be set to true and the discovery
+     * will be informed, if a discovery is registered.
+     */
     public void checkZones() {
-        // if (connectionMananager.checkConnection()) {
-        // TODO: dS-API getApartmentTemperatureControlStatus zu Liste ändern?
-        HashMap<Integer, TemperatureControlStatus> temperationControlStatus = dSapi
+        List<TemperatureControlStatus> temperationControlStatus = dSapi
                 .getApartmentTemperatureControlStatus(connectionMananager.getSessionToken());
         if (!temperationControlStatus.isEmpty()) {
-            for (TemperatureControlStatus tempConStat : temperationControlStatus.values()) {
-                /*
-                 * if (tempConStat.getIsConfigured()) {
-                 * isConfigured = true;
-                 * // TODO: heatingWaterSystemStateAbfragen
-                 * if (discovery != null) {
-                 * discovery.configChanged(tempConStat);
-                 * } else {
-                 * break;
-                 * }
-                 * }
-                 */
+            for (TemperatureControlStatus tempConStat : temperationControlStatus) {
                 addTemperatureControlStatus(tempConStat);
             }
             if (isConfigured && systemStateChangeListener != null) {
                 currentHeatingWaterSystemStage = dSapi.propertyTreeGetString(connectionMananager.getSessionToken(),
                         GET_HEATING_WATER_SYSTEM_STATE_PATH);
             }
-            // this.temperationControlStatus = temperationControlStatus;
         }
-        // }
     }
 
-    // TODO: static isHeatingControllerInstallated
+    /**
+     * Returns true, if the digitalSTROM heating controller app is installed.
+     *
+     * @param connectionManager (must not be null)
+     * @return true, if heating controller app is installed, otherwise false
+     */
     public static boolean isHeatingControllerInstallated(ConnectionManager connectionManager) {
-        // if (connectionManager.checkConnection()) {
         return connectionManager.getDigitalSTROMAPI().propertyTreeGetChildren(connectionManager.getSessionToken(),
                 GET_HEATING_HEATING_CONTROLLER_CHILDREN_PATH) != null;
-        // }
-        // return false;
     }
 
+    /**
+     * Returns all zone which have temperature controlled configured.
+     *
+     * @return all temperature controlled zones
+     */
     public Collection<TemperatureControlStatus> getTemperatureControlStatusFromAllZones() {
-        return this.temperationControlStatus.values();
+        return temperationControlStatus != null ? this.temperationControlStatus.values()
+                : new LinkedList<TemperatureControlStatus>();
     }
 
+    /**
+     * Registers a {@link TemperatureControlStatusListener} for a zone, if the temperation control for this zone is
+     * configured. It can be also register a {@link TemperatureControlStatusListener} as discovery, if the
+     * {@link TemperatureControlStatusListener#getID()} returns {@link TemperatureControlStatusListener#DISCOVERY}.
+     *
+     * @param temperatureControlStatusListener
+     */
     public void registerTemperatureControlStatusListener(
             TemperatureControlStatusListener temperatureControlStatusListener) {
         if (temperatureControlStatusListener != null) {
@@ -151,6 +233,11 @@ public class TemperatureControlManager implements EventHandler, TemperatureSenso
         }
     }
 
+    /**
+     * Unrigesters a {@link TemperatureControlStatusListener}, if it exist.
+     *
+     * @param temperatureControlStatusListener
+     */
     public void unregisterTemperatureControlStatusListener(
             TemperatureControlStatusListener temperatureControlStatusListener) {
         if (temperatureControlStatusListener != null) {
@@ -168,6 +255,13 @@ public class TemperatureControlManager implements EventHandler, TemperatureSenso
         }
     }
 
+    /**
+     * Returns the {@link TemperatureControlStatus} for the given zone, if the temperature control is configured,
+     * otherwise it will be returned null.
+     *
+     * @param zoneID
+     * @return {@link TemperatureControlStatus} if the temperature control is configured, otherwise null
+     */
     public TemperatureControlStatus checkAndGetTemperatureControlStatus(Integer zoneID) {
         TemperatureControlStatus tempConStat = this.temperationControlStatus.get(zoneID);
         if (tempConStat.getIsConfigured()) {
@@ -189,25 +283,28 @@ public class TemperatureControlManager implements EventHandler, TemperatureSenso
         logger.debug("detect event: {}", eventItem.toString());
         try {
             if (eventItem.getName().equals(EventNames.ZONE_SENSOR_VALUE)) {
-                if (SensorEnum.ROOM_TEMPERATION_SET_POINT.getSensorType().toString()
-                        .equals(eventItem.getProperties().get(EventResponseEnum.SENSOR_TYPE))) {
-                    Integer zoneID = Integer.parseInt(eventItem.getSource().get(EventResponseEnum.ZONEID));
-                    if (zoneTemperationControlListenerMap.get(zoneID) != null) {
-                        Float newValue = Float
-                                .parseFloat(eventItem.getProperties().get(EventResponseEnum.SENSOR_VALUE_FLOAT));
-                        if (!isEcho(zoneID, SensorEnum.ROOM_TEMPERATION_CONTROL_VARIABLE, newValue)) {
-                            zoneTemperationControlListenerMap.get(zoneID).onTargetTemperatureChanged(newValue);
+                if (zoneTemperationControlListenerMap != null) {
+                    if (SensorEnum.ROOM_TEMPERATION_SET_POINT.getSensorType().toString()
+                            .equals(eventItem.getProperties().get(EventResponseEnum.SENSOR_TYPE))) {
+                        Integer zoneID = Integer.parseInt(eventItem.getSource().get(EventResponseEnum.ZONEID));
+                        if (zoneTemperationControlListenerMap.get(zoneID) != null) {
+                            Float newValue = Float
+                                    .parseFloat(eventItem.getProperties().get(EventResponseEnum.SENSOR_VALUE_FLOAT));
+                            if (!isEcho(zoneID, SensorEnum.ROOM_TEMPERATION_CONTROL_VARIABLE, newValue)) {
+                                zoneTemperationControlListenerMap.get(zoneID).onTargetTemperatureChanged(newValue);
+                            }
                         }
                     }
-                }
-                if (SensorEnum.ROOM_TEMPERATION_CONTROL_VARIABLE.getSensorType().toString()
-                        .equals(eventItem.getProperties().get(EventResponseEnum.SENSOR_TYPE))) {
-                    Integer zoneID = Integer.parseInt(eventItem.getSource().get(EventResponseEnum.ZONEID));
-                    if (zoneTemperationControlListenerMap.get(zoneID) != null) {
-                        Float newValue = Float
-                                .parseFloat(eventItem.getProperties().get(EventResponseEnum.SENSOR_VALUE_FLOAT));
-                        if (!isEcho(zoneID, SensorEnum.ROOM_TEMPERATION_CONTROL_VARIABLE, newValue)) {
-                            zoneTemperationControlListenerMap.get(zoneID).onControlValueChanged(newValue.intValue());
+                    if (SensorEnum.ROOM_TEMPERATION_CONTROL_VARIABLE.getSensorType().toString()
+                            .equals(eventItem.getProperties().get(EventResponseEnum.SENSOR_TYPE))) {
+                        Integer zoneID = Integer.parseInt(eventItem.getSource().get(EventResponseEnum.ZONEID));
+                        if (zoneTemperationControlListenerMap.get(zoneID) != null) {
+                            Float newValue = Float
+                                    .parseFloat(eventItem.getProperties().get(EventResponseEnum.SENSOR_VALUE_FLOAT));
+                            if (!isEcho(zoneID, SensorEnum.ROOM_TEMPERATION_CONTROL_VARIABLE, newValue)) {
+                                zoneTemperationControlListenerMap.get(zoneID)
+                                        .onControlValueChanged(newValue.intValue());
+                            }
                         }
                     }
                 }
@@ -215,14 +312,12 @@ public class TemperatureControlManager implements EventHandler, TemperatureSenso
 
             if (eventItem.getName().equals(EventNames.HEATING_CONTROL_OPERATION_MODE)) {
                 if (EVALUATE_REAL_ACTIVE_MODE.equals(eventItem.getProperties().get(EventResponseEnum.ACTIONS))) {
-                    // if (connectionMananager.checkConnection()) {
                     Integer zoneID = Integer.parseInt(eventItem.getProperties().get(EventResponseEnum.ZONEID));
                     TemperatureControlStatus temperationControlStatus = dSapi
                             .getZoneTemperatureControlStatus(connectionMananager.getSessionToken(), zoneID, null);
                     if (temperationControlStatus != null) {
                         addTemperatureControlStatus(temperationControlStatus);
                     }
-                    // }
                 }
             }
 
@@ -238,7 +333,7 @@ public class TemperatureControlManager implements EventHandler, TemperatureSenso
                 }
             }
         } catch (Exception e) {
-            logger.debug("Exception: ", e);
+            logger.error("Exception: ", e);
         }
     }
 
@@ -290,13 +385,11 @@ public class TemperatureControlManager implements EventHandler, TemperatureSenso
     @Override
     public boolean pushTargetTemperature(Integer zoneID, Float newValue) {
         if (checkAndGetTemperatureControlStatus(zoneID) != null) {
-            // if (connectionMananager.checkConnection()) {
             if (dSapi.pushZoneSensorValue(connectionMananager.getSessionToken(), zoneID, null, (short) 0, null,
                     newValue, SensorEnum.ROOM_TEMPERATION_SET_POINT)) {
                 addEcho(zoneID, SensorEnum.ROOM_TEMPERATION_SET_POINT, newValue);
                 return true;
             }
-            // }
         }
         return false;
     }
@@ -314,14 +407,31 @@ public class TemperatureControlManager implements EventHandler, TemperatureSenso
         return false;
     }
 
+    /**
+     * Returns true, if minimum one zone has temperature control configured.
+     *
+     * @return true, if minimum one zone has temperature control configured, otherwise false
+     */
     public boolean isConfigured() {
         return isConfigured;
     }
 
+    /**
+     * Returns the current heating water system state, if a {@link SystemStateChangeListener} is registered, otherwise
+     * null.
+     *
+     * @return the current heating water system state or null, if no {@link SystemStateChangeListener}
+     */
     public String getHeatingWaterSystemState() {
         return currentHeatingWaterSystemStage;
     }
 
+    /**
+     * Registers the given {@link SystemStateChangeListener}, which will be informed about heating system water state
+     * changes.
+     *
+     * @param systemStateChangeListener
+     */
     public void registerSystemStateChangeListener(SystemStateChangeListener systemStateChangeListener) {
         if (eventListener != null) {
             SUPPORTED_EVENTS.add(EventNames.STATE_CHANGED);
@@ -330,6 +440,9 @@ public class TemperatureControlManager implements EventHandler, TemperatureSenso
         this.systemStateChangeListener = systemStateChangeListener;
     }
 
+    /**
+     * Unregisters a registered {@link SystemStateChangeListener}.
+     */
     public void unregisterSystemStateChangeListener() {
         this.systemStateChangeListener = null;
     }

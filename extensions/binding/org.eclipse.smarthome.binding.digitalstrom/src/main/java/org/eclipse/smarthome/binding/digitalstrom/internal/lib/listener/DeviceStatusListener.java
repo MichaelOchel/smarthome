@@ -8,17 +8,18 @@
 package org.eclipse.smarthome.binding.digitalstrom.internal.lib.listener;
 
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.manager.DeviceStatusManager;
+import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.Circuit;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.Device;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.DeviceStateUpdate;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.constants.ChangeableDeviceConfigEnum;
 
 /**
- * The {@link DeviceStatusListener} is notified, if a {@link Device} status has changed, if a scene configuration is
- * added
- * to a {@link Device} or if a device has been added or removed.
+ * The {@link DeviceStatusListener} is notified, if a {@link Device} status or configuration has changed, if a scene
+ * configuration is added to a {@link Device} or if a device has been added or removed. The {@link DeviceStatusListener}
+ * can be also registered by a {@link Circuit} to get informed by configuration or status changes.
  * <p>
  * By implementation with the id {@link #DEVICE_DISCOVERY} this listener can be used as a device discovery to get
- * informed, if a new {@link Device}s is added or removed from the digitalSTROM-System.<br>
+ * informed, if a new {@link Device} or {@link Circuit} is added or removed from the digitalSTROM-System.<br>
  * For that the {@link DeviceStatusListener} has to be registered on the
  * {@link DeviceStatusManager#registerDeviceListener(DeviceStatusListener)}. Then the {@link DeviceStatusListener} gets
  * informed by the methods {@link #onDeviceAdded(Device)} and {@link #onDeviceRemoved(Device)}.

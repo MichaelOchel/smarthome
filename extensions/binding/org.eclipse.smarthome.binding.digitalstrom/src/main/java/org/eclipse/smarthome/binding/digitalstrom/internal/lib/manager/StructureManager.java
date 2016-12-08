@@ -190,21 +190,73 @@ public interface StructureManager {
      */
     public boolean checkZoneGroupID(int zoneID, short groupID);
 
-    void addCircuitList(List<Circuit> referenceCircuitList);
+    /**
+     * Adds the given {@link List} of {@link Circuit}'s to this {@link StructureManager}.
+     *
+     * @param referenceCircuitList
+     */
+    public void addCircuitList(List<Circuit> referenceCircuitList);
 
-    Circuit addCircuit(Circuit circuit);
+    /**
+     * Adds the given {@link Circuit} to this {@link StructureManager}.
+     *
+     * @param circuit
+     * @return the old {@link Circuit}, if the given {@link Circuit} was already added.
+     */
+    public Circuit addCircuit(Circuit circuit);
 
-    Circuit getCircuitByDSID(DSID dSID);
+    /**
+     * Returns the {@link Circuit} with the given {@link DSID}.
+     *
+     * @param dSID
+     * @return the {@link Circuit} with the given {@link DSID}
+     */
+    public Circuit getCircuitByDSID(DSID dSID);
 
-    Circuit getCircuitByDSID(String dSID);
+    /**
+     * Returns the {@link Circuit} with the given dSID as {@link String}.
+     *
+     * @param dSID
+     * @return the {@link Circuit} with the given dSID
+     */
+    public Circuit getCircuitByDSID(String dSID);
 
-    Circuit getCircuitByDSUID(String dSUID);
+    /**
+     * Returns the {@link Circuit} with the given dSUID as {@link String}.
+     *
+     * @param dSUID
+     * @return the {@link Circuit} with the given dSUID
+     */
+    public Circuit getCircuitByDSUID(String dSUID);
 
-    Circuit updateCircuitConfig(Circuit newCircuit);
+    /**
+     * Updates the configuration of an added {@link Circuit} through a new {@link Circuit} object.
+     * 
+     * @param newCircuit
+     * @return {@link Circuit} with the old configuration
+     */
+    public Circuit updateCircuitConfig(Circuit newCircuit);
 
-    Circuit deleteCircuit(DSID dSID);
+    /**
+     * Deletes the {@link Circuit} with the given {@link dSID}.
+     * 
+     * @param dSID
+     * @return the removed {@link Circuit}
+     */
+    public Circuit deleteCircuit(DSID dSID);
 
-    Circuit deleteCircuit(String dSUID);
+    /**
+     * Deletes the {@link Circuit} with the given {@link dSUID}.
+     * 
+     * @param dSUID
+     * @return the removed {@link Circuit}
+     */
+    public Circuit deleteCircuit(String dSUID);
 
-    Map<DSID, Circuit> getCircuitMap();
+    /**
+     * Returns a {@link Map} of all {@link Circuit}'s which are added to this {@link StructureManager}.
+     * 
+     * @return {@link Map} of all added {@link Circuit}'s
+     */
+    public Map<DSID, Circuit> getCircuitMap();
 }

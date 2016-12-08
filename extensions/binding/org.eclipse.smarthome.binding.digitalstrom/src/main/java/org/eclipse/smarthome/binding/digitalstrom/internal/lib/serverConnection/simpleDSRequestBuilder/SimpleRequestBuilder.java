@@ -30,9 +30,8 @@ import org.eclipse.smarthome.binding.digitalstrom.internal.lib.serverConnection.
  * <span style="padding-left:14em">{@link #buildRequestString()};<br>
  * </span></i>
  *
- * @author Michael Ochel
- * @author Matthias Siegele
- *
+ * @author Michael Ochel - initial contributer
+ * @author Matthias Siegele - initial contributer
  */
 public class SimpleRequestBuilder {
 
@@ -109,6 +108,8 @@ public class SimpleRequestBuilder {
      * @returns SimpleRequestBuilder with chosen function
      * @throws IllegalArgumentException if a function is already chosen
      * @throws NullArgumentException if the functionKey is null
+     *
+     * @return SimpleRequestBuilder
      */
     public SimpleRequestBuilder addFunction(String functionKey) throws IllegalArgumentException, NullArgumentException {
         return builder.addFunctionInt(functionKey);
@@ -193,6 +194,7 @@ public class SimpleRequestBuilder {
      *
      * @see java.lang.Object#equals()
      */
+    @SuppressWarnings("javadoc")
     public boolean equals(SimpleRequestBuilder builder) {
         return this.request.contains(builder.request);
     }

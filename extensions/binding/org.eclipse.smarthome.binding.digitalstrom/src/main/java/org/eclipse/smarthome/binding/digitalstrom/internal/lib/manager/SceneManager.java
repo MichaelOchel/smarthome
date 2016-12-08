@@ -130,7 +130,7 @@ public interface SceneManager {
     /**
      * Adds the scene call with the given dSID and sceneId as an echo to ignore them by detecting the {@link EventItem}.
      *
-     * @param dsid
+     * @param dSID
      * @param sceneId
      */
     public void addEcho(String dSID, short sceneId);
@@ -238,5 +238,12 @@ public interface SceneManager {
      */
     public ManagerStates getManagerState();
 
-    void callInternalSceneWithoutDiscovery(Integer zoneID, Short groupID, Short sceneID);
+    /**
+     * Calls a scene without inform the scene discovery about the conceivably new {@link InternalScene}.
+     * 
+     * @param zoneID
+     * @param groupID
+     * @param sceneID
+     */
+    public void callInternalSceneWithoutDiscovery(Integer zoneID, Short groupID, Short sceneID);
 }

@@ -11,10 +11,13 @@ import java.util.List;
 import java.util.Map;
 
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.config.Config;
+import org.eclipse.smarthome.binding.digitalstrom.internal.lib.event.constants.EventNames;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.event.types.EventItem;
+import org.eclipse.smarthome.binding.digitalstrom.internal.lib.sensorJobExecutor.sensorJob.impl.DeviceConsumptionSensorJob;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.DeviceSceneSpec;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.DeviceStateUpdate;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.constants.DeviceBinarayInputEnum;
+import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.constants.FuncNameAndColorGroupEnum;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.constants.FunctionalColorGroupEnum;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.constants.OutputModeEnum;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.constants.SensorEnum;
@@ -66,7 +69,7 @@ public interface Device extends GeneralDeviceInformations {
     /**
      * Sets the zoneID of this device.
      *
-     * @parm zoneID
+     * @param zoneID
      */
     public void setZoneId(int zoneID);
 
@@ -168,7 +171,7 @@ public interface Device extends GeneralDeviceInformations {
      * Adds an set slat position command as {@link DeviceStateUpdate} with the given slat position to the list of
      * outstanding commands.
      *
-     * @return slat position
+     * @param slatPosition
      */
     public void setSlatPosition(int slatPosition);
 
@@ -277,6 +280,7 @@ public interface Device extends GeneralDeviceInformations {
      * the output value and the second is the angle value or -1 if no angle value exists.
      * If the method returns null, this scene id isn't read yet.
      *
+     * @param sceneID
      * @return scene output value and scene angle value or null, if it isn't read out yet
      */
     public Integer[] getSceneOutputValue(short sceneID);
@@ -570,83 +574,381 @@ public interface Device extends GeneralDeviceInformations {
      */
     public void decreaseSlatAngle();
 
-    void saveConfigSceneSpecificationIntoDevice(String propertries);
+    /**
+     * Saves scene configurations from the given sceneProperties in the {@link Device]. <br>
+     * <br>
+     * <b>The {@link String} has to be like the following format:</b><br>
+     * {[sceneID] = }(1){Scene: [sceneID], dontcare: [don't care flag], localPrio: [local prio flag], specialMode:
+     * [special mode flag]}(0..1), {sceneValue: [sceneValue]{, sceneAngle: [scene angle]}(0..1)}{\n}(0..1)<br>
+     * <br>
+     * e.g. "10 = Scene: PRESET_4, dontcare: false, localPrio: false, specialMode: false, flashMode: false, sceneValue:
+     * 0\n"
+     *
+     * @param propertries
+     */
+    public void saveConfigSceneSpecificationIntoDevice(String propertries);
 
-    boolean isSensorDevice();
+    /**
+     * Returns true, if this {@link Device} is a sensor device. That means, that this {@link Device} has no output
+     * channel
+     * ({@link OutputModeEnum#DISABLED}), but climate sensors.
+     *
+     * @return true, if it is a sensor device
+     */
+    public boolean isSensorDevice();
 
-    boolean isHeatingDevice();
+    /**
+     * Returns true, if this {@link Device} is a heating device. That means, that the output mode of this {@link Device}
+     * is one of the following modes {@link OutputModeEnum#PWM} or {@link OutputModeEnum#SWITCH} and the
+     * {@link FuncNameAndColorGroupEnum} is {@link FuncNameAndColorGroupEnum#HEATING}.
+     *
+     * @return true, if it is a heating device
+     */
+    public boolean isHeatingDevice();
 
-    void setSensorDataRefreshPriority(SensorEnum powerSensorType, String refreshPriority);
+    /**
+     * Sets the refresh priority for the given power sensor as {@link SensorEnum}. <br>
+     * <b>Note:</b><br>
+     * 1. The device must have this sensor type, otherwise the set has no effect.<br>
+     * <br>
+     * 2. Valid priorities are:<br>
+     * - {@link Config#REFRESH_PRIORITY_NEVER}<br>
+     * - {@link Config#REFRESH_PRIORITY_LOW}<br>
+     * - {@link Config#REFRESH_PRIORITY_MEDIUM}<br>
+     * - {@link Config#REFRESH_PRIORITY_HIGH}<br>
+     * <br>
+     * 3. Valid sensor types are:<br>
+     * - {@link SensorEnum#POWER_CONSUMPTION}<br>
+     * - {@link SensorEnum#OUTPUT_CURRENT}<br>
+     * - {@link SensorEnum#ELECTRIC_METER}<br>
+     * - {@link SensorEnum#ACTIVE_POWER}<br>
+     *
+     * @param powerSensorType the power sensor to set
+     * @param refreshPriority the new refresh priority
+     */
+    public void setSensorDataRefreshPriority(SensorEnum powerSensorType, String refreshPriority);
 
-    String getPowerSensorRefreshPriority(SensorEnum powerSensorType);
+    /**
+     * Returns the refresh priority of the given power sensor type as {@link SensorEnum}. If the sensor type is not
+     * supported by
+     * this {@link Device} or it is not a power sensor it will be returned null.
+     *
+     * @param powerSensorType
+     * @return the refresh priority
+     */
+    public String getPowerSensorRefreshPriority(SensorEnum powerSensorType);
 
-    List<SensorEnum> getPowerSensorTypes();
+    /**
+     * Returns a {@link List} with all power sensors, which are supported by this {@link Device}.
+     *
+     * @return all supported power sensors
+     */
+    public List<SensorEnum> getPowerSensorTypes();
 
-    List<SensorEnum> getClimateSensorTypes();
+    /**
+     * Returns a {@link List} with all climate sensors, which are supported by this {@link Device}.
+     *
+     * @return all supported climate sensors
+     */
+    public List<SensorEnum> getClimateSensorTypes();
 
-    List<DeviceSensorValue> getDeviceSensorValues();
+    /**
+     * Returns all {@link DeviceSensorValue}'s of this {@link Device}.
+     *
+     * @return list of all {@link DeviceSensorValue}'s
+     */
+    public List<DeviceSensorValue> getDeviceSensorValues();
 
-    void setDeviceSensorValue(DeviceSensorValue deviceSensorValue);
+    /**
+     * Sets the given {@link DeviceSensorValue}. That means the given {@link DeviceSensorValue} will be added, if this
+     * type of {@link DeviceSensorValue} does not exist before, otherwise the existing {@link DeviceSensorValue} will be
+     * updated,
+     * if the given {@link DeviceSensorValue} is newer.
+     *
+     * @param deviceSensorValue the new device sensor value
+     */
+    public void setDeviceSensorValue(DeviceSensorValue deviceSensorValue);
 
-    DeviceSensorValue getDeviceSensorValue(SensorEnum sensorType);
+    /**
+     * Returns the {@link DeviceSensorValue} of the given sensor type as {@link SensorEnum} or null, if no
+     * {@link DeviceSensorValue} exists for the given sensor type.
+     *
+     * @param sensorType
+     * @return the {@link DeviceSensorValue} or null
+     */
+    public DeviceSensorValue getDeviceSensorValue(SensorEnum sensorType);
 
-    DeviceSensorValue getDeviceSensorValue(Short sensorIndex);
+    /**
+     * Returns the {@link DeviceSensorValue} of the given sensor index as {@link Short} or null, if no
+     * {@link DeviceSensorValue} exists for the given sensor index.
+     *
+     * @param sensorIndex
+     * @return the {@link DeviceSensorValue} or null
+     */
+    public DeviceSensorValue getDeviceSensorValue(Short sensorIndex);
 
-    Short getSensorIndex(SensorEnum sensorType);
+    /**
+     * Returns the sensor index for the given sensor type as {@link SensorEnum} of the {@link Device} or null, if the
+     * sensor type does not exist. It will be needed to readout the current sensor value of the digitalSTROM device.
+     *
+     * @param sensorType
+     * @return sensor index for the sensor type
+     */
+    public Short getSensorIndex(SensorEnum sensorType);
 
-    SensorEnum getSensorType(Short sensorIndex);
+    /**
+     * Returns the sensor type as {@link SensorEnum} of the given sensor index or null, if the given sensor type does
+     * not exist.
+     *
+     * @param sensorIndex
+     * @return the sensor type or null
+     */
+    public SensorEnum getSensorType(Short sensorIndex);
 
-    Integer getDsSensorValue(SensorEnum sensorType);
+    /**
+     * Returns the internal digitalSTROM sensor value for the given sensor type as {@link SensorEnum}, if the sensor
+     * type exists and the value is valid. The resolution can be found at {@link SensorEnum}.
+     *
+     * @param sensorType
+     * @return the internal digitalSTROM sensor value or null
+     */
+    public Integer getDsSensorValue(SensorEnum sensorType);
 
-    Integer getDsSensorValue(Short sensorIndex);
+    /**
+     * Returns the internal digitalSTROM sensor value for the given sensor index as {@link Short}, if the sensor
+     * index exists and the value is valid. The resolution can be found at {@link SensorEnum}.
+     *
+     * @param sensorIndex
+     * @return the internal digitalSTROM sensor value or null
+     */
+    public Integer getDsSensorValue(Short sensorIndex);
 
-    Float getFloatSensorValue(SensorEnum sensorType);
+    /**
+     * Returns the float sensor value for the given sensor type as {@link SensorEnum}, if the sensor
+     * type exists and the value is valid. The resolution can be found at {@link SensorEnum}.
+     *
+     * @param sensorType
+     * @return the float sensor value or null
+     */
+    public Float getFloatSensorValue(SensorEnum sensorType);
 
-    Float getFloatSensorValue(Short sensorIndex);
+    /**
+     * Returns the float sensor value for the given sensor index as {@link Short}, if the sensor
+     * index exists and the value is valid. The resolution can be found at {@link SensorEnum}.
+     *
+     * @param sensorIndex
+     * @return the float sensor value or null
+     */
+    public Float getFloatSensorValue(Short sensorIndex);
 
-    boolean setFloatSensorValue(SensorEnum sensorType, Float floatSensorValue);
+    /**
+     * Sets the float sensor value for a given sensor type as {@link SensorEnum}. If the sensor type does not exist, it
+     * will be returned false.
+     *
+     * @param sensorType
+     * @param floatSensorValue the new float sensor value
+     * @return true, if it was successful, otherwise false
+     */
+    public boolean setFloatSensorValue(SensorEnum sensorType, Float floatSensorValue);
 
-    boolean setFloatSensorValue(Short sensorIndex, Float floatSensorValue);
+    /**
+     * Sets the float sensor value for a given sensor index as {@link Short}. If the sensor type does not exist, it
+     * will be returned false.
+     *
+     * @param sensorIndex
+     * @param floatSensorValue the new float sensor value
+     * @return true, if it was successful, otherwise false
+     */
+    public boolean setFloatSensorValue(Short sensorIndex, Float floatSensorValue);
 
-    boolean setDsSensorValue(Short sensorIndex, Integer dSSensorValue);
+    /**
+     * Sets the internal digitalSTROM sensor value for a given sensor index as {@link Short}. If the sensor index does
+     * not exist, it will be returned false.
+     *
+     * @param sensorIndex
+     * @param dSSensorValue the new internal digitalSTROM sensor value
+     * @return true, if it was successful, otherwise false
+     */
+    public boolean setDsSensorValue(Short sensorIndex, Integer dSSensorValue);
 
-    boolean setDsSensorValue(SensorEnum sensorType, Integer dSSensorValue);
+    /**
+     * Sets the internal digitalSTROM sensor value for a given sensor type as {@link SensorEnum}. If the sensor type
+     * does
+     * not exist, it will be returned false.
+     *
+     * @param sensorType
+     * @param dSSensorValue the new internal digitalSTROM sensor value
+     * @return true, if it was successful, otherwise false
+     */
+    public boolean setDsSensorValue(SensorEnum sensorType, Integer dSSensorValue);
 
-    boolean setDsSensorValue(Short sensorIndex, Integer dSSensorValue, Float floatSensorValue);
+    /**
+     * Sets the internal digitalSTROM and float sensor value for a given sensor index as {@link Short}. If the sensor
+     * index does not exist, it will be returned false.
+     *
+     * @param sensorIndex
+     * @param dSSensorValue the new internal digitalSTROM sensor value
+     * @param floatSensorValue the new float sensor value
+     * @return true, if it was successful, otherwise false
+     */
+    public boolean setDsSensorValue(Short sensorIndex, Integer dSSensorValue, Float floatSensorValue);
 
-    boolean setDsSensorValue(SensorEnum sensorType, Integer dSSensorValue, Float floatSensorValue);
+    /**
+     * Sets the internal digitalSTROM and float sensor value for a given sensor type as {@link SensorEnum}. If the
+     * sensor type does not exist, it will be returned false.
+     *
+     * @param sensorType
+     * @param dSSensorValue the new internal digitalSTROM sensor value
+     * @param floatSensorValue the new float sensor value
+     * @return true, if it was successful, otherwise false
+     */
+    public boolean setDsSensorValue(SensorEnum sensorType, Integer dSSensorValue, Float floatSensorValue);
 
-    boolean hasSensors();
+    /**
+     * Returns true, if this {@link Device} has sensors, otherwise false.
+     *
+     * @return true, if device has sensors
+     */
+    public boolean hasSensors();
 
-    boolean hasClimateSensors();
+    /**
+     * Returns true, if this {@link Device} has climate sensors, otherwise false.
+     *
+     * @return true, if device has climate sensors
+     */
+    public boolean hasClimateSensors();
 
-    boolean hasPowerSensors();
+    /**
+     * Returns true, if this {@link Device} has power sensors, otherwise false.
+     *
+     * @return true, if device has power sensors
+     */
+    public boolean hasPowerSensors();
 
-    void setDeviceSensorDsValueBySensorJob(SensorEnum sensorType, Integer value);
+    /**
+     * Only needed for {@link DeviceConsumptionSensorJob}'s. To set the internal digitalSTROM sensor value please use
+     * {@link #setDsSensorValue(SensorEnum, Integer)}.
+     *
+     * @param sensorType
+     * @param value new value
+     */
+    public void setDeviceSensorDsValueBySensorJob(SensorEnum sensorType, Integer value);
 
-    void enableSensorEchoBox();
+    /**
+     * Enables the internal sensor echo box for {@link EventNames#DEVICE_SENSOR_VALUE} events.
+     */
+    public void enableSensorEchoBox();
 
-    void disableSensorEchoBox();
+    /**
+     * Disables the internal sensor echo box for {@link EventNames#DEVICE_SENSOR_VALUE} events.
+     */
+    public void disableSensorEchoBox();
 
-    boolean isSensorEchoBoxEnabled();
+    /**
+     * Returns true, if the internal sensor echo box is enabled, otherwise false.
+     *
+     * @return true, if the internal sensor echo box is enabled
+     */
+    public boolean isSensorEchoBoxEnabled();
 
-    void setDeviceSensorByEvent(EventItem event);
+    /**
+     * Sets the {@link DeviceSensorValue} through a {@link EventItem} of the type
+     * {@link EventNames#DEVICE_SENSOR_VALUE}.
+     *
+     * @param event
+     */
+    public void setDeviceSensorByEvent(EventItem event);
 
-    boolean checkPowerSensorRefreshPriorityNever(SensorEnum powerSensorType);
+    /**
+     * Returns true, if the refresh priority of the given power sensor type as {@link SensorEnum} is equals
+     * {@link Config#REFRESH_PRIORITY_NEVER}, otherwise false.
+     *
+     * @param powerSensorType
+     * @return true, if refresh priority is never
+     */
+    public boolean checkPowerSensorRefreshPriorityNever(SensorEnum powerSensorType);
 
-    boolean containsSensorType(SensorEnum sensorType);
+    /**
+     * Returns true, if the given sensor type as {@link SensorEnum} is supported by this {@link Device}, otherwise
+     * false.
+     *
+     * @param sensorType
+     * @return true, if the sensor type is supported
+     */
+    public boolean supportsSensorType(SensorEnum sensorType);
 
-    boolean isTemperatureControlledDevice();
+    /**
+     * Returns true, if this {@link Device} is a temperature controlled device, otherwise false. That means, that the
+     * output mode is one of the output modes in
+     * {@link OutputModeEnum#outputModeIsTemperationControlled(OutputModeEnum)}.
+     *
+     * @return true, if this {@link Device} is a temperature controlled
+     */
+    public boolean isTemperatureControlledDevice();
 
+    /**
+     * Returns true, if this {@link Device} is a binary input device. That means it have no output mode
+     * ({@link OutputModeEnum#DISABLED}), but {@link DeviceBinaryInput}'s.
+     *
+     * @return true, if this {@link Device} is a binary input device
+     */
     public boolean isBinaryInputDevice();
 
-    List<DeviceBinaryInput> getBinaryInputs();
+    /**
+     * Returns a {@link List} which contains all currently configured {@link DeviceBinaryInput}'s.
+     *
+     * @return list with all configured {@link DeviceBinaryInput}'s
+     */
+    public List<DeviceBinaryInput> getBinaryInputs();
 
-    DeviceBinaryInput getBinaryInput(DeviceBinarayInputEnum binaryInputType);
+    /**
+     * Returns the {@link DeviceBinaryInput} of the given binary input type as {@link DeviceBinarayInputEnum}} or null,
+     * if the binary input type does not exist.
+     *
+     * @param binaryInputType
+     * @return the {@link DeviceBinaryInput} or null
+     */
+    public DeviceBinaryInput getBinaryInput(DeviceBinarayInputEnum binaryInputType);
 
-    Short getBinaryInputState(DeviceBinarayInputEnum binaryInputType);
+    /**
+     * Returns the state of the given binary input type as {@link DeviceBinarayInputEnum}} or null, if the binary input
+     * type does not exist.
+     *
+     * @param binaryInputType
+     * @return state of the given binary input type or null
+     */
+    public Short getBinaryInputState(DeviceBinarayInputEnum binaryInputType);
 
-    void setBinaryInputState(DeviceBinarayInputEnum binaryInputType, Short newState);
+    /**
+     * Sets the state of an existing {@link DeviceBinaryInput}. If the given {@link DeviceBinarayInputEnum} does not
+     * exist, it will returned false, otherwise true.
+     *
+     * @param binaryInputType
+     * @param newState the new state
+     * @return true, if it was successful, otherwise false
+     */
+    public boolean setBinaryInputState(DeviceBinarayInputEnum binaryInputType, Short newState);
 
-    void setBinaryInputs(List<DeviceBinaryInput> newBinaryInputs);
+    /**
+     * Sets the given {@link List} of {@link DeviceBinaryInput}'s as supported binary inputs.
+     *
+     * @param newBinaryInputs
+     */
+    public void setBinaryInputs(List<DeviceBinaryInput> newBinaryInputs);
+
+    /**
+     * Returns true, if the given power sensor type as {@link SensorEnum} is up to date and does not need a refresh,
+     * otherwise it will returned false.
+     *
+     * @param powerSensorType
+     * @return true, if the power sensor is up to date
+     */
+    public boolean isPowerSensorUpToDate(SensorEnum powerSensorType);
+
+    /**
+     * Returns a {@link List} of all supported sensor types as {@link SensorEnum}.
+     *
+     * @return all supported sensor types
+     */
+    public List<SensorEnum> getSensorTypes();
 }
