@@ -158,7 +158,7 @@ public class ZoneTemperatureControlHandler extends BaseThingHandler implements T
     }
 
     private boolean isTemperature() {
-        return currentChannelID.contains(DsChannelTypeProvider.TEMPERATURE_CONTROLLED);
+        return currentChannelID.contains(DsChannelTypeProvider.TEMPERATURE_CONTROLED);
     }
 
     private void sendCommandAndUpdateChannel(Float newValue) {
@@ -203,7 +203,7 @@ public class ZoneTemperatureControlHandler extends BaseThingHandler implements T
         if (controlMode != null && controlState != null) {
             if (controlMode.equals(ControlModes.PID_CONTROL)
                     && (currentChannelID == null
-                            || !currentChannelID.contains(DsChannelTypeProvider.TEMPERATURE_CONTROLLED))
+                            || !currentChannelID.contains(DsChannelTypeProvider.TEMPERATURE_CONTROLED))
                     && !controlState.equals(ControlStates.EMERGENCY)) {
                 currentChannelID = DsChannelTypeProvider.getOutputChannelTypeID(FunctionalColorGroupEnum.BLUE,
                         OutputModeEnum.TEMPRETURE_PWM);
