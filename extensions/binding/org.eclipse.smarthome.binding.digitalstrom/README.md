@@ -151,8 +151,6 @@ The following table shows the parameter:
 |-----------------|------------------------|--------------|----------------- |------------- |
 | ID | dSID| The unique identifier of a digitalSTOM-device. | true | false |
 
-=======
-
 #### Sensor setup
 
 The GE, BL and SW digitalSTROM-Devices have usually sensors to capture power consumption data. So these devices have the following parameters to read them out.  
@@ -235,11 +233,14 @@ The Scene-Thing-Type *Named-Scene* and *Group-Scene* have all parameters. The *A
 
 ### Textual configuration examples
 
+### Textual configuration examples
+
 Usually the discovery works reliable, so that a manual configuration is not needed.
 
 However, at the thing file, a manual configuration looks e.g. like 
 
 #### digitalSTROM-Devices
+
 ```
 Thing digitalstrom:GE:GE-KM200 (digitalstrom:dssBridge:myDssBridge) [ dSID="3504175fe0000000000043d4",  activePowerRefreshPriority="low", electricMeterRefreshPriority=“medium", outputCurrentRefreshPriority="high"]
 
@@ -474,40 +475,40 @@ Number Temperature { channel="digitalstrom:zoneTemperatureControl:dSS:zoneTemper
 sitemap demo label="Main Menu"
 {
   Frame label="System" {
-    Frame label="digitalSTROM-Server"{
+   Frame label="digitalSTROM-Server"{
       Text item=TotalActivePower 
       Text item=TotalElectricMeter 
     }
   
-    Frame label="digitalSTROM-Meter"{
+   Frame label="digitalSTROM-Meter"{
       Text item=TotalActivePowerDsm
       Text item=TotalElectricMeterDsm
     }
   }
   
   Frame label="Climate" {
-    Frame label="heating/cooling"{
+   Frame label="heating/cooling"{
       Switch item=SensorSwitch 
     }
     
-    Frame label="iSens200"{
+   Frame label="iSens200"{
       Text item=TempIndoor
       Text item=HumidityIndoor
     }
     
-    Frame label="Target temperature"{
+   Frame label="Target temperature"{
       Slider item=Temperature
       Text item=Temperature
     }
   }
   
   Frame label="Shade"{
-    Frame label="Rollerschutter"{
+   Frame label="Rollerschutter"{
       Slider item=Shade 
       Text item=Shade
     }
     
-    Frame label="Blind"{
+   Frame label="Blind"{
       Slider item=BlindPosition 
       Slider item=BlindAngle
     }
@@ -528,7 +529,7 @@ sitemap demo label="Main Menu"
       Text item=ElectricMeter 
     }
     
-    Frame label="TV"{
+   Frame label="TV"{
       Switch item=DeviceSwitch
     }  
   }
