@@ -5,6 +5,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map.Entry;
 
+import org.apache.commons.lang.StringUtils;
 import org.eclipse.smarthome.binding.digitalstrom.DigitalSTROMBindingConstants;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.climate.jsonResponseContainer.BaseSensorValues;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.climate.jsonResponseContainer.impl.AssignedSensors;
@@ -24,11 +25,15 @@ import org.eclipse.smarthome.binding.digitalstrom.internal.lib.manager.Connectio
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.manager.impl.ConnectionManagerImpl;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.serverConnection.constants.JSONApiResponseKeysEnum;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.serverConnection.impl.JSONResponseHandler;
+import org.eclipse.smarthome.binding.digitalstrom.internal.lib.serverConnection.simpleDSRequestBuilder.SimpleRequestBuilder;
+import org.eclipse.smarthome.binding.digitalstrom.internal.lib.serverConnection.simpleDSRequestBuilder.constants.ClassKeys;
+import org.eclipse.smarthome.binding.digitalstrom.internal.lib.serverConnection.simpleDSRequestBuilder.constants.FunctionKeys;
+import org.eclipse.smarthome.binding.digitalstrom.internal.lib.serverConnection.simpleDSRequestBuilder.constants.InterfaceKeys;
+import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.Circuit;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.Device;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.CachedMeteringValue;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.DeviceStateUpdate;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.constants.ChangeableDeviceConfigEnum;
-import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.constants.DeviceBinarayInputEnum;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.constants.MeteringTypeEnum;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.constants.MeteringUnitsEnum;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.impl.JSONDeviceSceneSpecImpl;
@@ -73,12 +78,12 @@ public class TestApi {
                 if (deviceStateUpdate.getValue() instanceof CachedMeteringValue) {
                     CachedMeteringValue cachedVal = (CachedMeteringValue) deviceStateUpdate.getValue();
                     System.out.println(cachedVal.getMeteringType() + " " + cachedVal.getMeteringUnit() + " = "
-                            + (cachedVal.getMeteringType().equals(MeteringTypeEnum.energy)
+                            + (cachedVal.getMeteringType().equals(MeteringTypeEnum.ENERGY)
                                     && (cachedVal.getMeteringUnit() == null
-                                            || cachedVal.getMeteringUnit().equals(MeteringUnitsEnum.Wh))));
-                    if (cachedVal.getMeteringType().equals(MeteringTypeEnum.energy)
+                                            || cachedVal.getMeteringUnit().equals(MeteringUnitsEnum.WH))));
+                    if (cachedVal.getMeteringType().equals(MeteringTypeEnum.ENERGY)
                             && (cachedVal.getMeteringUnit() == null
-                                    || cachedVal.getMeteringUnit().equals(MeteringUnitsEnum.Wh))) {
+                                    || cachedVal.getMeteringUnit().equals(MeteringUnitsEnum.WH))) {
                         System.out.println("new Value = " + new DecimalType(cachedVal.getValue() * 0.001));
                     }
                     System.out.println("new Value = " + new DecimalType(cachedVal.getValue()));
@@ -98,13 +103,11 @@ public class TestApi {
 
         @Override
         public void onDeviceConfigChanged(ChangeableDeviceConfigEnum whatConfig) {
-            // TODO Auto-generated method stub
 
         }
 
         @Override
         public void onSceneConfigAdded(short sceneID) {
-            // TODO Auto-generated method stub
 
         }
 
@@ -113,6 +116,10 @@ public class TestApi {
             return DSID;
         }
 
+    }
+
+    public static String buildChannelID(String... parts) {
+        return StringUtils.join(parts, DsChannelTypeProvider.SEPERATOR);
     }
 
     public static void main(String[] args) {
@@ -127,30 +134,95 @@ public class TestApi {
         final String DEVICE_QUERY2 = "devQ2";
         String testType = "";
 
-        final ConnectionManager connMan = new ConnectionManagerImpl(host, user, pw, false);
+        final ConnectionManager connMan = new ConnectionManagerImpl(host1, user, user, true);
         connMan.registerConnectionListener(new DummyConnectionListener());
         final DsAPI dSAPI = connMan.getDigitalSTROMAPI();
-        try {
-            System.out.println(dSAPI.getTime(null));
-        } catch (Exception e) {
+        // connMan.checkConnection();
+        String request = SimpleRequestBuilder.buildNewRequest(InterfaceKeys.JSON).addRequestClass(ClassKeys.SYSTEM)
+                .addFunction(FunctionKeys.LOGIN_APPLICATION).addParameter("test", "test").buildRequestString();
+
+        String functionName = request.substring(request.indexOf("/", (request.indexOf("/", 1) + 1)) + 1);
+        int functionEnd;
+        if ((functionEnd = functionName.indexOf("?")) > -1) {
+            functionName = functionName.substring(0, functionEnd);
         }
-        System.out.println(System.currentTimeMillis() + 60000 + ">=" + System.currentTimeMillis() + "="
-                + (System.currentTimeMillis() + 60000 >= System.currentTimeMillis()));
+        functionName = StringUtils.substringAfterLast(StringUtils.substringBefore(null, "?"), "/");
+        System.out.println(StringUtils.replaceOnce(request,
+                StringUtils.substringBefore(StringUtils.substringAfter(request, "token="), "&"), "dssadmin2"));
+        System.out.println(dSAPI.getInstallationName("123"));
 
-        System.out.println(dSAPI.getDSID(null));
-
-        String request = "/json/apartment/getName?token=null&token=null";
-        int start = request.indexOf("token=");
-        int end = request.indexOf("&", start);
-        System.err.println(start + " " + end);
-        if (end == -1) {
-            request = request.substring(0, start + 6) + "123";
-        } else {
-            request = request.substring(0, start + 6) + "123" + request.substring(end, request.length());
+        String channelID = DsChannelTypeProvider.getMeteringChannelID(MeteringTypeEnum.ENERGY, MeteringUnitsEnum.WH,
+                false);
+        System.out.println(channelID);
+        System.out.println(DsChannelTypeProvider.getMeteringType(channelID));
+        List<CachedMeteringValue> meteringVale = dSAPI.getLatest(connMan.getSessionToken(),
+                MeteringTypeEnum.CONSUMPTION, DsAPI.ALL_METERS, null);
+        for (Circuit circuit : dSAPI.getApartmentCircuits(null)) {
+            for (CachedMeteringValue meterval : meteringVale) {
+                if (meterval.getDsid().equals(circuit.getDSID())) {
+                    circuit.addMeteringValue(meterval);
+                    System.out.println(circuit.getAllCachedMeteringValues().toString());
+                }
+            }
         }
+        /*
+         * String channelIDpre = DsChannelTypeProvider.GENERAL;
+         * List<String> supportedOutputChannelTypes = new LinkedList<String>();
+         * for (short i = 0; i < 3; i++) {
+         * if (i == 1) {
+         * channelIDpre = DsChannelTypeProvider.LIGHT;
+         * }
+         * if (i == 2) {
+         * channelIDpre = DsChannelTypeProvider.HEATING;
+         * supportedOutputChannelTypes.add(DsChannelTypeProvider.buildIdentifier(channelIDpre,
+         * DsChannelTypeProvider.TEMPERATURE_CONTROLLED));
+         * }
+         * supportedOutputChannelTypes
+         * .add(DsChannelTypeProvider.buildIdentifier(channelIDpre, DsChannelTypeProvider.SWITCH));
+         * supportedOutputChannelTypes
+         * .add(DsChannelTypeProvider.buildIdentifier(channelIDpre, DsChannelTypeProvider.DIMMER));
+         * if (i < 2) {
+         * supportedOutputChannelTypes
+         * .add(DsChannelTypeProvider.buildIdentifier(channelIDpre, "2", DsChannelTypeProvider.STAGE));
+         * supportedOutputChannelTypes
+         * .add(DsChannelTypeProvider.buildIdentifier(channelIDpre, "3", DsChannelTypeProvider.STAGE));
+         * }
+         * }
+         * channelIDpre = DsChannelTypeProvider.SHADE;
+         * supportedOutputChannelTypes.add(channelIDpre);
+         * supportedOutputChannelTypes
+         * .add(DsChannelTypeProvider.buildIdentifier(channelIDpre, DsChannelTypeProvider.ANGLE));
+         * supportedOutputChannelTypes.add(DsChannelTypeProvider.SCENE);
+         *
+         * System.out.println(supportedOutputChannelTypes.toString());
+         */
+        // StringUtils.join([DsChannelTypeProvider.SHADE, DsChannelTypeProvider.ANGLE]),
+        // DsChannelTypeProvider.SEPERATOR));
 
-        System.err.println(request);
-        connMan.checkConnection();
+        /*
+         * List<ChannelTypeUID> channelTypeList = new LinkedList<ChannelTypeUID>();
+         * for (String channelTypeId : supportedOutputChannelTypes) {
+         * channelTypeList.add(new ChannelTypeUID(DigitalSTROMBindingConstants.BINDING_ID, channelTypeId));
+         * }
+         * for (SensorEnum sensorType : SensorEnum.values()) {
+         * channelTypeList.add(
+         * new ChannelTypeUID(DigitalSTROMBindingConstants.BINDING_ID, sensorType.toString().toLowerCase()));
+         * }
+         * for (MeteringTypeEnum meteringType : MeteringTypeEnum.values()) {
+         * channelTypeList.add(new ChannelTypeUID(DigitalSTROMBindingConstants.BINDING_ID,
+         * DsChannelTypeProvider.buildIdentifier(meteringType.toString(), MeteringUnitsEnum.WH.toString())));
+         * channelTypeList.add(new ChannelTypeUID(DigitalSTROMBindingConstants.BINDING_ID,
+         * DsChannelTypeProvider.buildIdentifier(DsChannelTypeProvider.TOTAL_PRE, meteringType.toString(),
+         * MeteringUnitsEnum.WH.toString())));
+         * }
+         * for (DeviceBinarayInputEnum binaryInput : DeviceBinarayInputEnum.values()) {
+         * channelTypeList.add(new ChannelTypeUID(DigitalSTROMBindingConstants.BINDING_ID, DsChannelTypeProvider
+         * .buildIdentifier(DsChannelTypeProvider.BINARY_INPUT_PRE, binaryInput.toString().toLowerCase())));
+         * }
+         * System.out.println(channelTypeList.toString());
+         */
+
+        // connMan.checkConnection();
         new Thread(new Runnable() {
 
             @Override
@@ -169,7 +241,6 @@ public class TestApi {
                         Thread.sleep(sleepTime);
                         sleepTime += 1000;
                     } catch (InterruptedException e) {
-                        // TODO Auto-generated catch block
                         e.printStackTrace();
                     }
                 }
@@ -178,15 +249,47 @@ public class TestApi {
 
         });// .start();
 
-        for (short i = 1; i < 21; i++) {
-            String type = DeviceBinarayInputEnum.getdeviceBinarayInput(i).toString();
-            System.out.println(DsChannelTypeProvider
-                    .getBinaryInputChannelUID(DeviceBinarayInputEnum.getdeviceBinarayInput(i)).getId() + "_label = "
-                    + type.charAt(0) + type.substring(1, type.length()).toLowerCase().replace("_", " ") + " sensor");
-            System.out.println(DsChannelTypeProvider
-                    .getBinaryInputChannelUID(DeviceBinarayInputEnum.getdeviceBinarayInput(i)).getId() + "_desc = \n");
-        }
-
+        /*
+         * String path =
+         * "F:/PraxisProjekt/smarthome-master/git/smarthome/extensions/binding/org.eclipse.smarthome.binding.digitalstrom/ESH-INF/i18n/digitalstrom_en.properties";
+         * File en = new File(path);
+         * Map<String, String> i18nMap = new HashMap<String, String>();
+         * if (en.exists()) {
+         * try {
+         * InputStream certInputStream = new FileInputStream(en);
+         * InputStreamReader reader = new InputStreamReader(certInputStream);
+         * BufferedReader br = new BufferedReader(reader);
+         *
+         * String currentLine;
+         * while ((currentLine = br.readLine()) != null) {
+         * if (!currentLine.startsWith("#")) {
+         * String[] currentLineSnipp = currentLine.split("=");
+         * if (currentLineSnipp.length == 2) {
+         * i18nMap.put(currentLineSnipp[0].replaceAll(" ", ""), currentLineSnipp[1]);
+         * }
+         * // System.out.println(currentLine);
+         * }
+         * }
+         * br.close();
+         * System.out.println(i18nMap.toString());
+         * } catch (FileNotFoundException e) {
+         * System.err.println("Can't find a certificate file at the path: " + path + "\nPlease check the path!");
+         * } catch (IOException e) {
+         * System.err.println("An IOException occurred: " + e.getMessage());
+         * }
+         * }
+         * String channelID = null;
+         * for (short i = 1; i < 21; i++) {
+         * channelID = DsChannelTypeProvider.getBinaryInputChannelUID(DeviceBinarayInputEnum.getdeviceBinarayInput(i))
+         * .getId();
+         * System.out.println("| " + channelID + " | Switch | " + i18nMap.get(channelID + "_desc") + " | SW |");
+         * }
+         * System.out.println();
+         * for (SensorEnum sensor : SensorEnum.values()) {
+         * channelID = DsChannelTypeProvider.getSensorChannelUID(sensor).getId();
+         * System.out.println("| " + channelID + " | Number | " + i18nMap.get(channelID + "_desc") + " | --- |");
+         * }
+         */
         // System.out.println(connMan.getDigitalSTROMAPI().getLatest(connMan.getSessionToken(),
         // MeteringTypeEnum.energyDelta,
         // ALL_METERS, MeteringUnitsEnum.Wh));
@@ -514,13 +617,11 @@ public class TestApi {
 
                 @Override
                 public void setEventListener(EventListener eventListener) {
-                    // TODO Auto-generated method stub
 
                 }
 
                 @Override
                 public void unsetEventListener(EventListener eventListener) {
-                    // TODO Auto-generated method stub
 
                 }
 
@@ -599,7 +700,6 @@ public class TestApi {
                                 try {
                                     Thread.sleep(500);
                                 } catch (InterruptedException e) {
-                                    // TODO Auto-generated catch block
                                     e.printStackTrace();
                                 }
                             }
@@ -611,7 +711,6 @@ public class TestApi {
                         try {
                             Thread.sleep(1000);
                         } catch (InterruptedException e) {
-                            // TODO Auto-generated catch block
                             e.printStackTrace();
                         }
                     }

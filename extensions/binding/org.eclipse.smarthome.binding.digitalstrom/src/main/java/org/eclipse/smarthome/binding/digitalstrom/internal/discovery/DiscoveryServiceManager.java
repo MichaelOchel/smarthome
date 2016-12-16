@@ -28,7 +28,6 @@ import org.eclipse.smarthome.binding.digitalstrom.internal.providers.DsDeviceThi
 import org.eclipse.smarthome.config.discovery.AbstractDiscoveryService;
 import org.eclipse.smarthome.config.discovery.DiscoveryService;
 import org.eclipse.smarthome.core.thing.ThingTypeUID;
-import org.eclipse.smarthome.core.thing.type.ThingType;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.ServiceRegistration;
 

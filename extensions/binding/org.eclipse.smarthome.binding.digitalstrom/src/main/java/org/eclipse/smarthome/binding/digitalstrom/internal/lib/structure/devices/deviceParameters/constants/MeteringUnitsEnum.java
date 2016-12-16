@@ -15,6 +15,12 @@ package org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.device
  * @author Matthias Siegele - remove W, because it does not exist any more
  */
 public enum MeteringUnitsEnum {
-    Wh,
-    Ws;
+    WH("Wh"),
+    WS("Ws");
+
+    public final String UNIT;
+
+    private MeteringUnitsEnum(String unit) {
+        this.UNIT = unit;
+    }
 }

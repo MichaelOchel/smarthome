@@ -39,8 +39,11 @@ public class JSONResponseHandler {
         } else if (jsonResponse.get(JSONApiResponseKeysEnum.OK.getKey()) != null) {
             return jsonResponse.get(JSONApiResponseKeysEnum.OK.getKey()).getAsBoolean();
         } else {
-            logger.error("JSONResponseHandler: error in json request. Error message : "
-                    + jsonResponse.get(JSONApiResponseKeysEnum.MESSAGE.getKey()).toString());
+            String message = "unknown message";
+            if (jsonResponse.get(JSONApiResponseKeysEnum.MESSAGE.getKey()) != null) {
+                message = jsonResponse.get(JSONApiResponseKeysEnum.MESSAGE.getKey()).getAsString();
+            }
+            logger.error("JSONResponseHandler: error in json request. Error message : " + message);
         }
         return false;
     }

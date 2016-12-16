@@ -23,7 +23,7 @@ public class DigitalSTROMBindingConstants {
 
     // List of all Thing Type IDs
     public static final String THING_TYPE_ID_DSS_BRIDGE = "dssBridge";
-    public static final String THING_TYPE_ID_ZONE_TEMERATURE_CONTROL = "zone_temperature_control";
+    public static final String THING_TYPE_ID_ZONE_TEMERATURE_CONTROL = "zoneTemperatureControl";
 
     // List of all Thing Type UIDs
     public final static ThingTypeUID THING_TYPE_DSS_BRIDGE = new ThingTypeUID(BINDING_ID, THING_TYPE_ID_DSS_BRIDGE);

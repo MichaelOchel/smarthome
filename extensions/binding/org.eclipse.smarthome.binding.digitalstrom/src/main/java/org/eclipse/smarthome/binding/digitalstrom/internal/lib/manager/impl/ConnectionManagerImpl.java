@@ -415,7 +415,7 @@ public class ConnectionManagerImpl implements ConnectionManager {
                         // no token found, generate applicationToken
                         applicationToken = this.digitalSTROMClient
                                 .requestAppplicationToken(config.getApplicationName());
-                        logger.info("no application-token for application" + config.getApplicationName()
+                        logger.info("no application-token for application " + config.getApplicationName()
                                 + " found, generate a application-token " + applicationToken);
                         if (StringUtils.isNotBlank(applicationToken)) {
                             // enable applicationToken

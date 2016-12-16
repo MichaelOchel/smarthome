@@ -16,7 +16,8 @@ package org.eclipse.smarthome.binding.digitalstrom.internal.lib.serverConnection
 public interface HttpTransport {
 
     /**
-     * Executes a digitalSTROM-request.
+     * Executes a digitalSTROM-request through calling {@link #execute(String, int, int)} with default connection time
+     * out and read timeout.
      *
      * @param request
      * @return response

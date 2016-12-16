@@ -16,7 +16,6 @@ import java.util.Set;
 
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.manager.ConnectionManager;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.manager.StructureManager;
-import org.eclipse.smarthome.binding.digitalstrom.internal.lib.serverConnection.DsAPI;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.serverConnection.impl.JSONResponseHandler;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.AbstractGeneralDeviceInformations;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.Circuit;
@@ -417,7 +416,7 @@ public class StructureManagerImpl implements StructureManager {
                     newCircuit.addMeteringValue(meteringValue);
                 }
                 if (intCircuit.isListenerRegisterd()) {
-
+                    newCircuit.registerDeviceStatusListener(intCircuit.getDeviceStatusListener());
                 }
             }
         }
@@ -436,6 +435,6 @@ public class StructureManagerImpl implements StructureManager {
 
     @Override
     public Map<DSID, Circuit> getCircuitMap() {
-        return circuitMap;
+        return circuitMap != null ? new HashMap<DSID, Circuit>(circuitMap) : new HashMap<DSID, Circuit>();
     }
 }

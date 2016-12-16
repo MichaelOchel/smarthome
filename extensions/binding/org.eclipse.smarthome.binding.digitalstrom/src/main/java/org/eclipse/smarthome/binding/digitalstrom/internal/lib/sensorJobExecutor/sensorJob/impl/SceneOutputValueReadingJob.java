@@ -45,7 +45,7 @@ public class SceneOutputValueReadingJob implements SensorJob {
 
     @Override
     public void execute(DsAPI digitalSTROM, String token) {
-        int[] sceneValue = digitalSTROM.getSceneValue(token, this.device.getDSID(), this.sceneID);
+        int[] sceneValue = digitalSTROM.getSceneValue(token, this.device.getDSID(), null, null, this.sceneID);
 
         if (sceneValue[0] != -1) {
             if (device.isBlind()) {

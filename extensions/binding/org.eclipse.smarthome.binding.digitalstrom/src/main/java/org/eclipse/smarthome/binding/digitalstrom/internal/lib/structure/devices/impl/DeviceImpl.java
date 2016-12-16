@@ -294,9 +294,9 @@ public class DeviceImpl extends AbstractGeneralDeviceInformations implements Dev
     @Override
     public synchronized void setIsOn(boolean flag) {
         if (flag) {
-            this.deviceStateUpdates.add(new DeviceStateUpdateImpl(DeviceStateUpdate.UPDATE_ON_OFF, 1));
+            this.deviceStateUpdates.add(new DeviceStateUpdateImpl(DeviceStateUpdate.ON_OFF, 1));
         } else {
-            this.deviceStateUpdates.add(new DeviceStateUpdateImpl(DeviceStateUpdate.UPDATE_ON_OFF, -1));
+            this.deviceStateUpdates.add(new DeviceStateUpdateImpl(DeviceStateUpdate.ON_OFF, -1));
         }
     }
 
@@ -308,14 +308,14 @@ public class DeviceImpl extends AbstractGeneralDeviceInformations implements Dev
     @Override
     public synchronized void setIsOpen(boolean flag) {
         if (flag) {
-            this.deviceStateUpdates.add(new DeviceStateUpdateImpl(DeviceStateUpdate.UPDATE_OPEN_CLOSE, 1));
+            this.deviceStateUpdates.add(new DeviceStateUpdateImpl(DeviceStateUpdate.OPEN_CLOSE, 1));
             if (isBlind()) {
-                this.deviceStateUpdates.add(new DeviceStateUpdateImpl(DeviceStateUpdate.UPDATE_OPEN_CLOSE_ANGLE, 1));
+                this.deviceStateUpdates.add(new DeviceStateUpdateImpl(DeviceStateUpdate.OPEN_CLOSE_ANGLE, 1));
             }
         } else {
-            this.deviceStateUpdates.add(new DeviceStateUpdateImpl(DeviceStateUpdate.UPDATE_OPEN_CLOSE, -1));
+            this.deviceStateUpdates.add(new DeviceStateUpdateImpl(DeviceStateUpdate.OPEN_CLOSE, -1));
             if (isBlind()) {
-                this.deviceStateUpdates.add(new DeviceStateUpdateImpl(DeviceStateUpdate.UPDATE_OPEN_CLOSE_ANGLE, -1));
+                this.deviceStateUpdates.add(new DeviceStateUpdateImpl(DeviceStateUpdate.OPEN_CLOSE_ANGLE, -1));
             }
         }
     }
@@ -324,12 +324,12 @@ public class DeviceImpl extends AbstractGeneralDeviceInformations implements Dev
     public synchronized void setOutputValue(short value) {
         if (!isShade()) {
             if (value <= 0) {
-                this.deviceStateUpdates.add(new DeviceStateUpdateImpl(DeviceStateUpdate.UPDATE_ON_OFF, -1));
+                this.deviceStateUpdates.add(new DeviceStateUpdateImpl(DeviceStateUpdate.ON_OFF, -1));
 
             } else if (value > maxOutputValue) {
-                this.deviceStateUpdates.add(new DeviceStateUpdateImpl(DeviceStateUpdate.UPDATE_ON_OFF, 1));
+                this.deviceStateUpdates.add(new DeviceStateUpdateImpl(DeviceStateUpdate.ON_OFF, 1));
             } else {
-                this.deviceStateUpdates.add(new DeviceStateUpdateImpl(DeviceStateUpdate.UPDATE_BRIGHTNESS, value));
+                this.deviceStateUpdates.add(new DeviceStateUpdateImpl(DeviceStateUpdate.OUTPUT, value));
             }
         }
     }
@@ -399,12 +399,12 @@ public class DeviceImpl extends AbstractGeneralDeviceInformations implements Dev
     @Override
     public synchronized void increase() {
         if (isDimmable()) {
-            deviceStateUpdates.add(new DeviceStateUpdateImpl(DeviceStateUpdate.UPDATE_BRIGHTNESS_INCREASE, 0));
+            deviceStateUpdates.add(new DeviceStateUpdateImpl(DeviceStateUpdate.OUTPUT_INCREASE, 0));
         }
         if (isShade()) {
-            this.deviceStateUpdates.add(new DeviceStateUpdateImpl(DeviceStateUpdate.UPDATE_SLAT_INCREASE, 0));
+            this.deviceStateUpdates.add(new DeviceStateUpdateImpl(DeviceStateUpdate.SLAT_INCREASE, 0));
             if (isBlind()) {
-                this.deviceStateUpdates.add(new DeviceStateUpdateImpl(DeviceStateUpdate.UPDATE_SLAT_ANGLE_DECREASE, 0));
+                this.deviceStateUpdates.add(new DeviceStateUpdateImpl(DeviceStateUpdate.SLAT_ANGLE_DECREASE, 0));
             }
         }
     }
@@ -412,12 +412,12 @@ public class DeviceImpl extends AbstractGeneralDeviceInformations implements Dev
     @Override
     public synchronized void decrease() {
         if (isDimmable()) {
-            this.deviceStateUpdates.add(new DeviceStateUpdateImpl(DeviceStateUpdate.UPDATE_BRIGHTNESS_DECREASE, 0));
+            this.deviceStateUpdates.add(new DeviceStateUpdateImpl(DeviceStateUpdate.OUTPUT_DECREASE, 0));
         }
         if (isShade()) {
-            this.deviceStateUpdates.add(new DeviceStateUpdateImpl(DeviceStateUpdate.UPDATE_SLAT_DECREASE, 0));
+            this.deviceStateUpdates.add(new DeviceStateUpdateImpl(DeviceStateUpdate.SLAT_DECREASE, 0));
             if (isBlind()) {
-                this.deviceStateUpdates.add(new DeviceStateUpdateImpl(DeviceStateUpdate.UPDATE_SLAT_ANGLE_DECREASE, 0));
+                this.deviceStateUpdates.add(new DeviceStateUpdateImpl(DeviceStateUpdate.SLAT_ANGLE_DECREASE, 0));
             }
         }
     }
@@ -425,14 +425,14 @@ public class DeviceImpl extends AbstractGeneralDeviceInformations implements Dev
     @Override
     public synchronized void increaseSlatAngle() {
         if (isBlind()) {
-            this.deviceStateUpdates.add(new DeviceStateUpdateImpl(DeviceStateUpdate.UPDATE_SLAT_ANGLE_DECREASE, 1));
+            this.deviceStateUpdates.add(new DeviceStateUpdateImpl(DeviceStateUpdate.SLAT_ANGLE_DECREASE, 1));
         }
     }
 
     @Override
     public synchronized void decreaseSlatAngle() {
         if (isBlind()) {
-            this.deviceStateUpdates.add(new DeviceStateUpdateImpl(DeviceStateUpdate.UPDATE_SLAT_ANGLE_DECREASE, 1));
+            this.deviceStateUpdates.add(new DeviceStateUpdateImpl(DeviceStateUpdate.SLAT_ANGLE_DECREASE, 1));
         }
     }
 
@@ -467,11 +467,11 @@ public class DeviceImpl extends AbstractGeneralDeviceInformations implements Dev
             return;
         }
         if (angle < minSlatAngle) {
-            this.deviceStateUpdates.add(new DeviceStateUpdateImpl(DeviceStateUpdate.UPDATE_SLAT_ANGLE, minSlatAngle));
+            this.deviceStateUpdates.add(new DeviceStateUpdateImpl(DeviceStateUpdate.SLAT_ANGLE, minSlatAngle));
         } else if (angle > this.maxSlatPosition) {
-            this.deviceStateUpdates.add(new DeviceStateUpdateImpl(DeviceStateUpdate.UPDATE_SLAT_ANGLE, maxSlatAngle));
+            this.deviceStateUpdates.add(new DeviceStateUpdateImpl(DeviceStateUpdate.SLAT_ANGLE, maxSlatAngle));
         } else {
-            this.deviceStateUpdates.add(new DeviceStateUpdateImpl(DeviceStateUpdate.UPDATE_SLAT_ANGLE, angle));
+            this.deviceStateUpdates.add(new DeviceStateUpdateImpl(DeviceStateUpdate.SLAT_ANGLE, angle));
         }
     }
 
@@ -482,12 +482,12 @@ public class DeviceImpl extends AbstractGeneralDeviceInformations implements Dev
         }
         if (position < minSlatPosition) {
             this.deviceStateUpdates
-                    .add(new DeviceStateUpdateImpl(DeviceStateUpdate.UPDATE_SLATPOSITION, minSlatPosition));
+                    .add(new DeviceStateUpdateImpl(DeviceStateUpdate.SLATPOSITION, minSlatPosition));
         } else if (position > this.maxSlatPosition) {
             this.deviceStateUpdates
-                    .add(new DeviceStateUpdateImpl(DeviceStateUpdate.UPDATE_SLATPOSITION, maxSlatPosition));
+                    .add(new DeviceStateUpdateImpl(DeviceStateUpdate.SLATPOSITION, maxSlatPosition));
         } else {
-            this.deviceStateUpdates.add(new DeviceStateUpdateImpl(DeviceStateUpdate.UPDATE_SLATPOSITION, position));
+            this.deviceStateUpdates.add(new DeviceStateUpdateImpl(DeviceStateUpdate.SLATPOSITION, position));
         }
     }
 
@@ -603,13 +603,13 @@ public class DeviceImpl extends AbstractGeneralDeviceInformations implements Dev
                 }
                 if (sceneOutputMap.get(sceneNumber) != null) {
                     if (!isShade()) {
-                        updateInternalDeviceState(new DeviceStateUpdateImpl(DeviceStateUpdate.UPDATE_BRIGHTNESS,
+                        updateInternalDeviceState(new DeviceStateUpdateImpl(DeviceStateUpdate.OUTPUT,
                                 sceneOutputMap.get(sceneNumber)[0]));
                     } else {
-                        updateInternalDeviceState(new DeviceStateUpdateImpl(DeviceStateUpdate.UPDATE_SLATPOSITION,
+                        updateInternalDeviceState(new DeviceStateUpdateImpl(DeviceStateUpdate.SLATPOSITION,
                                 sceneOutputMap.get(sceneNumber)[0]));
                         if (isBlind()) {
-                            updateInternalDeviceState(new DeviceStateUpdateImpl(DeviceStateUpdate.UPDATE_SLAT_ANGLE,
+                            updateInternalDeviceState(new DeviceStateUpdateImpl(DeviceStateUpdate.SLAT_ANGLE,
                                     sceneOutputMap.get(sceneNumber)[1]));
                         }
                     }
@@ -629,7 +629,7 @@ public class DeviceImpl extends AbstractGeneralDeviceInformations implements Dev
                     case ABSENT:
                     case DEEP_OFF:
                     case SLEEPING:
-                        this.updateInternalDeviceState(new DeviceStateUpdateImpl(DeviceStateUpdate.UPDATE_ON_OFF, -1));
+                        this.updateInternalDeviceState(new DeviceStateUpdateImpl(DeviceStateUpdate.ON_OFF, -1));
                         return true;
                     case AREA_1_OFF:
                     case AREA_2_OFF:
@@ -658,7 +658,7 @@ public class DeviceImpl extends AbstractGeneralDeviceInformations implements Dev
                     case PRESET_20:
                     case PRESET_30:
                     case PRESET_40:
-                        this.updateInternalDeviceState(new DeviceStateUpdateImpl(DeviceStateUpdate.UPDATE_ON_OFF, -1));
+                        this.updateInternalDeviceState(new DeviceStateUpdateImpl(DeviceStateUpdate.ON_OFF, -1));
                         return true;
                     default:
                         break;
@@ -669,13 +669,13 @@ public class DeviceImpl extends AbstractGeneralDeviceInformations implements Dev
                 case DEVICE_ON:
                 case MAXIMUM:
                     if (!isShade()) {
-                        this.updateInternalDeviceState(new DeviceStateUpdateImpl(DeviceStateUpdate.UPDATE_ON_OFF, 1));
+                        this.updateInternalDeviceState(new DeviceStateUpdateImpl(DeviceStateUpdate.ON_OFF, 1));
                     } else {
                         this.updateInternalDeviceState(
-                                new DeviceStateUpdateImpl(DeviceStateUpdate.UPDATE_OPEN_CLOSE, 1));
+                                new DeviceStateUpdateImpl(DeviceStateUpdate.OPEN_CLOSE, 1));
                         if (isBlind()) {
                             this.updateInternalDeviceState(
-                                    new DeviceStateUpdateImpl(DeviceStateUpdate.UPDATE_OPEN_CLOSE_ANGLE, 1));
+                                    new DeviceStateUpdateImpl(DeviceStateUpdate.OPEN_CLOSE_ANGLE, 1));
                         }
                     }
                     return true;
@@ -684,13 +684,13 @@ public class DeviceImpl extends AbstractGeneralDeviceInformations implements Dev
                 case DEVICE_OFF:
                 case AUTO_OFF:
                     if (!isShade()) {
-                        this.updateInternalDeviceState(new DeviceStateUpdateImpl(DeviceStateUpdate.UPDATE_ON_OFF, -1));
+                        this.updateInternalDeviceState(new DeviceStateUpdateImpl(DeviceStateUpdate.ON_OFF, -1));
                     } else {
                         this.updateInternalDeviceState(
-                                new DeviceStateUpdateImpl(DeviceStateUpdate.UPDATE_OPEN_CLOSE, -1));
+                                new DeviceStateUpdateImpl(DeviceStateUpdate.OPEN_CLOSE, -1));
                         if (isBlind()) {
                             this.updateInternalDeviceState(
-                                    new DeviceStateUpdateImpl(DeviceStateUpdate.UPDATE_OPEN_CLOSE_ANGLE, -1));
+                                    new DeviceStateUpdateImpl(DeviceStateUpdate.OPEN_CLOSE_ANGLE, -1));
                         }
                     }
                     return true;
@@ -705,20 +705,20 @@ public class DeviceImpl extends AbstractGeneralDeviceInformations implements Dev
                             return true;
                         }
                         this.updateInternalDeviceState(
-                                new DeviceStateUpdateImpl(DeviceStateUpdate.UPDATE_BRIGHTNESS_INCREASE, 0));
+                                new DeviceStateUpdateImpl(DeviceStateUpdate.OUTPUT_INCREASE, 0));
                     }
                     if (isShade()) {
                         if (slatPosition == maxSlatPosition) {
                             return true;
                         }
                         this.updateInternalDeviceState(
-                                new DeviceStateUpdateImpl(DeviceStateUpdate.UPDATE_SLAT_INCREASE, 0));
+                                new DeviceStateUpdateImpl(DeviceStateUpdate.SLAT_INCREASE, 0));
                         if (isBlind()) {
                             if (slatAngle == maxSlatAngle) {
                                 return true;
                             }
                             updateInternalDeviceState(
-                                    new DeviceStateUpdateImpl(DeviceStateUpdate.UPDATE_SLAT_ANGLE_INCREASE, 0));
+                                    new DeviceStateUpdateImpl(DeviceStateUpdate.SLAT_ANGLE_INCREASE, 0));
                         }
                     }
                     return true;
@@ -733,19 +733,19 @@ public class DeviceImpl extends AbstractGeneralDeviceInformations implements Dev
                             return true;
                         }
                         updateInternalDeviceState(
-                                new DeviceStateUpdateImpl(DeviceStateUpdate.UPDATE_BRIGHTNESS_DECREASE, 0));
+                                new DeviceStateUpdateImpl(DeviceStateUpdate.OUTPUT_DECREASE, 0));
                     }
                     if (isShade()) {
                         if (slatPosition == minSlatPosition) {
                             return true;
                         }
-                        updateInternalDeviceState(new DeviceStateUpdateImpl(DeviceStateUpdate.UPDATE_SLAT_DECREASE, 0));
+                        updateInternalDeviceState(new DeviceStateUpdateImpl(DeviceStateUpdate.SLAT_DECREASE, 0));
                         if (isBlind()) {
                             if (slatAngle == minSlatAngle) {
                                 return true;
                             }
                             this.updateInternalDeviceState(
-                                    new DeviceStateUpdateImpl(DeviceStateUpdate.UPDATE_SLAT_ANGLE_INCREASE, 0));
+                                    new DeviceStateUpdateImpl(DeviceStateUpdate.SLAT_ANGLE_INCREASE, 0));
                         }
                     }
                     return true;
@@ -821,13 +821,13 @@ public class DeviceImpl extends AbstractGeneralDeviceInformations implements Dev
     public synchronized void internalUndoScene() {
         if (!isShade()) {
             updateInternalDeviceState(
-                    new DeviceStateUpdateImpl(DeviceStateUpdate.UPDATE_BRIGHTNESS, this.outputValueBeforeSceneCall));
+                    new DeviceStateUpdateImpl(DeviceStateUpdate.OUTPUT, this.outputValueBeforeSceneCall));
         } else {
             updateInternalDeviceState(
-                    new DeviceStateUpdateImpl(DeviceStateUpdate.UPDATE_SLATPOSITION, this.outputValueBeforeSceneCall));
+                    new DeviceStateUpdateImpl(DeviceStateUpdate.SLATPOSITION, this.outputValueBeforeSceneCall));
             if (isBlind()) {
                 updateInternalDeviceState(
-                        new DeviceStateUpdateImpl(DeviceStateUpdate.UPDATE_SLAT_ANGLE, this.slatAngleBeforeSceneCall));
+                        new DeviceStateUpdateImpl(DeviceStateUpdate.SLAT_ANGLE, this.slatAngleBeforeSceneCall));
             }
         }
 
@@ -1471,7 +1471,7 @@ public class DeviceImpl extends AbstractGeneralDeviceInformations implements Dev
                         standby = config.getStandbyActivePower();
                     }
                     if (devSenVal.getDsValue() > standby) {
-                        this.updateInternalDeviceState(new DeviceStateUpdateImpl(DeviceStateUpdate.UPDATE_ON_OFF, 1));
+                        this.updateInternalDeviceState(new DeviceStateUpdateImpl(DeviceStateUpdate.ON_OFF, 1));
                     }
                 }
                 if (SensorEnum.isPowerSensor(devSenVal.getSensorType())) {
@@ -1512,57 +1512,57 @@ public class DeviceImpl extends AbstractGeneralDeviceInformations implements Dev
     public synchronized void updateInternalDeviceState(DeviceStateUpdate deviceStateUpdate) {
         if (deviceStateUpdate != null) {
             switch (deviceStateUpdate.getType()) {
-                case DeviceStateUpdate.UPDATE_BRIGHTNESS_DECREASE:
-                    deviceStateUpdate = new DeviceStateUpdateImpl(DeviceStateUpdate.UPDATE_BRIGHTNESS_DECREASE,
+                case DeviceStateUpdate.OUTPUT_DECREASE:
+                    deviceStateUpdate = new DeviceStateUpdateImpl(DeviceStateUpdate.OUTPUT_DECREASE,
                             internalSetOutputValue(outputValue - getDimmStep()));
                     break;
-                case DeviceStateUpdate.UPDATE_BRIGHTNESS_INCREASE:
-                    deviceStateUpdate = new DeviceStateUpdateImpl(DeviceStateUpdate.UPDATE_BRIGHTNESS_INCREASE,
+                case DeviceStateUpdate.OUTPUT_INCREASE:
+                    deviceStateUpdate = new DeviceStateUpdateImpl(DeviceStateUpdate.OUTPUT_INCREASE,
                             internalSetOutputValue(outputValue + getDimmStep()));
                     break;
-                case DeviceStateUpdate.UPDATE_BRIGHTNESS:
+                case DeviceStateUpdate.OUTPUT:
                     internalSetOutputValue(deviceStateUpdate.getValueAsInteger());
                     break;
-                case DeviceStateUpdate.UPDATE_ON_OFF:
+                case DeviceStateUpdate.ON_OFF:
                     if (deviceStateUpdate.getValueAsInteger() < 0) {
                         internalSetOutputValue(0);
                     } else {
                         internalSetOutputValue(maxOutputValue);
                     }
                     break;
-                case DeviceStateUpdate.UPDATE_OPEN_CLOSE:
+                case DeviceStateUpdate.OPEN_CLOSE:
                     if (deviceStateUpdate.getValueAsInteger() < 0) {
                         internalSetOutputValue(0);
                     } else {
                         internalSetOutputValue(maxSlatPosition);
                     }
                     break;
-                case DeviceStateUpdate.UPDATE_OPEN_CLOSE_ANGLE:
+                case DeviceStateUpdate.OPEN_CLOSE_ANGLE:
                     if (deviceStateUpdate.getValueAsInteger() < 0) {
                         internalSetAngleValue(0);
                     } else {
                         internalSetAngleValue(maxSlatAngle);
                     }
                     break;
-                case DeviceStateUpdate.UPDATE_SLAT_DECREASE:
-                    deviceStateUpdate = new DeviceStateUpdateImpl(DeviceStateUpdate.UPDATE_SLAT_DECREASE,
+                case DeviceStateUpdate.SLAT_DECREASE:
+                    deviceStateUpdate = new DeviceStateUpdateImpl(DeviceStateUpdate.SLAT_DECREASE,
                             internalSetOutputValue(slatPosition - getDimmStep()));
                     break;
-                case DeviceStateUpdate.UPDATE_SLAT_INCREASE:
-                    deviceStateUpdate = new DeviceStateUpdateImpl(DeviceStateUpdate.UPDATE_SLAT_INCREASE,
+                case DeviceStateUpdate.SLAT_INCREASE:
+                    deviceStateUpdate = new DeviceStateUpdateImpl(DeviceStateUpdate.SLAT_INCREASE,
                             internalSetOutputValue(slatPosition + getDimmStep()));
-                case DeviceStateUpdate.UPDATE_SLATPOSITION:
+                case DeviceStateUpdate.SLATPOSITION:
                     internalSetOutputValue(deviceStateUpdate.getValueAsInteger());
                     break;
-                case DeviceStateUpdate.UPDATE_SLAT_ANGLE_DECREASE:
-                    deviceStateUpdate = new DeviceStateUpdateImpl(DeviceStateUpdate.UPDATE_SLAT_ANGLE_DECREASE,
+                case DeviceStateUpdate.SLAT_ANGLE_DECREASE:
+                    deviceStateUpdate = new DeviceStateUpdateImpl(DeviceStateUpdate.SLAT_ANGLE_DECREASE,
                             internalSetAngleValue(slatAngle - DeviceConstants.ANGLE_STEP_SLAT));
                     break;
-                case DeviceStateUpdate.UPDATE_SLAT_ANGLE_INCREASE:
-                    deviceStateUpdate = new DeviceStateUpdateImpl(DeviceStateUpdate.UPDATE_SLAT_ANGLE_INCREASE,
+                case DeviceStateUpdate.SLAT_ANGLE_INCREASE:
+                    deviceStateUpdate = new DeviceStateUpdateImpl(DeviceStateUpdate.SLAT_ANGLE_INCREASE,
                             internalSetAngleValue(slatAngle + DeviceConstants.ANGLE_STEP_SLAT));
                     break;
-                case DeviceStateUpdate.UPDATE_SLAT_ANGLE:
+                case DeviceStateUpdate.SLAT_ANGLE:
                     internalSetAngleValue(deviceStateUpdate.getValueAsInteger());
                     break;
                 case DeviceStateUpdate.UPDATE_CALL_SCENE:
@@ -1654,12 +1654,12 @@ public class DeviceImpl extends AbstractGeneralDeviceInformations implements Dev
      */
     private void informListenerAboutStateUpdate(DeviceStateUpdate deviceStateUpdate) {
         if (listener != null) {
-            if (isSwitch() && deviceStateUpdate.getType().equals(DeviceStateUpdate.UPDATE_BRIGHTNESS)) {
+            if (isSwitch() && deviceStateUpdate.getType().equals(DeviceStateUpdate.OUTPUT)) {
                 if (deviceStateUpdate.getValueAsInteger() >= switchPercentOff) {
-                    deviceStateUpdate = new DeviceStateUpdateImpl(DeviceStateUpdate.UPDATE_ON_OFF,
+                    deviceStateUpdate = new DeviceStateUpdateImpl(DeviceStateUpdate.ON_OFF,
                             DeviceStateUpdate.ON_VALUE);
                 } else {
-                    deviceStateUpdate = new DeviceStateUpdateImpl(DeviceStateUpdate.UPDATE_ON_OFF,
+                    deviceStateUpdate = new DeviceStateUpdateImpl(DeviceStateUpdate.ON_OFF,
                             DeviceStateUpdate.OFF_VALUE);
                 }
             }
@@ -1722,16 +1722,6 @@ public class DeviceImpl extends AbstractGeneralDeviceInformations implements Dev
                             internalSetSceneOutputValue(sceneID, sceneValue, sceneAngle);
                             deviceStateUpdates.add(new DeviceStateUpdateImpl(DeviceStateUpdate.UPDATE_SCENE_OUTPUT,
                                     new Short[] { sceneID, (short) -1 }));
-                            /*
-                             * synchronized (sceneOutputMap) {
-                             * sceneOutputMap.put(sceneID, new Integer[] { sceneValue, sceneAngle });
-                             * if (activeSceneNumber == sceneID) {
-                             * internalCallScene(sceneID);
-                             * }
-                             * deviceStateUpdates
-                             * .add(new DeviceStateUpdateImpl(DeviceStateUpdate.UPDATE_OUTPUT_VALUE, -1));
-                             * }
-                             */
                         }
                         if (sceneSpecNew != null) {
                             logger.debug("Saved sceneConfig: [{}] for scene id {} into device with dsid {}",

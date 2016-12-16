@@ -11,13 +11,10 @@ import java.util.List;
 import java.util.Map;
 
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.config.Config;
-import org.eclipse.smarthome.binding.digitalstrom.internal.lib.event.constants.EventNames;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.event.types.EventItem;
-import org.eclipse.smarthome.binding.digitalstrom.internal.lib.sensorJobExecutor.sensorJob.impl.DeviceConsumptionSensorJob;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.DeviceSceneSpec;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.DeviceStateUpdate;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.constants.DeviceBinarayInputEnum;
-import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.constants.FuncNameAndColorGroupEnum;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.constants.FunctionalColorGroupEnum;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.constants.OutputModeEnum;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.constants.SensorEnum;
@@ -549,8 +546,7 @@ public interface Device extends GeneralDeviceInformations {
      * <ul>
      * <li><b>Key:</b> scene[sceneID]</li>
      * <li><b>Value:</b> {Scene: [sceneID], dontcare: [don't care flag], localPrio: [local prio flag], specialMode:
-     * [special mode flag]}(0..1),
-     * {sceneValue: [sceneValue]{, sceneAngle: [scene angle]}(0..1)}(0..1)</li>
+     * [special mode flag]}(0..1), {sceneValue: [scene value], sceneAngle: [scene angle]}(0..1))</li>
      * </ul>
      *
      * @param sceneProperties

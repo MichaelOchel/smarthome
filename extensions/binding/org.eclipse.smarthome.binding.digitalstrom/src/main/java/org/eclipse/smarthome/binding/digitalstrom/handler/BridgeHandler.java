@@ -9,11 +9,15 @@ package org.eclipse.smarthome.binding.digitalstrom.handler;
 
 import static org.eclipse.smarthome.binding.digitalstrom.DigitalSTROMBindingConstants.*;
 
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
 
 import org.apache.commons.lang.StringUtils;
 import org.eclipse.smarthome.binding.digitalstrom.DigitalSTROMBindingConstants;
@@ -89,6 +93,8 @@ public class BridgeHandler extends BaseBridgeHandler
      */
     public final static Set<ThingTypeUID> SUPPORTED_THING_TYPES = Collections.singleton(THING_TYPE_DSS_BRIDGE);
 
+    private static final long RECONNECT_TRACKER_INTERVAL = 15;
+
     /* DS-Manager */
     private ConnectionManager connMan;
     private StructureManager structMan;
@@ -97,6 +103,7 @@ public class BridgeHandler extends BaseBridgeHandler
     private TemperatureControlManager tempContMan;
 
     private EventListener eventListener;
+    private ScheduledFuture<?> reconnectTracker = null;
 
     private DeviceStatusListener deviceDiscovery = null;
     private SceneStatusListener sceneDiscovery = null;
@@ -104,7 +111,36 @@ public class BridgeHandler extends BaseBridgeHandler
     private Config config = null;
 
     List<SceneStatusListener> unregisterSceneStatusListeners = null;
-    private int connectionTimeoutCounter = 0;
+    private short connectionTimeoutCounter = 0;
+    private short ignoredTimeouts = 5;
+
+    // TODO: Overridden methods updateThing(..) and updateConfiguration(..) can be delete, if it is able to dynamically
+    // change the thing-configurations and the thing-structure by textual configurations
+    @Override
+    public void updateThing(Thing thing) {
+        try {
+            super.updateThing(thing);
+        } catch (IllegalStateException e) {
+            if (e.getMessage().contains("Most likely because it is read-only.")) {
+                logger.debug("Can not update thing, because it is read-only (textual configurd).");
+            } else {
+                logger.error(e.getMessage(), e);
+            }
+        }
+    }
+
+    @Override
+    protected void updateConfiguration(Configuration configuration) {
+        try {
+            super.updateConfiguration(configuration);
+        } catch (IllegalStateException e) {
+            if (e.getMessage().contains("Most likely because it is read-only.")) {
+                logger.debug("Can not update thing, because it is read-only (textual configurd).");
+            } else {
+                logger.error(e.getMessage(), e);
+            }
+        }
+    }
 
     private class Initializer implements Runnable {
 
@@ -178,24 +214,26 @@ public class BridgeHandler extends BaseBridgeHandler
                     configuration.put(APPLICATION_TOKEN, connMan.getApplicationToken());
                     configChanged = true;
                 }
-                if (StringUtils.isNotBlank((String) configuration.get(DigitalSTROMBindingConstants.DS_NAME))) {
-                    String dSSname = connMan.getDigitalSTROMAPI().getInstallationName(connMan.getSessionToken());
-
-                    if (dSSname != null) {
-                        updateProperty(DS_NAME, dSSname);
-                    }
+                Map<String, String> properties = editProperties();
+                String dSSname = connMan.getDigitalSTROMAPI().getInstallationName(connMan.getSessionToken());
+                if (dSSname != null) {
+                    properties.put(DS_NAME, dSSname);
                 }
+                Map<String, String> versions = connMan.getDigitalSTROMAPI().getSystemVersion();
+                if (versions != null) {
+                    properties.putAll(versions);
+                }
+                updateProperties(properties);
+
                 if (configChanged) {
                     updateConfiguration(configuration);
                 }
-                if (StringUtils.isBlank(
-
-                        getThing().getProperties().get(DigitalSTROMBindingConstants.SERVER_CERT))
+                if (StringUtils.isBlank(getThing().getProperties().get(DigitalSTROMBindingConstants.SERVER_CERT))
                         && StringUtils.isNotBlank(config.getCert())) {
                     updateProperty(DigitalSTROMBindingConstants.SERVER_CERT, config.getCert());
                 }
             } catch (Exception e) {
-                logger.debug("Exeption: ", e);
+                logger.debug("An exception occurred: ", e);
             }
         }
     };
@@ -241,52 +279,48 @@ public class BridgeHandler extends BaseBridgeHandler
         logger.info("Loading configuration");
         ArrayList<String> numberExc = null;
         // Parameters can't be null, because of an existing default value.
-        if (StringUtils
-                .isNotBlank(thingConfig.get(DigitalSTROMBindingConstants.SENSOR_DATA_UPDATE_INTERVAL).toString())) {
-            try {
-                config.setSensordataRefreshInterval(Integer.parseInt(
-                        thingConfig.get(DigitalSTROMBindingConstants.SENSOR_DATA_UPDATE_INTERVAL).toString() + "000"));
-            } catch (NumberFormatException e) {
-                if (numberExc == null) {
-                    numberExc = new ArrayList<String>();
-                }
-                numberExc.add("\"Sensor update interval\"");
+        if (thingConfig.get(DigitalSTROMBindingConstants.SENSOR_DATA_UPDATE_INTERVAL) instanceof BigDecimal) {
+            config.setSensordataRefreshInterval(
+                    ((BigDecimal) thingConfig.get(DigitalSTROMBindingConstants.SENSOR_DATA_UPDATE_INTERVAL)).intValue()
+                            * 1000);
+        } else {
+            if (numberExc == null) {
+                numberExc = new ArrayList<String>();
             }
+            numberExc.add("\"Sensor update interval\" ( "
+                    + thingConfig.get(DigitalSTROMBindingConstants.SENSOR_DATA_UPDATE_INTERVAL) + ")");
         }
-        if (StringUtils
-                .isNotBlank(thingConfig.get(DigitalSTROMBindingConstants.TOTAL_POWER_UPDATE_INTERVAL).toString())) {
-            try {
-                config.setTotalPowerUpdateInterval(Integer.parseInt(
-                        thingConfig.get(DigitalSTROMBindingConstants.TOTAL_POWER_UPDATE_INTERVAL).toString() + "000"));
-            } catch (NumberFormatException e) {
-                if (numberExc == null) {
-                    numberExc = new ArrayList<String>();
-                }
-                numberExc.add("\"Total power update interval\"");
+        if (thingConfig.get(DigitalSTROMBindingConstants.TOTAL_POWER_UPDATE_INTERVAL) instanceof BigDecimal) {
+            config.setTotalPowerUpdateInterval(
+                    ((BigDecimal) thingConfig.get(DigitalSTROMBindingConstants.TOTAL_POWER_UPDATE_INTERVAL)).intValue()
+                            * 1000);
+        } else {
+            if (numberExc == null) {
+                numberExc = new ArrayList<String>();
             }
+            numberExc.add("\"Total power update interval\" ("
+                    + thingConfig.get(DigitalSTROMBindingConstants.TOTAL_POWER_UPDATE_INTERVAL) + ")");
         }
-        if (StringUtils.isNotBlank(thingConfig.get(DigitalSTROMBindingConstants.SENSOR_WAIT_TIME).toString())) {
-            try {
-                config.setSensorReadingWaitTime(Integer
-                        .parseInt(thingConfig.get(DigitalSTROMBindingConstants.SENSOR_WAIT_TIME).toString() + "000"));
-            } catch (NumberFormatException e) {
-                if (numberExc == null) {
-                    numberExc = new ArrayList<String>();
-                }
-                numberExc.add("\"Wait time sensor reading\"");
+        if (thingConfig.get(DigitalSTROMBindingConstants.SENSOR_WAIT_TIME) instanceof BigDecimal) {
+            config.setSensorReadingWaitTime(
+                    ((BigDecimal) thingConfig.get(DigitalSTROMBindingConstants.SENSOR_WAIT_TIME)).intValue() * 1000);
+        } else {
+            if (numberExc == null) {
+                numberExc = new ArrayList<String>();
             }
+            numberExc.add("\"Wait time sensor reading\" ("
+                    + thingConfig.get(DigitalSTROMBindingConstants.SENSOR_WAIT_TIME) + ")");
         }
-        if (StringUtils.isNotBlank(
-                thingConfig.get(DigitalSTROMBindingConstants.DEFAULT_TRASH_DEVICE_DELETE_TIME_KEY).toString())) {
-            try {
-                config.setTrashDeviceDeleteTime(Integer.parseInt(
-                        thingConfig.get(DigitalSTROMBindingConstants.DEFAULT_TRASH_DEVICE_DELETE_TIME_KEY).toString()));
-            } catch (NumberFormatException e) {
-                if (numberExc == null) {
-                    numberExc = new ArrayList<String>();
-                }
-                numberExc.add("\"Days to be slaked trash bin devices\"");
+        if (thingConfig.get(DigitalSTROMBindingConstants.DEFAULT_TRASH_DEVICE_DELETE_TIME_KEY) instanceof BigDecimal) {
+            config.setTrashDeviceDeleteTime(
+                    ((BigDecimal) thingConfig.get(DigitalSTROMBindingConstants.DEFAULT_TRASH_DEVICE_DELETE_TIME_KEY))
+                            .intValue());
+        } else {
+            if (numberExc == null) {
+                numberExc = new ArrayList<String>();
             }
+            numberExc.add("\"Days to be slaked trash bin devices\" ("
+                    + thingConfig.get(DigitalSTROMBindingConstants.DEFAULT_TRASH_DEVICE_DELETE_TIME_KEY) + ")");
         }
         if (numberExc != null) {
             String excText = "The field ";
@@ -338,6 +372,9 @@ public class BridgeHandler extends BaseBridgeHandler
     @Override
     public void dispose() {
         logger.debug("Handler disposed");
+        if (reconnectTracker != null && !reconnectTracker.isCancelled()) {
+            reconnectTracker.cancel(true);
+        }
         if (eventListener != null) {
             eventListener.stop();
         }
@@ -436,7 +473,7 @@ public class BridgeHandler extends BaseBridgeHandler
      * @param sceneStatusListener (must not be null)
      */
     public synchronized void registerSceneStatusListener(SceneStatusListener sceneStatusListener) {
-        if (this.sceneMan != null /* && !generatingScenes */) {
+        if (this.sceneMan != null) {
             if (sceneStatusListener == null) {
                 throw new IllegalArgumentException("It's not allowed to pass null.");
             }
@@ -460,7 +497,7 @@ public class BridgeHandler extends BaseBridgeHandler
      * @param sceneStatusListener (must not be null)
      */
     public void unregisterSceneStatusListener(SceneStatusListener sceneStatusListener) {
-        if (this.sceneMan != null /* && !generatingScenes */) {
+        if (this.sceneMan != null) {
             if (sceneStatusListener.getSceneStatusListenerID() != null) {
                 this.sceneMan.unregisterSceneListener(sceneStatusListener);
             } else {
@@ -498,42 +535,42 @@ public class BridgeHandler extends BaseBridgeHandler
     @Override
     public void channelLinked(ChannelUID channelUID) {
         if (devStatMan != null) {
-            String[] meteringChannelSplit = channelUID.getId().split("_");
-            if (meteringChannelSplit.length > 2) {
-                MeteringTypeEnum meteringType = MeteringTypeEnum.valueOf(meteringChannelSplit[1]);
-                MeteringUnitsEnum unitType = MeteringUnitsEnum.valueOf(meteringChannelSplit[2]);
-                if (meteringType.equals(MeteringTypeEnum.energy)) {
-                    if (unitType == null || unitType.equals(MeteringUnitsEnum.Wh)) {
-                        onEnergyMeterValueChanged(devStatMan.getTotalEnergyMeterValue());
-                    } else {
-                        onEnergyMeterWsValueChanged(devStatMan.getTotalEnergyMeterWsValue());
-                    }
+            MeteringTypeEnum meteringType = DsChannelTypeProvider.getMeteringType(channelUID.getId());
+            if (meteringType != null) {
+                if (meteringType.equals(MeteringTypeEnum.ENERGY)) {
+                    onEnergyMeterValueChanged(devStatMan.getTotalEnergyMeterValue());
                 } else {
                     onTotalPowerConsumptionChanged(devStatMan.getTotalPowerConsumption());
                 }
+            } else {
+                logger.warn("Channel with id {} is not known for the thing with id {}.", channelUID.getId(),
+                        getThing().getUID());
             }
         }
     }
 
     @Override
     public void onTotalPowerConsumptionChanged(int newPowerConsumption) {
-        updateChannelState(MeteringTypeEnum.consumption, MeteringUnitsEnum.Wh, newPowerConsumption);
+        updateChannelState(MeteringTypeEnum.CONSUMPTION, MeteringUnitsEnum.WH, newPowerConsumption);
     }
 
     @Override
     public void onEnergyMeterValueChanged(int newEnergyMeterValue) {
-        updateChannelState(MeteringTypeEnum.energy, MeteringUnitsEnum.Wh, newEnergyMeterValue * 0.001);
+        updateChannelState(MeteringTypeEnum.ENERGY, MeteringUnitsEnum.WH, newEnergyMeterValue * 0.001);
     }
 
     @Override
     public void onEnergyMeterWsValueChanged(int newEnergyMeterValue) {
-        updateChannelState(MeteringTypeEnum.energy, MeteringUnitsEnum.Ws, newEnergyMeterValue);
+        // not needed
     }
 
     private void updateChannelState(MeteringTypeEnum meteringType, MeteringUnitsEnum meteringUnit, double value) {
-        String channelID = DsChannelTypeProvider.TOTAL_PRE + meteringType.toString() + "_" + meteringUnit.toString();
+        String channelID = DsChannelTypeProvider.getMeteringChannelID(meteringType, meteringUnit, true);
         if (getThing().getChannel(channelID) != null) {
-            updateState(new ChannelUID(getThing().getUID(), channelID), new DecimalType(value));
+            updateState(
+                    new ChannelUID(getThing().getUID(),
+                            DsChannelTypeProvider.getMeteringChannelID(meteringType, meteringUnit, true)),
+                    new DecimalType(value));
         }
     }
 
@@ -543,14 +580,16 @@ public class BridgeHandler extends BaseBridgeHandler
             case CONNECTION_LOST:
                 updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.COMMUNICATION_ERROR,
                         "The connection to the digitalSTROM-Server cannot be established.");
-                devStatMan.stop();
-                break;
+                startReconnectTracker();
+                return;
             case CONNECTION_RESUMED:
                 if (connectionTimeoutCounter > 0) {
+                    restartServices();
                     setStatus(ThingStatus.ONLINE);
-                    devStatMan.start();
                 }
-                break;
+                // reset connection timeout counter
+                connectionTimeoutCounter = 0;
+                return;
             case APPLICATION_TOKEN_GENERATED:
                 if (connMan != null) {
                     Configuration config = this.getConfig();
@@ -563,9 +602,8 @@ public class BridgeHandler extends BaseBridgeHandler
                 }
                 return;
             default:
+                return;
         }
-        // reset connection timeout counter
-        connectionTimeoutCounter = 0;
     }
 
     private void setStatus(ThingStatus status) {
@@ -575,8 +613,46 @@ public class BridgeHandler extends BaseBridgeHandler
             ThingHandler handler = thing.getHandler();
             if (handler != null) {
                 handler.bridgeStatusChanged(getThing().getStatusInfo());
-                // handler.initialize();
             }
+        }
+    }
+
+    private void startReconnectTracker() {
+        if (reconnectTracker == null || reconnectTracker.isCancelled()) {
+            logger.debug("Connection lost, stop all services and start reconnectTracker.");
+            stopServices();
+            reconnectTracker = scheduler.scheduleAtFixedRate(new Runnable() {
+
+                @Override
+                public void run() {
+                    if (connMan != null) {
+                        logger.debug("check connection");
+                        connMan.checkConnection();
+                    }
+                }
+            }, RECONNECT_TRACKER_INTERVAL, RECONNECT_TRACKER_INTERVAL, TimeUnit.SECONDS);
+        }
+    }
+
+    private void stopServices() {
+        if (devStatMan != null) {
+            devStatMan.stop();
+        }
+        if (eventListener != null) {
+            eventListener.stop();
+        }
+    }
+
+    private void restartServices() {
+        logger.debug("reconnect, stop reconnection tracker and restart services");
+        if (reconnectTracker != null && !reconnectTracker.isCancelled()) {
+            reconnectTracker.cancel(true);
+        }
+        if (devStatMan != null) {
+            devStatMan.start();
+        }
+        if (eventListener != null) {
+            eventListener.start();
         }
     }
 
@@ -596,15 +672,17 @@ public class BridgeHandler extends BaseBridgeHandler
                 case NO_USER_PASSWORD:
                     updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.CONFIGURATION_ERROR,
                             "No username or password is set to generate Application-Token. Please set user name and password or Application-Token.");
-                    break;
+                    stopServices();
+                    return;
                 case CONNECTON_TIMEOUT:
                     // ignore the first connection timeout
-                    if (connectionTimeoutCounter++ > 1) {
-                        // TODO: + connection tracker starten /implementieren
+                    if (connectionTimeoutCounter++ > ignoredTimeouts) {
                         updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.COMMUNICATION_ERROR,
                                 "Connection lost because connection timeout to Server.");
+                        break;
+                    } else {
+                        return;
                     }
-                    return;
                 case HOST_NOT_FOUND:
                     updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.COMMUNICATION_ERROR,
                             "Server not found! Please check these points:\n" + " - Is digitalSTROM-Server turned on?\n"
@@ -622,11 +700,8 @@ public class BridgeHandler extends BaseBridgeHandler
             }
             // reset connection timeout counter
             connectionTimeoutCounter = 0;
-            if (devStatMan != null) {
-                devStatMan.stop();
-            }
+            startReconnectTracker();
         }
-
     }
 
     /**
@@ -724,7 +799,6 @@ public class BridgeHandler extends BaseBridgeHandler
                         sceneMan.registerSceneListener(sceneDiscovery);
                         sceneDiscovery = null;
                     }
-                    // generatingScenes = true;
                     break;
                 case RUNNING:
                     logger.debug("SceneManager reports that he is running");

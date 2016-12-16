@@ -17,16 +17,13 @@ import java.util.Map;
 import org.apache.commons.lang.StringUtils;
 import org.eclipse.smarthome.binding.digitalstrom.DigitalSTROMBindingConstants;
 import org.eclipse.smarthome.binding.digitalstrom.handler.BridgeHandler;
-import org.eclipse.smarthome.binding.digitalstrom.handler.DeviceHandler;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.AbstractGeneralDeviceInformations;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.Circuit;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.Device;
-import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.constants.OutputModeEnum;
 import org.eclipse.smarthome.binding.digitalstrom.internal.providers.DsDeviceThingTypeProvider;
 import org.eclipse.smarthome.config.discovery.AbstractDiscoveryService;
 import org.eclipse.smarthome.config.discovery.DiscoveryResult;
 import org.eclipse.smarthome.config.discovery.DiscoveryResultBuilder;
-import org.eclipse.smarthome.core.thing.Thing;
 import org.eclipse.smarthome.core.thing.ThingTypeUID;
 import org.eclipse.smarthome.core.thing.ThingUID;
 import org.slf4j.Logger;
@@ -51,7 +48,7 @@ public class DeviceDiscoveryService extends AbstractDiscoveryService {
 
     /**
      * Creates a new {@link DeviceDiscoveryService} for the given supported {@link ThingTypeUID}.
-     *
+     * 
      * @param bridgeHandler (must not be null)
      * @param supportedThingType (must not be null)
      * @throws IllegalArgumentException

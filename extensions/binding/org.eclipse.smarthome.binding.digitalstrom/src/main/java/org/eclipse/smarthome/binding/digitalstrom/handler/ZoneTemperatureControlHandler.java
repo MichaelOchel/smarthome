@@ -18,10 +18,11 @@ import org.eclipse.smarthome.binding.digitalstrom.internal.lib.climate.constants
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.climate.constants.ControlStates;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.climate.jsonResponseContainer.impl.TemperatureControlStatus;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.listener.TemperatureControlStatusListener;
-import org.eclipse.smarthome.binding.digitalstrom.internal.lib.manager.impl.TemperatureControlManager;
+import org.eclipse.smarthome.binding.digitalstrom.internal.lib.manager.StructureManager;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.constants.FunctionalColorGroupEnum;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.constants.OutputModeEnum;
 import org.eclipse.smarthome.binding.digitalstrom.internal.providers.DsChannelTypeProvider;
+import org.eclipse.smarthome.config.core.Configuration;
 import org.eclipse.smarthome.core.library.types.DecimalType;
 import org.eclipse.smarthome.core.library.types.IncreaseDecreaseType;
 import org.eclipse.smarthome.core.library.types.OnOffType;
@@ -78,6 +79,34 @@ public class ZoneTemperatureControlHandler extends BaseThingHandler implements T
     private Float currentValue = 0f;
     private Float step = 1f;
 
+    // TODO: Overridden methods updateThing(..) and updateConfiguration(..) can be delete, if it is able to dynamically
+    // change the thing-configurations and the thing-structure by textual configurations
+    @Override
+    public void updateThing(Thing thing) {
+        try {
+            super.updateThing(thing);
+        } catch (IllegalStateException e) {
+            if (e.getMessage().contains("Most likely because it is read-only.")) {
+                logger.debug("Can not update thing, because it is read-only (textual configurd).");
+            } else {
+                logger.error(e.getMessage(), e);
+            }
+        }
+    }
+
+    @Override
+    protected void updateConfiguration(Configuration configuration) {
+        try {
+            super.updateConfiguration(configuration);
+        } catch (IllegalStateException e) {
+            if (e.getMessage().contains("Most likely because it is read-only.")) {
+                logger.debug("Can not update thing, because it is read-only (textual configurd).");
+            } else {
+                logger.error(e.getMessage(), e);
+            }
+        }
+    }
+
     /**
      * Creates a new {@link ZoneTemperatureControlHandler}.
      *
@@ -91,12 +120,6 @@ public class ZoneTemperatureControlHandler extends BaseThingHandler implements T
     public void initialize() {
         logger.debug("Initializing DeviceHandler.");
         if (getConfig().get(DigitalSTROMBindingConstants.ZONE_ID) != null) {
-            try {
-                // sometimes it comes as Interer and sometimes as BigDevimal
-                zoneID = Integer.parseInt(getConfig().get(DigitalSTROMBindingConstants.ZONE_ID).toString());
-            } catch (ClassCastException e) {
-                updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.CONFIGURATION_ERROR, "zoneID have to be a number");
-            }
             if (getBridge() != null) {
                 bridgeStatusChanged(getBridge().getStatusInfo());
             } else {
@@ -107,6 +130,30 @@ public class ZoneTemperatureControlHandler extends BaseThingHandler implements T
         } else {
             updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.CONFIGURATION_ERROR, "zoneID is missing");
         }
+    }
+
+    public static int getZoneID(Configuration config, BridgeHandler bridge) {
+        if (config == null || config.get(DigitalSTROMBindingConstants.ZONE_ID) == null) {
+            return -2;
+        }
+        if (bridge == null) {
+            return -3;
+        }
+        String configZoneID = config.get(DigitalSTROMBindingConstants.ZONE_ID).toString();
+        int zoneID;
+        StructureManager strucMan = bridge.getStructureManager();
+        if (strucMan != null) {
+            try {
+                zoneID = Integer.parseInt(SceneHandler.fixNumber(configZoneID));
+                if (!strucMan.checkZoneID(zoneID)) {
+                    zoneID = -1;
+                }
+            } catch (NumberFormatException e) {
+                zoneID = strucMan.getZoneId(configZoneID);
+            }
+            return zoneID;
+        }
+        return -1;
     }
 
     @Override
@@ -123,6 +170,14 @@ public class ZoneTemperatureControlHandler extends BaseThingHandler implements T
     @Override
     public void bridgeStatusChanged(ThingStatusInfo bridgeStatusInfo) {
         if (bridgeStatusInfo.getStatus().equals(ThingStatus.ONLINE)) {
+            int tempZoneID = getZoneID(getConfig(), getDssBridgeHandler());
+            if (tempZoneID == -1) {
+                updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.CONFIGURATION_ERROR,
+                        "Configured zone '" + getConfig().get(DigitalSTROMBindingConstants.ZONE_ID)
+                                + "' does not exist, please check the configuration.");
+            } else {
+                this.zoneID = tempZoneID;
+            }
             if (zoneID != null) {
                 if (getDssBridgeHandler() != null && temperatureSensorTransmitter == null) {
                     updateStatus(ThingStatus.ONLINE, ThingStatusDetail.CONFIGURATION_PENDING,
@@ -214,11 +269,11 @@ public class ZoneTemperatureControlHandler extends BaseThingHandler implements T
 
             if (handler instanceof BridgeHandler) {
                 dssBridgeHandler = (BridgeHandler) handler;
-                dssBridgeHandler.registerTemperatureControlStatusListener(this);
             } else {
                 return null;
             }
-        } else if (temperatureSensorTransmitter == null) {
+        }
+        if (temperatureSensorTransmitter == null && zoneID != null) {
             dssBridgeHandler.registerTemperatureControlStatusListener(this);
         }
         return dssBridgeHandler;
@@ -229,6 +284,7 @@ public class ZoneTemperatureControlHandler extends BaseThingHandler implements T
         ControlModes controlMode = ControlModes.getControlMode(tempControlStatus.getControlMode());
         ControlStates controlState = ControlStates.getControlState(tempControlStatus.getControlState());
         if (controlMode != null && controlState != null) {
+            logger.debug("config changed: " + tempControlStatus.toString());
             if (controlMode.equals(ControlModes.PID_CONTROL)
                     && (currentChannelID == null
                             || !currentChannelID.contains(DsChannelTypeProvider.TEMPERATURE_CONTROLLED))
@@ -266,7 +322,8 @@ public class ZoneTemperatureControlHandler extends BaseThingHandler implements T
         ThingBuilder thingBuilder = editThing();
         thingBuilder.withChannels(Lists.newArrayList(channel));
         updateThing(thingBuilder.build());
-        logger.debug("load channel: {} with item: Dimmer", currentChannelID);
+        logger.debug("load channel: {} with item: {]", currentChannelID,
+                DsChannelTypeProvider.getItemType(currentChannelID));
     }
 
     @Override
@@ -294,7 +351,8 @@ public class ZoneTemperatureControlHandler extends BaseThingHandler implements T
     }
 
     @Override
-    public void registerTemperatureSensorTransreciver(TemperatureControlSensorTransmitter temperatureSensorTransreciver) {
+    public void registerTemperatureSensorTransreciver(
+            TemperatureControlSensorTransmitter temperatureSensorTransreciver) {
         updateStatus(ThingStatus.ONLINE);
         this.temperatureSensorTransmitter = temperatureSensorTransreciver;
     }
