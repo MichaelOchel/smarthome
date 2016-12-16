@@ -87,6 +87,34 @@ public class DeviceHandler extends BaseThingHandler implements DeviceStatusListe
     private String currentChannel = null;
     private List<String> loadedSensorChannels = null;
 
+    // TODO: Overridden methods updateThing(..) and updateConfiguration(..) can be delete, if it is able to dynamically
+    // change the thing-configurations and the thing-structure by textual configurations
+    @Override
+    public void updateThing(Thing thing) {
+        try {
+            super.updateThing(thing);
+        } catch (IllegalStateException e) {
+            if (e.getMessage().contains("Most likely because it is read-only.")) {
+                logger.debug("Can not update thing, because it is read-only (textual configurd).");
+            } else {
+                logger.error(e.getMessage(), e);
+            }
+        }
+    }
+
+    @Override
+    protected void updateConfiguration(Configuration configuration) {
+        try {
+            super.updateConfiguration(configuration);
+        } catch (IllegalStateException e) {
+            if (e.getMessage().contains("Most likely because it is read-only.")) {
+                logger.debug("Can not update thing, because it is read-only (textual configurd).");
+            } else {
+                logger.error(e.getMessage(), e);
+            }
+        }
+    }
+
     /**
      * Creates a new {@link DeviceHandler}.
      *
@@ -331,9 +359,9 @@ public class DeviceHandler extends BaseThingHandler implements DeviceStatusListe
                 if (currentChannel != null) {
                     if (!device.isShade()) {
                         switch (deviceStateUpdate.getType()) {
-                            case DeviceStateUpdate.UPDATE_BRIGHTNESS_DECREASE:
-                            case DeviceStateUpdate.UPDATE_BRIGHTNESS_INCREASE:
-                            case DeviceStateUpdate.UPDATE_BRIGHTNESS:
+                            case DeviceStateUpdate.OUTPUT_DECREASE:
+                            case DeviceStateUpdate.OUTPUT_INCREASE:
+                            case DeviceStateUpdate.OUTPUT:
                                 if (currentChannel.contains(DsChannelTypeProvider.DIMMER)) {
                                     if (deviceStateUpdate.getValueAsInteger() > 0) {
                                         updateState(new ChannelUID(getThing().getUID(), currentChannel),
@@ -353,9 +381,9 @@ public class DeviceHandler extends BaseThingHandler implements DeviceStatusListe
                                     }
                                 }
                                 break;
-                            case DeviceStateUpdate.UPDATE_ON_OFF:
+                            case DeviceStateUpdate.ON_OFF:
                                 if (currentChannel.contains(DsChannelTypeProvider.STAGE)) {
-                                    onDeviceStateChanged(new DeviceStateUpdateImpl(DeviceStateUpdate.UPDATE_BRIGHTNESS,
+                                    onDeviceStateChanged(new DeviceStateUpdateImpl(DeviceStateUpdate.OUTPUT,
                                             device.getOutputValue()));
                                 }
                                 if (deviceStateUpdate.getValueAsInteger() > 0) {
@@ -370,18 +398,18 @@ public class DeviceHandler extends BaseThingHandler implements DeviceStatusListe
                     } else {
                         int percent = 0;
                         switch (deviceStateUpdate.getType()) {
-                            case DeviceStateUpdate.UPDATE_SLAT_DECREASE:
-                            case DeviceStateUpdate.UPDATE_SLAT_INCREASE:
-                            case DeviceStateUpdate.UPDATE_SLATPOSITION:
+                            case DeviceStateUpdate.SLAT_DECREASE:
+                            case DeviceStateUpdate.SLAT_INCREASE:
+                            case DeviceStateUpdate.SLATPOSITION:
                                 percent = fromValueToPercent(deviceStateUpdate.getValueAsInteger(),
                                         device.getMaxSlatPosition());
                                 break;
-                            case DeviceStateUpdate.UPDATE_OPEN_CLOSE:
+                            case DeviceStateUpdate.OPEN_CLOSE:
                                 if (deviceStateUpdate.getValueAsInteger() > 0) {
                                     percent = 100;
                                 }
                                 break;
-                            case DeviceStateUpdate.UPDATE_OPEN_CLOSE_ANGLE:
+                            case DeviceStateUpdate.OPEN_CLOSE_ANGLE:
                                 if (device.isBlind()) {
                                     if (deviceStateUpdate.getValueAsInteger() > 0) {
                                         updateState(new ChannelUID(getThing().getUID(), currentChannel),
@@ -392,9 +420,9 @@ public class DeviceHandler extends BaseThingHandler implements DeviceStatusListe
                                     }
                                 }
                                 return;
-                            case DeviceStateUpdate.UPDATE_SLAT_ANGLE_DECREASE:
-                            case DeviceStateUpdate.UPDATE_SLAT_ANGLE_INCREASE:
-                            case DeviceStateUpdate.UPDATE_SLAT_ANGLE:
+                            case DeviceStateUpdate.SLAT_ANGLE_DECREASE:
+                            case DeviceStateUpdate.SLAT_ANGLE_INCREASE:
+                            case DeviceStateUpdate.SLAT_ANGLE:
                                 updateState(new ChannelUID(getThing().getUID(), currentChannel),
                                         new PercentType(fromValueToPercent(deviceStateUpdate.getValueAsInteger(),
                                                 device.getMaxSlatAngle())));
@@ -472,11 +500,10 @@ public class DeviceHandler extends BaseThingHandler implements DeviceStatusListe
 
                 // load first channel values
                 onDeviceStateInitial(this.device);
-
-            } else {
-                onDeviceRemoved(device);
+                return;
             }
         }
+        onDeviceRemoved(device);
     }
 
     /**
@@ -633,32 +660,33 @@ public class DeviceHandler extends BaseThingHandler implements DeviceStatusListe
                     String channelID = channel.getUID().getId();
                     if (channelID.startsWith(DsChannelTypeProvider.BINARY_INPUT_PRE)) {
                         DeviceBinarayInputEnum devBinInput = getBinaryInput(channelID);
-                        logger.debug("devBin input is: " + devBinInput + " devBinInput exist at device "
-                                + device.getBinaryInput(devBinInput));
                         if (device.getBinaryInput(devBinInput) != null) {
                             addLoadedSensorChannel(channelID);
                         } else {
-                            channelInter.remove();
+                            logger.debug("remove {} binary input channel", channelID);
                             channelListChanged = true;
                             removeLoadedSensorChannel(channelID);
                         }
                     } else {
                         SensorEnum sensorType = getSensorEnum(channelID);
-                        if (SensorEnum.isPowerSensor(sensorType)) {
-                            if (device.checkPowerSensorRefreshPriorityNever(sensorType)) {
-                                logger.debug("remove {} sensor channel", sensorType.toString());
-                                channelInter.remove();
-                                channelListChanged = removeLoadedSensorChannel(channelID);
+                        if (sensorType != null) {
+                            if (SensorEnum.isPowerSensor(sensorType)) {
+                                if (device.checkPowerSensorRefreshPriorityNever(sensorType)) {
+                                    logger.debug("remove {} sensor channel", channelID);
+                                    channelInter.remove();
+                                    channelListChanged = removeLoadedSensorChannel(channelID);
+                                } else {
+                                    addLoadedSensorChannel(channelID);
+                                }
                             } else {
-                                addLoadedSensorChannel(channelID);
-                            }
-                        } else {
-                            if (device.supportsSensorType(sensorType)) {
-                                addLoadedSensorChannel(channelID);
-                            } else {
-                                channelInter.remove();
-                                removeLoadedSensorChannel(channelID);
-                                channelListChanged = true;
+                                if (device.supportsSensorType(sensorType)) {
+                                    addLoadedSensorChannel(channelID);
+                                } else {
+                                    logger.debug("remove {} sensor channel", channelID);
+                                    channelInter.remove();
+                                    removeLoadedSensorChannel(channelID);
+                                    channelListChanged = true;
+                                }
                             }
                         }
                     }

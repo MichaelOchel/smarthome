@@ -46,7 +46,7 @@ public class SceneConfigReadingJob implements SensorJob {
 
     @Override
     public void execute(DsAPI digitalSTROM, String token) {
-        DeviceSceneSpec sceneConfig = digitalSTROM.getDeviceSceneMode(token, device.getDSID(), null, sceneID);
+        DeviceSceneSpec sceneConfig = digitalSTROM.getDeviceSceneMode(token, device.getDSID(), null, null, sceneID);
 
         if (sceneConfig != null) {
             device.addSceneConfig(sceneID, sceneConfig);

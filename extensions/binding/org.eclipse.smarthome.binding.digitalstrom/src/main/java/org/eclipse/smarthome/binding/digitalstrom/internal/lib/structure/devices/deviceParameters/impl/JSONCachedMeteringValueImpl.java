@@ -48,7 +48,11 @@ public class JSONCachedMeteringValueImpl implements CachedMeteringValue {
     public JSONCachedMeteringValueImpl(JsonObject jObject, MeteringTypeEnum meteringType,
             MeteringUnitsEnum meteringUnit) {
         this.meteringType = meteringType;
-        this.meteringUnit = meteringUnit;
+        if (meteringUnit != null) {
+            this.meteringUnit = meteringUnit;
+        } else {
+            this.meteringUnit = MeteringUnitsEnum.WH;
+        }
         if (jObject.get(JSONApiResponseKeysEnum.DSID_LOWER_CASE.getKey()) != null) {
             this.dsid = new DSID(jObject.get(JSONApiResponseKeysEnum.DSID_LOWER_CASE.getKey()).getAsString());
         }

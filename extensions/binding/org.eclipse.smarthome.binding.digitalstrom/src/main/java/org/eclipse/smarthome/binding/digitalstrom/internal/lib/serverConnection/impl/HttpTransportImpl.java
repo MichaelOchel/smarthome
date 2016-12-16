@@ -59,6 +59,12 @@ import org.slf4j.LoggerFactory;
  * The method {@link #writePEMCertFile(String)} saves the SSL-Certificate in a file at the given path. If all
  * SSL-Certificates shout be ignored the flag <i>exeptAllCerts</i> have to be true at the constructor
  * </p>
+ * <p>
+ * If a {@link ConnectionManager} is given at the constructor, the session-token is not needed by requests and the
+ * {@link ConnectionListener}, which is registered at the {@link ConnectionManager}, will be automatically informed
+ * about
+ * connection state changes through the {@link #execute(String, int, int)} method.
+ * </p>
  *
  * @author Michael Ochel - Initial contribution
  * @author Matthias Siegele - Initial contribution
@@ -237,15 +243,12 @@ public class HttpTransportImpl implements HttpTransport {
         String response = null;
         HttpsURLConnection connection = null;
         try {
-            // String fixedRequest =
             request = checkSessionToken(request);
-            // System.out.println(request + ", loginconter=" + loginCounter);
             connection = getConnection(request, connectTimeout, readTimeout);
             if (connection != null) {
                 connection.connect();
                 if (connection.getResponseCode() == HttpURLConnection.HTTP_OK) {
                     response = IOUtils.toString(connection.getInputStream());
-                    // lastRequest = System.currentTimeMillis();
                     if (!response.contains("Authentication failed")) {
                         if (loginCounter > 0) {
                             connectionManager.checkConnection(connection.getResponseCode());
@@ -255,15 +258,10 @@ public class HttpTransportImpl implements HttpTransport {
                         connectionManager.checkConnection(-6);
                         loginCounter++;
                     }
-                    // System.out.println(response + ", responseCode=" + connection.getResponseCode() + ",
-                    // loginconter2="
-                    // + loginCounter);
                 }
                 connection.disconnect();
                 if (response == null && connectionManager != null && loginCounter < 2) {
                     if (connection.getResponseCode() == HttpURLConnection.HTTP_FORBIDDEN) {
-                        System.out.println(HttpURLConnection.HTTP_FORBIDDEN + " get new SessionToken! loginconter="
-                                + loginCounter);
                         execute(addSessionToken(request, connectionManager.getNewSessionToken()), connectTimeout,
                                 readTimeout);
                         loginCounter++;
@@ -284,11 +282,9 @@ public class HttpTransportImpl implements HttpTransport {
         } catch (IOException e) {
             if (e instanceof java.net.ConnectException) {
                 informConnectionManager(-3);
-            }
-            if (e instanceof java.net.UnknownHostException) {
+            } else if (e instanceof java.net.UnknownHostException) {
                 informConnectionManager(-5);
-            }
-            if (connectionManager != null) {
+            } else if (connectionManager != null) {
                 logger.error("An IOException occurred by executing jsonRequest: " + request, e);
                 informConnectionManager(-1);
             }
@@ -306,24 +302,22 @@ public class HttpTransportImpl implements HttpTransport {
         }
     }
 
-    // TODO: notwendig? oder nur per Forbidden? nach 61 sek war der sessionToken immer noch gültig
     private String checkSessionToken(String request) {
-        if (!request.contains("login")) {
+        if (checkNeededSessionToken(request)) {
             if (connectionManager != null) {
                 String sessionToken = connectionManager.getSessionToken();
                 if (sessionToken == null) {
                     return addSessionToken(request, connectionManager.getNewSessionToken());
                 }
-                // if (lastRequest + 60000 < System.currentTimeMillis()) {
-                // System.out.println("Session is not valid, get new sessiontoken " + sessionToken);
-                // sessionToken = connectionManager.getNewSessionToken();
-                // } else {
-                // System.out.println("Session is valid, use existing sessiontoken " + sessionToken);
-                // }
                 request = addSessionToken(request, sessionToken);
             }
         }
         return request;
+    }
+
+    private boolean checkNeededSessionToken(String request) {
+        String functionName = StringUtils.substringAfterLast(StringUtils.substringBefore(request, "?"), "/");
+        return !DsAPIImpl.METHODS_MUST_NOT_BE_LOGGED_IN.contains(functionName);
     }
 
     private String addSessionToken(String request, String sessionToken) {
@@ -334,13 +328,19 @@ public class HttpTransportImpl implements HttpTransport {
                 request = request + "?" + ParameterKeys.TOKEN + "=" + sessionToken;
             }
         } else {
-            int start = request.indexOf("token=");
-            int end = request.indexOf("&", start);
-            if (end == -1) {
-                request = request.substring(0, start + 6) + sessionToken;
-            } else {
-                request = request.substring(0, start + 6) + sessionToken + request.substring(end, request.length());
-            }
+            /*
+             * int start = request.indexOf("token=");
+             * int end = request.indexOf("&", start);
+             * if (end == -1) {
+             * request = request.substring(0, start + 6) + sessionToken;
+             * } else {
+             * request = request.substring(0, start + 6) + sessionToken + request.substring(end, request.length());
+             * }
+             */
+            request = StringUtils.replaceOnce(request,
+                    StringUtils.substringBefore(StringUtils.substringAfter(request, ParameterKeys.TOKEN + "="), "&"),
+                    sessionToken);
+
         }
         return request;
     }
@@ -379,7 +379,6 @@ public class HttpTransportImpl implements HttpTransport {
                 connection.disconnect();
                 return connection.getResponseCode();
             }
-            // TODO: in execute einbauen
         } catch (SocketTimeoutException e) {
             return -4;
         } catch (java.net.ConnectException e) {

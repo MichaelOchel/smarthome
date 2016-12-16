@@ -12,6 +12,9 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
 
 import org.apache.commons.lang.StringUtils;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.climate.jsonResponseContainer.BaseSensorValues;
@@ -52,6 +55,7 @@ import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.scene.c
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.google.common.collect.Lists;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
@@ -68,11 +72,16 @@ import com.google.gson.JsonObject;
  */
 public class DsAPIImpl implements DsAPI {
 
-    // TODO: checken ob bei zone abfragen check zoneXY abfrage drin ist (von wegen null und so)
     private Logger logger = LoggerFactory.getLogger(DsAPIImpl.class);
     private HttpTransport transport = null;
 
     private final String QUERY_GET_METERLIST = "/apartment/dSMeters/*(dSID)";
+
+    /**
+     * Contains methods where no login is required.
+     */
+    public static final List<String> METHODS_MUST_NOT_BE_LOGGED_IN = Lists.newArrayList("login",
+            "requestApplicationToken", "version", "time", "getDSID", "logout", "loginApplication");
 
     /**
      * Create a new {@link DsAPIImpl} with the given {@link HttpTransport}.
@@ -134,6 +143,15 @@ public class DsAPIImpl implements DsAPI {
 
     private boolean checkBlankField(JsonObject obj, String key) {
         return obj != null && obj.get(key) != null;
+    }
+
+    private boolean checkRequiredZone(Integer zoneID, String zoneName) {
+        return zoneID != null && zoneID > -1 || StringUtils.isNotBlank(zoneName);
+    }
+
+    private boolean checkRequiredDevice(DSID dsid, String dSUID, String name) {
+        return StringUtils.isNotBlank(getDsidString(dsid)) || StringUtils.isNotBlank(name)
+                || StringUtils.isNotBlank(dSUID);
     }
 
     @Override
@@ -249,16 +267,16 @@ public class DsAPIImpl implements DsAPI {
     }
 
     @Override
-    public boolean callZoneScene(String token, Integer id, String name, Short groupID, String groupName,
+    public boolean callZoneScene(String token, Integer zoneID, String zoneName, Short groupID, String groupName,
             SceneEnum sceneNumber, Boolean force) {
-        if (sceneNumber != null && (convertIntegerToString(id) != null || name != null)) {
+        if (checkRequiredZone(zoneID, zoneName)) {
             try {
                 String response = transport
                         .execute(
                                 SimpleRequestBuilder.buildNewRequest(InterfaceKeys.JSON).addRequestClass(ClassKeys.ZONE)
                                         .addFunction(FunctionKeys.CALL_SCENE).addParameter(ParameterKeys.TOKEN, token)
-                                        .addParameter(ParameterKeys.ID, convertIntegerToString(id))
-                                        .addParameter(ParameterKeys.NAME, name)
+                                        .addParameter(ParameterKeys.ID, convertIntegerToString(zoneID))
+                                        .addParameter(ParameterKeys.NAME, zoneName)
                                         .addParameter(ParameterKeys.GROUP_ID, convertShortToString(groupID))
                                         .addParameter(ParameterKeys.GROUP_NAME, groupName)
                                         .addParameter(ParameterKeys.SCENENUMBER,
@@ -276,7 +294,7 @@ public class DsAPIImpl implements DsAPI {
     @Override
     public boolean undoZoneScene(String token, Integer zoneID, String zoneName, Short groupID, String groupName,
             SceneEnum sceneNumber) {
-        if (sceneNumber != null && (convertIntegerToString(zoneID) != null || zoneName != null)) {
+        if (checkRequiredZone(zoneID, zoneName)) {
             try {
                 String response = transport.execute(
                         SimpleRequestBuilder.buildNewRequest(InterfaceKeys.JSON).addRequestClass(ClassKeys.ZONE)
@@ -296,13 +314,14 @@ public class DsAPIImpl implements DsAPI {
     }
 
     @Override
-    public boolean turnDeviceOn(String token, DSID dsid, String name) {
-        if (((getDsidString(dsid) != null) || name != null)) {
+    public boolean turnDeviceOn(String token, DSID dsid, String dSUID, String name) {
+        if (checkRequiredDevice(dsid, dSUID, name)) {
             try {
                 String response = transport.execute(SimpleRequestBuilder.buildNewRequest(InterfaceKeys.JSON)
                         .addRequestClass(ClassKeys.DEVICE).addFunction(FunctionKeys.TURN_ON)
                         .addParameter(ParameterKeys.TOKEN, token).addParameter(ParameterKeys.DSID, getDsidString(dsid))
-                        .addParameter(ParameterKeys.NAME, name).buildRequestString());
+                        .addParameter(ParameterKeys.NAME, name).addParameter(ParameterKeys.DSUID, dSUID)
+                        .buildRequestString());
                 return JSONResponseHandler.checkResponse(JSONResponseHandler.toJsonObject(response));
             } catch (Exception e) {
                 logger.debug("An exception occurred", e);
@@ -312,13 +331,14 @@ public class DsAPIImpl implements DsAPI {
     }
 
     @Override
-    public boolean turnDeviceOff(String token, DSID dsid, String name) {
-        if (((getDsidString(dsid) != null) || name != null)) {
+    public boolean turnDeviceOff(String token, DSID dsid, String dSUID, String name) {
+        if (checkRequiredDevice(dsid, dSUID, name)) {
             try {
                 String response = transport.execute(SimpleRequestBuilder.buildNewRequest(InterfaceKeys.JSON)
                         .addRequestClass(ClassKeys.DEVICE).addFunction(FunctionKeys.TURN_OFF)
                         .addParameter(ParameterKeys.TOKEN, token).addParameter(ParameterKeys.DSID, getDsidString(dsid))
-                        .addParameter(ParameterKeys.NAME, name).buildRequestString());
+                        .addParameter(ParameterKeys.DSUID, dSUID).addParameter(ParameterKeys.NAME, name)
+                        .buildRequestString());
 
                 return JSONResponseHandler.checkResponse(JSONResponseHandler.toJsonObject(response));
             } catch (Exception e) {
@@ -330,15 +350,14 @@ public class DsAPIImpl implements DsAPI {
     }
 
     @Override
-    public DeviceConfig getDeviceConfig(String token, DSID dsid, String name, DeviceParameterClassEnum class_,
-            Integer index) {
-        if (((getDsidString(dsid) != null) || name != null) && class_ != null
-                && convertIntegerToString(index) != null) {
+    public DeviceConfig getDeviceConfig(String token, DSID dSID, String dSUID, String name,
+            DeviceParameterClassEnum class_, Integer index) {
+        if (checkRequiredDevice(dSID, dSUID, name) && class_ != null && convertIntegerToString(index) != null) {
             try {
                 String response = transport.execute(SimpleRequestBuilder.buildNewRequest(InterfaceKeys.JSON)
                         .addRequestClass(ClassKeys.DEVICE).addFunction(FunctionKeys.GET_CONFIG)
-                        .addParameter(ParameterKeys.TOKEN, token).addParameter(ParameterKeys.DSID, getDsidString(dsid))
-                        .addParameter(ParameterKeys.NAME, name)
+                        .addParameter(ParameterKeys.TOKEN, token).addParameter(ParameterKeys.DSID, getDsidString(dSID))
+                        .addParameter(ParameterKeys.DSUID, dSUID).addParameter(ParameterKeys.NAME, name)
                         .addParameter(ParameterKeys.CLASS, class_.getClassIndex().toString())
                         .addParameter(ParameterKeys.INDEX, convertIntegerToString(index)).buildRequestString());
 
@@ -359,13 +378,13 @@ public class DsAPIImpl implements DsAPI {
     }
 
     @Override
-    public int getDeviceOutputValue(String token, DSID dsid, String name, Short offset) {
-        if (((getDsidString(dsid) != null) || name != null) && convertShortToString(offset) != null) {
+    public int getDeviceOutputValue(String token, DSID dSID, String dSUID, String name, Short offset) {
+        if (checkRequiredDevice(dSID, dSUID, name) && convertShortToString(offset) != null) {
             try {
                 String response = transport.execute(SimpleRequestBuilder.buildNewRequest(InterfaceKeys.JSON)
                         .addRequestClass(ClassKeys.DEVICE).addFunction(FunctionKeys.GET_OUTPUT_VALUE)
-                        .addParameter(ParameterKeys.TOKEN, token).addParameter(ParameterKeys.DSID, getDsidString(dsid))
-                        .addParameter(ParameterKeys.NAME, name)
+                        .addParameter(ParameterKeys.TOKEN, token).addParameter(ParameterKeys.DSID, getDsidString(dSID))
+                        .addParameter(ParameterKeys.DSUID, dSUID).addParameter(ParameterKeys.NAME, name)
                         .addParameter(ParameterKeys.OFFSET, convertShortToString(offset)).buildRequestString());
 
                 JsonObject responseObj = JSONResponseHandler.toJsonObject(response);
@@ -385,14 +404,15 @@ public class DsAPIImpl implements DsAPI {
     }
 
     @Override
-    public boolean setDeviceOutputValue(String token, DSID dsid, String name, Short offset, Integer value) {
-        if (((getDsidString(dsid) != null) || name != null) && convertShortToString(offset) != null
+    public boolean setDeviceOutputValue(String token, DSID dSID, String dSUID, String name, Short offset,
+            Integer value) {
+        if (checkRequiredDevice(dSID, dSUID, name) && convertShortToString(offset) != null
                 && convertIntegerToString(value) != null) {
             try {
                 String response = transport.execute(SimpleRequestBuilder.buildNewRequest(InterfaceKeys.JSON)
                         .addRequestClass(ClassKeys.DEVICE).addFunction(FunctionKeys.SET_OUTPUT_VALUE)
-                        .addParameter(ParameterKeys.TOKEN, token).addParameter(ParameterKeys.DSID, getDsidString(dsid))
-                        .addParameter(ParameterKeys.NAME, name)
+                        .addParameter(ParameterKeys.TOKEN, token).addParameter(ParameterKeys.DSID, getDsidString(dSID))
+                        .addParameter(ParameterKeys.DSUID, dSUID).addParameter(ParameterKeys.NAME, name)
                         .addParameter(ParameterKeys.OFFSET, convertShortToString(offset))
                         .addParameter(ParameterKeys.VALUE, convertIntegerToString(value)).buildRequestString());
                 return JSONResponseHandler.checkResponse(JSONResponseHandler.toJsonObject(response));
@@ -404,13 +424,13 @@ public class DsAPIImpl implements DsAPI {
     }
 
     @Override
-    public DeviceSceneSpec getDeviceSceneMode(String token, DSID dsid, String name, Short sceneID) {
-        if (((getDsidString(dsid) != null) || name != null) && convertShortToString(sceneID) != null) {
+    public DeviceSceneSpec getDeviceSceneMode(String token, DSID dSID, String dSUID, String name, Short sceneID) {
+        if (checkRequiredDevice(dSID, dSUID, name) && convertShortToString(sceneID) != null) {
             try {
                 String response = transport.execute(SimpleRequestBuilder.buildNewRequest(InterfaceKeys.JSON)
                         .addRequestClass(ClassKeys.DEVICE).addFunction(FunctionKeys.GET_SCENE_MODE)
-                        .addParameter(ParameterKeys.TOKEN, token).addParameter(ParameterKeys.DSID, getDsidString(dsid))
-                        .addParameter(ParameterKeys.NAME, name)
+                        .addParameter(ParameterKeys.TOKEN, token).addParameter(ParameterKeys.DSID, getDsidString(dSID))
+                        .addParameter(ParameterKeys.DSUID, dSUID).addParameter(ParameterKeys.NAME, name)
                         .addParameter(ParameterKeys.SCENE_ID, convertShortToString(sceneID)).buildRequestString());
                 JsonObject responseObj = JSONResponseHandler.toJsonObject(response);
 
@@ -428,33 +448,14 @@ public class DsAPIImpl implements DsAPI {
         return null;
     }
 
-    // @Override
-    /*
-     * public short getDeviceSensorValue(String token, DSID dsid, String name, SensorEnum sensorType) {
-     * if (((dsid != null && dsid.getValue() != null) || name != null) && sensorType != null) {
-     * switch (sensorType) {
-     * case ACTIVE_POWER:
-     * return getDeviceSensorValue(token, dsid, name, SensorIndexEnum.ACTIVE_POWER);
-     * case ELECTRIC_METER:
-     * return getDeviceSensorValue(token, dsid, name, SensorIndexEnum.ELECTRIC_METER);
-     * case OUTPUT_CURRENT:
-     * return getDeviceSensorValue(token, dsid, name, SensorIndexEnum.OUTPUT_CURRENT);
-     * default:
-     * return -1;
-     * }
-     * }
-     * return -1;
-     * }
-     */
-
     @Override
-    public short getDeviceSensorValue(String token, DSID dsid, String name, Short sensorIndex) {
-        if (((getDsidString(dsid) != null) || name != null) && sensorIndex != null) {
+    public short getDeviceSensorValue(String token, DSID dSID, String dSUID, String name, Short sensorIndex) {
+        if (checkRequiredDevice(dSID, dSUID, dSUID) && sensorIndex != null) {
             try {
                 String response = transport.execute(SimpleRequestBuilder.buildNewRequest(InterfaceKeys.JSON)
                         .addRequestClass(ClassKeys.DEVICE).addFunction(FunctionKeys.GET_SENSOR_VALUE)
-                        .addParameter(ParameterKeys.TOKEN, token).addParameter(ParameterKeys.DSID, getDsidString(dsid))
-                        .addParameter(ParameterKeys.NAME, name)
+                        .addParameter(ParameterKeys.TOKEN, token).addParameter(ParameterKeys.DSID, getDsidString(dSID))
+                        .addParameter(ParameterKeys.DSUID, dSUID).addParameter(ParameterKeys.NAME, name)
                         .addParameter(ParameterKeys.SENSOR_INDEX, convertShortToString(sensorIndex))
                         .buildRequestString());
                 JsonObject responseObj = JSONResponseHandler.toJsonObject(response);
@@ -474,13 +475,14 @@ public class DsAPIImpl implements DsAPI {
     }
 
     @Override
-    public boolean callDeviceScene(String token, DSID dsid, String name, Scene sceneNumber, Boolean force) {
-        if (((getDsidString(dsid) != null) || name != null) && sceneNumber != null) {
+    public boolean callDeviceScene(String token, DSID dSID, String dSUID, String name, Scene sceneNumber,
+            Boolean force) {
+        if (checkRequiredDevice(dSID, dSUID, name) && sceneNumber != null) {
             try {
                 String response = transport.execute(SimpleRequestBuilder.buildNewRequest(InterfaceKeys.JSON)
                         .addRequestClass(ClassKeys.DEVICE).addFunction(FunctionKeys.CALL_SCENE)
-                        .addParameter(ParameterKeys.TOKEN, token).addParameter(ParameterKeys.DSID, getDsidString(dsid))
-                        .addParameter(ParameterKeys.NAME, name)
+                        .addParameter(ParameterKeys.TOKEN, token).addParameter(ParameterKeys.DSID, getDsidString(dSID))
+                        .addParameter(ParameterKeys.DSUID, dSUID).addParameter(ParameterKeys.NAME, name)
                         .addParameter(ParameterKeys.SCENENUMBER, sceneNumber.getSceneNumber().toString())
                         .addParameter(ParameterKeys.FORCE, force.toString()).buildRequestString());
                 return JSONResponseHandler.checkResponse(JSONResponseHandler.toJsonObject(response));
@@ -492,12 +494,13 @@ public class DsAPIImpl implements DsAPI {
     }
 
     @Override
-    public boolean undoDeviceScene(String token, DSID dsid, Scene sceneNumber) {
-        if (((getDsidString(dsid) != null)) && sceneNumber != null) {
+    public boolean undoDeviceScene(String token, DSID dSID, String dSUID, String name, Scene sceneNumber) {
+        if (checkRequiredDevice(dSID, dSUID, name) && sceneNumber != null) {
             try {
                 String response = transport.execute(SimpleRequestBuilder.buildNewRequest(InterfaceKeys.JSON)
                         .addRequestClass(ClassKeys.DEVICE).addFunction(FunctionKeys.UNDO_SCENE)
-                        .addParameter(ParameterKeys.TOKEN, token).addParameter(ParameterKeys.DSID, getDsidString(dsid))
+                        .addParameter(ParameterKeys.TOKEN, token).addParameter(ParameterKeys.DSID, getDsidString(dSID))
+                        .addParameter(ParameterKeys.DSUID, dSUID).addParameter(ParameterKeys.NAME, name)
                         .addParameter(ParameterKeys.SCENENUMBER, sceneNumber.getSceneNumber().toString())
                         .buildRequestString());
                 return JSONResponseHandler.checkResponse(JSONResponseHandler.toJsonObject(response));
@@ -652,12 +655,17 @@ public class DsAPIImpl implements DsAPI {
     public List<CachedMeteringValue> getLatest(String token, MeteringTypeEnum type, String meterDSIDs,
             MeteringUnitsEnum unit) {
         if (type != null && meterDSIDs != null) {
+            String unitstring = null;
+            if (unit != null) {
+                unitstring = unit.UNIT;
+            }
             try {
-                String response = transport.execute(SimpleRequestBuilder.buildNewRequest(InterfaceKeys.JSON)
-                        .addRequestClass(ClassKeys.METERING).addFunction(FunctionKeys.GET_LATEST)
-                        .addParameter(ParameterKeys.TOKEN, token).addParameter(ParameterKeys.TYPE, objectToString(type))
-                        .addParameter(ParameterKeys.FROM, meterDSIDs)
-                        .addParameter(ParameterKeys.UNIT, objectToString(unit)).buildRequestString());
+                String response = transport.execute(
+                        SimpleRequestBuilder.buildNewRequest(InterfaceKeys.JSON).addRequestClass(ClassKeys.METERING)
+                                .addFunction(FunctionKeys.GET_LATEST).addParameter(ParameterKeys.TOKEN, token)
+                                .addParameter(ParameterKeys.TYPE, objectToString(type).toLowerCase())
+                                .addParameter(ParameterKeys.FROM, meterDSIDs)
+                                .addParameter(ParameterKeys.UNIT, unitstring).buildRequestString());
 
                 JsonObject responseObj = JSONResponseHandler.toJsonObject(response);
                 if (JSONResponseHandler.checkResponse(responseObj)) {
@@ -683,14 +691,14 @@ public class DsAPIImpl implements DsAPI {
     }
 
     @Override
-    public boolean setDeviceValue(String token, DSID dsid, String name, Integer value) {
-        if (((getDsidString(dsid) != null) || name != null)) {
+    public boolean setDeviceValue(String token, DSID dSID, String dSUID, String name, Integer value) {
+        if (checkRequiredDevice(dSID, dSUID, name)) {
             try {
                 String response = transport.execute(SimpleRequestBuilder.buildNewRequest(InterfaceKeys.JSON)
                         .addRequestClass(ClassKeys.DEVICE).addFunction(FunctionKeys.SET_VALUE)
-                        .addParameter(ParameterKeys.TOKEN, token).addParameter(ParameterKeys.DSID, getDsidString(dsid))
-                        .addParameter(ParameterKeys.NAME, name).addParameter(ParameterKeys.VALUE, value.toString())
-                        .buildRequestString());
+                        .addParameter(ParameterKeys.TOKEN, token).addParameter(ParameterKeys.DSID, getDsidString(dSID))
+                        .addParameter(ParameterKeys.DSUID, dSUID).addParameter(ParameterKeys.NAME, name)
+                        .addParameter(ParameterKeys.VALUE, value.toString()).buildRequestString());
                 return JSONResponseHandler.checkResponse(JSONResponseHandler.toJsonObject(response));
             } catch (Exception e) {
                 logger.debug("An exception occurred", e);
@@ -832,10 +840,7 @@ public class DsAPIImpl implements DsAPI {
             if (JSONResponseHandler.checkResponse(responseObj)) {
                 JsonObject obj = JSONResponseHandler.getResultJsonObject(responseObj);
                 if (obj != null) {
-                    String aplicationToken = obj.get(JSONApiResponseKeysEnum.APPLICATION_TOKEN.getKey()).getAsString();
-                    if (aplicationToken != null) {
-                        return aplicationToken;
-                    }
+                    return obj.get(JSONApiResponseKeysEnum.APPLICATION_TOKEN.getKey()).getAsString();
                 }
             }
         } catch (Exception e) {
@@ -871,56 +876,65 @@ public class DsAPIImpl implements DsAPI {
     }
 
     @Override
-    public int[] getSceneValue(String token, DSID dsid, Short sceneId) {
+    public int[] getSceneValue(String token, DSID dSID, String dSUID, String name, Short sceneId) {
         int[] value = { -1, -1 };
-        try {
-            String response = transport.execute(SimpleRequestBuilder.buildNewRequest(InterfaceKeys.JSON)
-                    .addRequestClass(ClassKeys.DEVICE).addFunction(FunctionKeys.GET_SCENE_VALUE)
-                    .addParameter(ParameterKeys.SCENE_ID, convertShortToString(sceneId))
-                    .addParameter(ParameterKeys.DSID, getDsidString(dsid)).addParameter(ParameterKeys.TOKEN, token)
-                    .buildRequestString(), 4000, 20000);
-            JsonObject responseObj = JSONResponseHandler.toJsonObject(response);
+        if (checkRequiredDevice(dSID, dSUID, name)) {
+            try {
+                String response = transport.execute(SimpleRequestBuilder.buildNewRequest(InterfaceKeys.JSON)
+                        .addRequestClass(ClassKeys.DEVICE).addFunction(FunctionKeys.GET_SCENE_VALUE)
+                        .addParameter(ParameterKeys.SCENE_ID, convertShortToString(sceneId))
+                        .addParameter(ParameterKeys.DSID, getDsidString(dSID)).addParameter(ParameterKeys.DSUID, dSUID)
+                        .addParameter(ParameterKeys.NAME, name).addParameter(ParameterKeys.TOKEN, token)
+                        .buildRequestString(), 4000, 20000);
+                JsonObject responseObj = JSONResponseHandler.toJsonObject(response);
 
-            if (JSONResponseHandler.checkResponse(responseObj)) {
-                JsonObject obj = JSONResponseHandler.getResultJsonObject(responseObj);
-                if (obj != null && obj.get("value") != null) {
-                    value[0] = obj.get("value").getAsInt();
-                    if (obj.get("angle") != null) {
-                        value[1] = obj.get("angle").getAsInt();
+                if (JSONResponseHandler.checkResponse(responseObj)) {
+                    JsonObject obj = JSONResponseHandler.getResultJsonObject(responseObj);
+                    if (obj != null && obj.get("value") != null) {
+                        value[0] = obj.get("value").getAsInt();
+                        if (obj.get("angle") != null) {
+                            value[1] = obj.get("angle").getAsInt();
+                        }
+                        return value;
                     }
-                    return value;
                 }
+            } catch (Exception e) {
+                logger.debug("An exception occurred", e);
             }
-        } catch (Exception e) {
-            logger.debug("An exception occurred", e);
         }
         return value;
     }
 
     @Override
-    public boolean increaseValue(String sessionToken, DSID dsid) {
-        try {
-            String response = transport.execute(SimpleRequestBuilder.buildNewRequest(InterfaceKeys.JSON)
-                    .addRequestClass(ClassKeys.DEVICE).addFunction(FunctionKeys.INCREASE_VALUE)
-                    .addParameter(ParameterKeys.DSID, getDsidString(dsid))
-                    .addParameter(ParameterKeys.TOKEN, sessionToken).buildRequestString());
-            return JSONResponseHandler.checkResponse(JSONResponseHandler.toJsonObject(response));
-        } catch (Exception e) {
-            logger.debug("An exception occurred", e);
+    public boolean increaseValue(String sessionToken, DSID dSID, String dSUID, String name) {
+        if (checkRequiredDevice(dSID, dSUID, name)) {
+            try {
+                String response = transport.execute(SimpleRequestBuilder.buildNewRequest(InterfaceKeys.JSON)
+                        .addRequestClass(ClassKeys.DEVICE).addFunction(FunctionKeys.INCREASE_VALUE)
+                        .addParameter(ParameterKeys.DSID, getDsidString(dSID)).addParameter(ParameterKeys.DSUID, dSUID)
+                        .addParameter(ParameterKeys.NAME, name).addParameter(ParameterKeys.TOKEN, sessionToken)
+                        .buildRequestString());
+                return JSONResponseHandler.checkResponse(JSONResponseHandler.toJsonObject(response));
+            } catch (Exception e) {
+                logger.debug("An exception occurred", e);
+            }
         }
         return false;
     }
 
     @Override
-    public boolean decreaseValue(String sessionToken, DSID dsid) {
-        try {
-            String response = transport.execute(SimpleRequestBuilder.buildNewRequest(InterfaceKeys.JSON)
-                    .addRequestClass(ClassKeys.DEVICE).addFunction(FunctionKeys.DECREASE_VALUE)
-                    .addParameter(ParameterKeys.DSID, getDsidString(dsid))
-                    .addParameter(ParameterKeys.TOKEN, sessionToken).buildRequestString());
-            return JSONResponseHandler.checkResponse(JSONResponseHandler.toJsonObject(response));
-        } catch (Exception e) {
-            logger.debug("An exception occurred", e);
+    public boolean decreaseValue(String sessionToken, DSID dSID, String dSUID, String name) {
+        if (checkRequiredDevice(dSID, dSUID, name)) {
+            try {
+                String response = transport.execute(SimpleRequestBuilder.buildNewRequest(InterfaceKeys.JSON)
+                        .addRequestClass(ClassKeys.DEVICE).addFunction(FunctionKeys.DECREASE_VALUE)
+                        .addParameter(ParameterKeys.DSID, getDsidString(dSID)).addParameter(ParameterKeys.DSUID, dSUID)
+                        .addParameter(ParameterKeys.NAME, name).addParameter(ParameterKeys.TOKEN, sessionToken)
+                        .buildRequestString());
+                return JSONResponseHandler.checkResponse(JSONResponseHandler.toJsonObject(response));
+            } catch (Exception e) {
+                logger.debug("An exception occurred", e);
+            }
         }
         return false;
     }
@@ -949,42 +963,47 @@ public class DsAPIImpl implements DsAPI {
 
     @Override
     public String getZoneName(String sessionToken, Integer zoneID) {
-        try {
-            String response = transport.execute(SimpleRequestBuilder.buildNewRequest(InterfaceKeys.JSON)
-                    .addRequestClass(ClassKeys.ZONE).addFunction(FunctionKeys.GET_NAME)
-                    .addParameter(ParameterKeys.ID, convertIntegerToString(zoneID))
-                    .addParameter(ParameterKeys.TOKEN, sessionToken).buildRequestString());
-            JsonObject responseObj = JSONResponseHandler.toJsonObject(response);
+        if (checkRequiredZone(zoneID, null)) {
+            try {
+                String response = transport.execute(SimpleRequestBuilder.buildNewRequest(InterfaceKeys.JSON)
+                        .addRequestClass(ClassKeys.ZONE).addFunction(FunctionKeys.GET_NAME)
+                        .addParameter(ParameterKeys.ID, convertIntegerToString(zoneID))
+                        .addParameter(ParameterKeys.TOKEN, sessionToken).buildRequestString());
+                JsonObject responseObj = JSONResponseHandler.toJsonObject(response);
 
-            if (JSONResponseHandler.checkResponse(responseObj)) {
-                JsonObject obj = JSONResponseHandler.getResultJsonObject(responseObj);
-                if (checkBlankField(obj, JSONApiResponseKeysEnum.NAME.getKey())) {
-                    return obj.get(JSONApiResponseKeysEnum.NAME.getKey()).getAsString();
+                if (JSONResponseHandler.checkResponse(responseObj)) {
+                    JsonObject obj = JSONResponseHandler.getResultJsonObject(responseObj);
+                    if (checkBlankField(obj, JSONApiResponseKeysEnum.NAME.getKey())) {
+                        return obj.get(JSONApiResponseKeysEnum.NAME.getKey()).getAsString();
+                    }
                 }
+            } catch (Exception e) {
+                logger.debug("An exception occurred", e);
             }
-        } catch (Exception e) {
-            logger.debug("An exception occurred", e);
         }
         return null;
     }
 
     @Override
-    public String getDeviceName(String sessionToken, DSID dSID) {
-        try {
-            String response = transport
-                    .execute(SimpleRequestBuilder.buildNewRequest(InterfaceKeys.JSON).addRequestClass(ClassKeys.DEVICE)
-                            .addFunction(FunctionKeys.GET_NAME).addParameter(ParameterKeys.TOKEN, sessionToken)
-                            .addParameter(ParameterKeys.DSID, getDsidString(dSID)).buildRequestString());
-            JsonObject responseObj = JSONResponseHandler.toJsonObject(response);
+    public String getDeviceName(String sessionToken, DSID dSID, String dSUID) {
+        if (checkRequiredDevice(dSID, dSUID, null)) {
+            try {
+                String response = transport.execute(
+                        SimpleRequestBuilder.buildNewRequest(InterfaceKeys.JSON).addRequestClass(ClassKeys.DEVICE)
+                                .addFunction(FunctionKeys.GET_NAME).addParameter(ParameterKeys.TOKEN, sessionToken)
+                                .addParameter(ParameterKeys.DSID, getDsidString(dSID))
+                                .addParameter(ParameterKeys.DSUID, dSUID).buildRequestString());
+                JsonObject responseObj = JSONResponseHandler.toJsonObject(response);
 
-            if (JSONResponseHandler.checkResponse(responseObj)) {
-                JsonObject obj = JSONResponseHandler.getResultJsonObject(responseObj);
-                if (checkBlankField(obj, JSONApiResponseKeysEnum.NAME.getKey())) {
-                    return obj.get(JSONApiResponseKeysEnum.NAME.getKey()).getAsString();
+                if (JSONResponseHandler.checkResponse(responseObj)) {
+                    JsonObject obj = JSONResponseHandler.getResultJsonObject(responseObj);
+                    if (checkBlankField(obj, JSONApiResponseKeysEnum.NAME.getKey())) {
+                        return obj.get(JSONApiResponseKeysEnum.NAME.getKey()).getAsString();
+                    }
                 }
+            } catch (Exception e) {
+                logger.debug("An exception occurred", e);
             }
-        } catch (Exception e) {
-            logger.debug("An exception occurred", e);
         }
         return null;
     }
@@ -1011,24 +1030,27 @@ public class DsAPIImpl implements DsAPI {
     }
 
     @Override
-    public String getSceneName(String sessionToken, Integer zoneID, Short groupID, Short sceneID) {
-        try {
-            String response = transport.execute(SimpleRequestBuilder.buildNewRequest(InterfaceKeys.JSON)
-                    .addRequestClass(ClassKeys.ZONE).addFunction(FunctionKeys.SCENE_GET_NAME)
-                    .addParameter(ParameterKeys.TOKEN, sessionToken)
-                    .addParameter(ParameterKeys.ID, convertIntegerToString(zoneID))
-                    .addParameter(ParameterKeys.GROUP_ID, convertShortToString(groupID))
-                    .addParameter(ParameterKeys.SCENENUMBER, convertShortToString(sceneID)).buildRequestString());
-            JsonObject responseObj = JSONResponseHandler.toJsonObject(response);
+    public String getSceneName(String sessionToken, Integer zoneID, String zoneName, Short groupID, Short sceneID) {
+        if (checkRequiredZone(zoneID, zoneName)) {
+            try {
+                String response = transport.execute(SimpleRequestBuilder.buildNewRequest(InterfaceKeys.JSON)
+                        .addRequestClass(ClassKeys.ZONE).addFunction(FunctionKeys.SCENE_GET_NAME)
+                        .addParameter(ParameterKeys.TOKEN, sessionToken)
+                        .addParameter(ParameterKeys.ID, convertIntegerToString(zoneID))
+                        .addParameter(ParameterKeys.NAME, zoneName)
+                        .addParameter(ParameterKeys.GROUP_ID, convertShortToString(groupID))
+                        .addParameter(ParameterKeys.SCENENUMBER, convertShortToString(sceneID)).buildRequestString());
+                JsonObject responseObj = JSONResponseHandler.toJsonObject(response);
 
-            if (JSONResponseHandler.checkResponse(responseObj)) {
-                JsonObject obj = JSONResponseHandler.getResultJsonObject(responseObj);
-                if (checkBlankField(obj, JSONApiResponseKeysEnum.NAME.getKey())) {
-                    return obj.get(JSONApiResponseKeysEnum.NAME.getKey()).getAsString();
+                if (JSONResponseHandler.checkResponse(responseObj)) {
+                    JsonObject obj = JSONResponseHandler.getResultJsonObject(responseObj);
+                    if (checkBlankField(obj, JSONApiResponseKeysEnum.NAME.getKey())) {
+                        return obj.get(JSONApiResponseKeysEnum.NAME.getKey()).getAsString();
+                    }
                 }
+            } catch (Exception e) {
+                logger.debug("An exception occurred", e);
             }
-        } catch (Exception e) {
-            logger.debug("An exception occurred", e);
         }
         return null;
     }
@@ -1036,21 +1058,22 @@ public class DsAPIImpl implements DsAPI {
     @Override
     public TemperatureControlStatus getZoneTemperatureControlStatus(String sessionToken, Integer zoneID,
             String zoneName) {
+        if (checkRequiredZone(zoneID, zoneName)) {
+            try {
+                String response = transport.execute(SimpleRequestBuilder.buildNewRequest(InterfaceKeys.JSON)
+                        .addRequestClass(ClassKeys.ZONE).addFunction(FunctionKeys.GET_TEMPERATURE_CONTROL_STATUS)
+                        .addParameter(ParameterKeys.TOKEN, sessionToken)
+                        .addParameter(ParameterKeys.ID, convertIntegerToString(zoneID))
+                        .addParameter(ParameterKeys.NAME, zoneName).buildRequestString());
+                JsonObject responseObj = JSONResponseHandler.toJsonObject(response);
 
-        try {
-            String response = transport.execute(SimpleRequestBuilder.buildNewRequest(InterfaceKeys.JSON)
-                    .addRequestClass(ClassKeys.ZONE).addFunction(FunctionKeys.GET_TEMPERATURE_CONTROL_STATUS)
-                    .addParameter(ParameterKeys.TOKEN, sessionToken)
-                    .addParameter(ParameterKeys.ID, convertIntegerToString(zoneID))
-                    .addParameter(ParameterKeys.NAME, zoneName).buildRequestString());
-            JsonObject responseObj = JSONResponseHandler.toJsonObject(response);
-
-            if (JSONResponseHandler.checkResponse(responseObj)) {
-                JsonObject obj = JSONResponseHandler.getResultJsonObject(responseObj);
-                return new TemperatureControlStatus(obj, zoneID, zoneName);
+                if (JSONResponseHandler.checkResponse(responseObj)) {
+                    JsonObject obj = JSONResponseHandler.getResultJsonObject(responseObj);
+                    return new TemperatureControlStatus(obj, zoneID, zoneName);
+                }
+            } catch (Exception e) {
+                logger.debug("An exception occurred", e);
             }
-        } catch (Exception e) {
-            logger.debug("An exception occurred", e);
         }
         return null;
     }
@@ -1058,20 +1081,22 @@ public class DsAPIImpl implements DsAPI {
     @Override
     public TemperatureControlConfig getZoneTemperatureControlConfig(String sessionToken, Integer zoneID,
             String zoneName) {
-        try {
-            String response = transport.execute(SimpleRequestBuilder.buildNewRequest(InterfaceKeys.JSON)
-                    .addRequestClass(ClassKeys.ZONE).addFunction(FunctionKeys.GET_TEMPERATURE_CONTROL_CONFIG)
-                    .addParameter(ParameterKeys.TOKEN, sessionToken)
-                    .addParameter(ParameterKeys.ID, convertIntegerToString(zoneID))
-                    .addParameter(ParameterKeys.NAME, zoneName).buildRequestString());
-            JsonObject responseObj = JSONResponseHandler.toJsonObject(response);
+        if (checkRequiredZone(zoneID, zoneName)) {
+            try {
+                String response = transport.execute(SimpleRequestBuilder.buildNewRequest(InterfaceKeys.JSON)
+                        .addRequestClass(ClassKeys.ZONE).addFunction(FunctionKeys.GET_TEMPERATURE_CONTROL_CONFIG)
+                        .addParameter(ParameterKeys.TOKEN, sessionToken)
+                        .addParameter(ParameterKeys.ID, convertIntegerToString(zoneID))
+                        .addParameter(ParameterKeys.NAME, zoneName).buildRequestString());
+                JsonObject responseObj = JSONResponseHandler.toJsonObject(response);
 
-            if (JSONResponseHandler.checkResponse(responseObj)) {
-                JsonObject obj = JSONResponseHandler.getResultJsonObject(responseObj);
-                return new TemperatureControlConfig(obj, zoneID, zoneName);
+                if (JSONResponseHandler.checkResponse(responseObj)) {
+                    JsonObject obj = JSONResponseHandler.getResultJsonObject(responseObj);
+                    return new TemperatureControlConfig(obj, zoneID, zoneName);
+                }
+            } catch (Exception e) {
+                logger.debug("An exception occurred", e);
             }
-        } catch (Exception e) {
-            logger.debug("An exception occurred", e);
         }
         return null;
     }
@@ -1079,40 +1104,44 @@ public class DsAPIImpl implements DsAPI {
     @Override
     public TemperatureControlValues getZoneTemperatureControlValues(String sessionToken, Integer zoneID,
             String zoneName) {
-        try {
-            String response = transport.execute(SimpleRequestBuilder.buildNewRequest(InterfaceKeys.JSON)
-                    .addRequestClass(ClassKeys.ZONE).addFunction(FunctionKeys.GET_TEMPERATURE_CONTROL_VALUES)
-                    .addParameter(ParameterKeys.TOKEN, sessionToken)
-                    .addParameter(ParameterKeys.ID, convertIntegerToString(zoneID))
-                    .addParameter(ParameterKeys.NAME, zoneName).buildRequestString());
-            JsonObject responseObj = JSONResponseHandler.toJsonObject(response);
+        if (checkRequiredZone(zoneID, zoneName)) {
+            try {
+                String response = transport.execute(SimpleRequestBuilder.buildNewRequest(InterfaceKeys.JSON)
+                        .addRequestClass(ClassKeys.ZONE).addFunction(FunctionKeys.GET_TEMPERATURE_CONTROL_VALUES)
+                        .addParameter(ParameterKeys.TOKEN, sessionToken)
+                        .addParameter(ParameterKeys.ID, convertIntegerToString(zoneID))
+                        .addParameter(ParameterKeys.NAME, zoneName).buildRequestString());
+                JsonObject responseObj = JSONResponseHandler.toJsonObject(response);
 
-            if (JSONResponseHandler.checkResponse(responseObj)) {
-                JsonObject obj = JSONResponseHandler.getResultJsonObject(responseObj);
-                return new TemperatureControlValues(obj, zoneID, zoneName);
+                if (JSONResponseHandler.checkResponse(responseObj)) {
+                    JsonObject obj = JSONResponseHandler.getResultJsonObject(responseObj);
+                    return new TemperatureControlValues(obj, zoneID, zoneName);
+                }
+            } catch (Exception e) {
+                logger.debug("An exception occurred", e);
             }
-        } catch (Exception e) {
-            logger.debug("An exception occurred", e);
         }
         return null;
     }
 
     @Override
     public AssignedSensors getZoneAssignedSensors(String sessionToken, Integer zoneID, String zoneName) {
-        try {
-            String response = transport.execute(SimpleRequestBuilder.buildNewRequest(InterfaceKeys.JSON)
-                    .addRequestClass(ClassKeys.ZONE).addFunction(FunctionKeys.GET_ASSIGNED_SENSORS)
-                    .addParameter(ParameterKeys.TOKEN, sessionToken)
-                    .addParameter(ParameterKeys.ID, convertIntegerToString(zoneID))
-                    .addParameter(ParameterKeys.NAME, zoneName).buildRequestString());
-            JsonObject responseObj = JSONResponseHandler.toJsonObject(response);
+        if (checkRequiredZone(zoneID, zoneName)) {
+            try {
+                String response = transport.execute(SimpleRequestBuilder.buildNewRequest(InterfaceKeys.JSON)
+                        .addRequestClass(ClassKeys.ZONE).addFunction(FunctionKeys.GET_ASSIGNED_SENSORS)
+                        .addParameter(ParameterKeys.TOKEN, sessionToken)
+                        .addParameter(ParameterKeys.ID, convertIntegerToString(zoneID))
+                        .addParameter(ParameterKeys.NAME, zoneName).buildRequestString());
+                JsonObject responseObj = JSONResponseHandler.toJsonObject(response);
 
-            if (JSONResponseHandler.checkResponse(responseObj)) {
-                JsonObject obj = JSONResponseHandler.getResultJsonObject(responseObj);
-                return new AssignedSensors(obj, zoneID, zoneName);
+                if (JSONResponseHandler.checkResponse(responseObj)) {
+                    JsonObject obj = JSONResponseHandler.getResultJsonObject(responseObj);
+                    return new AssignedSensors(obj, zoneID, zoneName);
+                }
+            } catch (Exception e) {
+                logger.debug("An exception occurred", e);
             }
-        } catch (Exception e) {
-            logger.debug("An exception occurred", e);
         }
         return null;
     }
@@ -1120,57 +1149,76 @@ public class DsAPIImpl implements DsAPI {
     @Override
     public boolean setZoneTemperatureControlState(String sessionToken, Integer zoneID, String controlState,
             String zoneName) {
-        try {
-            String response = transport.execute(SimpleRequestBuilder.buildNewRequest(InterfaceKeys.JSON)
-                    .addRequestClass(ClassKeys.ZONE).addFunction(FunctionKeys.SET_TEMEPERATURE_CONTROL_STATE)
-                    .addParameter(ParameterKeys.TOKEN, sessionToken)
-                    .addParameter(ParameterKeys.ID, convertIntegerToString(zoneID))
-                    .addParameter(ParameterKeys.NAME, zoneName).addParameter(ParameterKeys.CONTROL_STATE, controlState)
-                    .buildRequestString());
+        if (checkRequiredZone(zoneID, zoneName)) {
+            try {
+                String response = transport.execute(SimpleRequestBuilder.buildNewRequest(InterfaceKeys.JSON)
+                        .addRequestClass(ClassKeys.ZONE).addFunction(FunctionKeys.SET_TEMEPERATURE_CONTROL_STATE)
+                        .addParameter(ParameterKeys.TOKEN, sessionToken)
+                        .addParameter(ParameterKeys.ID, convertIntegerToString(zoneID))
+                        .addParameter(ParameterKeys.NAME, zoneName)
+                        .addParameter(ParameterKeys.CONTROL_STATE, controlState).buildRequestString());
 
-            return JSONResponseHandler.checkResponse(JSONResponseHandler.toJsonObject(response));
+                return JSONResponseHandler.checkResponse(JSONResponseHandler.toJsonObject(response));
 
-        } catch (Exception e) {
-            logger.debug("An exception occurred", e);
+            } catch (Exception e) {
+                logger.debug("An exception occurred", e);
+            }
         }
         return false;
     }
 
     @Override
-    public boolean setZoneTemperatureControlValue(String sessionToken, Integer zoneID, String zoneName,
-            String controlValue, Float temperature) {
-        try {
-            String response = transport.execute(SimpleRequestBuilder.buildNewRequest(InterfaceKeys.JSON)
-                    .addRequestClass(ClassKeys.ZONE).addFunction(FunctionKeys.SET_TEMEPERATURE_CONTROL_VALUE)
-                    .addParameter(ParameterKeys.TOKEN, sessionToken)
-                    .addParameter(ParameterKeys.ID, convertIntegerToString(zoneID))
-                    .addParameter(ParameterKeys.NAME, zoneName).addParameter(ParameterKeys.CONTROL_VALUE, controlValue)
-                    .buildRequestString());
+    public boolean setZoneTemperatureControlValues(String sessionToken, Integer zoneID, String zoneName,
+            List<Object[]> controlValues) {
+        if (checkRequiredZone(zoneID, zoneName)) {
+            try {
+                if (checkRequiredZone(zoneID, zoneName)) {
+                    if (controlValues != null) {
+                        SimpleRequestBuilder builder = SimpleRequestBuilder.buildNewRequest(InterfaceKeys.JSON)
+                                .addRequestClass(ClassKeys.ZONE)
+                                .addFunction(FunctionKeys.SET_TEMEPERATURE_CONTROL_VALUE)
+                                .addParameter(ParameterKeys.TOKEN, sessionToken)
+                                .addParameter(ParameterKeys.ID, convertIntegerToString(zoneID))
+                                .addParameter(ParameterKeys.NAME, zoneName);
+                        for (Object[] objAry : controlValues) {
+                            if (objAry.length == 2 && objAry[0] instanceof String && objAry[1] instanceof Integer) {
+                                builder.addParameter((String) objAry[0], convertIntegerToString((Integer) objAry[1]));
+                            } else {
+                                builder.buildRequestString();
+                                throw new IllegalArgumentException(
+                                        "The first field of the object array have to be a String and the second have to be a Integer.");
+                            }
+                        }
+                        String response = transport.execute(builder.buildRequestString());
 
-            return JSONResponseHandler.checkResponse(JSONResponseHandler.toJsonObject(response));
-
-        } catch (Exception e) {
-            logger.debug("An exception occurred", e);
+                        return JSONResponseHandler.checkResponse(JSONResponseHandler.toJsonObject(response));
+                    }
+                }
+            } catch (Exception e) {
+                logger.debug("An exception occurred", e);
+            }
         }
         return false;
     }
 
     @Override
     public SensorValues getZoneSensorValues(String sessionToken, Integer zoneID, String zoneName) {
-        try {
-            String response = transport
-                    .execute(SimpleRequestBuilder.buildNewRequest(InterfaceKeys.JSON).addRequestClass(ClassKeys.ZONE)
-                            .addFunction(FunctionKeys.GET_SENSOR_VALUES).addParameter(ParameterKeys.TOKEN, sessionToken)
-                            .addParameter(ParameterKeys.ID, convertIntegerToString(zoneID))
-                            .addParameter(ParameterKeys.NAME, zoneName).buildRequestString());
-            JsonObject responseObj = JSONResponseHandler.toJsonObject(response);
+        if (checkRequiredZone(zoneID, zoneName)) {
+            try {
+                String response = transport.execute(SimpleRequestBuilder.buildNewRequest(InterfaceKeys.JSON)
+                        .addRequestClass(ClassKeys.ZONE).addFunction(FunctionKeys.GET_SENSOR_VALUES)
+                        .addParameter(ParameterKeys.TOKEN, sessionToken)
+                        .addParameter(ParameterKeys.ID, convertIntegerToString(zoneID))
+                        .addParameter(ParameterKeys.NAME, zoneName).buildRequestString());
+                JsonObject responseObj = JSONResponseHandler.toJsonObject(response);
 
-            if (JSONResponseHandler.checkResponse(responseObj)) {
-                JsonObject obj = JSONResponseHandler.getResultJsonObject(responseObj);
-                return new SensorValues(obj, zoneID, zoneName);
+                if (JSONResponseHandler.checkResponse(responseObj)) {
+                    JsonObject obj = JSONResponseHandler.getResultJsonObject(responseObj);
+                    return new SensorValues(obj, zoneID, zoneName);
+                }
+            } catch (Exception e) {
+                logger.debug("An exception occurred", e);
             }
-        } catch (Exception e) {
-            logger.debug("An exception occurred", e);
         }
         return null;
     }
@@ -1180,34 +1228,36 @@ public class DsAPIImpl implements DsAPI {
             String controlDSUID, Short controlMode, Integer referenceZone, Float ctrlOffset, Float emergencyValue,
             Float manualValue, Float ctrlKp, Float ctrlTs, Float ctrlTi, Float ctrlKd, Float ctrlImin, Float ctrlImax,
             Float ctrlYmin, Float ctrlYmax, Boolean ctrlAntiWindUp, Boolean ctrlKeepFloorWarm) {
-        try {
-            String response = transport.execute(SimpleRequestBuilder.buildNewRequest(InterfaceKeys.JSON)
-                    .addRequestClass(ClassKeys.ZONE).addFunction(FunctionKeys.SET_TEMPERATION_CONTROL_CONFIG)
-                    .addParameter(ParameterKeys.TOKEN, sessionToken)
-                    .addParameter(ParameterKeys.ID, convertIntegerToString(zoneID))
-                    .addParameter(ParameterKeys.NAME, zoneName)
-                    .addParameter(ParameterKeys.CONTROL_MODE, objectToString(controlMode))
-                    .addParameter(ParameterKeys.CONTROL_DSUID, controlDSUID)
-                    .addParameter(ParameterKeys.REFERENCE_ZONE, objectToString(referenceZone))
-                    .addParameter(ParameterKeys.CTRL_OFFSET, objectToString(ctrlOffset))
-                    .addParameter(ParameterKeys.EMERGENCY_VALUE, objectToString(emergencyValue))
-                    .addParameter(ParameterKeys.MANUAL_VALUE, objectToString(manualValue))
-                    .addParameter(ParameterKeys.CTRL_KP, objectToString(ctrlKp))
-                    .addParameter(ParameterKeys.CTRL_TS, objectToString(ctrlTs))
-                    .addParameter(ParameterKeys.CTRL_TI, objectToString(ctrlTi))
-                    .addParameter(ParameterKeys.CTRL_KD, objectToString(ctrlKd))
-                    .addParameter(ParameterKeys.CTRL_I_MIN, objectToString(ctrlImin))
-                    .addParameter(ParameterKeys.CTRL_I_MAX, objectToString(ctrlImax))
-                    .addParameter(ParameterKeys.CTRL_Y_MIN, objectToString(ctrlYmin))
-                    .addParameter(ParameterKeys.CTRL_Y_MAX, objectToString(ctrlYmax))
-                    .addParameter(ParameterKeys.CTRL_ANTI_WIND_UP, objectToString(ctrlAntiWindUp))
-                    .addParameter(ParameterKeys.CTRL_KEEP_FLOOR_WARM, objectToString(ctrlKeepFloorWarm))
-                    .buildRequestString());
+        if (checkRequiredZone(zoneID, zoneName)) {
+            try {
+                String response = transport.execute(SimpleRequestBuilder.buildNewRequest(InterfaceKeys.JSON)
+                        .addRequestClass(ClassKeys.ZONE).addFunction(FunctionKeys.SET_TEMPERATION_CONTROL_CONFIG)
+                        .addParameter(ParameterKeys.TOKEN, sessionToken)
+                        .addParameter(ParameterKeys.ID, convertIntegerToString(zoneID))
+                        .addParameter(ParameterKeys.NAME, zoneName)
+                        .addParameter(ParameterKeys.CONTROL_MODE, objectToString(controlMode))
+                        .addParameter(ParameterKeys.CONTROL_DSUID, controlDSUID)
+                        .addParameter(ParameterKeys.REFERENCE_ZONE, objectToString(referenceZone))
+                        .addParameter(ParameterKeys.CTRL_OFFSET, objectToString(ctrlOffset))
+                        .addParameter(ParameterKeys.EMERGENCY_VALUE, objectToString(emergencyValue))
+                        .addParameter(ParameterKeys.MANUAL_VALUE, objectToString(manualValue))
+                        .addParameter(ParameterKeys.CTRL_KP, objectToString(ctrlKp))
+                        .addParameter(ParameterKeys.CTRL_TS, objectToString(ctrlTs))
+                        .addParameter(ParameterKeys.CTRL_TI, objectToString(ctrlTi))
+                        .addParameter(ParameterKeys.CTRL_KD, objectToString(ctrlKd))
+                        .addParameter(ParameterKeys.CTRL_I_MIN, objectToString(ctrlImin))
+                        .addParameter(ParameterKeys.CTRL_I_MAX, objectToString(ctrlImax))
+                        .addParameter(ParameterKeys.CTRL_Y_MIN, objectToString(ctrlYmin))
+                        .addParameter(ParameterKeys.CTRL_Y_MAX, objectToString(ctrlYmax))
+                        .addParameter(ParameterKeys.CTRL_ANTI_WIND_UP, objectToString(ctrlAntiWindUp))
+                        .addParameter(ParameterKeys.CTRL_KEEP_FLOOR_WARM, objectToString(ctrlKeepFloorWarm))
+                        .buildRequestString());
 
-            return JSONResponseHandler.checkResponse(JSONResponseHandler.toJsonObject(response));
+                return JSONResponseHandler.checkResponse(JSONResponseHandler.toJsonObject(response));
 
-        } catch (Exception e) {
-            logger.debug("An exception occurred", e);
+            } catch (Exception e) {
+                logger.debug("An exception occurred", e);
+            }
         }
         return false;
     }
@@ -1215,38 +1265,42 @@ public class DsAPIImpl implements DsAPI {
     @Override
     public boolean setZoneSensorSource(String sessionToken, Integer zoneID, String zoneName, SensorEnum sensorType,
             DSID dSID) {
-        try {
-            String response = transport
-                    .execute(SimpleRequestBuilder.buildNewRequest(InterfaceKeys.JSON).addRequestClass(ClassKeys.ZONE)
-                            .addFunction(FunctionKeys.SET_SENSOR_SOURCE).addParameter(ParameterKeys.TOKEN, sessionToken)
-                            .addParameter(ParameterKeys.ID, convertIntegerToString(zoneID))
-                            .addParameter(ParameterKeys.NAME, zoneName)
-                            .addParameter(ParameterKeys.SENSOR_TYPE, sensorType.getSensorType().toString())
-                            .addParameter(ParameterKeys.DSID, getDsidString(dSID)).buildRequestString());
+        if (checkRequiredZone(zoneID, zoneName)) {
+            try {
+                String response = transport.execute(SimpleRequestBuilder.buildNewRequest(InterfaceKeys.JSON)
+                        .addRequestClass(ClassKeys.ZONE).addFunction(FunctionKeys.SET_SENSOR_SOURCE)
+                        .addParameter(ParameterKeys.TOKEN, sessionToken)
+                        .addParameter(ParameterKeys.ID, convertIntegerToString(zoneID))
+                        .addParameter(ParameterKeys.NAME, zoneName)
+                        .addParameter(ParameterKeys.SENSOR_TYPE, sensorType.getSensorType().toString())
+                        .addParameter(ParameterKeys.DSID, getDsidString(dSID)).buildRequestString());
 
-            return JSONResponseHandler.checkResponse(JSONResponseHandler.toJsonObject(response));
+                return JSONResponseHandler.checkResponse(JSONResponseHandler.toJsonObject(response));
 
-        } catch (Exception e) {
-            logger.debug("An exception occurred", e);
+            } catch (Exception e) {
+                logger.debug("An exception occurred", e);
+            }
         }
         return false;
     }
 
     @Override
     public boolean clearZoneSensorSource(String sessionToken, Integer zoneID, String zoneName, SensorEnum sensorType) {
-        try {
-            String response = transport.execute(SimpleRequestBuilder.buildNewRequest(InterfaceKeys.JSON)
-                    .addRequestClass(ClassKeys.ZONE).addFunction(FunctionKeys.SET_TEMEPERATURE_CONTROL_VALUE)
-                    .addParameter(ParameterKeys.TOKEN, sessionToken)
-                    .addParameter(ParameterKeys.ID, convertIntegerToString(zoneID))
-                    .addParameter(ParameterKeys.NAME, zoneName)
-                    .addParameter(ParameterKeys.SENSOR_TYPE, sensorType.getSensorType().toString())
-                    .buildRequestString());
+        if (checkRequiredZone(zoneID, zoneName)) {
+            try {
+                String response = transport.execute(SimpleRequestBuilder.buildNewRequest(InterfaceKeys.JSON)
+                        .addRequestClass(ClassKeys.ZONE).addFunction(FunctionKeys.SET_TEMEPERATURE_CONTROL_VALUE)
+                        .addParameter(ParameterKeys.TOKEN, sessionToken)
+                        .addParameter(ParameterKeys.ID, convertIntegerToString(zoneID))
+                        .addParameter(ParameterKeys.NAME, zoneName)
+                        .addParameter(ParameterKeys.SENSOR_TYPE, sensorType.getSensorType().toString())
+                        .buildRequestString());
 
-            return JSONResponseHandler.checkResponse(JSONResponseHandler.toJsonObject(response));
+                return JSONResponseHandler.checkResponse(JSONResponseHandler.toJsonObject(response));
 
-        } catch (Exception e) {
-            logger.debug("An exception occurred", e);
+            } catch (Exception e) {
+                logger.debug("An exception occurred", e);
+            }
         }
         return false;
     }
@@ -1254,19 +1308,21 @@ public class DsAPIImpl implements DsAPI {
     @Override
     public TemperatureControlInternals getZoneTemperatureControlInternals(String sessionToken, Integer zoneID,
             String zoneName) {
-        try {
-            String response = transport.execute(SimpleRequestBuilder.buildNewRequest(InterfaceKeys.JSON)
-                    .addRequestClass(ClassKeys.ZONE).addFunction(FunctionKeys.GET_TEMPERATURE_CONTROL_INTERNALS)
-                    .addParameter(ParameterKeys.TOKEN, sessionToken).addParameter(ParameterKeys.NAME, zoneName)
-                    .addParameter(ParameterKeys.ID, convertIntegerToString(zoneID)).buildRequestString());
-            JsonObject responseObj = JSONResponseHandler.toJsonObject(response);
+        if (checkRequiredZone(zoneID, zoneName)) {
+            try {
+                String response = transport.execute(SimpleRequestBuilder.buildNewRequest(InterfaceKeys.JSON)
+                        .addRequestClass(ClassKeys.ZONE).addFunction(FunctionKeys.GET_TEMPERATURE_CONTROL_INTERNALS)
+                        .addParameter(ParameterKeys.TOKEN, sessionToken).addParameter(ParameterKeys.NAME, zoneName)
+                        .addParameter(ParameterKeys.ID, convertIntegerToString(zoneID)).buildRequestString());
+                JsonObject responseObj = JSONResponseHandler.toJsonObject(response);
 
-            if (JSONResponseHandler.checkResponse(responseObj)) {
-                JsonObject obj = JSONResponseHandler.getResultJsonObject(responseObj);
-                return new TemperatureControlInternals(obj, zoneID, zoneName);
+                if (JSONResponseHandler.checkResponse(responseObj)) {
+                    JsonObject obj = JSONResponseHandler.getResultJsonObject(responseObj);
+                    return new TemperatureControlInternals(obj, zoneID, zoneName);
+                }
+            } catch (Exception e) {
+                logger.debug("An exception occurred", e);
             }
-        } catch (Exception e) {
-            logger.debug("An exception occurred", e);
         }
         return null;
     }
@@ -1274,7 +1330,7 @@ public class DsAPIImpl implements DsAPI {
     @Override
     public boolean setZoneOutputValue(String sessionToken, Integer zoneID, String zoneName, Short groupID,
             String groupName, Integer value) {
-        if (value != null && checkManutoryZone(zoneID, zoneName)) {
+        if (value != null && checkRequiredZone(zoneID, zoneName)) {
             try {
                 String response = transport.execute(SimpleRequestBuilder.buildNewRequest(InterfaceKeys.JSON)
                         .addRequestClass(ClassKeys.ZONE).addFunction(FunctionKeys.SET_OUTPUT_VALUE)
@@ -1295,13 +1351,9 @@ public class DsAPIImpl implements DsAPI {
         return false;
     }
 
-    private boolean checkManutoryZone(Integer zoneID, String zoneName) {
-        return zoneID != null && zoneID > -1 || StringUtils.isNotBlank(zoneName);
-    }
-
     @Override
     public boolean zoneBlink(String sessionToken, Integer zoneID, String zoneName, Short groupID, String groupName) {
-        if (checkManutoryZone(zoneID, zoneName)) {
+        if (checkRequiredZone(zoneID, zoneName)) {
             try {
                 String response = transport.execute(SimpleRequestBuilder.buildNewRequest(InterfaceKeys.JSON)
                         .addRequestClass(ClassKeys.ZONE).addFunction(FunctionKeys.BLINK)
@@ -1324,7 +1376,7 @@ public class DsAPIImpl implements DsAPI {
     @Override
     public boolean pushZoneSensorValue(String sessionToken, Integer zoneID, String zoneName, Short groupID,
             String sourceDSUID, Float sensorValue, SensorEnum sensorType) {
-        if (checkManutoryZone(zoneID, zoneName) && sensorType != null && sensorValue != null) {
+        if (checkRequiredZone(zoneID, zoneName) && sensorType != null && sensorValue != null) {
             try {
                 String response = transport.execute(SimpleRequestBuilder.buildNewRequest(InterfaceKeys.JSON)
                         .addRequestClass(ClassKeys.ZONE).addFunction(FunctionKeys.PUSH_SENSOR_VALUE)
@@ -1507,12 +1559,12 @@ public class DsAPIImpl implements DsAPI {
     }
 
     @Override
-    public JsonObject query(String token, String query) {
+    public JsonObject query(String sessionToken, String query) {
         try {
             String response = transport.execute(
                     SimpleRequestBuilder.buildNewRequest(InterfaceKeys.JSON).addRequestClass(ClassKeys.PROPERTY_TREE)
                             .addFunction(FunctionKeys.QUERY).addParameter(ParameterKeys.QUERY, query)
-                            .addParameter(ParameterKeys.TOKEN, token).buildRequestString());
+                            .addParameter(ParameterKeys.TOKEN, sessionToken).buildRequestString());
 
             JsonObject responseObj = JSONResponseHandler.toJsonObject(response);
             if (JSONResponseHandler.checkResponse(responseObj)) {
@@ -1525,12 +1577,12 @@ public class DsAPIImpl implements DsAPI {
     }
 
     @Override
-    public JsonObject query2(String token, String query) {
+    public JsonObject query2(String sessionToken, String query) {
         try {
             String response = transport.execute(
                     SimpleRequestBuilder.buildNewRequest(InterfaceKeys.JSON).addRequestClass(ClassKeys.PROPERTY_TREE)
                             .addFunction(FunctionKeys.QUERY2).addParameter(ParameterKeys.QUERY, query)
-                            .addParameter(ParameterKeys.TOKEN, token).buildRequestString());
+                            .addParameter(ParameterKeys.TOKEN, sessionToken).buildRequestString());
 
             JsonObject responseObj = JSONResponseHandler.toJsonObject(response);
             if (JSONResponseHandler.checkResponse(responseObj)) {
@@ -1543,12 +1595,12 @@ public class DsAPIImpl implements DsAPI {
     }
 
     @Override
-    public String propertyTreeGetString(String token, String path) {
+    public String propertyTreeGetString(String sessionToken, String path) {
         try {
             String response = transport.execute(
                     SimpleRequestBuilder.buildNewRequest(InterfaceKeys.JSON).addRequestClass(ClassKeys.PROPERTY_TREE)
                             .addFunction(FunctionKeys.GET_STRING).addParameter(ParameterKeys.PATH, path)
-                            .addParameter(ParameterKeys.TOKEN, token).buildRequestString());
+                            .addParameter(ParameterKeys.TOKEN, sessionToken).buildRequestString());
 
             JsonObject responseObj = JSONResponseHandler.toJsonObject(response);
             if (JSONResponseHandler.checkResponse(responseObj)) {
@@ -1561,18 +1613,196 @@ public class DsAPIImpl implements DsAPI {
         return null;
     }
 
-    // TODO: erweitern
     @Override
-    public JsonArray propertyTreeGetChildren(String token, String path) {
+    public Boolean propertyTreeSetString(String token, String path, String value) {
+        try {
+            String response = transport.execute(SimpleRequestBuilder.buildNewRequest(InterfaceKeys.JSON)
+                    .addRequestClass(ClassKeys.PROPERTY_TREE).addFunction(FunctionKeys.SET_STRING)
+                    .addParameter(ParameterKeys.PATH, path).addParameter(ParameterKeys.TOKEN, token)
+                    .addParameter(ParameterKeys.VALUE, value).buildRequestString());
+
+            return JSONResponseHandler.checkResponse(JSONResponseHandler.toJsonObject(response));
+        } catch (Exception e) {
+            logger.debug("An exception occurred", e);
+        }
+        return null;
+    }
+
+    @Override
+    public JsonArray propertyTreeGetChildren(String sessionToken, String path) {
         try {
             String response = transport.execute(
                     SimpleRequestBuilder.buildNewRequest(InterfaceKeys.JSON).addRequestClass(ClassKeys.PROPERTY_TREE)
                             .addFunction(FunctionKeys.GET_CHILDREN).addParameter(ParameterKeys.PATH, path)
-                            .addParameter(ParameterKeys.TOKEN, token).buildRequestString());
+                            .addParameter(ParameterKeys.TOKEN, sessionToken).buildRequestString());
 
             JsonObject responseObj = JSONResponseHandler.toJsonObject(response);
             if (JSONResponseHandler.checkResponse(responseObj)) {
                 return responseObj.get(JSONApiResponseKeysEnum.RESULT.getKey()).getAsJsonArray();
+            }
+        } catch (Exception e) {
+            logger.debug("An exception occurred", e);
+        }
+        return null;
+    }
+
+    @Override
+    public Integer propertyTreeGetInteger(String sessionToken, String path) {
+        try {
+            String response = transport.execute(
+                    SimpleRequestBuilder.buildNewRequest(InterfaceKeys.JSON).addRequestClass(ClassKeys.PROPERTY_TREE)
+                            .addFunction(FunctionKeys.GET_INTEGER).addParameter(ParameterKeys.PATH, path)
+                            .addParameter(ParameterKeys.TOKEN, sessionToken).buildRequestString());
+
+            JsonObject responseObj = JSONResponseHandler.toJsonObject(response);
+            if (JSONResponseHandler.checkResponse(responseObj)) {
+                responseObj = JSONResponseHandler.getResultJsonObject(responseObj);
+                return responseObj.get(JSONApiResponseKeysEnum.VALUE.getKey()).getAsInt();
+            }
+        } catch (Exception e) {
+            logger.debug("An exception occurred", e);
+        }
+        return null;
+    }
+
+    @Override
+    public Boolean propertyTreeSetInteger(String sessionToken, String path, Integer value) {
+        try {
+            String response = transport.execute(SimpleRequestBuilder.buildNewRequest(InterfaceKeys.JSON)
+                    .addRequestClass(ClassKeys.PROPERTY_TREE).addFunction(FunctionKeys.SET_INTEGER)
+                    .addParameter(ParameterKeys.PATH, path).addParameter(ParameterKeys.TOKEN, sessionToken)
+                    .addParameter(ParameterKeys.VALUE, convertIntegerToString(value)).buildRequestString());
+
+            return JSONResponseHandler.checkResponse(JSONResponseHandler.toJsonObject(response));
+        } catch (Exception e) {
+            logger.debug("An exception occurred", e);
+        }
+        return null;
+    }
+
+    @Override
+    public Boolean propertyTreeGetBoolean(String sessionToken, String path) {
+        try {
+            String response = transport.execute(
+                    SimpleRequestBuilder.buildNewRequest(InterfaceKeys.JSON).addRequestClass(ClassKeys.PROPERTY_TREE)
+                            .addFunction(FunctionKeys.GET_BOOLEAN).addParameter(ParameterKeys.PATH, path)
+                            .addParameter(ParameterKeys.TOKEN, sessionToken).buildRequestString());
+
+            JsonObject responseObj = JSONResponseHandler.toJsonObject(response);
+            if (JSONResponseHandler.checkResponse(responseObj)) {
+                responseObj = JSONResponseHandler.getResultJsonObject(responseObj);
+                return responseObj.get(JSONApiResponseKeysEnum.VALUE.getKey()).getAsBoolean();
+            }
+        } catch (Exception e) {
+            logger.debug("An exception occurred", e);
+        }
+        return null;
+    }
+
+    @Override
+    public Boolean propertyTreeSetBoolean(String sessionToken, String path, Boolean value) {
+        try {
+            String response = transport.execute(SimpleRequestBuilder.buildNewRequest(InterfaceKeys.JSON)
+                    .addRequestClass(ClassKeys.PROPERTY_TREE).addFunction(FunctionKeys.SET_BOOLEAN)
+                    .addParameter(ParameterKeys.PATH, path).addParameter(ParameterKeys.TOKEN, sessionToken)
+                    .addParameter(ParameterKeys.VALUE, objectToString(value)).buildRequestString());
+
+            return JSONResponseHandler.checkResponse(JSONResponseHandler.toJsonObject(response));
+        } catch (Exception e) {
+            logger.debug("An exception occurred", e);
+        }
+        return null;
+    }
+
+    @Override
+    public String propertyTreeGetType(String sessionToken, String path) {
+        try {
+            String response = transport.execute(
+                    SimpleRequestBuilder.buildNewRequest(InterfaceKeys.JSON).addRequestClass(ClassKeys.PROPERTY_TREE)
+                            .addFunction(FunctionKeys.GET_TYPE).addParameter(ParameterKeys.PATH, path)
+                            .addParameter(ParameterKeys.TOKEN, sessionToken).buildRequestString());
+
+            JsonObject responseObj = JSONResponseHandler.toJsonObject(response);
+            if (JSONResponseHandler.checkResponse(responseObj)) {
+                responseObj = JSONResponseHandler.getResultJsonObject(responseObj);
+                return responseObj.get(JSONApiResponseKeysEnum.VALUE.getKey()).getAsString();
+            }
+        } catch (Exception e) {
+            logger.debug("An exception occurred", e);
+        }
+        return null;
+    }
+
+    @Override
+    public Map<String, Boolean> propertyTreeGetFlages(String sessionToken, String path) {
+        try {
+            String response = transport.execute(
+                    SimpleRequestBuilder.buildNewRequest(InterfaceKeys.JSON).addRequestClass(ClassKeys.PROPERTY_TREE)
+                            .addFunction(FunctionKeys.GET_FLAGS).addParameter(ParameterKeys.PATH, path)
+                            .addParameter(ParameterKeys.TOKEN, sessionToken).buildRequestString());
+
+            JsonObject responseObj = JSONResponseHandler.toJsonObject(response);
+            if (JSONResponseHandler.checkResponse(responseObj)) {
+                responseObj = JSONResponseHandler.getResultJsonObject(responseObj);
+                Set<Entry<String, JsonElement>> flagEntries = responseObj.entrySet();
+                Map<String, Boolean> flags = new HashMap<String, Boolean>(flagEntries.size());
+                for (Entry<String, JsonElement> flag : flagEntries) {
+                    flags.put(flag.getKey(), flag.getValue().getAsBoolean());
+                }
+                return flags;
+            }
+        } catch (Exception e) {
+            logger.debug("An exception occurred", e);
+        }
+        return null;
+    }
+
+    @Override
+    public Boolean propertyTreeSetFlag(String sessionToken, String path, String flag, Boolean value) {
+        try {
+            String response = transport.execute(
+                    SimpleRequestBuilder.buildNewRequest(InterfaceKeys.JSON).addRequestClass(ClassKeys.PROPERTY_TREE)
+                            .addFunction(FunctionKeys.SET_FLAG).addParameter(ParameterKeys.PATH, path)
+                            .addParameter(ParameterKeys.TOKEN, sessionToken).addParameter(ParameterKeys.FLAG, flag)
+                            .addParameter(ParameterKeys.VALUE, objectToString(value)).buildRequestString());
+
+            return JSONResponseHandler.checkResponse(JSONResponseHandler.toJsonObject(response));
+        } catch (Exception e) {
+            logger.debug("An exception occurred", e);
+        }
+        return null;
+    }
+
+    @Override
+    public Boolean propertyTreeRemove(String sessionToken, String path) {
+        try {
+            String response = transport.execute(
+                    SimpleRequestBuilder.buildNewRequest(InterfaceKeys.JSON).addRequestClass(ClassKeys.PROPERTY_TREE)
+                            .addFunction(FunctionKeys.REMOVE).addParameter(ParameterKeys.PATH, path)
+                            .addParameter(ParameterKeys.TOKEN, sessionToken).buildRequestString());
+
+            return JSONResponseHandler.checkResponse(JSONResponseHandler.toJsonObject(response));
+        } catch (Exception e) {
+            logger.debug("An exception occurred", e);
+        }
+        return null;
+    }
+
+    @Override
+    public Map<String, String> getSystemVersion() {
+        try {
+            String response = transport.execute(SimpleRequestBuilder.buildNewRequest(InterfaceKeys.JSON)
+                    .addRequestClass(ClassKeys.SYSTEM).addFunction(FunctionKeys.VERSION).buildRequestString());
+
+            JsonObject responseObj = JSONResponseHandler.toJsonObject(response);
+            if (JSONResponseHandler.checkResponse(responseObj)) {
+                Set<Entry<String, JsonElement>> entries = JSONResponseHandler.getResultJsonObject(responseObj)
+                        .entrySet();
+                Map<String, String> versions = new HashMap<String, String>(entries.size());
+                for (Entry<String, JsonElement> entry : entries) {
+                    versions.put(entry.getKey(), entry.getValue().getAsString());
+                }
+                return versions;
             }
         } catch (Exception e) {
             logger.debug("An exception occurred", e);

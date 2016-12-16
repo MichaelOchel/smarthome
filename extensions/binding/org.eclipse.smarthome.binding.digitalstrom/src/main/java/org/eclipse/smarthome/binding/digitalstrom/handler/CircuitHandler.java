@@ -21,6 +21,7 @@ import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.constants.ChangeableDeviceConfigEnum;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.constants.MeteringTypeEnum;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.constants.MeteringUnitsEnum;
+import org.eclipse.smarthome.binding.digitalstrom.internal.providers.DsChannelTypeProvider;
 import org.eclipse.smarthome.core.library.types.DecimalType;
 import org.eclipse.smarthome.core.thing.Bridge;
 import org.eclipse.smarthome.core.thing.ChannelUID;
@@ -112,6 +113,9 @@ public class CircuitHandler extends BaseThingHandler implements DeviceStatusList
                 return null;
             }
         }
+        if (circuit == null) {
+            dssBridgeHandler.registerDeviceStatusListener(this);
+        }
         return dssBridgeHandler;
     }
 
@@ -160,11 +164,12 @@ public class CircuitHandler extends BaseThingHandler implements DeviceStatusList
         if (deviceStateUpdate != null && DeviceStateUpdate.UPDATE_CIRCUIT_METER.equals(deviceStateUpdate.getType())) {
             if (deviceStateUpdate.getValue() instanceof CachedMeteringValue) {
                 CachedMeteringValue cachedVal = (CachedMeteringValue) deviceStateUpdate.getValue();
-                if (cachedVal.getMeteringType().equals(MeteringTypeEnum.energy) && (cachedVal.getMeteringUnit() == null
-                        || cachedVal.getMeteringUnit().equals(MeteringUnitsEnum.Wh))) {
-                    updateState(getChannelID(cachedVal), new DecimalType(cachedVal.getValue() * 0.001));
-                } else {
-                    updateState(getChannelID(cachedVal), new DecimalType(cachedVal.getValue()));
+                if (MeteringUnitsEnum.WH.equals(cachedVal.getMeteringUnit())) {
+                    if (cachedVal.getMeteringType().equals(MeteringTypeEnum.ENERGY)) {
+                        updateState(getChannelID(cachedVal), new DecimalType(cachedVal.getValue() * 0.001));
+                    } else {
+                        updateState(getChannelID(cachedVal), new DecimalType(cachedVal.getValue()));
+                    }
                 }
             }
         }
@@ -202,11 +207,10 @@ public class CircuitHandler extends BaseThingHandler implements DeviceStatusList
 
                 // load first channel values
                 onCircuitStateInitial(this.circuit);
-
-            } else {
-                onDeviceRemoved(device);
+                return;
             }
         }
+        onDeviceRemoved(device);
     }
 
     private void checkCircuitInfoProperties(Circuit device) {
@@ -254,7 +258,7 @@ public class CircuitHandler extends BaseThingHandler implements DeviceStatusList
     private void onCircuitStateInitial(Circuit circuit) {
         if (circuit != null) {
             for (CachedMeteringValue cachedMeterValue : circuit.getAllCachedMeteringValues()) {
-                if (cachedMeterValue != null) {
+                if (cachedMeterValue != null && MeteringUnitsEnum.WH.equals(cachedMeterValue.getMeteringUnit())) {
                     String channelID = getChannelID(cachedMeterValue);
                     if (isLinked(channelID)) {
                         channelLinked(new ChannelUID(getThing().getUID(), channelID));
@@ -265,37 +269,22 @@ public class CircuitHandler extends BaseThingHandler implements DeviceStatusList
     }
 
     private String getChannelID(CachedMeteringValue cachedMeterValue) {
-        String channelID = cachedMeterValue.getMeteringType().toString();
-        if (cachedMeterValue.getMeteringUnit() != null) {
-            channelID = channelID + "_" + cachedMeterValue.getMeteringUnit().toString();
-        } else {
-            channelID = channelID + "_" + MeteringUnitsEnum.Wh.toString();
-        }
-        return channelID;
+        return DsChannelTypeProvider.getMeteringChannelID(cachedMeterValue.getMeteringType(),
+                cachedMeterValue.getMeteringUnit(), false);
     }
 
     @Override
     public void channelLinked(ChannelUID channelUID) {
         if (circuit != null) {
-            try {
-                String[] meteringChannelSplit = channelUID.getId().split("_");
-                if (meteringChannelSplit.length > 1) {
-                    MeteringTypeEnum meteringType = MeteringTypeEnum.valueOf(meteringChannelSplit[0]);
-                    MeteringUnitsEnum unitType = MeteringUnitsEnum.valueOf(meteringChannelSplit[1]);
-                    double val = circuit.getMeteringValue(meteringType, unitType);
-                    if (val > -1) {
-                        if (meteringType.equals(MeteringTypeEnum.energy)
-                                && (unitType == null || unitType.equals(MeteringUnitsEnum.Wh))) {
-                            updateState(channelUID, new DecimalType(val * 0.001));
-                        } else {
-                            updateState(channelUID, new DecimalType(val));
-                        }
-                    }
+            MeteringTypeEnum meteringType = DsChannelTypeProvider.getMeteringType(channelUID.getId());
+            double val = circuit.getMeteringValue(meteringType, MeteringUnitsEnum.WH);
+            if (val > -1) {
+                if (meteringType.equals(MeteringTypeEnum.ENERGY)) {
+                    updateState(channelUID, new DecimalType(val * 0.001));
+                } else {
+                    updateState(channelUID, new DecimalType(val));
                 }
-            } catch (IllegalArgumentException e) {
-                // ignore
             }
-
         }
     }
 

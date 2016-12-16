@@ -54,7 +54,7 @@ public class ZoneTemperatureControlDiscoveryService extends AbstractDiscoverySer
      */
     public ZoneTemperatureControlDiscoveryService(BridgeHandler bridgeHandler, ThingTypeUID supportedThingType)
             throws IllegalArgumentException {
-        super(Sets.newHashSet(supportedThingType), 10, false);
+        super(Sets.newHashSet(supportedThingType), 10, true);
         BRIDGE_UID = bridgeHandler.getThing().getUID();
         this.bridgeHandler = bridgeHandler;
         bridgeHandler.registerTemperatureControlStatusListener(this);
@@ -128,7 +128,8 @@ public class ZoneTemperatureControlDiscoveryService extends AbstractDiscoverySer
     }
 
     @Override
-    public void registerTemperatureSensorTransreciver(TemperatureControlSensorTransmitter temperatureSensorTransreciver) {
+    public void registerTemperatureSensorTransreciver(
+            TemperatureControlSensorTransmitter temperatureSensorTransreciver) {
         // nothing to do
     }
 

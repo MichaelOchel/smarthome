@@ -276,9 +276,9 @@ public class DeviceStatusManagerImpl implements DeviceStatusManager, EventHandle
                                 DeviceStateUpdate deviceStateUpdate = eshDevice.getNextDeviceUpdateState();
                                 if (deviceStateUpdate != null) {
                                     switch (deviceStateUpdate.getType()) {
-                                        case DeviceStateUpdate.UPDATE_BRIGHTNESS:
-                                        case DeviceStateUpdate.UPDATE_SLAT_ANGLE_INCREASE:
-                                        case DeviceStateUpdate.UPDATE_SLAT_ANGLE_DECREASE:
+                                        case DeviceStateUpdate.OUTPUT:
+                                        case DeviceStateUpdate.SLAT_ANGLE_INCREASE:
+                                        case DeviceStateUpdate.SLAT_ANGLE_DECREASE:
                                             filterCommand(deviceStateUpdate, eshDevice);
                                             break;
                                         case DeviceStateUpdate.UPDATE_SCENE_CONFIG:
@@ -415,42 +415,41 @@ public class DeviceStatusManagerImpl implements DeviceStatusManager, EventHandle
         private void filterCommand(DeviceStateUpdate deviceStateUpdate, Device device) {
             String stateUpdateType = deviceStateUpdate.getType();
             short newAngle = 0;
-            if (stateUpdateType.equals(DeviceStateUpdate.UPDATE_SLAT_ANGLE_INCREASE)
-                    || stateUpdateType.equals(DeviceStateUpdate.UPDATE_SLAT_ANGLE_DECREASE)) {
+            if (stateUpdateType.equals(DeviceStateUpdate.SLAT_ANGLE_INCREASE)
+                    || stateUpdateType.equals(DeviceStateUpdate.SLAT_ANGLE_DECREASE)) {
                 newAngle = device.getAnglePosition();
             }
             DeviceStateUpdate nextDeviceStateUpdate = device.getNextDeviceUpdateState();
             while (nextDeviceStateUpdate != null && nextDeviceStateUpdate.getType().equals(stateUpdateType)) {
                 switch (stateUpdateType) {
-                    case DeviceStateUpdate.UPDATE_BRIGHTNESS:
+                    case DeviceStateUpdate.OUTPUT:
                         deviceStateUpdate = nextDeviceStateUpdate;
                         nextDeviceStateUpdate = device.getNextDeviceUpdateState();
                         break;
-                    case DeviceStateUpdate.UPDATE_SLAT_ANGLE_INCREASE:
+                    case DeviceStateUpdate.SLAT_ANGLE_INCREASE:
                         if (deviceStateUpdate.getValueAsInteger() == 1) {
                             newAngle = (short) (newAngle + DeviceConstants.ANGLE_STEP_SLAT);
                         }
                         break;
-                    case DeviceStateUpdate.UPDATE_SLAT_ANGLE_DECREASE:
+                    case DeviceStateUpdate.SLAT_ANGLE_DECREASE:
                         if (deviceStateUpdate.getValueAsInteger() == 1) {
                             newAngle = (short) (newAngle - DeviceConstants.ANGLE_STEP_SLAT);
                         }
                         break;
                 }
             }
-            if (stateUpdateType.equals(DeviceStateUpdate.UPDATE_SLAT_ANGLE_INCREASE)
-                    || stateUpdateType.equals(DeviceStateUpdate.UPDATE_SLAT_ANGLE_DECREASE)) {
+            if (stateUpdateType.equals(DeviceStateUpdate.SLAT_ANGLE_INCREASE)
+                    || stateUpdateType.equals(DeviceStateUpdate.SLAT_ANGLE_DECREASE)) {
                 if (newAngle > device.getMaxSlatAngle()) {
                     newAngle = (short) device.getMaxSlatAngle();
                 }
                 if (newAngle < device.getMinSlatAngle()) {
                     newAngle = (short) device.getMinSlatAngle();
                 }
-                if (!(stateUpdateType.equals(DeviceStateUpdate.UPDATE_SLAT_ANGLE_INCREASE)
-                        && checkAngleIsMinMax(device) == 1)
-                        || !(stateUpdateType.equals(DeviceStateUpdate.UPDATE_SLAT_ANGLE_DECREASE)
+                if (!(stateUpdateType.equals(DeviceStateUpdate.SLAT_ANGLE_INCREASE) && checkAngleIsMinMax(device) == 1)
+                        || !(stateUpdateType.equals(DeviceStateUpdate.SLAT_ANGLE_DECREASE)
                                 && checkAngleIsMinMax(device) == 0)) {
-                    deviceStateUpdate = new DeviceStateUpdateImpl(DeviceStateUpdate.UPDATE_SLAT_ANGLE, newAngle);
+                    deviceStateUpdate = new DeviceStateUpdateImpl(DeviceStateUpdate.SLAT_ANGLE, newAngle);
                 }
             }
             sendComandsToDSS(device, deviceStateUpdate);
@@ -693,7 +692,7 @@ public class DeviceStatusManagerImpl implements DeviceStatusManager, EventHandle
 
             @Override
             public void run() {
-                if (digitalSTROMClient.callDeviceScene(connMan.getSessionToken(), device.getDSID(), null,
+                if (digitalSTROMClient.callDeviceScene(connMan.getSessionToken(), device.getDSID(), null, null,
                         SceneEnum.STOP, true)) {
                     sceneMan.addEcho(device.getDSID().getValue(), SceneEnum.STOP.getSceneNumber());
                     readOutputValue(device);
@@ -709,19 +708,18 @@ public class DeviceStatusManagerImpl implements DeviceStatusManager, EventHandle
         }
 
         int outputValue = this.digitalSTROMClient.getDeviceOutputValue(connMan.getSessionToken(), device.getDSID(),
-                null, outputIndex);
+                null, null, outputIndex);
         if (outputValue != -1) {
             if (!device.isShade()) {
-                device.updateInternalDeviceState(
-                        new DeviceStateUpdateImpl(DeviceStateUpdate.UPDATE_BRIGHTNESS, outputValue));
+                device.updateInternalDeviceState(new DeviceStateUpdateImpl(DeviceStateUpdate.OUTPUT, outputValue));
             } else {
                 device.updateInternalDeviceState(
-                        new DeviceStateUpdateImpl(DeviceStateUpdate.UPDATE_SLATPOSITION, outputValue));
+                        new DeviceStateUpdateImpl(DeviceStateUpdate.SLATPOSITION, outputValue));
                 if (device.isBlind()) {
                     outputValue = this.digitalSTROMClient.getDeviceOutputValue(connMan.getSessionToken(),
-                            device.getDSID(), null, DeviceConstants.DEVICE_SENSOR_SLAT_ANGLE_OUTPUT);
+                            device.getDSID(), null, null, DeviceConstants.DEVICE_SENSOR_SLAT_ANGLE_OUTPUT);
                     device.updateInternalDeviceState(
-                            new DeviceStateUpdateImpl(DeviceStateUpdate.UPDATE_SLAT_ANGLE, outputValue));
+                            new DeviceStateUpdateImpl(DeviceStateUpdate.SLAT_ANGLE, outputValue));
                 }
             }
         }
@@ -739,7 +737,7 @@ public class DeviceStatusManagerImpl implements DeviceStatusManager, EventHandle
         while (!eshDevice.isDeviceUpToDate()) {
             DeviceStateUpdate deviceStateUpdate = eshDevice.getNextDeviceUpdateState();
             if (deviceStateUpdate != null) {
-                if (deviceStateUpdate.getType() != DeviceStateUpdate.UPDATE_BRIGHTNESS) {
+                if (deviceStateUpdate.getType() != DeviceStateUpdate.OUTPUT) {
                     if (deviceStateUpdate.getType() == DeviceStateUpdate.UPDATE_SCENE_CONFIG
                             || deviceStateUpdate.getType() == DeviceStateUpdate.UPDATE_SCENE_OUTPUT) {
                         updateSceneData(eshDevice, deviceStateUpdate);
@@ -749,7 +747,7 @@ public class DeviceStatusManagerImpl implements DeviceStatusManager, EventHandle
                 } else {
                     DeviceStateUpdate nextDeviceStateUpdate = eshDevice.getNextDeviceUpdateState();
                     while (nextDeviceStateUpdate != null
-                            && nextDeviceStateUpdate.getType() == DeviceStateUpdate.UPDATE_BRIGHTNESS) {
+                            && nextDeviceStateUpdate.getType() == DeviceStateUpdate.OUTPUT) {
                         deviceStateUpdate = nextDeviceStateUpdate;
                         nextDeviceStateUpdate = eshDevice.getNextDeviceUpdateState();
                     }
@@ -840,7 +838,7 @@ public class DeviceStatusManagerImpl implements DeviceStatusManager, EventHandle
                     return;
                 } else {
                     int consumption = this.digitalSTROMClient.getDeviceSensorValue(connMan.getSessionToken(),
-                            device.getDSID(), null, device.getSensorIndex(sensorType));
+                            device.getDSID(), null, null, device.getSensorIndex(sensorType));
                     if (consumption >= 0) {
                         device.setDeviceSensorDsValueBySensorJob(sensorType, consumption);
                         // device.updateInternalDeviceState(new DeviceStateUpdateImpl(sensorType, consumption));
@@ -849,11 +847,11 @@ public class DeviceStatusManagerImpl implements DeviceStatusManager, EventHandle
                 }
             } else {
                 switch (deviceStateUpdate.getType()) {
-                    case DeviceStateUpdate.UPDATE_BRIGHTNESS_DECREASE:
-                    case DeviceStateUpdate.UPDATE_SLAT_DECREASE:
+                    case DeviceStateUpdate.OUTPUT_DECREASE:
+                    case DeviceStateUpdate.SLAT_DECREASE:
                         if (checkIsAllreadyMinMax(device) != 0) {
                             requestSuccsessful = digitalSTROMClient.decreaseValue(connMan.getSessionToken(),
-                                    device.getDSID());
+                                    device.getDSID(), null, null);
                             if (requestSuccsessful) {
                                 sceneMan.addEcho(device.getDSID().getValue(), SceneEnum.DECREMENT.getSceneNumber());
                             }
@@ -861,11 +859,11 @@ public class DeviceStatusManagerImpl implements DeviceStatusManager, EventHandle
                             commandHaveNoEffect = true;
                         }
                         break;
-                    case DeviceStateUpdate.UPDATE_BRIGHTNESS_INCREASE:
-                    case DeviceStateUpdate.UPDATE_SLAT_INCREASE:
+                    case DeviceStateUpdate.OUTPUT_INCREASE:
+                    case DeviceStateUpdate.SLAT_INCREASE:
                         if (checkIsAllreadyMinMax(device) != 1) {
                             requestSuccsessful = digitalSTROMClient.increaseValue(connMan.getSessionToken(),
-                                    device.getDSID());
+                                    device.getDSID(), null, null);
                             if (requestSuccsessful) {
                                 sceneMan.addEcho(device.getDSID().getValue(), SceneEnum.INCREMENT.getSceneNumber());
                             }
@@ -873,20 +871,20 @@ public class DeviceStatusManagerImpl implements DeviceStatusManager, EventHandle
                             commandHaveNoEffect = true;
                         }
                         break;
-                    case DeviceStateUpdate.UPDATE_BRIGHTNESS:
+                    case DeviceStateUpdate.OUTPUT:
                         if (device.getOutputValue() != deviceStateUpdate.getValueAsInteger()) {
                             requestSuccsessful = digitalSTROMClient.setDeviceValue(connMan.getSessionToken(),
-                                    device.getDSID(), null, deviceStateUpdate.getValueAsInteger());
+                                    device.getDSID(), null, null, deviceStateUpdate.getValueAsInteger());
                         } else {
                             commandHaveNoEffect = true;
                         }
                         break;
-                    case DeviceStateUpdate.UPDATE_OPEN_CLOSE:
-                    case DeviceStateUpdate.UPDATE_ON_OFF:
+                    case DeviceStateUpdate.OPEN_CLOSE:
+                    case DeviceStateUpdate.ON_OFF:
                         if (deviceStateUpdate.getValueAsInteger() > 0) {
                             if (checkIsAllreadyMinMax(device) != 1) {
                                 requestSuccsessful = digitalSTROMClient.turnDeviceOn(connMan.getSessionToken(),
-                                        device.getDSID(), null);
+                                        device.getDSID(), null, null);
                                 if (requestSuccsessful) {
                                     sceneMan.addEcho(device.getDSID().getValue(), SceneEnum.MAXIMUM.getSceneNumber());
                                 }
@@ -896,7 +894,7 @@ public class DeviceStatusManagerImpl implements DeviceStatusManager, EventHandle
                         } else {
                             if (checkIsAllreadyMinMax(device) != 0) {
                                 requestSuccsessful = digitalSTROMClient.turnDeviceOff(connMan.getSessionToken(),
-                                        device.getDSID(), null);
+                                        device.getDSID(), null, null);
                                 if (requestSuccsessful) {
                                     sceneMan.addEcho(device.getDSID().getValue(), SceneEnum.MINIMUM.getSceneNumber());
                                 }
@@ -905,28 +903,28 @@ public class DeviceStatusManagerImpl implements DeviceStatusManager, EventHandle
                             }
                         }
                         break;
-                    case DeviceStateUpdate.UPDATE_SLATPOSITION:
+                    case DeviceStateUpdate.SLATPOSITION:
                         if (device.getSlatPosition() != deviceStateUpdate.getValueAsInteger()) {
                             requestSuccsessful = digitalSTROMClient.setDeviceOutputValue(connMan.getSessionToken(),
-                                    device.getDSID(), null, DeviceConstants.DEVICE_SENSOR_SLAT_POSITION_OUTPUT,
+                                    device.getDSID(), null, null, DeviceConstants.DEVICE_SENSOR_SLAT_POSITION_OUTPUT,
                                     deviceStateUpdate.getValueAsInteger());
                         } else {
                             commandHaveNoEffect = true;
                         }
                         break;
-                    case DeviceStateUpdate.UPDATE_SLAT_STOP:
+                    case DeviceStateUpdate.SLAT_STOP:
                         this.sendStopComandsToDSS(device);
                         break;
-                    case DeviceStateUpdate.UPDATE_SLAT_MOVE:
+                    case DeviceStateUpdate.SLAT_MOVE:
                         if (deviceStateUpdate.getValueAsInteger() > 0) {
                             requestSuccsessful = digitalSTROMClient.turnDeviceOn(connMan.getSessionToken(),
-                                    device.getDSID(), null);
+                                    device.getDSID(), null, null);
                             if (requestSuccsessful) {
                                 sceneMan.addEcho(device.getDSID().getValue(), SceneEnum.MAXIMUM.getSceneNumber());
                             }
                         } else {
                             requestSuccsessful = digitalSTROMClient.turnDeviceOff(connMan.getSessionToken(),
-                                    device.getDSID(), null);
+                                    device.getDSID(), null, null);
                             if (requestSuccsessful) {
                                 sceneMan.addEcho(device.getDSID().getValue(), SceneEnum.MINIMUM.getSceneNumber());
                             }
@@ -938,32 +936,33 @@ public class DeviceStatusManagerImpl implements DeviceStatusManager, EventHandle
                     case DeviceStateUpdate.UPDATE_CALL_SCENE:
                         if (SceneEnum.getScene((short) deviceStateUpdate.getValue()) != null) {
                             requestSuccsessful = digitalSTROMClient.callDeviceScene(connMan.getSessionToken(),
-                                    device.getDSID(), null, SceneEnum.getScene((short) deviceStateUpdate.getValue()),
-                                    true);
+                                    device.getDSID(), null, null,
+                                    SceneEnum.getScene((short) deviceStateUpdate.getValue()), true);
                         }
                         break;
                     case DeviceStateUpdate.UPDATE_UNDO_SCENE:
                         if (SceneEnum.getScene((short) deviceStateUpdate.getValue()) != null) {
                             requestSuccsessful = digitalSTROMClient.undoDeviceScene(connMan.getSessionToken(),
-                                    device.getDSID(), SceneEnum.getScene((short) deviceStateUpdate.getValue()));
+                                    device.getDSID(), null, null,
+                                    SceneEnum.getScene((short) deviceStateUpdate.getValue()));
                         }
                         break;
-                    case DeviceStateUpdate.UPDATE_SLAT_ANGLE_DECREASE:
+                    case DeviceStateUpdate.SLAT_ANGLE_DECREASE:
                         // By UPDATE_SLAT_ANGLE_DECREASE, UPDATE_SLAT_ANGLE_INCREASE with value unequal 1 which will
                         // handle in the pollingRunnable and UPDATE_OPEN_CLOSE_ANGLE the value will be set without
                         // checking, because it was triggered by setting the slat position.
                         requestSuccsessful = true;
                         break;
-                    case DeviceStateUpdate.UPDATE_SLAT_ANGLE_INCREASE:
+                    case DeviceStateUpdate.SLAT_ANGLE_INCREASE:
                         requestSuccsessful = true;
                         break;
-                    case DeviceStateUpdate.UPDATE_OPEN_CLOSE_ANGLE:
+                    case DeviceStateUpdate.OPEN_CLOSE_ANGLE:
                         requestSuccsessful = true;
                         break;
-                    case DeviceStateUpdate.UPDATE_SLAT_ANGLE:
+                    case DeviceStateUpdate.SLAT_ANGLE:
                         if (device.getAnglePosition() != deviceStateUpdate.getValueAsInteger()) {
                             requestSuccsessful = digitalSTROMClient.setDeviceOutputValue(connMan.getSessionToken(),
-                                    device.getDSID(), null, DeviceConstants.DEVICE_SENSOR_SLAT_ANGLE_OUTPUT,
+                                    device.getDSID(), null, null, DeviceConstants.DEVICE_SENSOR_SLAT_ANGLE_OUTPUT,
                                     deviceStateUpdate.getValueAsInteger());
                         } else {
                             commandHaveNoEffect = true;
@@ -1063,6 +1062,9 @@ public class DeviceStatusManagerImpl implements DeviceStatusManager, EventHandle
                 for (Device device : strucMan.getDeviceMap().values()) {
                     deviceDiscovery.onDeviceAdded(device);
                 }
+                for (Circuit circuit : strucMan.getCircuitMap().values()) {
+                    deviceDiscovery.onDeviceAdded(circuit);
+                }
             } else {
                 Device intDevice = strucMan.getDeviceByDSID(deviceListener.getDeviceStatusListenerID());
                 if (intDevice != null) {
@@ -1161,7 +1163,7 @@ public class DeviceStatusManagerImpl implements DeviceStatusManager, EventHandle
     @Override
     public int getTotalPowerConsumption() {
         List<CachedMeteringValue> cachedConsumptionMeteringValues = digitalSTROMClient
-                .getLatest(connMan.getSessionToken(), MeteringTypeEnum.consumption, DsAPI.ALL_METERS, null);
+                .getLatest(connMan.getSessionToken(), MeteringTypeEnum.CONSUMPTION, DsAPI.ALL_METERS, null);
         if (cachedConsumptionMeteringValues != null) {
             tempConsumption = 0;
             for (CachedMeteringValue value : cachedConsumptionMeteringValues) {
@@ -1183,16 +1185,13 @@ public class DeviceStatusManagerImpl implements DeviceStatusManager, EventHandle
         if (totalPowerConsumptionListener != null) {
             totalPowerConsumptionListener.onEnergyMeterValueChanged(val);
         }
-        val = getTotalEnergyMeterWsValue();
-        if (totalPowerConsumptionListener != null) {
-            totalPowerConsumptionListener.onEnergyMeterWsValueChanged(val);
-        }
+
     }
 
     @Override
     public int getTotalEnergyMeterValue() {
         List<CachedMeteringValue> cachedEnergyMeteringValues = digitalSTROMClient.getLatest(connMan.getSessionToken(),
-                MeteringTypeEnum.energy, DsAPI.ALL_METERS, MeteringUnitsEnum.Wh);
+                MeteringTypeEnum.ENERGY, DsAPI.ALL_METERS, null);
         if (cachedEnergyMeteringValues != null) {
             tempEnergyMeter = 0;
             for (CachedMeteringValue value : cachedEnergyMeteringValues) {
@@ -1208,7 +1207,7 @@ public class DeviceStatusManagerImpl implements DeviceStatusManager, EventHandle
     @Override
     public int getTotalEnergyMeterWsValue() {
         List<CachedMeteringValue> cachedEnergyMeteringValues = digitalSTROMClient.getLatest(connMan.getSessionToken(),
-                MeteringTypeEnum.energy, DsAPI.ALL_METERS, MeteringUnitsEnum.Ws);
+                MeteringTypeEnum.ENERGY, DsAPI.ALL_METERS, MeteringUnitsEnum.WS);
         if (cachedEnergyMeteringValues != null) {
             tempEnergyMeterWs = 0;
             for (CachedMeteringValue value : cachedEnergyMeteringValues) {

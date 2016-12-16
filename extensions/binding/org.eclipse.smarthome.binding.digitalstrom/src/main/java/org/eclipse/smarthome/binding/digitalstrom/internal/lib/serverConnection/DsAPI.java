@@ -9,6 +9,7 @@ package org.eclipse.smarthome.binding.digitalstrom.internal.lib.serverConnection
 
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.climate.jsonResponseContainer.BaseSensorValues;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.climate.jsonResponseContainer.impl.AssignedSensors;
@@ -59,7 +60,7 @@ public interface DsAPI {
      * or groupName are specified. Only devices contained in this group will be
      * addressed.
      *
-     * @param sessionToken
+     * @param sessionToken can be null, if a {@link ConnectionManager} is registered at the {@link HttpTransport}
      * @param groupID not required
      * @param groupName not required
      * @param sceneNumber required
@@ -72,7 +73,7 @@ public interface DsAPI {
     /**
      * Returns all zones
      *
-     * @param sessionToken
+     * @param sessionToken can be null, if a {@link ConnectionManager} is registered at the {@link HttpTransport}
      * @return Apartment
      */
     public Apartment getApartmentStructure(String sessionToken);
@@ -81,7 +82,7 @@ public interface DsAPI {
      * Returns the list of devices in the apartment. If unassigned is true,
      * only devices that are not assigned to a zone will be returned.
      *
-     * @param sessionToken
+     * @param sessionToken can be null, if a {@link ConnectionManager} is registered at the {@link HttpTransport}
      * @return List of devices
      */
     public List<Device> getApartmentDevices(String sessionToken);
@@ -89,7 +90,7 @@ public interface DsAPI {
     /**
      * Returns an array containing all digitalSTROM-Meters of the apartment.
      *
-     * @param sessionToken
+     * @param sessionToken can be null, if a {@link ConnectionManager} is registered at the {@link HttpTransport}
      * @return
      */
     public List<Circuit> getApartmentCircuits(String sessionToken);
@@ -97,7 +98,7 @@ public interface DsAPI {
     /**
      * Returns a list of dSID's of all meters(dSMs)
      *
-     * @param sessionToken
+     * @param sessionToken can be null, if a {@link ConnectionManager} is registered at the {@link HttpTransport}
      * @return String-List with dSID's
      */
     public List<String> getMeterList(String sessionToken);
@@ -106,7 +107,7 @@ public interface DsAPI {
      * Calls the sceneNumber on all devices in the given zone. If groupID or groupName
      * are specified only devices contained in this group will be addressed.
      *
-     * @param sessionToken
+     * @param sessionToken can be null, if a {@link ConnectionManager} is registered at the {@link HttpTransport}
      * @param zoneID needs either id or name
      * @param zoneName needs either id or name
      * @param groupID not required
@@ -121,45 +122,49 @@ public interface DsAPI {
     /**
      * Turns the device on. This will call the scene "max" on the device.
      *
-     * @param sessionToken
-     * @param dSID needs either dSIDid or name
-     * @param deviceName needs either dSIDid or name
+     * @param sessionToken can be null, if a {@link ConnectionManager} is registered at the {@link HttpTransport}
+     * @param dSID needs either dSID, dSUID or name
+     * @param dSUID needs either dSID, dSUID or name
+     * @param deviceName needs either dSID, dsUID or name
      * @return true, if successful
      */
-    public boolean turnDeviceOn(String sessionToken, DSID dSID, String deviceName);
+    public boolean turnDeviceOn(String sessionToken, DSID dSID, String dSUID, String deviceName);
 
     /**
      * Turns the device off. This will call the scene "min" on the device.
      *
-     * @param sessionToken
-     * @param dSID needs either dSID or name
-     * @param deviceName needs either dSID or name
+     * @param sessionToken can be null, if a {@link ConnectionManager} is registered at the {@link HttpTransport}
+     * @param dSID needs either dSID, dSUID or name
+     * @param dSUID needs either dSID, dSUID or name
+     * @param deviceName needs either dSID, dsUID or name
      * @return true, if successful
      */
-    public boolean turnDeviceOff(String sessionToken, DSID dSID, String deviceName);
+    public boolean turnDeviceOff(String sessionToken, DSID dSID, String dSUID, String deviceName);
 
     /**
      * Sets the output value of device.
      *
-     * @param sessionToken
-     * @param dSID needs either dSID or name
-     * @param deviceName needs either dSID or name
+     * @param sessionToken can be null, if a {@link ConnectionManager} is registered at the {@link HttpTransport}
+     * @param dSID needs either dSID, dSUID or name
+     * @param dSUID needs either dSID, dSUID or name
+     * @param deviceName needs either dSID, dsUID or name
      * @param value required (0 - 255)
      * @return true, if successful
      */
-    public boolean setDeviceValue(String sessionToken, DSID dSID, String deviceName, Integer value);
+    public boolean setDeviceValue(String sessionToken, DSID dSID, String dSUID, String deviceName, Integer value);
 
     /**
      * Gets the value of configuration class at offset index.
      *
-     * @param sessionToken
-     * @param dSID needs either dSID or name
-     * @param deviceName needs either dSID or name
+     * @param sessionToken can be null, if a {@link ConnectionManager} is registered at the {@link HttpTransport}
+     * @param dSID needs either dSID, dSUID or name
+     * @param dSUID needs either dSID, dSUID or name
+     * @param deviceName needs either dSID, dsUID or name
      * @param clazz required
      * @param index required
      * @return config with values
      */
-    public DeviceConfig getDeviceConfig(String sessionToken, DSID dSID, String deviceName,
+    public DeviceConfig getDeviceConfig(String sessionToken, DSID dSID, String dSUID, String deviceName,
             DeviceParameterClassEnum clazz, Integer index);
 
     /**
@@ -167,60 +172,69 @@ public interface DsAPI {
      * The available parameters and offsets depend on the features of the
      * hardware components.
      *
-     * @param sessionToken
-     * @param dSID needs either dSID or name
-     * @param deviceName needs either dSID or name
-     * @param offset required (known offset f.e. 0)
-     * @return
+     * @param sessionToken can be null, if a {@link ConnectionManager} is registered at the {@link HttpTransport}
+     * @param dSID needs either dSID, dSUID or name
+     * @param dSUID needs either dSID, dSUID or name
+     * @param deviceName needs either dSID, dsUID or name
+     * @param offset required (known offset e.g. 0)
+     * @return current device output value or -1, if the request was not successful
      */
-    public int getDeviceOutputValue(String sessionToken, DSID dSID, String deviceName, Short offset);
+    public int getDeviceOutputValue(String sessionToken, DSID dSID, String dSUID, String deviceName, Short offset);
 
     /**
      * Sets the device output value at the given offset. The available
      * parameters and offsets depend on the features of the hardware components.
      *
-     * @param sessionToken
-     * @param dSID needs either dSID or name
-     * @param deviceName needs either dSID or name
+     * @param sessionToken can be null, if a {@link ConnectionManager} is registered at the {@link HttpTransport}
+     * @param dSID needs either dSID, dSUID or name
+     * @param dSUID needs either dSID, dSUID or name
+     * @param deviceName needs either dSID, dsUID or name
      * @param offset required
      * @param value required (0 - 65535)
      * @return true, if successful
      */
-    public boolean setDeviceOutputValue(String sessionToken, DSID dSID, String deviceName, Short offset, Integer value);
+    public boolean setDeviceOutputValue(String sessionToken, DSID dSID, String dSUID, String deviceName, Short offset,
+            Integer value);
 
     /**
      * Gets the device configuration for a specific scene command.
      *
-     * @param sessionToken
-     * @param dSID needs either dSID or name
-     * @param deviceName needs either dSID or name
+     * @param sessionToken can be null, if a {@link ConnectionManager} is registered at the {@link HttpTransport}
+     * @param dSID needs either dSID, dSUID or name
+     * @param dSUID needs either dSID, dSUID or name
+     * @param deviceName needs either dSID, dsUID or name
      * @param sceneID required (0 .. 255)
      * @return scene configuration
      */
-    public DeviceSceneSpec getDeviceSceneMode(String sessionToken, DSID dSID, String deviceName, Short sceneID);
+    public DeviceSceneSpec getDeviceSceneMode(String sessionToken, DSID dSID, String dSUID, String deviceName,
+            Short sceneID);
 
     /**
      * Requests the sensor value for a given index.
      *
-     * @param sessionToken
-     * @param dSID needs either dSID or name
-     * @param deviceName needs either dSID or name
+     * @param sessionToken can be null, if a {@link ConnectionManager} is registered at the {@link HttpTransport}
+     * @param dSID needs either dSID, dSUID or name
+     * @param dSUID needs either dSID, dSUID or name
+     * @param deviceName needs either dSID, dsUID or name
      * @param sensorIndex required
      * @return sensor value
      */
-    public short getDeviceSensorValue(String sessionToken, DSID dSID, String deviceName, Short sensorIndex);
+    public short getDeviceSensorValue(String sessionToken, DSID dSID, String dSUID, String deviceName,
+            Short sensorIndex);
 
     /**
      * Calls scene sceneNumber on the device.
      *
-     * @param sessionToken
-     * @param dSID needs either dSID or name
-     * @param deviceName needs either dSID or name
+     * @param sessionToken can be null, if a {@link ConnectionManager} is registered at the {@link HttpTransport}
+     * @param dSID needs either dSID, dSUID or name
+     * @param dSUID needs either dSID, dSUID or name
+     * @param deviceName needs either dSID, dsUID or name
      * @param sceneNumber required
      * @param force not required
      * @return true, if successful
      */
-    public boolean callDeviceScene(String sessionToken, DSID dSID, String deviceName, Scene sceneNumber, Boolean force);
+    public boolean callDeviceScene(String sessionToken, DSID dSID, String dSUID, String deviceName, Scene sceneNumber,
+            Boolean force);
 
     /**
      * Subscribes to an event given by the name. The subscriptionID is a unique id
@@ -228,7 +242,7 @@ public interface DsAPI {
      * using the same subscription id, this allows to retrieve a grouped output of the
      * events (i.e. get output of all subscribed by the given id).
      *
-     * @param sessionToken
+     * @param sessionToken can be null, if a {@link ConnectionManager} is registered at the {@link HttpTransport}
      * @param eventName required
      * @param subscriptionID required
      * @param connectionTimeout
@@ -242,7 +256,7 @@ public interface DsAPI {
      * Unsubscribes from an event given by the name. The subscriptionID is a unique
      * id that was used in the subscribe call.
      *
-     * @param sessionToken
+     * @param sessionToken can be null, if a {@link ConnectionManager} is registered at the {@link HttpTransport}
      * @param eventName required
      * @param subscriptionID required
      * @param connectionTimeout
@@ -259,7 +273,7 @@ public interface DsAPI {
      * are taken place, can be specified (in ms). By default the timeout
      * is disabled: 0 (zero), if no events occur the call will block.
      *
-     * @param sessionToken
+     * @param sessionToken can be null, if a {@link ConnectionManager} is registered at the {@link HttpTransport}
      * @param subscriptionID required
      * @param timeout optional
      * @return Event-String
@@ -269,10 +283,28 @@ public interface DsAPI {
     /**
      * Returns the dSS time in UTC seconds since epoch.
      *
-     * @param sessionToken
+     * @param sessionToken can be null, if a {@link ConnectionManager} is registered at the {@link HttpTransport}
      * @return time
      */
     public int getTime(String sessionToken);
+
+    /**
+     * <b>Description partially taken form digitalSTROM JSON-API:</b><br>
+     * Returns the version of the digitalSTROM-Server software version as {@link Map}.<br>
+     * <br>
+     * <b>Key, value:</b><br>
+     * <li><b>version</b> the dSS application version</li>
+     * <li><b>distroVersion</b> the host platform firmware release (since v1.10)</li>
+     * <li><b>Hardware</b> the host platform hardware identifier (since v1.10)</li>
+     * <li><b>Revision</b> the host platform hardware revision number (since v1.10)</li>
+     * <li><b>Serial</b> the host platform hardware serial number (since v1.10)</li>
+     * <li><b>Ethernet</b> the host platform IEEE Mac address (since v1.10)</li>
+     * <li><b>MachineID</b> the host system unique id (since v1.10)</li>
+     * <li><b>Kernel</b> the host system Linux kernel release string (since v1.10)</li>
+     *
+     * @return the digitalSTROM-Server software version
+     */
+    public Map<String, String> getSystemVersion();
 
     /**
      * Creates a new session using the registered application token
@@ -301,8 +333,8 @@ public interface DsAPI {
     /**
      * Returns the dSID of the digitalSTROM Server.
      *
-     * @param sessionToken required
-     * @return dsID
+     * @param sessionToken can be null, if a {@link ConnectionManager} is registered at the {@link HttpTransport}
+     * @return dSID
      */
     public String getDSID(String sessionToken);
 
@@ -318,7 +350,7 @@ public interface DsAPI {
     /**
      * Revokes an application token, caller must be logged in.
      *
-     * @param sessionToken
+     * @param sessionToken can be null, if a {@link ConnectionManager} is registered at the {@link HttpTransport}
      * @param applicationToken
      * @return true, if successful, otherwise false
      */
@@ -327,7 +359,7 @@ public interface DsAPI {
     /**
      * Enables an application token, caller must be logged in.
      *
-     * @param sessionToken
+     * @param sessionToken can be null, if a {@link ConnectionManager} is registered at the {@link HttpTransport}
      * @param applicationToken required
      * @return true, if successful, otherwise false
      */
@@ -336,7 +368,7 @@ public interface DsAPI {
     /**
      * Returns all resolutions stored on this dSS
      *
-     * @param sessionToken
+     * @param sessionToken can be null, if a {@link ConnectionManager} is registered at the {@link HttpTransport}
      * @return List of resolutions
      */
     public List<Integer> getResolutions(String sessionToken);
@@ -350,7 +382,7 @@ public interface DsAPI {
      * the
      * set-syntax, currently it supports: .meters(dsid1,dsid2,...) and .meters(all)
      *
-     * @param sessionToken
+     * @param sessionToken can be null, if a {@link ConnectionManager} is registered at the {@link HttpTransport}
      * @param type required
      * @param meterDSIDs required
      * @param unit optional
@@ -367,14 +399,11 @@ public interface DsAPI {
      * units: 'Wh' (default) and 'Ws' you can also see at {@link MeteringUnitsEnum}. <br>
      * The meterDSIDs parameter you can directly pass a {@link List} of the digitalSTROM-Meter dSID's as {@link String}.
      *
-     * @param sessionToken
+     * @param sessionToken can be null, if a {@link ConnectionManager} is registered at the {@link HttpTransport}
      * @param type required
      * @param meterDSIDs required
      * @param unit optional
      * @return cached metering values
-     *
-     * @author Michael Ochel
-     * @author Matthias Siegele
      */
     public List<CachedMeteringValue> getLatest(String sessionToken, MeteringTypeEnum type, List<String> meterDSIDs,
             MeteringUnitsEnum unit);
@@ -382,11 +411,8 @@ public interface DsAPI {
     /**
      * Checks the connection and returns the HTTP-Status-Code.
      *
-     * @param sessionToken required
+     * @param sessionToken can be null, if a {@link ConnectionManager} is registered at the {@link HttpTransport}
      * @return HTTP-Status-Code
-     *
-     * @author Michael Ochel
-     * @author Matthias Siegele
      */
     public int checkConnection(String sessionToken);
 
@@ -395,68 +421,61 @@ public interface DsAPI {
      * <br>
      * At array position 0 is the output value and at position 1 the angle value, if the device is a blind.
      *
-     * @param sessionToken required
-     * @param dSID required
+     * @param sessionToken can be null, if a {@link ConnectionManager} is registered at the {@link HttpTransport}
+     * @param dSID needs either dSID, dSUID or name
+     * @param dSUID needs either dSID, dSUID or name
+     * @param deviceName needs either dSID, dsUID or name
      * @param sceneId required
      * @return scene value at array position 0 and angle at position 1
-     *
-     * @author Michael Ochel
-     * @author Matthias Siegele
      */
-    public int[] getSceneValue(String sessionToken, DSID dSID, Short sceneId);
+    public int[] getSceneValue(String sessionToken, DSID dSID, String dSUID, String deviceName, Short sceneId);
 
     /**
      * Calls the INC scene on the digitalSTROM-Device with the given dSID and returns true if the request was success.
      *
-     * @param sessionToken required
-     * @param dSID required
+     * @param sessionToken can be null, if a {@link ConnectionManager} is registered at the {@link HttpTransport}
+     * @param dSID needs either dSID, dSUID or name
+     * @param dSUID needs either dSID, dSUID or name
+     * @param deviceName needs either dSID, dsUID or name
      * @return success true otherwise false
-     *
-     * @author Michael Ochel
-     * @author Matthias Siegele
      */
-    public boolean increaseValue(String sessionToken, DSID dSID);
+    public boolean increaseValue(String sessionToken, DSID dSID, String dSUID, String deviceName);
 
     /**
      * Calls the DEC scene on the digitalSTROM-Device with the given dSID and returns true if the request was
      * successful.
      *
-     * @param sessionToken required
-     * @param dSID required
+     * @param sessionToken can be null, if a {@link ConnectionManager} is registered at the {@link HttpTransport}
+     * @param dSID needs either dSID, dSUID or name
+     * @param dSUID needs either dSID, dSUID or name
+     * @param deviceName needs either dSID, dsUID or name
      * @return success true otherwise false
-     *
-     * @author Michael Ochel
-     * @author Matthias Siegele
      */
-    public boolean decreaseValue(String sessionToken, DSID dSID);
+    public boolean decreaseValue(String sessionToken, DSID dSID, String dSUID, String deviceName);
 
     /**
      * Undos the given sceneNumer of the digitalSTROM-Device with the given dSID and returns true if the request was
      * successful.
      *
-     * @param sessionToken required
-     * @param dsid required
+     * @param sessionToken can be null, if a {@link ConnectionManager} is registered at the {@link HttpTransport}
+     * @param dSID needs either dSID, dSUID or name
+     * @param dSUID needs either dSID, dSUID or name
+     * @param deviceName needs either dSID, dsUID or name
      * @param sceneNumber required
      * @return success true otherwise false
-     *
-     * @author Michael Ochel
-     * @author Matthias Siegele
      */
-    public boolean undoDeviceScene(String sessionToken, DSID dsid, Scene sceneNumber);
+    public boolean undoDeviceScene(String sessionToken, DSID dsid, String dSUID, String deviceName, Scene sceneNumber);
 
     /**
      * Undo the given sceneNumer on the digitalSTROM apartment-group with the given groupID or groupName and returns
      * true
      * if the request was successful.
      *
-     * @param sessionToken required
+     * @param sessionToken can be null, if a {@link ConnectionManager} is registered at the {@link HttpTransport}
      * @param groupID needs either groupID or groupName
      * @param groupName needs either groupID or groupName
      * @param sceneNumber required
      * @return success true otherwise false
-     *
-     * @author Michael Ochel
-     * @author Matthias Siegele
      */
     public boolean undoApartmentScene(String sessionToken, Short groupID, String groupName, Scene sceneNumber);
 
@@ -464,16 +483,13 @@ public interface DsAPI {
      * Undo the given sceneNumer on the digitalSTROM zone-group with the given zoneID or zoneName and groupID or
      * groupName and returns true if the request was successful.
      *
-     * @param sessionToken
+     * @param sessionToken can be null, if a {@link ConnectionManager} is registered at the {@link HttpTransport}
      * @param zoneID needs either zoneID or zoneName
      * @param zoneName needs either zoneID or zoneName
      * @param groupID needs either groupID or groupName
      * @param groupName needs either groupID or groupName
      * @param sceneNumber required
      * @return success true otherwise false
-     *
-     * @author Michael Ochel
-     * @author Matthias Siegele
      */
     public boolean undoZoneScene(String sessionToken, Integer zoneID, String zoneName, Short groupID, String groupName,
             SceneEnum sceneNumber);
@@ -481,7 +497,7 @@ public interface DsAPI {
     /**
      * Returns user defined name of the digitalSTROM installation.
      *
-     * @param sessionToken required
+     * @param sessionToken can be null, if a {@link ConnectionManager} is registered at the {@link HttpTransport}
      * @return name of the digitalSTROM installation
      */
     public String getInstallationName(String sessionToken);
@@ -489,7 +505,7 @@ public interface DsAPI {
     /**
      * Returns user defined name of the zone from the given zone id.
      *
-     * @param sessionToken required
+     * @param sessionToken can be null, if a {@link ConnectionManager} is registered at the {@link HttpTransport}
      * @param zoneID required
      * @return name of the given zone id
      */
@@ -498,16 +514,18 @@ public interface DsAPI {
     /**
      * Returns user defined name of the device from the given dSID
      *
-     * @param sessionToken required
-     * @param dSID required
+     * @param sessionToken can be null, if a {@link ConnectionManager} is registered at the {@link HttpTransport}
+     * @param dSID needs either dSID, dSUID or name
+     * @param dSUID needs either dSID, dSUID or name
+     * @param deviceName needs either dSID, dsUID or name
      * @return name of the given device dSID
      */
-    public String getDeviceName(String sessionToken, DSID dSID);
+    public String getDeviceName(String sessionToken, DSID dSID, String dSUID);
 
     /**
      * Returns user defined name of the circuit from the given dSID.
      *
-     * @param sessionToken required
+     * @param sessionToken can be null, if a {@link ConnectionManager} is registered at the {@link HttpTransport}
      * @param dSID required
      * @return name of the given circuit dSID
      */
@@ -516,24 +534,22 @@ public interface DsAPI {
     /**
      * Returns user defined name of the scene from the given zoneID, groupID and sceneID.
      *
-     * @param sessionToken required
+     * @param sessionToken can be null, if a {@link ConnectionManager} is registered at the {@link HttpTransport}
      * @param zoneID (0 is broadcast)
+     * @param zoneName
      * @param groupID (0 is broadcast)
      * @param sceneID (between 0 and 127)
      * @return name of the scene otherwise null
      */
-    public String getSceneName(String sessionToken, Integer zoneID, Short groupID, Short sceneID);
+    public String getSceneName(String sessionToken, Integer zoneID, String zoneName, Short groupID, Short sceneID);
 
     /**
      * Returns the temperature control status to the given zone.
      *
-     * @param sessionToken required
+     * @param sessionToken can be null, if a {@link ConnectionManager} is registered at the {@link HttpTransport}
      * @param zoneID required or zoneName
      * @param zoneName required or zoneID
      * @return temperature control status to the given zone
-     *
-     * @author Michael Ochel
-     * @author Matthias Siegele
      */
     public TemperatureControlStatus getZoneTemperatureControlStatus(String sessionToken, Integer zoneID,
             String zoneName);
@@ -553,13 +569,10 @@ public interface DsAPI {
      * CtrlAntiWindUp = Control integrator anti wind up: 0=inactive, 1=active
      * CtrlKeepFloorWarm = Control mode with higher priority on comfort: 0=inactive, 1=active
      *
-     * @param sessionToken required
+     * @param sessionToken can be null, if a {@link ConnectionManager} is registered at the {@link HttpTransport}
      * @param zoneID required or zoneName
      * @param zoneName required or zoneID
      * @return temperature control status with configuration parameters
-     *
-     * @author Michael Ochel
-     * @author Matthias Siegele
      */
     public TemperatureControlConfig getZoneTemperatureControlConfig(String sessionToken, Integer zoneID,
             String zoneName);
@@ -578,13 +591,10 @@ public interface DsAPI {
      * <li>7 CollingOff</li>
      *
      *
-     * @param sessionToken required
+     * @param sessionToken can be null, if a {@link ConnectionManager} is registered at the {@link HttpTransport}
      * @param zoneID required or zoneName
      * @param zoneName required or zoneID
      * @return temperature control values of control modes
-     *
-     * @author Michael Ochel
-     * @author Matthias Siegele
      */
     public TemperatureControlValues getZoneTemperatureControlValues(String sessionToken, Integer zoneID,
             String zoneName);
@@ -592,7 +602,7 @@ public interface DsAPI {
     /**
      * Set the configuration of the zone temperature control.
      *
-     * @param sessionToken (required)
+     * @param sessionToken can be null, if a {@link ConnectionManager} is registered at the {@link HttpTransport}
      * @param zoneID (required alternative zoneName)
      * @param zoneName (required alternative zoneID)
      * @param controlDSUID dSUID of the meter or service that runs the control algorithm for this zone (optional)
@@ -612,7 +622,7 @@ public interface DsAPI {
      * @param ctrlYmax Control maximum control value (Optional for ControlMode 1)
      * @param ctrlAntiWindUp Control integrator anti wind up (Optional for ControlMode 1)
      * @param ctrlKeepFloorWarm Control mode with higher priority on comfort (Optional for ControlMode 1)
-     * @return
+     * @return true, if successful
      */
     public boolean setZoneTemperatureControlConfig(String sessionToken, Integer zoneID, String zoneName,
             String controlDSUID, Short controlMode, Integer referenceZone, Float ctrlOffset, Float emergencyValue,
@@ -623,13 +633,10 @@ public interface DsAPI {
      * Returns the assigned Sensor dSUID of a zone.
      *
      *
-     * @param sessionToken required
+     * @param sessionToken can be null, if a {@link ConnectionManager} is registered at the {@link HttpTransport}
      * @param zoneID required or zoneName
      * @param zoneName required or zoneID
      * @return assigned Sensor dSUID of the given zone.
-     *
-     * @author Michael Ochel
-     * @author Matthias Siegele
      */
     public AssignedSensors getZoneAssignedSensors(String sessionToken, Integer zoneID, String zoneName);
 
@@ -637,51 +644,48 @@ public interface DsAPI {
      * Sets the temperature control state of a given zone.<br>
      * Control states: 0=internal; 1=external; 2=exbackup; 3=emergency
      *
-     * @param sessionToken required
+     * @param sessionToken can be null, if a {@link ConnectionManager} is registered at the {@link HttpTransport}
      * @param zoneID required or zoneName
      * @param zoneName required or zoneID
      * @param controlState required
      * @return success true otherwise false
-     *
-     * @author Michael Ochel
-     * @author Matthias Siegele
-     *
      */
     public boolean setZoneTemperatureControlState(String sessionToken, Integer zoneID, String zoneName,
             String controlState);
 
     /**
-     * Sets the wished temperature for a controlValue
+     * Sets the wished temperature (control mode = {@link ControlModes#PID_CONTROL}) or control valve value for a
+     * operation mode, see
+     * {@link OperationModes}.<br>
+     * To set the values a {@link List} with an object array has to be set as controlVlaues parameter. The 1th field has
+     * to be a {@link String} for the {@link OperationModes} name and the 2nd field has to be a {@link Integer} for the
+     * new value. If the control mode is {@link ControlModes#PID_CONTROL} it is the nominal temperature, otherwise it is
+     * the control valve value.
      *
-     * @param sessionToken
+     * @param sessionToken can be null, if a {@link ConnectionManager} is registered at the {@link HttpTransport}
      * @param zoneID required or zoneName
      * @param zoneName required or zoneID
-     * @param controlValue
-     * @param temperature
+     * @param controlValues
      * @return success true otherwise false
      */
-    public boolean setZoneTemperatureControlValue(String sessionToken, Integer zoneID, String zoneName,
-            String controlValue, Float temperature);
-    // TODO: add einzelwert oder Liste
+    public boolean setZoneTemperatureControlValues(String sessionToken, Integer zoneID, String zoneName,
+            List<Object[]> controlValues);
 
     /**
      * Returns the value of a Sensor of the given zone.
      *
      *
-     * @param sessionToken required
+     * @param sessionToken can be null, if a {@link ConnectionManager} is registered at the {@link HttpTransport}
      * @param zoneID required or zoneName
      * @param zoneName required or zoneID
      * @return value of a Sensor of the given zone
-     *
-     * @author Michael Ochel
-     * @author Matthias Siegele
      */
     public SensorValues getZoneSensorValues(String sessionToken, Integer zoneID, String zoneName);
 
     /**
      * Set the source of a sensor in a zone to a given device source address.
      *
-     * @param sessionToken
+     * @param sessionToken can be null, if a {@link ConnectionManager} is registered at the {@link HttpTransport}
      * @param zoneID required or zoneName
      * @param zoneName required or zoneID
      * @param sensorType
@@ -694,7 +698,7 @@ public interface DsAPI {
     /**
      * Remove all assignments for a particular sensor type in a zone.
      *
-     * @param sessionToken
+     * @param sessionToken can be null, if a {@link ConnectionManager} is registered at the {@link HttpTransport}
      * @param zoneID required or zoneName
      * @param zoneName required or zoneID
      * @param sensorType
@@ -706,7 +710,7 @@ public interface DsAPI {
     /**
      * Returns internal status information of the temperature control of a zone.
      *
-     * @param sessionToken
+     * @param sessionToken can be null, if a {@link ConnectionManager} is registered at the {@link HttpTransport}
      * @param zoneID required or zoneName
      * @param zoneName required or zoneID
      * @return internal status information of the temperature control of a zone
@@ -717,33 +721,24 @@ public interface DsAPI {
     /**
      * Returns the temperature control status of all zones.
      *
-     * @param sessionToken required
+     * @param sessionToken can be null, if a {@link ConnectionManager} is registered at the {@link HttpTransport}
      * @return temperature control status of all zones
-     *
-     * @author Michael Ochel
-     * @author Matthias Siegele
      */
     public List<TemperatureControlStatus> getApartmentTemperatureControlStatus(String sessionToken);
 
     /**
      * Returns the temperature control status of all zones.
      *
-     * @param sessionToken required
+     * @param sessionToken can be null, if a {@link ConnectionManager} is registered at the {@link HttpTransport}
      * @return temperature control status of all zones
-     *
-     * @author Michael Ochel
-     * @author Matthias Siegele
      */
     public HashMap<Integer, TemperatureControlConfig> getApartmentTemperatureControlConfig(String sessionToken);
 
     /**
      * Returns the temperature control status of all zones.
      *
-     * @param sessionToken required
+     * @param sessionToken can be null, if a {@link ConnectionManager} is registered at the {@link HttpTransport}
      * @return temperature control status of all zones
-     *
-     * @author Michael Ochel
-     * @author Matthias Siegele
      */
     public HashMap<Integer, TemperatureControlValues> getApartmentTemperatureControlValues(String sessionToken);
 
@@ -751,22 +746,16 @@ public interface DsAPI {
      * Returns the assigned Sensor dSUID of all zones.
      *
      *
-     * @param sessionToken required
+     * @param sessionToken can be null, if a {@link ConnectionManager} is registered at the {@link HttpTransport}
      * @return assigned Sensor dSUID of all zones.
-     *
-     * @author Michael Ochel
-     * @author Matthias Siegele
      */
     public HashMap<Integer, AssignedSensors> getApartmentAssignedSensors(String sessionToken);
 
     /**
      * Returns the value of a Sensor of all zones.
      *
-     * @param sessionToken required
+     * @param sessionToken can be null, if a {@link ConnectionManager} is registered at the {@link HttpTransport}
      * @return value of a Sensor of all zones
-     *
-     * @author Michael Ochel
-     * @author Matthias Siegele
      */
     public HashMap<Integer, BaseSensorValues> getApartmentSensorValues(String sessionToken);
 
@@ -777,11 +766,11 @@ public interface DsAPI {
      * all device from zone4 would look like this: ’/apartment/zones/zone4/*(ZoneID,name)’.
      * More complex combinations (see example below) are also possible.
      *
-     * @param token required
+     * @param sessionToken can be null, if a {@link ConnectionManager} is registered at the {@link HttpTransport}
      * @param query required
      * @return response as {@link JsonObject}
      */
-    public JsonObject query(String token, String query);
+    public JsonObject query(String sessionToken, String query);
 
     /**
      * <b>Description taken form digitalSTROM JSON-API:</b><br>
@@ -792,11 +781,11 @@ public interface DsAPI {
      * folder, nothing is extracted, and the node will not show up in the resulting
      * json structure.</i>
      *
-     * @param token required
+     * @param sessionToken can be null, if a {@link ConnectionManager} is registered at the {@link HttpTransport}
      * @param query required
      * @return response as {@link JsonObject}
      */
-    public JsonObject query2(String token, String query);
+    public JsonObject query2(String sessionToken, String query);
 
     /**
      * <b>Description taken form digitalSTROM JSON-API:</b><br>
@@ -811,7 +800,7 @@ public interface DsAPI {
      * <b>Notice:</b> Setting output values without a group identification is strongly
      * unrecommended.<br>
      *
-     * @param sessionToken required
+     * @param sessionToken can be null, if a {@link ConnectionManager} is registered at the {@link HttpTransport}
      * @param zoneID or zoneName are required
      * @param zoneName or zoneID are required
      * @param groupID optional
@@ -827,7 +816,7 @@ public interface DsAPI {
      * Executes the ”blink” function on a group of devices in a zone for identification
      * purposes.
      *
-     * @param sessionToken required
+     * @param sessionToken can be null, if a {@link ConnectionManager} is registered at the {@link HttpTransport}
      * @param zoneID or zoneName are required
      * @param zoneName or zoneID are required
      * @param groupID optional
@@ -843,7 +832,7 @@ public interface DsAPI {
      * all devices in the selected zone. The reference for the sensor type definitions
      * can be found in the ds-basics document.
      *
-     * @param sessionToken required
+     * @param sessionToken can be null, if a {@link ConnectionManager} is registered at the {@link HttpTransport}
      * @param zoneID or zoneName are required
      * @param zoneName or zoneID are required
      * @param groupID optional
@@ -860,21 +849,127 @@ public interface DsAPI {
      * Returns the string value of the property, this call will fail if the property is
      * not of type ’string’.
      *
-     * @param token required
+     * @param sessionToken can be null, if a {@link ConnectionManager} is registered at the {@link HttpTransport}
      * @param path to property required
-     * @return string value of the property
+     * @return {@link String} value of the property
      */
-    public String propertyTreeGetString(String token, String path);
+    public String propertyTreeGetString(String sessionToken, String path);
 
     /**
      * <b>Description taken form digitalSTROM JSON-API:</b><br>
      * Sets the string value of the property, this call will fail if the property is not
      * of type ’string’.
      *
-     * @param token required
+     * @param sessionToken can be null, if a {@link ConnectionManager} is registered at the {@link HttpTransport}
      * @param path to property required
      * @return {@link JsonArray} of child nodes
      */
-    public JsonArray propertyTreeGetChildren(String token, String path);
+    public JsonArray propertyTreeGetChildren(String sessionToken, String path);
+
+    /**
+     * <b>Description taken form digitalSTROM JSON-API:</b><br>
+     * Sets the string value of the property, this call will fail if the property is not
+     * of type ’string’.
+     *
+     * @param sessionToken can be null, if a {@link ConnectionManager} is registered at the {@link HttpTransport}
+     * @param path required
+     * @param value required
+     * @return true, if successful
+     */
+    public Boolean propertyTreeSetString(String sessionToken, String path, String value);
+
+    /**
+     * <b>Description taken form digitalSTROM JSON-API:</b><br>
+     * Returns the integer value of the property, this call will fail if the property is
+     * not of type ’integer’.
+     *
+     * @param sessionToken can be null, if a {@link ConnectionManager} is registered at the {@link HttpTransport}
+     * @param path required
+     * @return {@link Integer} value of the property
+     */
+    public Integer propertyTreeGetInteger(String sessionToken, String path);
+
+    /**
+     * <b>Description taken form digitalSTROM JSON-API:</b><br>
+     * Sets the integer value of the property, this call will fail if the property is not
+     * of type ’integer’.
+     *
+     * @param sessionToken can be null, if a {@link ConnectionManager} is registered at the {@link HttpTransport}
+     * @param path required
+     * @param value required
+     * @return true, if successful
+     */
+    public Boolean propertyTreeSetInteger(String sessionToken, String path, Integer value);
+
+    /**
+     * <b>Description taken form digitalSTROM JSON-API:</b><br>
+     * Returns the boolean value of the property, this call will fail if the property is
+     * not of type ’boolean’.
+     *
+     * @param sessionToken can be null, if a {@link ConnectionManager} is registered at the {@link HttpTransport}
+     * @param path required
+     * @return {@link Boolean} value of the property
+     */
+    public Boolean propertyTreeGetBoolean(String sessionToken, String path);
+
+    /**
+     * <b>Description taken form digitalSTROM JSON-API:</b><br>
+     * Returns the boolean value of the property, this call will fail if the property is
+     * not of type ’boolean’.
+     *
+     * @param sessionToken can be null, if a {@link ConnectionManager} is registered at the {@link HttpTransport}
+     * @param path required
+     * @param value required
+     * @return true, if successful
+     */
+    public Boolean propertyTreeSetBoolean(String sessionToken, String path, Boolean value);
+
+    /**
+     * <b>Description taken form digitalSTROM JSON-API:</b><br>
+     * Returns the type of the property as {@link String}, this can be “none”, “string”, “integer” or
+     * “boolean”.
+     *
+     * @param sessionToken can be null, if a {@link ConnectionManager} is registered at the {@link HttpTransport}
+     * @param path required
+     * @return the type of the property as {@link String}
+     */
+    public String propertyTreeGetType(String sessionToken, String path);
+
+    /**
+     * Returns the flag values of a property as {@link Map}. The key is the flag type and the value the {@link Boolean}
+     * value.<br>
+     * <br>
+     * Flag types are:<br>
+     * - READABLE <br>
+     * - WRITEABLE <br>
+     * - ARCHIVE <br>
+     *
+     * @param sessionToken can be null, if a {@link ConnectionManager} is registered at the {@link HttpTransport}
+     * @param path required
+     * @return the type of the property as {@link String}
+     */
+    public Map<String, Boolean> propertyTreeGetFlages(String sessionToken, String path);
+
+    /**
+     * <b>Description taken form digitalSTROM JSON-API:</b><br>
+     * Sets a given flag of a property.
+     *
+     * @param sessionToken can be null, if a {@link ConnectionManager} is registered at the {@link HttpTransport}
+     * @param path required
+     * @param flag required
+     * @param value required
+     * @return true, if successful
+     */
+    public Boolean propertyTreeSetFlag(String sessionToken, String path, String flag, Boolean value);
+
+    /**
+     * <b>Description taken form digitalSTROM JSON-API:</b><br>
+     * Removes a property node.
+     *
+     * @param sessionToken can be null, if a {@link ConnectionManager} is registered at the {@link HttpTransport}
+     * @param path required
+     * @return true, if successful
+     */
+    public Boolean propertyTreeRemove(String sessionToken, String path);
 
 }

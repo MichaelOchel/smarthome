@@ -57,7 +57,7 @@ public class CircuitImpl extends AbstractGeneralDeviceInformations implements Ci
 
     /**
      * Creates a new {@link CircuitImpl} through the digitalSTROM json response as {@link JsonObject}.
-     * 
+     *
      * @param jObject
      */
     public CircuitImpl(JsonObject jObject) {
@@ -290,15 +290,14 @@ public class CircuitImpl extends AbstractGeneralDeviceInformations implements Ci
     public void addMeteringValue(CachedMeteringValue cachedMeteringValue) {
         if (cachedMeteringValue != null) {
             switch (cachedMeteringValue.getMeteringType()) {
-                case consumption:
+                case CONSUMPTION:
                     if (checkNewer(consumption, cachedMeteringValue)) {
                         consumption = cachedMeteringValue;
                         informListener(cachedMeteringValue);
                     }
                     break;
-                case energy:
-                    if (cachedMeteringValue.getMeteringUnit() == null
-                            || cachedMeteringValue.getMeteringUnit().equals(MeteringUnitsEnum.Wh)) {
+                case ENERGY:
+                    if (cachedMeteringValue.getMeteringUnit().equals(MeteringUnitsEnum.WH)) {
                         if (checkNewer(energyWh, cachedMeteringValue)) {
                             energyWh = cachedMeteringValue;
                             informListener(cachedMeteringValue);
@@ -310,22 +309,6 @@ public class CircuitImpl extends AbstractGeneralDeviceInformations implements Ci
                         }
                     }
                     break;
-                /*
-                 * case energyDelta:
-                 * if (cachedMeteringValue.getMeteringUnit() == null
-                 * || cachedMeteringValue.getMeteringUnit().equals(MeteringUnitsEnum.Wh)) {
-                 * if (checkNewer(energyDeltaWh, cachedMeteringValue)) {
-                 * energyDeltaWh = cachedMeteringValue;
-                 * informListener(cachedMeteringValue);
-                 * }
-                 * } else {
-                 * if (checkNewer(energyDeltaWs, cachedMeteringValue)) {
-                 * energyDeltaWs = cachedMeteringValue;
-                 * informListener(cachedMeteringValue);
-                 * }
-                 * }
-                 * break;
-                 */
                 default:
                     break;
             }
@@ -347,22 +330,14 @@ public class CircuitImpl extends AbstractGeneralDeviceInformations implements Ci
     @Override
     public double getMeteringValue(MeteringTypeEnum meteringType, MeteringUnitsEnum meteringUnit) {
         switch (meteringType) {
-            case consumption:
-                return getValue(this.consumption);
-            case energy:
-                if (meteringUnit.equals(MeteringUnitsEnum.Wh)) {
-                    return getValue(this.energyWh);
+            case CONSUMPTION:
+                return getValue(consumption);
+            case ENERGY:
+                if (MeteringUnitsEnum.WS.equals(meteringUnit)) {
+                    return getValue(energyWs);
                 } else {
-                    return getValue(this.energyWs);
+                    return getValue(energyWh);
                 }
-                /*
-                 * case energyDelta:
-                 * if (meteringUnit.equals(MeteringUnitsEnum.Wh)) {
-                 * return getValue(this.energyDeltaWh);
-                 * } else {
-                 * return getValue(this.energyDeltaWs);
-                 * }
-                 */
             default:
                 break;
         }
@@ -377,15 +352,6 @@ public class CircuitImpl extends AbstractGeneralDeviceInformations implements Ci
     public List<CachedMeteringValue> getAllCachedMeteringValues() {
         return Lists.newArrayList(consumption, /* energyDeltaWh, energyDeltaWs, */ energyWh, energyWs);
     }
-
-    /*
-     * public void registerDeviceStausListenerForConfigUpdate(DeviceStatusListener deviceStatusListener) {
-     * if (deviceStatusListener != null) {
-     * super.listener = deviceStatusListener;
-     * this.listener.onDeviceConfigChanged(null);
-     * }
-     * }
-     */
 
     /*
      * (non-Javadoc)

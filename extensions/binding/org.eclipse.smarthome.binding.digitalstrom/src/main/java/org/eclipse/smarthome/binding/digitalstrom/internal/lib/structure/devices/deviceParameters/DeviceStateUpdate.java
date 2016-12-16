@@ -7,8 +7,6 @@
  */
 package org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters;
 
-import org.eclipse.smarthome.binding.digitalstrom.internal.lib.sensorJobExecutor.SensorJobExecutor;
-import org.eclipse.smarthome.binding.digitalstrom.internal.lib.sensorJobExecutor.sensorJob.SensorJob;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.constants.DeviceBinarayInputEnum;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.constants.SensorEnum;
 
@@ -21,27 +19,27 @@ import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices
 public interface DeviceStateUpdate {
 
     // Update types
-    // TODO: UPDATE löschen, ggf. UPDATE_BRIGHTNESS zu output oder main_output ändern, u.U. UPDATE_SLATPOSITION
-    // ebenfalls hierdurch ersetzen
+    // TODO: SLAT is in principle the same like OUTPUT, so may it is better to delete SLAT... and change all to OUTPUT..
+    // in certain circumstances it is also better to rename SLAT_ANGLE to e.g. SECONDARY_OUTPUT
     // light
-    public final static String UPDATE_BRIGHTNESS = "brightness";
-    public final static String UPDATE_ON_OFF = "OnOff";
-    public final static String UPDATE_BRIGHTNESS_INCREASE = "brightnessIncrese";
-    public final static String UPDATE_BRIGHTNESS_DECREASE = "brightnessDecrese";
-    public final static String UPDATE_BRIGHTNESS_STOP = "brightnessStop";
-    public final static String UPDATE_BRIGHTNESS_MOVE = "brightnessMove";
+    public final static String OUTPUT = "output";
+    public final static String ON_OFF = "OnOff";
+    public final static String OUTPUT_INCREASE = "outputIncrese";
+    public final static String OUTPUT_DECREASE = "outputDecrese";
+    public final static String OUTPUT_STOP = "outputStop";
+    public final static String OUTPUT_MOVE = "outputMove";
 
     // shades
-    public final static String UPDATE_SLATPOSITION = "slatposition";
-    public static final String UPDATE_SLAT_ANGLE = "slatAngle";
-    public final static String UPDATE_SLAT_INCREASE = "slatIncrese";
-    public final static String UPDATE_SLAT_DECREASE = "slatDecrese";
-    public static final String UPDATE_SLAT_ANGLE_INCREASE = "slatAngleIncrese";
-    public static final String UPDATE_SLAT_ANGLE_DECREASE = "slatAngleDecrese";
-    public final static String UPDATE_OPEN_CLOSE = "openClose";
-    public static final String UPDATE_OPEN_CLOSE_ANGLE = "openCloseAngle";
-    public final static String UPDATE_SLAT_MOVE = "slatMove";
-    public final static String UPDATE_SLAT_STOP = "slatStop";
+    public final static String SLATPOSITION = "slatposition";
+    public static final String SLAT_ANGLE = "slatAngle";
+    public final static String SLAT_INCREASE = "slatIncrese";
+    public final static String SLAT_DECREASE = "slatDecrese";
+    public static final String SLAT_ANGLE_INCREASE = "slatAngleIncrese";
+    public static final String SLAT_ANGLE_DECREASE = "slatAngleDecrese";
+    public final static String OPEN_CLOSE = "openClose";
+    public static final String OPEN_CLOSE_ANGLE = "openCloseAngle";
+    public final static String SLAT_MOVE = "slatMove";
+    public final static String SLAT_STOP = "slatStop";
 
     // sensor data
     public final static String UPDATE_OUTPUT_VALUE = "outputValue";

@@ -125,11 +125,6 @@ public class SceneManagerImpl implements SceneManager, EventHandler {
         }
         eventListener.start();
         logger.debug("start SceneManager");
-        // if (!scenesGenerated) {
-        // generateScenes();
-        // } else {
-        // stateChanged(ManagerStates.RUNNING);
-        // }
         stateChanged(ManagerStates.RUNNING);
     }
 
@@ -137,8 +132,6 @@ public class SceneManagerImpl implements SceneManager, EventHandler {
     public void stop() {
         logger.debug("stop SceneManager");
         if (eventListener != null) {
-            // this.eventListener.stop();
-            // this.eventListener = null;
             eventListener.removeEventHandler(this);
         }
         this.discovery.stop();
@@ -318,10 +311,8 @@ public class SceneManagerImpl implements SceneManager, EventHandler {
             short groupID = Short.parseShort(sceneData[1]);
             short sceneNumber = Short.parseShort(sceneData[2]);
             String sceneName = null;
-            // if (connectionManager.checkConnection()) {
             sceneName = connectionManager.getDigitalSTROMAPI().getSceneName(connectionManager.getSessionToken(), zoneID,
-                    groupID, sceneNumber);
-            // }
+                    null, groupID, sceneNumber);
             InternalScene intScene = null;
             if (SceneEnum.getScene(sceneNumber) != null && structureManager.checkZoneGroupID(zoneID, groupID)) {
                 if (sceneName == null) {
@@ -470,6 +461,22 @@ public class SceneManagerImpl implements SceneManager, EventHandler {
             stateChanged(ManagerStates.RUNNING);
         }
         if (String.valueOf(scenesGenerated).contains("2")) {
+            String type = "nan";
+            switch (String.valueOf(scenesGenerated).indexOf("2")) {
+                case 0:
+                    type = "namedScens";
+                    break;
+                case 1:
+                    type = "appScenes";
+                    break;
+                case 2:
+                    type = "zoneScenes";
+                    break;
+                case 3:
+                    type = "reachableScenes";
+                    break;
+            }
+            logger.warn("Not all scenes are generated, try it again. Scene type {} is not generated.", type);
             stateChanged(ManagerStates.RUNNING);
         }
     }

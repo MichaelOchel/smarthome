@@ -42,7 +42,7 @@ import com.google.gson.JsonObject;
 public class SceneDiscovery {
 
     private static final Logger logger = LoggerFactory.getLogger(SceneDiscovery.class);
-
+    // fields: 0 = namedScenes, 1 = apartmentScenes, 2 = zoneScenes, 3 = reachableScenes
     private char[] scenesGenerated = "0000".toCharArray();
 
     private List<InternalScene> namedScenes = new LinkedList<InternalScene>();
@@ -52,9 +52,9 @@ public class SceneDiscovery {
     private SceneManager sceneManager;
     private SceneStatusListener discovery = null;
 
-    private final String query = "/json/property/query?query=/apartment/zones/*(ZoneID)/groups/*(group)/scenes/*(scene,name)";
-    private final String reachableScenesQuery = "/json/zone/getReachableScenes?id=";
-    private final String reachableGroupsQuery = "/json/apartment/getReachableGroups?token=";
+    public final String NAMEND_SCENE_QUERY = "/json/property/query?query=/apartment/zones/*(ZoneID)/groups/*(group)/scenes/*(scene,name)";
+    public final String REACHABLE_SCENE_QUERY = "/json/zone/getReachableScenes?id=";
+    public final String Reachable_GROUPS_QUERY = "/json/apartment/getReachableGroups?token=";
 
     /**
      * Creates a new {@link SceneDiscovery} with managed scene by the {@link SceneManager}
@@ -94,24 +94,18 @@ public class SceneDiscovery {
      * @return true, if successful otherwise false
      */
     public boolean generateNamedScenes(ConnectionManager connectionManager) {
-        // if (connectionManager.checkConnection()) {
-        String response = connectionManager.getHttpTransport()
-                .execute(query + "&token=" + connectionManager.getSessionToken());
-        if (response == null) {
+        JsonObject responsJsonObj = connectionManager.getDigitalSTROMAPI().query(connectionManager.getSessionToken(),
+                NAMEND_SCENE_QUERY);
+        if (responsJsonObj == null) {
+            scenesGenerated[0] = '2';
+            sceneManager.scenesGenerated(scenesGenerated);
             return false;
         } else {
-            JsonObject responsJsonObj = JSONResponseHandler.toJsonObject(response);
-            if (JSONResponseHandler.checkResponse(responsJsonObj)) {
-                addScenesToList(JSONResponseHandler.getResultJsonObject(responsJsonObj));
-                scenesGenerated[0] = '1';
-                sceneManager.scenesGenerated(scenesGenerated);
-                return true;
-            }
+            addScenesToList(responsJsonObj);
+            scenesGenerated[0] = '1';
+            sceneManager.scenesGenerated(scenesGenerated);
+            return true;
         }
-        // }
-        scenesGenerated[0] = '2';
-        sceneManager.scenesGenerated(scenesGenerated);
-        return false;
     }
 
     /**
@@ -259,51 +253,54 @@ public class SceneDiscovery {
                                 }
                                 if (zoneID != null) {
                                     if (groupIdInter != null) {
-                                        // TODO:
-                                        // if (connectionManager.checkConnection()) {
-                                        if (connectionManager.connectionEstablished()) {
-                                            Short groupID = null;
-                                            if (groupIdInter.hasNext()) {
-                                                groupID = groupIdInter.next();
-                                            } else {
-                                                groupIdInter = null;
+                                        // if (connectionManager.connectionEstablished()) {
+                                        Short groupID = null;
+                                        if (groupIdInter.hasNext()) {
+                                            groupID = groupIdInter.next();
+                                        } else {
+                                            groupIdInter = null;
+                                        }
+                                        if (groupID != null) {
+                                            if (FunctionalColorGroupEnum.getColorGroup(groupID)
+                                                    .equals(FunctionalColorGroupEnum.YELLOW)) {
+                                                discoverScene(SceneEnum.AUTO_OFF.getSceneNumber(), groupID);
                                             }
-                                            if (groupID != null) {
-                                                if (FunctionalColorGroupEnum.getColorGroup(groupID)
-                                                        .equals(FunctionalColorGroupEnum.YELLOW)) {
-                                                    discoverScene(SceneEnum.AUTO_OFF.getSceneNumber(), groupID);
-                                                }
-                                                String response = connectionManager.getHttpTransport()
-                                                        .execute(reachableScenesQuery + zoneID + "&groupID=" + groupID
-                                                                + "&token=" + connectionManager.getSessionToken());
-                                                if (response == null) {
-                                                    scenesGenerated[3] = '2';
-                                                    sceneManager.scenesGenerated(scenesGenerated);
-                                                    return;
-                                                } else {
-                                                    JsonObject responsJsonObj = JSONResponseHandler
-                                                            .toJsonObject(response);
-                                                    if (JSONResponseHandler.checkResponse(responsJsonObj)) {
-                                                        JsonObject resultJsonObj = JSONResponseHandler
-                                                                .getResultJsonObject(responsJsonObj);
-                                                        if (resultJsonObj.get(JSONApiResponseKeysEnum.REACHABLE_SCENES
-                                                                .getKey()) instanceof JsonArray) {
-                                                            JsonArray scenes = (JsonArray) resultJsonObj.get(
-                                                                    JSONApiResponseKeysEnum.REACHABLE_SCENES.getKey());
-                                                            if (scenes != null) {
-                                                                for (int i = 0; i < scenes.size(); i++) {
-                                                                    discoverScene(scenes.get(i).getAsShort(), groupID);
-                                                                }
+                                            String response = connectionManager.getHttpTransport()
+                                                    .execute(REACHABLE_SCENE_QUERY + zoneID + "&groupID=" + groupID
+                                                            + "&token=" + connectionManager.getSessionToken());
+                                            if (response == null) {
+                                                scenesGenerated[3] = '2';
+                                                sceneManager.scenesGenerated(scenesGenerated);
+                                                logger.warn(
+                                                        "Reachable scenes for zone {} and group {} cant be generated, because the dSS does not answer",
+                                                        zoneID, groupID);
+                                                generateReachableScenesScheduledFuture.cancel(true);
+                                                return;
+                                            } else {
+                                                JsonObject responsJsonObj = JSONResponseHandler.toJsonObject(response);
+                                                if (JSONResponseHandler.checkResponse(responsJsonObj)) {
+                                                    JsonObject resultJsonObj = JSONResponseHandler
+                                                            .getResultJsonObject(responsJsonObj);
+                                                    if (resultJsonObj.get(JSONApiResponseKeysEnum.REACHABLE_SCENES
+                                                            .getKey()) instanceof JsonArray) {
+                                                        JsonArray scenes = (JsonArray) resultJsonObj
+                                                                .get(JSONApiResponseKeysEnum.REACHABLE_SCENES.getKey());
+                                                        if (scenes != null) {
+                                                            for (int i = 0; i < scenes.size(); i++) {
+                                                                discoverScene(scenes.get(i).getAsShort(), groupID);
                                                             }
                                                         }
                                                     }
                                                 }
                                             }
-                                        } else {
-                                            scenesGenerated[3] = '2';
-                                            sceneManager.scenesGenerated(scenesGenerated);
-                                            generateReachableScenesScheduledFuture.cancel(true);
                                         }
+                                        /*
+                                         * } else {
+                                         * scenesGenerated[3] = '2';
+                                         * sceneManager.scenesGenerated(scenesGenerated);
+                                         * generateReachableScenesScheduledFuture.cancel(true);
+                                         * }
+                                         */
                                     }
                                 }
                             }
@@ -343,9 +340,8 @@ public class SceneDiscovery {
 
     private HashMap<Integer, List<Short>> getReachableGroups(ConnectionManager connectionManager) {
         HashMap<Integer, List<Short>> reachableGroupsMap = null;
-        // if (connectionManager.checkConnection()) {
         String response = connectionManager.getHttpTransport()
-                .execute(this.reachableGroupsQuery + connectionManager.getSessionToken());
+                .execute(this.Reachable_GROUPS_QUERY + connectionManager.getSessionToken());
         if (response == null) {
             return null;
         } else {
@@ -371,7 +367,6 @@ public class SceneDiscovery {
                 }
             }
         }
-        // }
         return reachableGroupsMap;
     }
 
@@ -394,7 +389,7 @@ public class SceneDiscovery {
                 }
                 this.sceneManager.addInternalScene(scene);
             } else {
-                logger.error("Added scene with id: " + scene.getID() + " is a not usage scene!");
+                logger.warn("Added scene with id: " + scene.getID() + " is a not usage scene!");
             }
         }
     }

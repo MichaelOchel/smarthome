@@ -130,7 +130,7 @@ public abstract class AbstractSensorJobExecutor {
      * @param sensorJob
      */
     public void addHighPriorityJob(SensorJob sensorJob) {
-        // TODO: can be Overridden to implement a priority
+        // can be Overridden to implement a priority
         addSensorJobToCircuitScheduler(sensorJob);
     }
 
@@ -140,7 +140,7 @@ public abstract class AbstractSensorJobExecutor {
      * @param sensorJob
      */
     public void addMediumPriorityJob(SensorJob sensorJob) {
-        // TODO: can be Overridden to implement a priority
+        // can be Overridden to implement a priority
         addSensorJobToCircuitScheduler(sensorJob);
     }
 
@@ -150,7 +150,7 @@ public abstract class AbstractSensorJobExecutor {
      * @param sensorJob
      */
     public void addLowPriorityJob(SensorJob sensorJob) {
-        // TODO: can be Overridden to implement a priority
+        // can be Overridden to implement a priority
         addSensorJobToCircuitScheduler(sensorJob);
     }
 
@@ -213,7 +213,7 @@ public abstract class AbstractSensorJobExecutor {
 
     /**
      * Removes the {@link SensorJob} with the given ID.
-     * 
+     *
      * @param device needed for the meterDSID
      * @param ID
      */

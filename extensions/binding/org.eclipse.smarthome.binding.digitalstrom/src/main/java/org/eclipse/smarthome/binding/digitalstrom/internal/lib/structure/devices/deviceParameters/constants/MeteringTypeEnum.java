@@ -19,10 +19,10 @@ import com.google.common.collect.Lists;
  * @author Matthias Siegele - add MeteringUnitEnum list
  */
 public enum MeteringTypeEnum {
-    energy(Lists.newArrayList(MeteringUnitsEnum.Wh, MeteringUnitsEnum.Ws)),
+    ENERGY(Lists.newArrayList(MeteringUnitsEnum.WH, MeteringUnitsEnum.WS)),
     // currently null by request getLast
     // energyDelta(Lists.newArrayList(MeteringUnitsEnum.Wh, MeteringUnitsEnum.Ws)),
-    consumption(Lists.newArrayList(MeteringUnitsEnum.Wh));
+    CONSUMPTION(Lists.newArrayList(MeteringUnitsEnum.WH));
 
     private final List<MeteringUnitsEnum> meteringUnits;
 

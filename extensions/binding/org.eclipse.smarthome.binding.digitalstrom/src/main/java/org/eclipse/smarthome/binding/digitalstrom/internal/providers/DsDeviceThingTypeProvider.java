@@ -18,7 +18,6 @@ import java.util.Locale;
 import org.eclipse.smarthome.binding.digitalstrom.DigitalSTROMBindingConstants;
 import org.eclipse.smarthome.binding.digitalstrom.handler.CircuitHandler;
 import org.eclipse.smarthome.binding.digitalstrom.handler.DeviceHandler;
-import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.GeneralDeviceInformations;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.constants.MeteringTypeEnum;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.constants.MeteringUnitsEnum;
 import org.eclipse.smarthome.core.i18n.I18nProvider;
@@ -144,12 +143,10 @@ public class DsDeviceThingTypeProvider implements ThingTypeProvider {
             if (SupportedThingTypes.circuit.equals(supportedThingType)) {
                 channelDefinitions = new ArrayList<ChannelDefinition>(3);
                 for (MeteringTypeEnum meteringType : MeteringTypeEnum.values()) {
-                    for (MeteringUnitsEnum meteringUnit : meteringType.getMeteringUnitList()) {
-                        channelDefinitions
-                                .add(new ChannelDefinition(meteringType.toString() + "_" + meteringUnit.toString(),
-                                        new ChannelTypeUID(DigitalSTROMBindingConstants.BINDING_ID,
-                                                meteringType.toString() + "_" + meteringUnit.toString())));
-                    }
+                    channelDefinitions.add(new ChannelDefinition(
+                            DsChannelTypeProvider.getMeteringChannelID(meteringType, MeteringUnitsEnum.WH, false),
+                            new ChannelTypeUID(DigitalSTROMBindingConstants.BINDING_ID, DsChannelTypeProvider
+                                    .getMeteringChannelID(meteringType, MeteringUnitsEnum.WH, false))));
                 }
             }
 

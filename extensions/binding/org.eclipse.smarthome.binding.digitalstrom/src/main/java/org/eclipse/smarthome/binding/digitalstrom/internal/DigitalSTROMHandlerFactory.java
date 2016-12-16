@@ -142,7 +142,7 @@ public class DigitalSTROMHandlerFactory extends BaseThingHandlerFactory {
 
     private ThingUID getDeviceUID(ThingTypeUID thingTypeUID, ThingUID thingUID, Configuration configuration,
             ThingUID bridgeUID) {
-        if (StringUtils.isNotBlank((String) configuration.get(DEVICE_DSID))) {
+        if (thingUID == null && StringUtils.isNotBlank((String) configuration.get(DEVICE_DSID))) {
             thingUID = new ThingUID(thingTypeUID, bridgeUID, configuration.get(DEVICE_DSID).toString());
         }
         return thingUID;
@@ -150,59 +150,82 @@ public class DigitalSTROMHandlerFactory extends BaseThingHandlerFactory {
 
     private ThingUID getZoneTemperatureControlUID(ThingTypeUID thingTypeUID, ThingUID thingUID,
             Configuration configuration, ThingUID bridgeUID) {
-        thingUID = new ThingUID(thingTypeUID, bridgeUID, configuration.get(ZONE_ID).toString());
+        if (thingUID == null) {
+            Integer zoneID = ZoneTemperatureControlHandler.getZoneID(configuration, bridgeHandlers.get(bridgeUID));
+            if (zoneID > -1) {
+                thingUID = new ThingUID(thingTypeUID, bridgeUID, zoneID.toString());
+            } else {
+                switch (zoneID) {
+                    case -1:
+                        logger.error("Configured zone '" + configuration.get(DigitalSTROMBindingConstants.ZONE_ID)
+                                + "' does not exist, please check your configuration.");
+                        break;
+                    case -2:
+                        logger.error("ZoneID is missing at your configuration.");
+                        break;
+                    case -3:
+                        logger.error("Bridge is missing, can not check the zoneID.");
+                        break;
+                }
+            }
+        }
         return thingUID;
     }
 
     private ThingUID getSceneUID(ThingTypeUID thingTypeUID, ThingUID thingUID, Configuration configuration,
             ThingUID bridgeUID) {
-        if (thingUID.getId().split("-").length == 3) {
-            return thingUID;
-        }
+        if (thingUID == null) {
+            // if (thingUID.getId().split("-").length == 3) {
+            // return thingUID;
+            // }
 
-        String sceneID = SceneHandler.getSceneID(configuration, bridgeHandlers.get(bridgeUID));
-        switch (sceneID) {
-            case SceneHandler.SCENE_WRONG:
-                logger.error("Configured scene '" + configuration.get(DigitalSTROMBindingConstants.SCENE_ID)
-                        + "' does not exist or can not be used, please check your configuration.");
-                break;
-            case SceneHandler.ZONE_WRONG:
-                logger.error("Configured zone '" + configuration.get(DigitalSTROMBindingConstants.ZONE_ID)
-                        + "' does not exist, please check your configuration.");
-                break;
-            case SceneHandler.GROUP_WRONG:
-                logger.error("Configured group '" + configuration.get(DigitalSTROMBindingConstants.GROUP_ID)
-                        + "' does not exist, please check your configuration.");
-                break;
-            case SceneHandler.NO_STRUC_MAN:
-                logger.error("Waiting for building digitalSTROM model.");
-                break;
-            case SceneHandler.NO_SCENE:
-                logger.error("No Scene-ID is set!");
-                break;
-            case SceneHandler.NO_BRIDGE:
-                logger.error("No related bridge found!");
-            default:
-                return new ThingUID(thingTypeUID, bridgeUID, sceneID);
+            String sceneID = SceneHandler.getSceneID(configuration, bridgeHandlers.get(bridgeUID));
+            switch (sceneID) {
+                case SceneHandler.SCENE_WRONG:
+                    logger.error("Configured scene '" + configuration.get(DigitalSTROMBindingConstants.SCENE_ID)
+                            + "' does not exist or can not be used, please check your configuration.");
+                    break;
+                case SceneHandler.ZONE_WRONG:
+                    logger.error("Configured zone '" + configuration.get(DigitalSTROMBindingConstants.ZONE_ID)
+                            + "' does not exist, please check your configuration.");
+                    break;
+                case SceneHandler.GROUP_WRONG:
+                    logger.error("Configured group '" + configuration.get(DigitalSTROMBindingConstants.GROUP_ID)
+                            + "' does not exist, please check your configuration.");
+                    break;
+                case SceneHandler.NO_STRUC_MAN:
+                    logger.error("Waiting for building digitalSTROM model.");
+                    break;
+                case SceneHandler.NO_SCENE:
+                    logger.error("No Scene-ID is set!");
+                    break;
+                case SceneHandler.NO_BRIDGE:
+                    logger.error("No related bridge found!");
+                default:
+                    return new ThingUID(thingTypeUID, bridgeUID, sceneID);
+            }
         }
-        return null;
+        return thingUID;
     }
 
     private ThingUID getBridgeThingUID(ThingTypeUID thingTypeUID, ThingUID thingUID, Configuration configuration) {
-        String dSID;
-        if (StringUtils.isBlank((String) configuration.get(DS_ID))) {
-            dSID = getDSSid(configuration);
-            if (dSID != null) {
-                configuration.put(DS_ID, dSID);
+        if (thingUID == null) {
+            String dSID;
+            if (StringUtils.isBlank((String) configuration.get(DS_ID))) {
+                dSID = getDSSid(configuration);
+                if (dSID != null) {
+                    configuration.put(DS_ID, dSID);
+                }
+            } else {
+                dSID = configuration.get(DS_ID).toString();
             }
-        } else {
-            dSID = configuration.get(DS_ID).toString();
+            if (dSID != null) {
+                return new ThingUID(thingTypeUID, dSID);
+            } else {
+                return null;
+            }
         }
-        if (dSID != null) {
-            return new ThingUID(thingTypeUID, dSID);
-        } else {
-            return null;
-        }
+        return thingUID;
     }
 
     private String getDSSid(Configuration configuration) {
@@ -222,9 +245,6 @@ public class DigitalSTROMHandlerFactory extends BaseThingHandlerFactory {
                 pw = configuration.get(PASSWORD).toString();
             }
             ConnectionManager connMan = new ConnectionManagerImpl(host, user, pw, applicationToken, false, true);
-            // Only to get sessionToken for server versions which returns the dSID of the server only, if a user is
-            // logged in
-            // connMan.checkConnection();
             dsID = connMan.getDigitalSTROMAPI().getDSID(connMan.getSessionToken());
         }
         return dsID;
