@@ -13,7 +13,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
-import org.eclipse.smarthome.binding.digitalstrom.internal.lib.event.EventHandler;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.event.EventListener;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.event.constants.EventNames;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.event.constants.EventResponseEnum;
@@ -42,7 +41,7 @@ import com.google.common.collect.Lists;
  * @author Matthias Siegele - Initial contribution
  *
  */
-public class SceneManagerImpl implements SceneManager, EventHandler {
+public class SceneManagerImpl implements SceneManager {
 
     /**
      * Contains all supported event-types.

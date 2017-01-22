@@ -11,13 +11,17 @@ import java.util.HashMap;
 import java.util.Hashtable;
 import java.util.Map;
 
+import org.eclipse.smarthome.binding.digitalstrom.DigitalSTROMBindingConstants;
 import org.eclipse.smarthome.binding.digitalstrom.handler.BridgeHandler;
 import org.eclipse.smarthome.binding.digitalstrom.handler.CircuitHandler;
 import org.eclipse.smarthome.binding.digitalstrom.handler.DeviceHandler;
 import org.eclipse.smarthome.binding.digitalstrom.handler.SceneHandler;
 import org.eclipse.smarthome.binding.digitalstrom.handler.ZoneTemperatureControlHandler;
+import org.eclipse.smarthome.binding.digitalstrom.internal.lib.climate.TemperatureControlSensorTransmitter;
+import org.eclipse.smarthome.binding.digitalstrom.internal.lib.climate.jsonResponseContainer.impl.TemperatureControlStatus;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.listener.DeviceStatusListener;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.listener.SceneStatusListener;
+import org.eclipse.smarthome.binding.digitalstrom.internal.lib.listener.TemperatureControlStatusListener;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.AbstractGeneralDeviceInformations;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.Circuit;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.Device;
@@ -38,7 +42,8 @@ import org.osgi.framework.ServiceRegistration;
  * @author Michael Ochel - Initial contribution
  * @author Matthias Siegele - Initial contribution
  */
-public class DiscoveryServiceManager implements SceneStatusListener, DeviceStatusListener {
+public class DiscoveryServiceManager
+        implements SceneStatusListener, DeviceStatusListener, TemperatureControlStatusListener {
 
     private HashMap<String, AbstractDiscoveryService> discoveryServices = null;
     private Map<String, ServiceRegistration<?>> discoveryServiceRegs = new HashMap<>();
@@ -53,8 +58,9 @@ public class DiscoveryServiceManager implements SceneStatusListener, DeviceStatu
      */
     public DiscoveryServiceManager(BridgeHandler bridgeHandler) {
         bridgeUID = bridgeHandler.getThing().getUID().getAsString();
-        discoveryServices = new HashMap<String, AbstractDiscoveryService>(
-                SceneHandler.SUPPORTED_THING_TYPES.size() + DeviceHandler.SUPPORTED_THING_TYPES.size());
+        discoveryServices = new HashMap<String, AbstractDiscoveryService>(SceneHandler.SUPPORTED_THING_TYPES.size()
+                + DeviceHandler.SUPPORTED_THING_TYPES.size() + CircuitHandler.SUPPORTED_THING_TYPES.size()
+                + ZoneTemperatureControlHandler.SUPPORTED_THING_TYPES.size());
         for (ThingTypeUID type : SceneHandler.SUPPORTED_THING_TYPES) {
             discoveryServices.put(type.getId(), new SceneDiscoveryService(bridgeHandler, type));
         }
@@ -69,6 +75,7 @@ public class DiscoveryServiceManager implements SceneStatusListener, DeviceStatu
         }
         bridgeHandler.registerSceneStatusListener(this);
         bridgeHandler.registerDeviceStatusListener(this);
+        bridgeHandler.registerTemperatureControlStatusListener(this);
     }
 
     /**
@@ -218,5 +225,43 @@ public class DiscoveryServiceManager implements SceneStatusListener, DeviceStatu
     @Override
     public String getDeviceStatusListenerID() {
         return DeviceStatusListener.DEVICE_DISCOVERY;
+    }
+
+    @Override
+    public void configChanged(TemperatureControlStatus tempControlStatus) {
+        // currently only this thing-type exists
+        if (discoveryServices.get(DigitalSTROMBindingConstants.THING_TYPE_ZONE_TEMERATURE_CONTROL) != null) {
+            ((ZoneTemperatureControlDiscoveryService) discoveryServices
+                    .get(DigitalSTROMBindingConstants.THING_TYPE_ZONE_TEMERATURE_CONTROL))
+                            .configChanged(tempControlStatus);
+        }
+    }
+
+    @Override
+    public void onTemperatureControlIsNotConfigured() {
+        // nothing to do
+    }
+
+    @Override
+    public void registerTemperatureSensorTransmitter(
+            TemperatureControlSensorTransmitter temperatureSensorTransreciver) {
+        // nothing to do
+    }
+
+    @Override
+    public Integer getTemperationControlStatusListenrID() {
+        return TemperatureControlStatusListener.DISCOVERY;
+    }
+
+    @Override
+    public void onTargetTemperatureChanged(Float newValue) {
+        // nothing to do
+
+    }
+
+    @Override
+    public void onControlValueChanged(Integer newValue) {
+        // nothing to do
+
     }
 }

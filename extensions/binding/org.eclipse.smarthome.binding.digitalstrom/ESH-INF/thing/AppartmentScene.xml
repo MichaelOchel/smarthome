@@ -15,7 +15,6 @@
         </channels>
 
         <config-description>
-            <!--sceneName -->
             <!--scene id -->
             <parameter name="sceneID" type="text" readOnly="true">
                 <label>@text/param_scene_id_label</label>

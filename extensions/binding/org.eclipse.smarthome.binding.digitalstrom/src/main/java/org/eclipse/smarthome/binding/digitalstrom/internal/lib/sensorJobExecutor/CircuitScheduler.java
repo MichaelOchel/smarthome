@@ -13,7 +13,6 @@ import java.util.PriorityQueue;
 
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.config.Config;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.sensorJobExecutor.sensorJob.SensorJob;
-import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.Device;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.impl.DSID;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -100,7 +99,7 @@ public class CircuitScheduler {
 
     private boolean checkSensorJobPrio(SensorJob sensorJob) {
         synchronized (sensorJobQueue) {
-            for (Iterator<SensorJob> iter = sensorJobQueue.iterator(); iter.hasNext();) {
+            for (Iterator< SensorJob>iter = sensorJobQueue.iterator(); iter.hasNext();) {
                 SensorJob existSensorJob = iter.next();
                 if (existSensorJob.equals(sensorJob)) {
                     if (existSensorJob != null
@@ -158,7 +157,7 @@ public class CircuitScheduler {
      */
     public void removeSensorJob(DSID dSID) {
         synchronized (sensorJobQueue) {
-            for (Iterator<SensorJob> iter = sensorJobQueue.iterator(); iter.hasNext();) {
+            for (Iterator< SensorJob>iter = sensorJobQueue.iterator(); iter.hasNext();) {
                 SensorJob job = iter.next();
                 if (job.getDSID().equals(dSID)) {
                     iter.remove();
@@ -171,19 +170,19 @@ public class CircuitScheduler {
     /**
      * Removes the {@link SensorJob} with the given ID .
      *
-     * @param ID of the {@link SensorJob}
+     * @param id of the {@link SensorJob}
      */
-    public void removeSensorJob(String ID) {
+    public void removeSensorJob(String id) {
         synchronized (sensorJobQueue) {
-            for (Iterator<SensorJob> iter = sensorJobQueue.iterator(); iter.hasNext();) {
+            for (Iterator< SensorJob>iter = sensorJobQueue.iterator(); iter.hasNext();) {
                 SensorJob job = iter.next();
-                if (job.getID().equals(ID)) {
+                if (job.getID().equals(id)) {
                     iter.remove();
-                    logger.debug("Remove SensorJob with ID {}." + ID);
+                    logger.debug("Remove SensorJob with ID {}." + id);
                     return;
                 }
             }
-            logger.debug("No SensorJob with ID {} found, cannot remove a not existing SensorJob." + ID);
+            logger.debug("No SensorJob with ID {} found, cannot remove a not existing SensorJob." + id);
         }
     }
 

@@ -17,7 +17,6 @@ import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.config.Config;
-import org.eclipse.smarthome.binding.digitalstrom.internal.lib.event.EventHandler;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.event.EventListener;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.event.constants.EventNames;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.event.constants.EventResponseEnum;
@@ -50,6 +49,7 @@ import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.constants.DeviceBinarayInputEnum;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.constants.MeteringTypeEnum;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.constants.MeteringUnitsEnum;
+import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.constants.OutputModeEnum;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.constants.SensorEnum;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.impl.DSID;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.impl.DeviceStateUpdateImpl;
@@ -71,7 +71,7 @@ import com.google.gson.JsonObject;
  * @author Michael Ochel - Initial contribution
  * @author Matthias Siegele - Initial contribution
  */
-public class DeviceStatusManagerImpl implements DeviceStatusManager, EventHandler {
+public class DeviceStatusManagerImpl implements DeviceStatusManager {
 
     private Logger logger = LoggerFactory.getLogger(DeviceStatusManagerImpl.class);
 
@@ -629,6 +629,16 @@ public class DeviceStatusManagerImpl implements DeviceStatusManager, EventHandle
             internalDevice.setName(newDevice.getName());
         }
         if (newDevice.getOutputMode() != null && !newDevice.getOutputMode().equals(internalDevice.getOutputMode())) {
+            if (deviceDiscovery != null) {
+                if (OutputModeEnum.DISABLED.equals(internalDevice.getOutputMode())
+                        || OutputModeEnum.outputModeIsTemperationControlled(internalDevice.getOutputMode())) {
+                    deviceDiscovery.onDeviceAdded(newDevice);
+                }
+                if (OutputModeEnum.DISABLED.equals(newDevice.getOutputMode())
+                        || OutputModeEnum.outputModeIsTemperationControlled(newDevice.getOutputMode())) {
+                    deviceDiscovery.onDeviceRemoved(newDevice);
+                }
+            }
             internalDevice.setOutputMode(newDevice.getOutputMode());
         }
         if (!newDevice.getBinaryInputs().equals(internalDevice.getBinaryInputs())) {

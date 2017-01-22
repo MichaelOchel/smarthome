@@ -13,10 +13,6 @@
             <label>@text/dss_param_group_general_label</label>
             <description>@text/dss_param_group_general_desc</description>
         </parameter-group>
-        <parameter-group name="info">
-            <label>@text/dss_param_group_info_label</label>
-            <description>@text/dss_param_group_info_desc</description>
-        </parameter-group>
         <!--Application token -->
         <parameter name="applicationToken" type="text" groupName="connection">
             <label>@text/dss_param_app_token_label</label>
@@ -39,11 +35,6 @@
             <description>@text/dss_param_password_desc</description>
             <required>false</required>
             <context>password</context>
-        </parameter><!--dSID -->
-        <parameter name="dSID" type="text" groupName="info" readOnly="true">
-            <label>@text/dss_param_dsid_label</label>
-            <description>@text/dss_param_dsid_desc</description>
-            <required>false</required>
         </parameter>
         <!--sensorDataUpdateInterval -->
         <parameter name="sensorDataUpdateInterval" type="integer" groupName="general" min="60">

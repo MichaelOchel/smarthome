@@ -206,7 +206,7 @@ public class TemperatureControlManager implements EventHandler, TemperatureContr
     public void registerTemperatureControlStatusListener(
             TemperatureControlStatusListener temperatureControlStatusListener) {
         if (temperatureControlStatusListener != null) {
-            if (temperatureControlStatusListener.getID().equals(TemperatureControlStatusListener.DISCOVERY)) {
+            if (temperatureControlStatusListener.getTemperationControlStatusListenrID().equals(TemperatureControlStatusListener.DISCOVERY)) {
                 logger.debug("discovery is registered");
                 this.discovery = temperatureControlStatusListener;
                 if (temperationControlStatus != null) {
@@ -219,14 +219,15 @@ public class TemperatureControlManager implements EventHandler, TemperatureContr
                     zoneTemperationControlListenerMap = new HashMap<Integer, TemperatureControlStatusListener>();
                 }
                 TemperatureControlStatus tempConStat = checkAndGetTemperatureControlStatus(
-                        temperatureControlStatusListener.getID());
+                        temperatureControlStatusListener.getTemperationControlStatusListenrID());
                 if (tempConStat != null) {
-                    logger.debug("register listener with id " + temperatureControlStatusListener.getID());
-                    zoneTemperationControlListenerMap.put(temperatureControlStatusListener.getID(),
+                    logger.debug("register listener with id " + temperatureControlStatusListener.getTemperationControlStatusListenrID());
+                    zoneTemperationControlListenerMap.put(temperatureControlStatusListener.getTemperationControlStatusListenrID(),
                             temperatureControlStatusListener);
-                    temperatureControlStatusListener.registerTemperatureSensorTransreciver(this);
+                    temperatureControlStatusListener.registerTemperatureSensorTransmitter(this);
                     temperatureControlStatusListener.configChanged(tempConStat);
                 } else {
+                    // TODO: onTemperatureControlIsNotConfigured() zu configChanged(null) bzw. Abfrage ob isConfig...
                     temperatureControlStatusListener.onTemperatureControlIsNotConfigured();
                 }
             }
@@ -241,15 +242,15 @@ public class TemperatureControlManager implements EventHandler, TemperatureContr
     public void unregisterTemperatureControlStatusListener(
             TemperatureControlStatusListener temperatureControlStatusListener) {
         if (temperatureControlStatusListener != null) {
-            if (temperatureControlStatusListener.getID().equals(TemperatureControlStatusListener.DISCOVERY)) {
+            if (temperatureControlStatusListener.getTemperationControlStatusListenrID().equals(TemperatureControlStatusListener.DISCOVERY)) {
                 this.discovery = null;
                 return;
             }
             if (temperatureControlStatusListener != null) {
                 temperatureControlStatusListener = zoneTemperationControlListenerMap
-                        .remove(temperatureControlStatusListener.getID());
+                        .remove(temperatureControlStatusListener.getTemperationControlStatusListenrID());
                 if (discovery != null && temperatureControlStatusListener != null) {
-                    discovery.configChanged(temperationControlStatus.get(temperatureControlStatusListener.getID()));
+                    discovery.configChanged(temperationControlStatus.get(temperatureControlStatusListener.getTemperationControlStatusListenrID()));
                 }
             }
         }
@@ -284,24 +285,24 @@ public class TemperatureControlManager implements EventHandler, TemperatureContr
         try {
             if (eventItem.getName().equals(EventNames.ZONE_SENSOR_VALUE)) {
                 if (zoneTemperationControlListenerMap != null) {
-                    if (SensorEnum.ROOM_TEMPERATION_SET_POINT.getSensorType().toString()
+                    if (SensorEnum.ROOM_TEMPERATURE_SET_POINT.getSensorType().toString()
                             .equals(eventItem.getProperties().get(EventResponseEnum.SENSOR_TYPE))) {
                         Integer zoneID = Integer.parseInt(eventItem.getSource().get(EventResponseEnum.ZONEID));
                         if (zoneTemperationControlListenerMap.get(zoneID) != null) {
                             Float newValue = Float
                                     .parseFloat(eventItem.getProperties().get(EventResponseEnum.SENSOR_VALUE_FLOAT));
-                            if (!isEcho(zoneID, SensorEnum.ROOM_TEMPERATION_CONTROL_VARIABLE, newValue)) {
+                            if (!isEcho(zoneID, SensorEnum.ROOM_TEMPERATURE_CONTROL_VARIABLE, newValue)) {
                                 zoneTemperationControlListenerMap.get(zoneID).onTargetTemperatureChanged(newValue);
                             }
                         }
                     }
-                    if (SensorEnum.ROOM_TEMPERATION_CONTROL_VARIABLE.getSensorType().toString()
+                    if (SensorEnum.ROOM_TEMPERATURE_CONTROL_VARIABLE.getSensorType().toString()
                             .equals(eventItem.getProperties().get(EventResponseEnum.SENSOR_TYPE))) {
                         Integer zoneID = Integer.parseInt(eventItem.getSource().get(EventResponseEnum.ZONEID));
                         if (zoneTemperationControlListenerMap.get(zoneID) != null) {
                             Float newValue = Float
                                     .parseFloat(eventItem.getProperties().get(EventResponseEnum.SENSOR_VALUE_FLOAT));
-                            if (!isEcho(zoneID, SensorEnum.ROOM_TEMPERATION_CONTROL_VARIABLE, newValue)) {
+                            if (!isEcho(zoneID, SensorEnum.ROOM_TEMPERATURE_CONTROL_VARIABLE, newValue)) {
                                 zoneTemperationControlListenerMap.get(zoneID)
                                         .onControlValueChanged(newValue.intValue());
                             }
@@ -386,8 +387,8 @@ public class TemperatureControlManager implements EventHandler, TemperatureContr
     public boolean pushTargetTemperature(Integer zoneID, Float newValue) {
         if (checkAndGetTemperatureControlStatus(zoneID) != null) {
             if (dSapi.pushZoneSensorValue(connectionMananager.getSessionToken(), zoneID, null, (short) 0, null,
-                    newValue, SensorEnum.ROOM_TEMPERATION_SET_POINT)) {
-                addEcho(zoneID, SensorEnum.ROOM_TEMPERATION_SET_POINT, newValue);
+                    newValue, SensorEnum.ROOM_TEMPERATURE_SET_POINT)) {
+                addEcho(zoneID, SensorEnum.ROOM_TEMPERATURE_SET_POINT, newValue);
                 return true;
             }
         }
@@ -399,8 +400,8 @@ public class TemperatureControlManager implements EventHandler, TemperatureContr
         if (checkAndGetTemperatureControlStatus(zoneID) != null) {
             if (dSapi.pushZoneSensorValue(connectionMananager.getSessionToken(), zoneID, null,
                     FuncNameAndColorGroupEnum.TEMPERATION_CONTROL.getFunctionalColorGroup(), null, newValue,
-                    SensorEnum.ROOM_TEMPERATION_CONTROL_VARIABLE)) {
-                addEcho(zoneID, SensorEnum.ROOM_TEMPERATION_CONTROL_VARIABLE, newValue);
+                    SensorEnum.ROOM_TEMPERATURE_CONTROL_VARIABLE)) {
+                addEcho(zoneID, SensorEnum.ROOM_TEMPERATURE_CONTROL_VARIABLE, newValue);
                 return true;
             }
         }

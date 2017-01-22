@@ -79,34 +79,6 @@ public class ZoneTemperatureControlHandler extends BaseThingHandler implements T
     private Float currentValue = 0f;
     private Float step = 1f;
 
-    // TODO: Overridden methods updateThing(..) and updateConfiguration(..) can be delete, if it is able to dynamically
-    // change the thing-configurations and the thing-structure by textual configurations
-    @Override
-    public void updateThing(Thing thing) {
-        try {
-            super.updateThing(thing);
-        } catch (IllegalStateException e) {
-            if (e.getMessage().contains("Most likely because it is read-only.")) {
-                logger.debug("Can not update thing, because it is read-only (textual configurd).");
-            } else {
-                logger.error(e.getMessage(), e);
-            }
-        }
-    }
-
-    @Override
-    protected void updateConfiguration(Configuration configuration) {
-        try {
-            super.updateConfiguration(configuration);
-        } catch (IllegalStateException e) {
-            if (e.getMessage().contains("Most likely because it is read-only.")) {
-                logger.debug("Can not update thing, because it is read-only (textual configurd).");
-            } else {
-                logger.error(e.getMessage(), e);
-            }
-        }
-    }
-
     /**
      * Creates a new {@link ZoneTemperatureControlHandler}.
      *
@@ -144,7 +116,7 @@ public class ZoneTemperatureControlHandler extends BaseThingHandler implements T
         StructureManager strucMan = bridge.getStructureManager();
         if (strucMan != null) {
             try {
-                zoneID = Integer.parseInt(SceneHandler.fixNumber(configZoneID));
+                zoneID = Integer.parseInt(configZoneID);// SceneHandler.fixNumber(configZoneID));
                 if (!strucMan.checkZoneID(zoneID)) {
                     zoneID = -1;
                 }
@@ -305,7 +277,8 @@ public class ZoneTemperatureControlHandler extends BaseThingHandler implements T
                             "The communication with temperation sensor fails. Temperature control state emergency (temperature control though the control value) is active.");
                 }
             }
-
+            // TODO: in case control-mode zone-follower it is maybe useful to add the followed zone-id, but this info is
+            // not in the control-status
             Map<String, String> properties = editProperties();
             properties.put("controlDSUID", tempControlStatus.getControlDSUID());
             properties.put("controlMode", controlMode.getKey());
@@ -351,14 +324,14 @@ public class ZoneTemperatureControlHandler extends BaseThingHandler implements T
     }
 
     @Override
-    public void registerTemperatureSensorTransreciver(
+    public void registerTemperatureSensorTransmitter(
             TemperatureControlSensorTransmitter temperatureSensorTransreciver) {
         updateStatus(ThingStatus.ONLINE);
         this.temperatureSensorTransmitter = temperatureSensorTransreciver;
     }
 
     @Override
-    public Integer getID() {
+    public Integer getTemperationControlStatusListenrID() {
         return zoneID;
     }
 

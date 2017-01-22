@@ -83,6 +83,7 @@ public class SceneDiscoveryService extends AbstractDiscoveryService {
     }
 
     private void onSceneAddedInternal(InternalScene scene) {
+        logger.debug(scene.getSceneType());
         if (scene != null && scene.getSceneType().equals(sceneType)) {
             if (!ignoredScene(scene.getSceneID()) && !ignoreGroup(scene.getGroupID())) {
                 ThingUID thingUID = getThingUID(scene);
@@ -110,13 +111,16 @@ public class SceneDiscoveryService extends AbstractDiscoveryService {
         }
     }
 
-    private boolean ignoreGroup(short groupID) {
-        switch (FuncNameAndColorGroupEnum.getMode(groupID)) {
-            case TEMPERATION_CONTROL:
-                return true;
-            default:
-                return false;
+    private boolean ignoreGroup(Short groupID) {
+        if (FuncNameAndColorGroupEnum.getMode(groupID) != null) {
+            switch (FuncNameAndColorGroupEnum.getMode(groupID)) {
+                case TEMPERATION_CONTROL:
+                    return true;
+                default:
+                    return false;
+            }
         }
+        return false;
     }
 
     private boolean ignoredScene(short sceneID) {

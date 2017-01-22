@@ -55,14 +55,14 @@ public interface TemperatureControlStatusListener {
     /**
      * Registers a {@link TemperatureControlSensorTransmitter}.
      *
-     * @param temperatureSensorTransreciver
+     * @param temperatureSensorTransmitter
      */
-    public void registerTemperatureSensorTransreciver(TemperatureControlSensorTransmitter temperatureSensorTransreciver);
+    public void registerTemperatureSensorTransmitter(TemperatureControlSensorTransmitter temperatureSensorTransmitter);
 
     /**
      * Returns the id of this {@link TemperatureControlStatusListener}.
      *
      * @return id
      */
-    public Integer getID();
+    public Integer getTemperationControlStatusListenrID();
 }

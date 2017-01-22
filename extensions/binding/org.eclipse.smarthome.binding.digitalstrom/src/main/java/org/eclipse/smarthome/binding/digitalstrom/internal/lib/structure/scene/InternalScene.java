@@ -68,6 +68,10 @@ public class InternalScene {
         } else {
             this.sceneName = sceneName;
         }
+        setSceneType();
+    }
+
+    private void setSceneType() {
         if ((sceneName != null) && !sceneName.contains("Apartment-Scene: ") && !sceneName.contains("Zone-Scene: Zone:")
                 && !(sceneName.contains("Zone: ") && sceneName.contains("Group: ") && sceneName.contains("Scene: "))) {
             sceneType = SceneTypes.NAMED_SCENE;
@@ -272,6 +276,7 @@ public class InternalScene {
      */
     public void setSceneName(String sceneName) {
         this.sceneName = sceneName;
+        setSceneType();
     }
 
     /**
@@ -327,7 +332,6 @@ public class InternalScene {
      */
     public synchronized void unregisterSceneListener() {
         if (listener != null) {
-            // this.listener.onSceneRemoved(this);
             this.listener = null;
         }
     }

@@ -15,6 +15,7 @@ import org.apache.commons.lang.StringUtils;
 import org.eclipse.smarthome.binding.digitalstrom.DigitalSTROMBindingConstants;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.config.Config;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.serverConnection.DsAPI;
+import org.eclipse.smarthome.binding.digitalstrom.internal.lib.serverConnection.constants.JSONApiResponseKeysEnum;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.serverConnection.impl.DsAPIImpl;
 import org.eclipse.smarthome.config.discovery.AbstractDiscoveryService;
 import org.eclipse.smarthome.config.discovery.DiscoveryResult;
@@ -51,7 +52,6 @@ public class BridgeDiscoveryService extends AbstractDiscoveryService {
             if (uid != null) {
                 Map<String, Object> properties = new HashMap<>(2);
                 properties.put(DigitalSTROMBindingConstants.HOST, HOST_ADDRESS);
-                properties.put(DigitalSTROMBindingConstants.DS_ID, uid.getId());
                 DiscoveryResult result = DiscoveryResultBuilder.create(uid).withProperties(properties)
                         .withLabel("digitalSTROM-Server").build();
                 thingDiscovered(result);
@@ -61,11 +61,15 @@ public class BridgeDiscoveryService extends AbstractDiscoveryService {
         private ThingUID getThingUID() {
             DsAPI digitalSTROMClient = new DsAPIImpl(HOST_ADDRESS, Config.DEFAULT_CONNECTION_TIMEOUT,
                     Config.DEFAULT_READ_TIMEOUT, true);
+            String dSID = null;
             switch (digitalSTROMClient.checkConnection("123")) {
                 case HttpURLConnection.HTTP_OK:
                 case HttpURLConnection.HTTP_UNAUTHORIZED:
                 case HttpURLConnection.HTTP_FORBIDDEN:
-                    String dSID = digitalSTROMClient.getDSID("123");
+                    Map<String, String> dsidMap = digitalSTROMClient.getDSID(null);
+                    if (dsidMap != null) {
+                        dSID = dsidMap.get(JSONApiResponseKeysEnum.DSID.getKey());
+                    }
                     if (StringUtils.isNotBlank(dSID)) {
                         return new ThingUID(DigitalSTROMBindingConstants.THING_TYPE_DSS_BRIDGE, dSID);
                     } else {

@@ -20,14 +20,11 @@ import org.eclipse.smarthome.binding.digitalstrom.handler.CircuitHandler;
 import org.eclipse.smarthome.binding.digitalstrom.handler.DeviceHandler;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.constants.MeteringTypeEnum;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.constants.MeteringUnitsEnum;
-import org.eclipse.smarthome.core.i18n.I18nProvider;
 import org.eclipse.smarthome.core.thing.ThingTypeUID;
 import org.eclipse.smarthome.core.thing.binding.ThingTypeProvider;
 import org.eclipse.smarthome.core.thing.type.ChannelDefinition;
 import org.eclipse.smarthome.core.thing.type.ChannelTypeUID;
 import org.eclipse.smarthome.core.thing.type.ThingType;
-import org.osgi.framework.Bundle;
-import org.osgi.service.component.ComponentContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -42,7 +39,7 @@ import com.google.common.collect.Lists;
  * @author Michael Ochel - initial contributer
  * @author Matthias Siegele - initial contributer
  */
-public class DsDeviceThingTypeProvider implements ThingTypeProvider {
+public class DsDeviceThingTypeProvider extends BaseDsI18n implements ThingTypeProvider {
 
     /**
      * Through the {@link SupportedThingTypes} the {@link ThingType}'s will be created. For that the enum name will be
@@ -70,31 +67,13 @@ public class DsDeviceThingTypeProvider implements ThingTypeProvider {
         }
     }
 
-    private I18nProvider i18n = null;
-    private Bundle bundle = null;
     private Logger logger = LoggerFactory.getLogger(DsDeviceThingTypeProvider.class);
 
     private final String DEVICE_WITH_POWER_SENSORS = "binding:digitalstrom:deviceWithPowerSensors";
     private final String DEVICE_WITHOUT_POWER_SENSORS = "binding:digitalstrom:deviceWithoutPowerSensors";
 
-    protected void activate(ComponentContext componentContext) {
-        this.bundle = componentContext.getBundleContext().getBundle();
-        init();
-    }
-
-    protected void deactivate(ComponentContext componentContext) {
-        this.bundle = null;
-    }
-
-    protected void setI18nProvider(I18nProvider i18n) {
-        this.i18n = i18n;
-    };
-
-    protected void unsetI18nProvider(I18nProvider i18n) {
-        this.i18n = null;
-    };
-
-    private void init() {
+    @Override
+    protected void init() {
         for (SupportedThingTypes supportedThingType : SupportedThingTypes.values()) {
             if (supportedThingType.handler.equals(DeviceHandler.class.getSimpleName())) {
                 DeviceHandler.SUPPORTED_THING_TYPES
@@ -105,10 +84,6 @@ public class DsDeviceThingTypeProvider implements ThingTypeProvider {
                         .add(new ThingTypeUID(DigitalSTROMBindingConstants.BINDING_ID, supportedThingType.toString()));
             }
         }
-    }
-
-    private String getText(String key, Locale locale) {
-        return i18n != null ? i18n.getText(bundle, key, i18n.getText(bundle, key, key, Locale.ENGLISH), locale) : key;
     }
 
     @Override
@@ -152,7 +127,7 @@ public class DsDeviceThingTypeProvider implements ThingTypeProvider {
 
             return new ThingType(thingTypeUID,
                     Lists.newArrayList(DigitalSTROMBindingConstants.THING_TYPE_ID_DSS_BRIDGE),
-                    getText(thingTypeUID.getId() + "_label", locale), getText(thingTypeUID.getId() + "_desc", locale),
+                    getLabelText(thingTypeUID.getId(), locale), getDescText(thingTypeUID.getId(), locale),
                     channelDefinitions, null, null, configDesc);
         } catch (IllegalArgumentException e) {
             // ignore

@@ -481,11 +481,9 @@ public class DeviceImpl extends AbstractGeneralDeviceInformations implements Dev
             return;
         }
         if (position < minSlatPosition) {
-            this.deviceStateUpdates
-                    .add(new DeviceStateUpdateImpl(DeviceStateUpdate.SLATPOSITION, minSlatPosition));
+            this.deviceStateUpdates.add(new DeviceStateUpdateImpl(DeviceStateUpdate.SLATPOSITION, minSlatPosition));
         } else if (position > this.maxSlatPosition) {
-            this.deviceStateUpdates
-                    .add(new DeviceStateUpdateImpl(DeviceStateUpdate.SLATPOSITION, maxSlatPosition));
+            this.deviceStateUpdates.add(new DeviceStateUpdateImpl(DeviceStateUpdate.SLATPOSITION, maxSlatPosition));
         } else {
             this.deviceStateUpdates.add(new DeviceStateUpdateImpl(DeviceStateUpdate.SLATPOSITION, position));
         }
@@ -569,6 +567,7 @@ public class DeviceImpl extends AbstractGeneralDeviceInformations implements Dev
                 logger.debug("internalUndo Scene dSID " + dsid.getValue());
                 this.activeScene = null;
             }
+            internalUndoScene();
             lastCallWasUndo = true;
         }
     }
@@ -671,8 +670,7 @@ public class DeviceImpl extends AbstractGeneralDeviceInformations implements Dev
                     if (!isShade()) {
                         this.updateInternalDeviceState(new DeviceStateUpdateImpl(DeviceStateUpdate.ON_OFF, 1));
                     } else {
-                        this.updateInternalDeviceState(
-                                new DeviceStateUpdateImpl(DeviceStateUpdate.OPEN_CLOSE, 1));
+                        this.updateInternalDeviceState(new DeviceStateUpdateImpl(DeviceStateUpdate.OPEN_CLOSE, 1));
                         if (isBlind()) {
                             this.updateInternalDeviceState(
                                     new DeviceStateUpdateImpl(DeviceStateUpdate.OPEN_CLOSE_ANGLE, 1));
@@ -686,8 +684,7 @@ public class DeviceImpl extends AbstractGeneralDeviceInformations implements Dev
                     if (!isShade()) {
                         this.updateInternalDeviceState(new DeviceStateUpdateImpl(DeviceStateUpdate.ON_OFF, -1));
                     } else {
-                        this.updateInternalDeviceState(
-                                new DeviceStateUpdateImpl(DeviceStateUpdate.OPEN_CLOSE, -1));
+                        this.updateInternalDeviceState(new DeviceStateUpdateImpl(DeviceStateUpdate.OPEN_CLOSE, -1));
                         if (isBlind()) {
                             this.updateInternalDeviceState(
                                     new DeviceStateUpdateImpl(DeviceStateUpdate.OPEN_CLOSE_ANGLE, -1));
@@ -704,15 +701,13 @@ public class DeviceImpl extends AbstractGeneralDeviceInformations implements Dev
                         if (outputValue == maxOutputValue) {
                             return true;
                         }
-                        this.updateInternalDeviceState(
-                                new DeviceStateUpdateImpl(DeviceStateUpdate.OUTPUT_INCREASE, 0));
+                        this.updateInternalDeviceState(new DeviceStateUpdateImpl(DeviceStateUpdate.OUTPUT_INCREASE, 0));
                     }
                     if (isShade()) {
                         if (slatPosition == maxSlatPosition) {
                             return true;
                         }
-                        this.updateInternalDeviceState(
-                                new DeviceStateUpdateImpl(DeviceStateUpdate.SLAT_INCREASE, 0));
+                        this.updateInternalDeviceState(new DeviceStateUpdateImpl(DeviceStateUpdate.SLAT_INCREASE, 0));
                         if (isBlind()) {
                             if (slatAngle == maxSlatAngle) {
                                 return true;
@@ -732,8 +727,7 @@ public class DeviceImpl extends AbstractGeneralDeviceInformations implements Dev
                         if (outputValue == minOutputValue) {
                             return true;
                         }
-                        updateInternalDeviceState(
-                                new DeviceStateUpdateImpl(DeviceStateUpdate.OUTPUT_DECREASE, 0));
+                        updateInternalDeviceState(new DeviceStateUpdateImpl(DeviceStateUpdate.OUTPUT_DECREASE, 0));
                     }
                     if (isShade()) {
                         if (slatPosition == minSlatPosition) {
@@ -853,14 +847,10 @@ public class DeviceImpl extends AbstractGeneralDeviceInformations implements Dev
 
     @Override
     public void setSceneOutputValue(short sceneId, int value) {
-        // synchronized (sceneOutputMap) {
-        // sceneOutputMap.put(sceneId, new Integer[] { value, -1 });
         internalSetSceneOutputValue(sceneId, value, -1);
         if (listener != null) {
             listener.onSceneConfigAdded(sceneId);
         }
-        // internalSetSceneOutputValue(sceneId);
-        // }
     }
 
     @Override
@@ -1115,11 +1105,9 @@ public class DeviceImpl extends AbstractGeneralDeviceInformations implements Dev
             } else {
                 if (isSwitch()) {
                     if (outputValue < switchPercentOff) {
-                        outputValue = 0;
                         internalSetOff();
                         isOn = false;
                     } else {
-                        outputValue = maxOutputValue;
                         isOn = true;
                         setCachedMeterData();
                     }
@@ -1134,7 +1122,7 @@ public class DeviceImpl extends AbstractGeneralDeviceInformations implements Dev
 
     private void internalSetOff() {
         this.isOn = false;
-        logger.debug("internal set OFF " + getSensorDataReadingInitialized(SensorEnum.ACTIVE_POWER));
+        logger.debug("internal set OFF ");
         if (!checkPowerSensorRefreshPriorityNever(SensorEnum.ACTIVE_POWER)) {
             if (getSensorDataReadingInitialized(SensorEnum.ACTIVE_POWER)) {
                 deviceStateUpdates.add(new DeviceStateUpdateImpl(SensorEnum.ACTIVE_POWER, -1));
@@ -1154,8 +1142,6 @@ public class DeviceImpl extends AbstractGeneralDeviceInformations implements Dev
             }
             setDsSensorValue(SensorEnum.POWER_CONSUMPTION, 0);
         }
-
-        // setSensorDataReadingInitialized(SensorEnum.ELECTRIC_METER, false);
     }
 
     private short internalSetAngleValue(int value) {
@@ -1511,6 +1497,7 @@ public class DeviceImpl extends AbstractGeneralDeviceInformations implements Dev
     @Override
     public synchronized void updateInternalDeviceState(DeviceStateUpdate deviceStateUpdate) {
         if (deviceStateUpdate != null) {
+            logger.debug("internal set outputvalue");
             switch (deviceStateUpdate.getType()) {
                 case DeviceStateUpdate.OUTPUT_DECREASE:
                     deviceStateUpdate = new DeviceStateUpdateImpl(DeviceStateUpdate.OUTPUT_DECREASE,
@@ -1597,6 +1584,7 @@ public class DeviceImpl extends AbstractGeneralDeviceInformations implements Dev
                     }
                 } else {
                     if (sceneOutput[0] != outputValue) {
+                        logger.debug("Scene output value: {} setted output value {}", sceneOutput[0], outputValue);
                         outputChanged = true;
                     }
                 }
@@ -1656,8 +1644,7 @@ public class DeviceImpl extends AbstractGeneralDeviceInformations implements Dev
         if (listener != null) {
             if (isSwitch() && deviceStateUpdate.getType().equals(DeviceStateUpdate.OUTPUT)) {
                 if (deviceStateUpdate.getValueAsInteger() >= switchPercentOff) {
-                    deviceStateUpdate = new DeviceStateUpdateImpl(DeviceStateUpdate.ON_OFF,
-                            DeviceStateUpdate.ON_VALUE);
+                    deviceStateUpdate = new DeviceStateUpdateImpl(DeviceStateUpdate.ON_OFF, DeviceStateUpdate.ON_VALUE);
                 } else {
                     deviceStateUpdate = new DeviceStateUpdateImpl(DeviceStateUpdate.ON_OFF,
                             DeviceStateUpdate.OFF_VALUE);
@@ -1683,55 +1670,60 @@ public class DeviceImpl extends AbstractGeneralDeviceInformations implements Dev
             String sceneSave;
             for (String key : propertries.keySet()) {
                 if (key.startsWith(DigitalSTROMBindingConstants.DEVICE_SCENE)) {
-                    short sceneID = Short.parseShort(
-                            (String) key.subSequence(DigitalSTROMBindingConstants.DEVICE_SCENE.length(), key.length()));
-                    sceneSave = propertries.get(key);
-                    if (StringUtils.isNotBlank(sceneSave)) {
-                        logger.debug("Find saved scene configuration for device with dSID {} and sceneID {}", dsid,
-                                key);
-                        String[] sceneParm = sceneSave.replace(" ", "").split(",");
-                        JSONDeviceSceneSpecImpl sceneSpecNew = null;
-                        int sceneValue = -1;
-                        int sceneAngle = -1;
-                        for (int j = 0; j < sceneParm.length; j++) {
-                            String[] sceneParmSplit = sceneParm[j].split(":");
-                            switch (sceneParmSplit[0]) {
-                                case "Scene":
-                                    sceneSpecNew = new JSONDeviceSceneSpecImpl(sceneParmSplit[1]);
-                                    break;
-                                case "dontcare":
-                                    sceneSpecNew.setDontcare(Boolean.parseBoolean(sceneParmSplit[1]));
-                                    break;
-                                case "localPrio":
-                                    sceneSpecNew.setLocalPrio(Boolean.parseBoolean(sceneParmSplit[1]));
-                                    break;
-                                case "specialMode":
-                                    sceneSpecNew.setSpecialMode(Boolean.parseBoolean(sceneParmSplit[1]));
-                                    break;
-                                case "sceneValue":
-                                    sceneValue = Integer.parseInt(sceneParmSplit[1]);
-                                    break;
-                                case "sceneAngle":
-                                    sceneAngle = Integer.parseInt(sceneParmSplit[1]);
-                                    break;
+                    try {
+                        short sceneID = Short.parseShort((String) key
+                                .subSequence(DigitalSTROMBindingConstants.DEVICE_SCENE.length(), key.length()));
+                        sceneSave = propertries.get(key);
+                        if (StringUtils.isNotBlank(sceneSave)) {
+                            logger.debug("Find saved scene configuration for device with dSID {} and sceneID {}", dsid,
+                                    key);
+                            String[] sceneParm = sceneSave.replace(" ", "").split(",");
+                            JSONDeviceSceneSpecImpl sceneSpecNew = null;
+                            int sceneValue = -1;
+                            int sceneAngle = -1;
+                            for (int j = 0; j < sceneParm.length; j++) {
+                                String[] sceneParmSplit = sceneParm[j].split(":");
+                                switch (sceneParmSplit[0]) {
+                                    case "Scene":
+                                        sceneSpecNew = new JSONDeviceSceneSpecImpl(sceneParmSplit[1]);
+                                        break;
+                                    case "dontcare":
+                                        sceneSpecNew.setDontcare(Boolean.parseBoolean(sceneParmSplit[1]));
+                                        break;
+                                    case "localPrio":
+                                        sceneSpecNew.setLocalPrio(Boolean.parseBoolean(sceneParmSplit[1]));
+                                        break;
+                                    case "specialMode":
+                                        sceneSpecNew.setSpecialMode(Boolean.parseBoolean(sceneParmSplit[1]));
+                                        break;
+                                    case "sceneValue":
+                                        sceneValue = Integer.parseInt(sceneParmSplit[1]);
+                                        break;
+                                    case "sceneAngle":
+                                        sceneAngle = Integer.parseInt(sceneParmSplit[1]);
+                                        break;
+                                }
+                            }
+                            if (sceneValue > -1) {
+                                logger.debug(
+                                        "Saved sceneValue {}, sceneAngle {} for scene id {} into device with dsid {}",
+                                        sceneValue, sceneAngle, sceneID, getDSID().getValue());
+                                internalSetSceneOutputValue(sceneID, sceneValue, sceneAngle);
+                                deviceStateUpdates.add(new DeviceStateUpdateImpl(DeviceStateUpdate.UPDATE_SCENE_OUTPUT,
+                                        new Short[] { sceneID, (short) -1 }));
+                            }
+                            if (sceneSpecNew != null) {
+                                logger.debug("Saved sceneConfig: [{}] for scene id {} into device with dsid {}",
+                                        sceneSpecNew.toString(), sceneID, getDSID().getValue());
+                                synchronized (sceneConfigMap) {
+                                    sceneConfigMap.put(sceneID, sceneSpecNew);
+                                }
+                                deviceStateUpdates.add(new DeviceStateUpdateImpl(DeviceStateUpdate.UPDATE_SCENE_CONFIG,
+                                        new Short[] { sceneID, (short) -1 }));
                             }
                         }
-                        if (sceneValue > -1) {
-                            logger.debug("Saved sceneValue {}, sceneAngle {} for scene id {} into device with dsid {}",
-                                    sceneValue, sceneAngle, sceneID, getDSID().getValue());
-                            internalSetSceneOutputValue(sceneID, sceneValue, sceneAngle);
-                            deviceStateUpdates.add(new DeviceStateUpdateImpl(DeviceStateUpdate.UPDATE_SCENE_OUTPUT,
-                                    new Short[] { sceneID, (short) -1 }));
-                        }
-                        if (sceneSpecNew != null) {
-                            logger.debug("Saved sceneConfig: [{}] for scene id {} into device with dsid {}",
-                                    sceneSpecNew.toString(), sceneID, getDSID().getValue());
-                            synchronized (sceneConfigMap) {
-                                sceneConfigMap.put(sceneID, sceneSpecNew);
-                            }
-                            deviceStateUpdates.add(new DeviceStateUpdateImpl(DeviceStateUpdate.UPDATE_SCENE_CONFIG,
-                                    new Short[] { sceneID, (short) -1 }));
-                        }
+                    } catch (NumberFormatException e) {
+                        // ignore
                     }
                 }
             }

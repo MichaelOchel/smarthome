@@ -29,6 +29,7 @@ import org.eclipse.smarthome.binding.digitalstrom.internal.lib.serverConnection.
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.serverConnection.simpleDSRequestBuilder.constants.ClassKeys;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.serverConnection.simpleDSRequestBuilder.constants.FunctionKeys;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.serverConnection.simpleDSRequestBuilder.constants.InterfaceKeys;
+import org.eclipse.smarthome.binding.digitalstrom.internal.lib.serverConnection.simpleDSRequestBuilder.constants.ParameterKeys;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.Circuit;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.Device;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.CachedMeteringValue;
@@ -38,6 +39,7 @@ import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.constants.MeteringUnitsEnum;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.impl.JSONDeviceSceneSpecImpl;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.impl.DeviceImpl;
+import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.scene.SceneDiscovery;
 import org.eclipse.smarthome.binding.digitalstrom.internal.providers.DsChannelTypeProvider;
 import org.eclipse.smarthome.core.library.types.DecimalType;
 
@@ -137,6 +139,11 @@ public class TestApi {
         final ConnectionManager connMan = new ConnectionManagerImpl(host1, user, user, true);
         connMan.registerConnectionListener(new DummyConnectionListener());
         final DsAPI dSAPI = connMan.getDigitalSTROMAPI();
+        System.out.println(
+                connMan.getDigitalSTROMAPI().query(connMan.getSessionToken(), SceneDiscovery.NAMEND_SCENE_QUERY));
+        System.out.println(SimpleRequestBuilder.buildNewRequest(InterfaceKeys.JSON).addRequestClass(ClassKeys.SYSTEM)
+                .addFunction(FunctionKeys.GET_DSID).addParameter(ParameterKeys.TOKEN, null).buildRequestString());
+        System.out.println(dSAPI.getDSID(null));
         // connMan.checkConnection();
         String request = SimpleRequestBuilder.buildNewRequest(InterfaceKeys.JSON).addRequestClass(ClassKeys.SYSTEM)
                 .addFunction(FunctionKeys.LOGIN_APPLICATION).addParameter("test", "test").buildRequestString();

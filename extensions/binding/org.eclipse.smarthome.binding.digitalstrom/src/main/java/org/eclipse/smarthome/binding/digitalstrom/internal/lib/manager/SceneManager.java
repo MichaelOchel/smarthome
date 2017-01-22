@@ -9,14 +9,13 @@ package org.eclipse.smarthome.binding.digitalstrom.internal.lib.manager;
 
 import java.util.List;
 
-import org.eclipse.smarthome.binding.digitalstrom.internal.lib.event.types.EventItem;
+import org.eclipse.smarthome.binding.digitalstrom.internal.lib.event.EventHandler;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.listener.ManagerStatusListener;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.listener.SceneStatusListener;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.listener.stateEnums.ManagerStates;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.listener.stateEnums.ManagerTypes;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.Device;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.scene.InternalScene;
-import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.scene.SceneDiscovery;
 
 /**
  * The {@link SceneManager} manages all functions concerning scenes without sending the commands itself.
@@ -40,7 +39,7 @@ import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.scene.S
  * @author Matthias Siegele - Initial contribution
  *
  */
-public interface SceneManager {
+public interface SceneManager extends EventHandler {
 
     /**
      * Activates the given {@link InternalScene}, if it exists. Otherwise it will be added to the scene list and
@@ -240,7 +239,7 @@ public interface SceneManager {
 
     /**
      * Calls a scene without inform the scene discovery about the conceivably new {@link InternalScene}.
-     * 
+     *
      * @param zoneID
      * @param groupID
      * @param sceneID

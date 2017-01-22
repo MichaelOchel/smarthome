@@ -121,6 +121,15 @@ public class EventListener {
         isStarted = false;
     }
 
+    /**
+     * Returns true, if the {@link EventListener} is started.
+     * 
+     * @return true, if is started
+     */
+    public boolean isStarted() {
+        return isStarted;
+    }
+
     private void internalStop() {
         if (subscriptionScheduler != null && !subscriptionScheduler.isCancelled()) {
             subscriptionScheduler.cancel(true);

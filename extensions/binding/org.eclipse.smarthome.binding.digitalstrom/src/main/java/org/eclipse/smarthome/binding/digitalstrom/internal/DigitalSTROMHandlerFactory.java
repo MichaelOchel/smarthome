@@ -10,6 +10,7 @@ package org.eclipse.smarthome.binding.digitalstrom.internal;
 import static org.eclipse.smarthome.binding.digitalstrom.DigitalSTROMBindingConstants.*;
 
 import java.util.HashMap;
+import java.util.Map;
 import java.util.Set;
 
 import org.apache.commons.lang.StringUtils;
@@ -22,6 +23,7 @@ import org.eclipse.smarthome.binding.digitalstrom.handler.ZoneTemperatureControl
 import org.eclipse.smarthome.binding.digitalstrom.internal.discovery.DiscoveryServiceManager;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.manager.ConnectionManager;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.manager.impl.ConnectionManagerImpl;
+import org.eclipse.smarthome.binding.digitalstrom.internal.lib.serverConnection.constants.JSONApiResponseKeysEnum;
 import org.eclipse.smarthome.config.core.Configuration;
 import org.eclipse.smarthome.core.thing.Bridge;
 import org.eclipse.smarthome.core.thing.Thing;
@@ -49,11 +51,12 @@ public class DigitalSTROMHandlerFactory extends BaseThingHandlerFactory {
     /**
      * Contains all supported {@link ThingTypeUID}'s.
      */
-    public final static Set<ThingTypeUID> SUPPORTED_THING_TYPES = Sets.union(SceneHandler.SUPPORTED_THING_TYPES,
-            Sets.union(BridgeHandler.SUPPORTED_THING_TYPES,
-                    Sets.union(DeviceHandler.SUPPORTED_THING_TYPES,
-                            Sets.union(ZoneTemperatureControlHandler.SUPPORTED_THING_TYPES,
-                                    CircuitHandler.SUPPORTED_THING_TYPES))));
+    public final static Set<ThingTypeUID> SUPPORTED_THING_TYPES = Sets
+            .union(SceneHandler.SUPPORTED_THING_TYPES,
+                    Sets.union(BridgeHandler.SUPPORTED_THING_TYPES,
+                            Sets.union(DeviceHandler.SUPPORTED_THING_TYPES,
+                                    Sets.union(ZoneTemperatureControlHandler.SUPPORTED_THING_TYPES,
+                                            CircuitHandler.SUPPORTED_THING_TYPES))));
 
     private HashMap<ThingUID, BridgeHandler> bridgeHandlers = null;
 
@@ -229,7 +232,7 @@ public class DigitalSTROMHandlerFactory extends BaseThingHandlerFactory {
     }
 
     private String getDSSid(Configuration configuration) {
-        String dsID = null;
+        String dSID = null;
         if (StringUtils.isNotBlank((String) configuration.get(HOST))) {
             String host = configuration.get(HOST).toString();
             String applicationToken = null;
@@ -245,9 +248,12 @@ public class DigitalSTROMHandlerFactory extends BaseThingHandlerFactory {
                 pw = configuration.get(PASSWORD).toString();
             }
             ConnectionManager connMan = new ConnectionManagerImpl(host, user, pw, applicationToken, false, true);
-            dsID = connMan.getDigitalSTROMAPI().getDSID(connMan.getSessionToken());
+            Map<String, String> dsidMap = connMan.getDigitalSTROMAPI().getDSID(connMan.getSessionToken());
+            if (dsidMap != null) {
+                dSID = dsidMap.get(JSONApiResponseKeysEnum.DSID.getKey());
+            }
         }
-        return dsID;
+        return dSID;
     }
 
     private boolean checkUserPassword(Configuration configuration) {

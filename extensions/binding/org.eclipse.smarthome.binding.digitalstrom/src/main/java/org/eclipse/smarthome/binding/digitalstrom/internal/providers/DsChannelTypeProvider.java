@@ -17,7 +17,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Set;
 
-import org.apache.commons.lang.StringUtils;
 import org.eclipse.smarthome.binding.digitalstrom.DigitalSTROMBindingConstants;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.constants.DeviceBinarayInputEnum;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.constants.FunctionalColorGroupEnum;
@@ -25,7 +24,6 @@ import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.constants.MeteringUnitsEnum;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.constants.OutputModeEnum;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.constants.SensorEnum;
-import org.eclipse.smarthome.core.i18n.I18nProvider;
 import org.eclipse.smarthome.core.thing.type.ChannelGroupType;
 import org.eclipse.smarthome.core.thing.type.ChannelGroupTypeUID;
 import org.eclipse.smarthome.core.thing.type.ChannelType;
@@ -33,8 +31,6 @@ import org.eclipse.smarthome.core.thing.type.ChannelTypeProvider;
 import org.eclipse.smarthome.core.thing.type.ChannelTypeUID;
 import org.eclipse.smarthome.core.types.StateDescription;
 import org.eclipse.smarthome.core.types.StateOption;
-import org.osgi.framework.Bundle;
-import org.osgi.service.component.ComponentContext;
 
 import com.google.common.collect.Sets;
 
@@ -46,10 +42,7 @@ import com.google.common.collect.Sets;
  * @author Matthias Siegele - Initial contribution
  *
  */
-public class DsChannelTypeProvider implements ChannelTypeProvider {
-
-    private I18nProvider i18n = null;
-    private Bundle bundle = null;
+public class DsChannelTypeProvider extends BaseDsI18n implements ChannelTypeProvider {
 
     // channelID building (effect group type + (nothing || SEPERATOR + item type || SEPERATOR + extended item type) e.g.
     // light_switch, shade or shade_angle
@@ -75,10 +68,6 @@ public class DsChannelTypeProvider implements ChannelTypeProvider {
     public final static String TOTAL_PRE = "total";
     public static final String BINARY_INPUT_PRE = "binary_input";
     public static final String OPTION = "opt";
-
-    public final static String SEPERATOR = "_";
-    public final static String LABEL_ID = "label";
-    public final static String DESC_ID = "desc";
 
     // tags
     private final String GE = "GE";
@@ -108,27 +97,6 @@ public class DsChannelTypeProvider implements ChannelTypeProvider {
     private final String CATEGORY_SMOKE = "Smoke";
     private final String CATEGORY_ALARM = "Alarm";
     private final String CATEGORY_MOTION = "Motion";
-
-    protected void activate(ComponentContext componentContext) {
-        this.bundle = componentContext.getBundleContext().getBundle();
-        init();
-    }
-
-    protected void deactivate(ComponentContext componentContext) {
-        this.bundle = null;
-    }
-
-    protected void setI18nProvider(I18nProvider i18n) {
-        this.i18n = i18n;
-    };
-
-    protected void unsetI18nProvider(I18nProvider i18n) {
-        this.i18n = null;
-    };
-
-    private String getText(String key, Locale locale) {
-        return i18n != null ? i18n.getText(bundle, key, i18n.getText(bundle, key, key, Locale.ENGLISH), locale) : key;
-    }
 
     /**
      * Returns the output channel type id as {@link String} for the given {@link FunctionalColorGroupEnum} and
@@ -204,10 +172,6 @@ public class DsChannelTypeProvider implements ChannelTypeProvider {
         return null;
     }
 
-    public static String buildIdentifier(Object... parts) {
-        return StringUtils.join(parts, DsChannelTypeProvider.SEPERATOR).toLowerCase();
-    }
-
     private static List<String> supportedOutputChannelTypes = new ArrayList<>();
 
     /**
@@ -220,7 +184,8 @@ public class DsChannelTypeProvider implements ChannelTypeProvider {
         return supportedOutputChannelTypes.contains(channelTypeID);
     }
 
-    private void init() {
+    @Override
+    protected void init() {
         String channelIDpre = GENERAL;
         for (short i = 0; i < 3; i++) {
             if (i == 1) {
@@ -260,9 +225,9 @@ public class DsChannelTypeProvider implements ChannelTypeProvider {
             case RELATIVE_HUMIDITY_INDOORS:
             case RELATIVE_HUMIDITY_OUTDOORS:
                 return CATEGORY_HUMIDITY;
-            case ROOM_TEMPERATION_CONTROL_VARIABLE:
+            case ROOM_TEMPERATURE_CONTROL_VARIABLE:
                 break;
-            case ROOM_TEMPERATION_SET_POINT:
+            case ROOM_TEMPERATURE_SET_POINT:
                 break;
             case TEMPERATURE_INDOORS:
             case TEMPERATURE_OUTDOORS:
@@ -376,14 +341,6 @@ public class DsChannelTypeProvider implements ChannelTypeProvider {
                     null);
         }
         return null;
-    }
-
-    private String getLabelText(String channelID, Locale locale) {
-        return getText(buildIdentifier(channelID, LABEL_ID), locale);
-    }
-
-    private String getDescText(String channelID, Locale locale) {
-        return getText(buildIdentifier(channelID, DESC_ID), locale);
     }
 
     private String getCategory(String channelID) {

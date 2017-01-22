@@ -65,8 +65,8 @@ public enum SensorEnum {
     PRECIPITATION((short) 20, "millimeter_per_square_meter", "mm/m2", 0, (float) 102.375, (float) 0.025, "%.3f"),
     CARBON_DIOXIDE((short) 21, "parts_per_million", "ppm", 1, (float) 131446.795, 800, "%.3f"),
     SOUND_PRESSURE_LEVEL((short) 25, "decibel", "dB", 0, (float) 255.938, (float) 0.0625, "%.2f"),
-    ROOM_TEMPERATION_SET_POINT((short) 50, "kelvin", "K", 230, (float) 332.375, (float) 0.025, "%.2f"),
-    ROOM_TEMPERATION_CONTROL_VARIABLE((short) 51, "kelvin", "K", 230, (float) 332.375, (float) 0.25, "%.2f"),
+    ROOM_TEMPERATURE_SET_POINT((short) 50, "kelvin", "K", 230, (float) 332.375, (float) 0.025, "%.2f"),
+    ROOM_TEMPERATURE_CONTROL_VARIABLE((short) 51, "kelvin", "K", 230, (float) 332.375, (float) 0.25, "%.2f"),
     OUTPUT_CURRENT_H((short) 64, "ampere", "mA", 0, 16380, 4, "%d"),
     POWER_CONSUMPTION((short) 65, "volt_ampere", "VA", 0, 4095, 1, "%d");
 
@@ -128,8 +128,8 @@ public enum SensorEnum {
                 case PRECIPITATION:
                 case CARBON_DIOXIDE:
                 case SOUND_PRESSURE_LEVEL:
-                case ROOM_TEMPERATION_SET_POINT:
-                case ROOM_TEMPERATION_CONTROL_VARIABLE:
+                case ROOM_TEMPERATURE_SET_POINT:
+                case ROOM_TEMPERATURE_CONTROL_VARIABLE:
                     return true;
                 default:
                     return false;

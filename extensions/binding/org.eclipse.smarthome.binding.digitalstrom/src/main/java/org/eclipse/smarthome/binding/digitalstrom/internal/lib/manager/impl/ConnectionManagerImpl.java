@@ -254,7 +254,6 @@ public class ConnectionManagerImpl implements ConnectionManager {
     }
 
     private void init(Config config, boolean acceptAllCerts) {
-        // this.transport = new HttpTransportImpl(config, acceptAllCerts);
         this.config = config;
         this.transport = new HttpTransportImpl(this, acceptAllCerts);
         this.digitalSTROMClient = new DsAPIImpl(transport);
@@ -283,7 +282,7 @@ public class ConnectionManagerImpl implements ConnectionManager {
         if (this.genAppToken) {
             if (StringUtils.isNotBlank(config.getAppToken())) {
                 sessionToken = this.digitalSTROMClient.loginApplication(config.getAppToken());
-            } else {
+            } else if (codeIsAuthentificationFaild()) {
                 onNotAuthenticated();
             }
         } else {
@@ -295,6 +294,12 @@ public class ConnectionManagerImpl implements ConnectionManager {
     @Override
     public synchronized boolean checkConnection() {
         return checkConnection(this.digitalSTROMClient.checkConnection(null));
+    }
+
+    private short code = HttpURLConnection.HTTP_OK;
+
+    private boolean codeIsAuthentificationFaild() {
+        return this.code == HttpURLConnection.HTTP_FORBIDDEN;
     }
 
     @Override
@@ -393,48 +398,51 @@ public class ConnectionManagerImpl implements ConnectionManager {
                 // reachable
                 logger.info("check existing application-tokens");
                 sessionToken = digitalSTROMClient.login(config.getUserName(), config.getPassword());
-                JsonObject jObj = digitalSTROMClient.query(sessionToken, QUERY_GET_ENABLED_APPLICATION_TOKENS);
+                if (sessionToken != null) {
+                    JsonObject jObj = digitalSTROMClient.query(sessionToken, QUERY_GET_ENABLED_APPLICATION_TOKENS);
 
-                if (jObj != null) {
-                    if (jObj.get("enabled") != null && jObj.get("enabled").isJsonArray()) {
-                        JsonArray jArray = jObj.get("enabled").getAsJsonArray();
-                        // application-token check
-                        for (int i = 0; i < jArray.size(); i++) {
-                            JsonObject appToken = jArray.get(i).getAsJsonObject();
-                            if (appToken.get("applicationName") != null && appToken.get("applicationName").getAsString()
-                                    .equals(config.getApplicationName())) {
-                                // found application-token, set as application-token
-                                applicationToken = appToken.get("token").getAsString();
-                                logger.info("found application-token" + applicationToken + " for application"
-                                        + config.getApplicationName());
-                                break;
+                    if (jObj != null) {
+                        if (jObj.get("enabled") != null && jObj.get("enabled").isJsonArray()) {
+                            JsonArray jArray = jObj.get("enabled").getAsJsonArray();
+                            // application-token check
+                            for (int i = 0; i < jArray.size(); i++) {
+                                JsonObject appToken = jArray.get(i).getAsJsonObject();
+                                if (appToken.get("applicationName") != null && appToken.get("applicationName")
+                                        .getAsString().equals(config.getApplicationName())) {
+                                    // found application-token, set as application-token
+                                    applicationToken = appToken.get("token").getAsString();
+                                    logger.info("found application-token" + applicationToken + " for application"
+                                            + config.getApplicationName());
+                                    break;
+                                }
                             }
                         }
-                    }
-                    if (applicationToken == null) {
-                        // no token found, generate applicationToken
-                        applicationToken = this.digitalSTROMClient
-                                .requestAppplicationToken(config.getApplicationName());
-                        logger.info("no application-token for application " + config.getApplicationName()
-                                + " found, generate a application-token " + applicationToken);
-                        if (StringUtils.isNotBlank(applicationToken)) {
-                            // enable applicationToken
-                            if (!digitalSTROMClient.enableApplicationToken(applicationToken,
-                                    digitalSTROMClient.login(config.getUserName(), config.getPassword()))) {
-                                // if enable failed set application-token = null so thats not will be set
-                                applicationToken = null;
+                        if (applicationToken == null) {
+                            // no token found, generate applicationToken
+                            applicationToken = this.digitalSTROMClient
+                                    .requestAppplicationToken(config.getApplicationName());
+                            logger.info("no application-token for application " + config.getApplicationName()
+                                    + " found, generate a application-token " + applicationToken);
+                            if (StringUtils.isNotBlank(applicationToken)) {
+                                // enable applicationToken
+                                if (!digitalSTROMClient.enableApplicationToken(applicationToken,
+                                        digitalSTROMClient.login(config.getUserName(), config.getPassword()))) {
+                                    // if enable failed set application-token = null so thats not will be set
+                                    applicationToken = null;
+                                }
                             }
                         }
-                    }
-                    if (applicationToken != null) {
-                        logger.info("application-token can be used");
-                        config.setAppToken(applicationToken);
-                        isAuthenticated = true;
+                        if (applicationToken != null) {
+                            logger.info("application-token can be used");
+                            config.setAppToken(applicationToken);
+                            isAuthenticated = true;
+                        }
                     }
                 } else {
                     if (connListener != null) {
                         connListener.onConnectionStateChange(ConnectionListener.NOT_AUTHENTICATED,
                                 ConnectionListener.WRONG_USER_OR_PASSWORD);
+                        return;
                     }
                 }
             }
@@ -498,10 +506,7 @@ public class ConnectionManagerImpl implements ConnectionManager {
     @Override
     public boolean removeApplicationToken() {
         if (StringUtils.isNotBlank(config.getAppToken())) {
-            // if (checkConnection()) {
-            return digitalSTROMClient.revokeToken(config.getAppToken(), null);// getSessionToken());
-            // }
-            // return false;
+            return digitalSTROMClient.revokeToken(config.getAppToken(), null);
         }
         return true;
     }

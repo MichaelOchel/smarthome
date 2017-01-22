@@ -177,6 +177,7 @@ public class HttpTransportImpl implements HttpTransport {
     }
 
     private void init(String uri, int connectTimeout, int readTimeout, boolean exeptAllCerts) {
+        logger.debug("init HttpTransportImpl");
         this.uri = fixURI(uri);
         this.connectTimeout = connectTimeout;
         this.readTimeout = readTimeout;
@@ -296,10 +297,12 @@ public class HttpTransportImpl implements HttpTransport {
         return null;
     }
 
-    private void informConnectionManager(int code) {
+    private boolean informConnectionManager(int code) {
         if (connectionManager != null && loginCounter < 2) {
             connectionManager.checkConnection(code);
+            return true;
         }
+        return false;
     }
 
     private String checkSessionToken(String request) {
@@ -328,15 +331,6 @@ public class HttpTransportImpl implements HttpTransport {
                 request = request + "?" + ParameterKeys.TOKEN + "=" + sessionToken;
             }
         } else {
-            /*
-             * int start = request.indexOf("token=");
-             * int end = request.indexOf("&", start);
-             * if (end == -1) {
-             * request = request.substring(0, start + 6) + sessionToken;
-             * } else {
-             * request = request.substring(0, start + 6) + sessionToken + request.substring(end, request.length());
-             * }
-             */
             request = StringUtils.replaceOnce(request,
                     StringUtils.substringBefore(StringUtils.substringAfter(request, ParameterKeys.TOKEN + "="), "&"),
                     sessionToken);
@@ -525,10 +519,9 @@ public class HttpTransportImpl implements HttpTransport {
     }
 
     private String getPEMCertificateFromServer(String host) {
+        HttpsURLConnection connection = null;
         try {
             URL url = new URL(host);
-
-            HttpsURLConnection connection = null;
 
             connection = (HttpsURLConnection) url.openConnection();
             connection.setHostnameVerifier(hostnameVerifier);
@@ -543,11 +536,27 @@ public class HttpTransportImpl implements HttpTransport {
                 return BEGIN_CERT + DatatypeConverter.printBase64Binary(by) + END_CERT;
             }
         } catch (MalformedURLException e) {
-            logger.error("A MalformedURLException occurred: ", e);
+            if (!informConnectionManager(-2)) {
+                logger.error("A MalformedURLException occurred: ", e);
+            }
         } catch (IOException e) {
-            logger.error("An IOException occurred: ", e);
+            short code = -1;
+            if (e instanceof java.net.ConnectException) {
+                code = -3;
+            } else if (e instanceof java.net.UnknownHostException) {
+                code = -5;
+            } else {
+                code = -1;
+            }
+            if (!informConnectionManager(code) || code == -1) {
+                logger.error("An IOException occurred: ", e);
+            }
         } catch (CertificateEncodingException e) {
             logger.error("A CertificateEncodingException occurred: ", e);
+        } finally {
+            if (connection != null) {
+                connection.disconnect();
+            }
         }
         return null;
     }

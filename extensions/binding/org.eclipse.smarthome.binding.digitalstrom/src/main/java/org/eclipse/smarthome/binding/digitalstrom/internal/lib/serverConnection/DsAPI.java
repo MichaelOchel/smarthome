@@ -336,7 +336,7 @@ public interface DsAPI {
      * @param sessionToken can be null, if a {@link ConnectionManager} is registered at the {@link HttpTransport}
      * @return dSID
      */
-    public String getDSID(String sessionToken);
+    public Map<String, String> getDSID(String sessionToken);
 
     /**
      * Returns a token for passwordless login. The token will need to be approved

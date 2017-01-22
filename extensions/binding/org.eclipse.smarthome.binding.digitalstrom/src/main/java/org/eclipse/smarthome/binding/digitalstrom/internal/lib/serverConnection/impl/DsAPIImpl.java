@@ -271,17 +271,15 @@ public class DsAPIImpl implements DsAPI {
             SceneEnum sceneNumber, Boolean force) {
         if (checkRequiredZone(zoneID, zoneName)) {
             try {
-                String response = transport
-                        .execute(
-                                SimpleRequestBuilder.buildNewRequest(InterfaceKeys.JSON).addRequestClass(ClassKeys.ZONE)
-                                        .addFunction(FunctionKeys.CALL_SCENE).addParameter(ParameterKeys.TOKEN, token)
-                                        .addParameter(ParameterKeys.ID, convertIntegerToString(zoneID))
-                                        .addParameter(ParameterKeys.NAME, zoneName)
-                                        .addParameter(ParameterKeys.GROUP_ID, convertShortToString(groupID))
-                                        .addParameter(ParameterKeys.GROUP_NAME, groupName)
-                                        .addParameter(ParameterKeys.SCENENUMBER,
-                                                sceneNumber.getSceneNumber().toString())
-                                        .addParameter(ParameterKeys.FORCE, force.toString()).buildRequestString());
+                String response = transport.execute(
+                        SimpleRequestBuilder.buildNewRequest(InterfaceKeys.JSON).addRequestClass(ClassKeys.ZONE)
+                                .addFunction(FunctionKeys.CALL_SCENE).addParameter(ParameterKeys.TOKEN, token)
+                                .addParameter(ParameterKeys.ID, convertIntegerToString(zoneID))
+                                .addParameter(ParameterKeys.NAME, zoneName)
+                                .addParameter(ParameterKeys.GROUP_ID, convertShortToString(groupID))
+                                .addParameter(ParameterKeys.GROUP_NAME, groupName)
+                                .addParameter(ParameterKeys.SCENENUMBER, sceneNumber.getSceneNumber().toString())
+                                .addParameter(ParameterKeys.FORCE, force.toString()).buildRequestString());
 
                 return JSONResponseHandler.checkResponse(JSONResponseHandler.toJsonObject(response));
             } catch (Exception e) {
@@ -791,7 +789,7 @@ public class DsAPIImpl implements DsAPI {
     }
 
     @Override
-    public String getDSID(String token) {
+    public Map<String, String> getDSID(String token) {
         try {
             String response = transport.execute(SimpleRequestBuilder.buildNewRequest(InterfaceKeys.JSON)
                     .addRequestClass(ClassKeys.SYSTEM).addFunction(FunctionKeys.GET_DSID)
@@ -801,10 +799,11 @@ public class DsAPIImpl implements DsAPI {
             if (JSONResponseHandler.checkResponse(responseObj)) {
                 JsonObject obj = JSONResponseHandler.getResultJsonObject(responseObj);
                 if (obj != null) {
-                    String dsID = obj.get(JSONApiResponseKeysEnum.DSID.getKey()).getAsString();
-                    if (dsID != null) {
-                        return dsID;
+                    Map<String, String> dsidMap = new HashMap<String, String>(obj.entrySet().size());
+                    for (Entry<String, JsonElement> entry : obj.entrySet()) {
+                        dsidMap.put(entry.getKey(), entry.getValue().getAsString());
                     }
+                    return dsidMap;
                 }
             }
         } catch (Exception e) {

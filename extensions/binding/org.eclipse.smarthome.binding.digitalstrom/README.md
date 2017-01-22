@@ -101,7 +101,7 @@ The parameter group *Server information* only includes informative parameters, w
 
 | Parameter Label | Parameter ID | Description  | Required | Advanced 
 |-----------------|-------------|--------------------------|---------- |------------- |
-| dSID | dSID | The unique identifier of a digitalSTOM-server. | false| false | 
+| dSID | dSID | The unique identifier of a digitalSTROM-server. | false| false | 
 
 #### General configuration:
 
@@ -144,12 +144,12 @@ The digitalSTROM-Device things have the following configuration parameter groups
 #### Device information
 
 
-Each digitalSTROM-Device needs the device ID named dSID as configuration parameter. The device ID is printed as serial number at the digitalSTOM-Device and can also be found within the web-interface of the digitalSTROM-Server. 
+Each digitalSTROM-Device needs the device ID named dSID as configuration parameter. The device ID is printed as serial number at the digitalSTROM-Device and can also be found within the web-interface of the digitalSTROM-Server. 
 The following table shows the parameter: 
 
 | Parameter Label | Parameter ID| Description  | Required | Advanced 
 |-----------------|------------------------|--------------|----------------- |------------- |
-| ID | dSID| The unique identifier of a digitalSTOM-device. | true | false |
+| ID | dSID| The unique identifier of a digitalSTORM-device. | true | false |
 
 #### Sensor setup
 
@@ -168,7 +168,7 @@ The following table shows all informative properties:
 
 | Property-Name | Description |
 | ------------- | ------------------------------------- |
-|dSUID | The unique identifier of a digitalSTOM-device with virtual devices. | 
+|dSUID | The unique identifier of a digitalSTORM-device with virtual devices. | 
 | deviceName | he name of a digitalSTROM-Device. | 
 | meterDSID | Identifier of the meter to which the device is connected. |   
 | hwInfo | The hardware type from this digitalSTROM-Device. |   
@@ -385,42 +385,20 @@ The digitalSTROM-Server
 ```
 Bridge digitalstrom:dssBridge:dSS [ ipAddress="urlOfMyDss",  userName="dssadmin", password="mySecretPassword", sensorDataUpdateInterval=180] {
   // the following things gets its channels dynamically, so you have to define the channels here manually (see "General Informations/Textual configuration notice").
-  GE GE-KM-200 [ dSID="3504175fe000000000010db9",  activePowerRefreshPriority="low", electricMeterRefreshPriority="medium", outputCurrentRefreshPriority="high"] {
-    Channels: 
-      Type light_dimmer : light_dimmer 
-      Type active_power : active_power 
-      Type output_current : output_current 
-      Type electric_meter : electric_meter 
-  }
+  GE GE-KM-200 [ dSID="3504175fe000000000010db9",  activePowerRefreshPriority="low", electricMeterRefreshPriority="medium", outputCurrentRefreshPriority="high"] 
 
-  SW SW-ZWS-200 [ dSID="3504175fe0000000000651c0"] {
-    Channels:
-      Type general_switch : general_switch 
-  }  
+  SW SW-ZWS-200 [ dSID="3504175fe0000000000651c0"] 
 
-  SW SW-UMR-200 [ dSID="302ed89f43f00ec0000a1034"] {
-    Channels:
-      Type binary_input_change_over_heating_cooling : binary_input_change_over_heating_cooling
-  }  
+  SW SW-UMR-200 [ dSID="302ed89f43f00ec0000a1034"] 
 
-  dSiSens200 dS-iSens200 [ dSID="302ed89f43f026800003543d"] {
-    Channels:
-      Type temperature_indoors : temperature_indoors 
-      Type relative_humidity_indoors : relative_humidity_indoors
-  }
+  dSiSens200 dS-iSens200 [ dSID="302ed89f43f026800003543d"] 
 
-  zoneTemperatureControl zoneTemperatureControl [ zoneID="livingroom"] {
-    Channels:
-      Type heating_temperature_controled : heating_temperature_controled 
-  }    
+  zoneTemperatureControl zoneTemperatureControl [ zoneID="livingroom"]     
 
-  GR GR-KL200 [ dSID="3504175fe0000000000651c1" ] {
-    Channels:
-      Type shade_angle : shade_angle
-  }
+  GR GR-KL220 [ dSID="3504175fe0000000000651c1" ] 
   
   // the following things have the channels defines in its thing-types, so it is not needed to define the chanels manually.
-  namedScene Scene1 [ zoneID="0", groupID="0", sceneID="5"] 
+  namedScene Scene1 [ zoneID="5", groupID="1", sceneID="5"] 
     
   circuit circuit1 [ dSID="3504175fe0000010000004e4" ]    
   
@@ -451,7 +429,7 @@ Switch DeviceSwitch { channel="digitalstrom:SW:dSS:SW-ZWS-200:general_switch" }
 //Rollershutter (GR-KL200)
 Rollershutter Shutter { channel="digitalstrom:GR:GR-KL200:shade" }
 
-//Blind (GR-KL210)
+//Blind (GR-KL220)
 Rollershutter BlindPosition { channel="digitalstrom:GR:GR-KL210:shade" }
 Dimmer BlindAngle { channel="digitalstrom:GR:GR-KL210:shade_angle" }
 
@@ -558,7 +536,7 @@ To get the device and scene state after a server start or restart, the binding u
 
 ### Textual configuration notice
 
-If you configure your system with textual configuration files, like *\*.thing*, there are two things you have to  consider.
-<!-- 1. can be delete, if it is able to dynamically change the thing-configurations and the thing-structure by textual configurations-->  
-1. Currently the automatically generated channels for devices and so on, have to be created in the textual configurations, too. Thats because dynamically thing changes are only allowed for non static thing-configurations at this moment.
-2. The feature of the persisting of scene-configurations, to get the scene-configurations after a restart faster (see *digitalSTROM-Scenes* above), will not support by textural configured things, because the properties can not be persist in this case. 
+If you configure your system with textual configuration files, like *\*.thing*, there are one things you have to  consider.
+<!-- 1. can be delete, if it is able to dynamically change the thing-configurations and the thing-structure by textual configurations  
+1. Currently the automatically generated channels for devices and so on, have to be created in the textual configurations, too. Thats because dynamically thing changes are only allowed for non static thing-configurations at this moment.-->
+* The feature of the persisting of scene-configurations, to get the scene-configurations after a restart faster (see *digitalSTROM-Scenes* above), will not support by textural configured things, because the properties can not be persist in this case. 

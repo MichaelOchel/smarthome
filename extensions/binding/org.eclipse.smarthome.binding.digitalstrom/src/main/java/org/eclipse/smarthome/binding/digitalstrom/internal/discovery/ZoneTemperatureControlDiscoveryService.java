@@ -16,9 +16,7 @@ import java.util.Map;
 import org.apache.commons.lang.StringUtils;
 import org.eclipse.smarthome.binding.digitalstrom.DigitalSTROMBindingConstants;
 import org.eclipse.smarthome.binding.digitalstrom.handler.BridgeHandler;
-import org.eclipse.smarthome.binding.digitalstrom.internal.lib.climate.TemperatureControlSensorTransmitter;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.climate.jsonResponseContainer.impl.TemperatureControlStatus;
-import org.eclipse.smarthome.binding.digitalstrom.internal.lib.listener.TemperatureControlStatusListener;
 import org.eclipse.smarthome.config.discovery.AbstractDiscoveryService;
 import org.eclipse.smarthome.config.discovery.DiscoveryResult;
 import org.eclipse.smarthome.config.discovery.DiscoveryResultBuilder;
@@ -38,12 +36,12 @@ import com.google.common.collect.Sets;
  * @author Michael Ochel
  * @author Matthias Siegele
  */
-public class ZoneTemperatureControlDiscoveryService extends AbstractDiscoveryService
-        implements TemperatureControlStatusListener {
+public class ZoneTemperatureControlDiscoveryService extends AbstractDiscoveryService {
 
     private Logger logger = LoggerFactory.getLogger(ZoneTemperatureControlDiscoveryService.class);
     BridgeHandler bridgeHandler;
     private final ThingUID BRIDGE_UID;
+    private final String THING_TYPE_ID;
 
     /**
      * Creates a new {@link ZoneTemperatureControlDiscoveryService}.
@@ -57,18 +55,13 @@ public class ZoneTemperatureControlDiscoveryService extends AbstractDiscoverySer
         super(Sets.newHashSet(supportedThingType), 10, true);
         BRIDGE_UID = bridgeHandler.getThing().getUID();
         this.bridgeHandler = bridgeHandler;
-        bridgeHandler.registerTemperatureControlStatusListener(this);
+        THING_TYPE_ID = supportedThingType.getId();
     }
 
     @Override
     protected void startScan() {
-        if (bridgeHandler.getTemperatureControlManager() != null) {
-            if (bridgeHandler.getTemperatureControlManager().getTemperatureControlStatusFromAllZones() != null) {
-                for (TemperatureControlStatus tempConStat : bridgeHandler.getTemperatureControlManager()
-                        .getTemperatureControlStatusFromAllZones()) {
-                    internalConfigChanged(tempConStat);
-                }
-            }
+        for (TemperatureControlStatus tempConStat : bridgeHandler.getTemperatureControlStatusFromAllZones()) {
+            internalConfigChanged(tempConStat);
         }
     }
 
@@ -79,7 +72,12 @@ public class ZoneTemperatureControlDiscoveryService extends AbstractDiscoverySer
         removeOlderResults(new Date().getTime());
     }
 
-    @Override
+    /**
+     * Method for the background discovery
+     *
+     * @see org.eclipse.smarthome.binding.digitalstrom.internal.lib.listener.TemperatureControlStatusListener#configChanged(TemperatureControlStatus)
+     * @param tempControlStatus
+     */
     public void configChanged(TemperatureControlStatus tempControlStatus) {
         if (isBackgroundDiscoveryEnabled()) {
             internalConfigChanged(tempControlStatus);
@@ -101,7 +99,6 @@ public class ZoneTemperatureControlDiscoveryService extends AbstractDiscoverySer
                     }
                     DiscoveryResult discoveryResult = DiscoveryResultBuilder.create(thingUID).withProperties(properties)
                             .withBridge(BRIDGE_UID).withLabel(zoneName).build();
-
                     thingDiscovered(discoveryResult);
 
                 }
@@ -110,9 +107,7 @@ public class ZoneTemperatureControlDiscoveryService extends AbstractDiscoverySer
     }
 
     private ThingUID getThingUID(TemperatureControlStatus tempControlStatus) {
-        ThingTypeUID thingTypeUID = new ThingTypeUID(BINDING_ID,
-                DigitalSTROMBindingConstants.THING_TYPE_ID_ZONE_TEMERATURE_CONTROL);
-
+        ThingTypeUID thingTypeUID = new ThingTypeUID(BINDING_ID, THING_TYPE_ID);
         if (getSupportedThingTypes().contains(thingTypeUID)) {
             String thingID = tempControlStatus.getZoneID().toString();
             ThingUID thingUID = new ThingUID(thingTypeUID, BRIDGE_UID, thingID);
@@ -122,32 +117,12 @@ public class ZoneTemperatureControlDiscoveryService extends AbstractDiscoverySer
         }
     }
 
-    @Override
-    public void onTemperatureControlIsNotConfigured() {
-        // nothing to do
+    /**
+     * Returns the ID of this {@link ZoneTemperatureControlDiscoveryService}.
+     *
+     * @return id of the service
+     */
+    public String getID() {
+        return THING_TYPE_ID;
     }
-
-    @Override
-    public void registerTemperatureSensorTransreciver(
-            TemperatureControlSensorTransmitter temperatureSensorTransreciver) {
-        // nothing to do
-    }
-
-    @Override
-    public Integer getID() {
-        return TemperatureControlStatusListener.DISCOVERY;
-    }
-
-    @Override
-    public void onTargetTemperatureChanged(Float newValue) {
-        // nothing to do
-
-    }
-
-    @Override
-    public void onControlValueChanged(Integer newValue) {
-        // nothing to do
-
-    }
-
 }
