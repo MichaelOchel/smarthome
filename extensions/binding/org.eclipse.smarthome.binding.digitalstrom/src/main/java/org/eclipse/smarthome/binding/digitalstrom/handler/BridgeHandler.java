@@ -69,8 +69,8 @@ import org.slf4j.LoggerFactory;
  * The {@link BridgeHandler} is the handler for a digitalSTROM-Server and connects it to
  * the framework.<br>
  * All {@link DeviceHandler}s and {@link SceneHandler}s use the {@link BridgeHandler} to execute the actual
- * commands.
- * <p>
+ * commands.<br>
+ * <br>
  * The {@link BridgeHandler} also:
  * <ul>
  * <li>manages the {@link DeviceStatusManager} (starts, stops, register {@link DeviceStatusListener},
@@ -80,7 +80,6 @@ import org.slf4j.LoggerFactory;
  * <li>implements the {@link ConnectionListener} to manage the {@link ThingStatus} of this {@link BridgeHandler}</li>
  * <li>and implements the {@link TotalPowerConsumptionListener} to update his Channels.</li>
  * </ul>
- * </p>
  *
  * @author Michael Ochel - Initial contribution
  * @author Matthias Siegele - Initial contribution
@@ -225,7 +224,7 @@ public class BridgeHandler extends BaseBridgeHandler
     /**
      * Creates a new {@link BridgeHandler}.
      *
-     * @param bridge
+     * @param bridge must not be null
      */
     public BridgeHandler(Bridge bridge) {
         super(bridge);
@@ -522,7 +521,7 @@ public class BridgeHandler extends BaseBridgeHandler
     /**
      * Delegate a stop command from a Thing to the {@link DeviceStatusManager#sendStopComandsToDSS(Device)}.
      *
-     * @param device
+     * @param device can be null
      */
     public void stopOutputValue(Device device) {
         this.devStatMan.sendStopComandsToDSS(device);
@@ -624,7 +623,12 @@ public class BridgeHandler extends BaseBridgeHandler
                 @Override
                 public void run() {
                     if (connMan != null) {
-                        logger.debug("check connection = " + connMan.checkConnection());
+                        boolean conStat = connMan.checkConnection();
+                        logger.debug("check connection = " + conStat);
+                        if (conStat) {
+                            restartServices();
+                            reconnectTracker.cancel(false);
+                        }
                     }
                 }
             }, RECONNECT_TRACKER_INTERVAL, RECONNECT_TRACKER_INTERVAL, TimeUnit.SECONDS);
@@ -739,8 +743,8 @@ public class BridgeHandler extends BaseBridgeHandler
      * Delegates a device command of a Thing to the
      * {@link DeviceStatusManager#sendComandsToDSS(Device, DeviceStateUpdate)}
      *
-     * @param device
-     * @param deviceStateUpdate
+     * @param device can be null
+     * @param deviceStateUpdate can be null
      */
     public void sendComandsToDSS(Device device, DeviceStateUpdate deviceStateUpdate) {
         if (devStatMan != null) {
@@ -833,7 +837,7 @@ public class BridgeHandler extends BaseBridgeHandler
     /**
      * Registers the given {@link TemperatureControlStatusListener} to the {@link TemperatureControlManager}.
      *
-     * @param temperatureControlStatusListener
+     * @param temperatureControlStatusListener can be null
      */
     public void registerTemperatureControlStatusListener(
             TemperatureControlStatusListener temperatureControlStatusListener) {
@@ -848,7 +852,7 @@ public class BridgeHandler extends BaseBridgeHandler
     /**
      * Unregisters the given {@link TemperatureControlStatusListener} from the {@link TemperatureControlManager}.
      *
-     * @param temperatureControlStatusListener
+     * @param temperatureControlStatusListener can be null
      */
     public void unregisterTemperatureControlStatusListener(
             TemperatureControlStatusListener temperatureControlStatusListener) {

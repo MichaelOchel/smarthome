@@ -30,7 +30,7 @@ public class JSONResponseHandler {
     /**
      * Checks the digitalSTROM-JSON response and return true if it was successful, otherwise false.
      *
-     * @param jsonResponse
+     * @param jsonResponse to check
      * @return true, if successful
      */
     public static boolean checkResponse(JsonObject jsonResponse) {
@@ -52,7 +52,7 @@ public class JSONResponseHandler {
      * Returns the {@link JsonObject} from the given digitalSTROM-JSON response {@link String} or null if the json
      * response was empty.
      *
-     * @param jsonResponse
+     * @param jsonResponse to convert
      * @return jsonObject
      */
     public static JsonObject toJsonObject(String jsonResponse) {
@@ -69,7 +69,7 @@ public class JSONResponseHandler {
     /**
      * Returns the result {@link JsonObject} from the given digitalSTROM-JSON response {@link JsonObject}.
      *
-     * @param jsonObject
+     * @param jsonObject of response
      * @return json result object
      */
     public static JsonObject getResultJsonObject(JsonObject jsonObject) {

@@ -8,15 +8,16 @@
 package org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.constants;
 
 /**
- * This enum contains all binary inputs with they id.
+ * This enum contains all binary inputs with they id. <br>
  *
  * @author Michael Ochel - initial contributer
  * @author Matthias Siegele - initial contributer
- * @see {@link http://developer.digitalstrom.org/Architecture/ds-basics.pdf#5f}
  */
 public enum DeviceBinarayInputEnum {
 
     /*
+     * Taken from http://developer.digitalstrom.org/Architecture/ds-basics.pdf#5f
+     *
      * Input Type | Assigned Index | Natural Device and Description
      * Presence | 1 | Presence detector
      * Brightness | 2 | ---
@@ -96,7 +97,7 @@ public enum DeviceBinarayInputEnum {
      * Returns the {@link DeviceBinarayInputEnum} of the given id or null, if no {@link DeviceBinarayInputEnum} exist
      * for the id.
      *
-     * @param binaryInputTypeID
+     * @param binaryInputTypeID of the {@link DeviceBinarayInputEnum}
      * @return the {@link DeviceBinarayInputEnum} of the id
      */
     public static DeviceBinarayInputEnum getdeviceBinarayInput(Short binaryInputTypeID) {

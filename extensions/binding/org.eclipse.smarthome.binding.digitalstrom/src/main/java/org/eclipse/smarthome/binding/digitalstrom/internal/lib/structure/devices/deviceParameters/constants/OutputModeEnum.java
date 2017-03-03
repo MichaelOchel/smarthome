@@ -14,7 +14,8 @@ import java.util.HashMap;
  *
  * @author Michael Ochel - Initial contribution
  * @author Matthias Siegele - Initial contribution
- * @see http://developer.digitalstrom.org/Architecture/ds-basics.pdf Table 36: Output Mode Register, page 51
+ * @see <a href="http://developer.digitalstrom.org/Architecture/ds-basics.pdf">Table 36: Output Mode Register, page
+ *      51</a>
  */
 public enum OutputModeEnum {
     /*
@@ -94,7 +95,7 @@ public enum OutputModeEnum {
     /**
      * Returns true, if the output mode id contains in digitalSTROM, otherwise false.
      *
-     * @param modeID
+     * @param modeID to contains
      * @return true, if contains, otherwise false
      */
     public static boolean containsMode(Integer modeID) {
@@ -104,7 +105,7 @@ public enum OutputModeEnum {
     /**
      * Returns true, if the output mode is a dimmable output mode, otherwise false.
      *
-     * @param outputMode
+     * @param outputMode to check
      * @return true, if outputMode is dimmable, otherwise false
      */
     public static boolean outputModeIsDimmable(OutputModeEnum outputMode) {
@@ -130,7 +131,7 @@ public enum OutputModeEnum {
     /**
      * Returns true, if the output mode is a switchable output mode, otherwise false.
      *
-     * @param outputMode
+     * @param outputMode to check
      * @return true, if outputMode is switchable, otherwise false
      */
     public static boolean outputModeIsSwitch(OutputModeEnum outputMode) {
@@ -153,7 +154,7 @@ public enum OutputModeEnum {
     /**
      * Returns true, if the output mode is a shade control output mode, otherwise false.
      *
-     * @param outputMode
+     * @param outputMode to check
      * @return true, if outputMode is for shade control, otherwise false
      */
     public static boolean outputModeIsShade(OutputModeEnum outputMode) {
@@ -175,7 +176,7 @@ public enum OutputModeEnum {
      * <b>Note:</b>
      * This output mode will be automatically controlled through the digitalSTROM-Server and can't be set manually.
      *
-     * @param outputMode
+     * @param outputMode to check
      * @return true, if outputMode is temperature controlled, otherwise false
      */
     public static boolean outputModeIsTemperationControlled(OutputModeEnum outputMode) {
@@ -194,7 +195,7 @@ public enum OutputModeEnum {
     /**
      * Returns the {@link OutputModeEnum} for the given modeID, otherwise null.
      *
-     * @param modeID
+     * @param modeID of the {@link OutputModeEnum}
      * @return OutputModeEnum or null
      */
     public static OutputModeEnum getMode(Integer modeID) {

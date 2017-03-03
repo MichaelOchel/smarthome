@@ -30,7 +30,7 @@ public interface GeneralDeviceInformations {
     /**
      * Sets the name of this device;
      *
-     * @param name
+     * @param name to set
      */
     public void setName(String name);
 
@@ -67,7 +67,7 @@ public interface GeneralDeviceInformations {
     /**
      * Register a {@link DeviceStatusListener} to this {@link Device}.
      *
-     * @param deviceStatuslistener
+     * @param deviceStatuslistener to register
      */
     public void registerDeviceStatusListener(DeviceStatusListener deviceStatuslistener);
 
@@ -94,21 +94,21 @@ public interface GeneralDeviceInformations {
 
     /**
      * Sets the valid state.
-     * 
+     *
      * @param isValid the new valid state
      */
     public void setIsValid(boolean isValid);
 
     /**
      * Returns the in the digitalSTROM web interface displayed dSID.
-     * 
+     *
      * @return displayed dSID
      */
     public String getDisplayID();
 
     /**
      * Returns the registered {@link DeviceStatusListener} or null, if no {@link DeviceStatusListener} is registered
-     * 
+     *
      * @return the registered {@link DeviceStatusListener} or null
      */
     public DeviceStatusListener getDeviceStatusListener();

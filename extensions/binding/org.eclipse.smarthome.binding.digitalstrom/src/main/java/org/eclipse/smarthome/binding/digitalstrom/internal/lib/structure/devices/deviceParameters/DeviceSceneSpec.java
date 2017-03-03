@@ -35,7 +35,7 @@ public interface DeviceSceneSpec {
     /**
      * Sets the don't care flag.
      *
-     * @param dontcare
+     * @param dontcare to set
      */
     public void setDontcare(boolean dontcare);
 
@@ -49,7 +49,7 @@ public interface DeviceSceneSpec {
     /**
      * Sets the local priority flag.
      *
-     * @param localPrio
+     * @param localPrio to set
      */
     public void setLocalPrio(boolean localPrio);
 
@@ -63,7 +63,7 @@ public interface DeviceSceneSpec {
     /**
      * Sets the special mode flag.
      *
-     * @param specialMode
+     * @param specialMode to set
      */
     public void setSpecialMode(boolean specialMode);
 
@@ -77,7 +77,7 @@ public interface DeviceSceneSpec {
     /**
      * Sets the flash mode flag.
      *
-     * @param flashMode
+     * @param flashMode to set
      */
     public void setFlashMode(boolean flashMode);
 }

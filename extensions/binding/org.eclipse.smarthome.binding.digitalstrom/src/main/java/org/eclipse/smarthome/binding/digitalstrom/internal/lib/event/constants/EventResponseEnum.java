@@ -72,7 +72,7 @@ public enum EventResponseEnum {
     /**
      * Returns true, if the given property exists at the ESH event properties, otherwise false.
      *
-     * @param property
+     * @param property to check
      * @return contains property (true = yes | false = no)
      */
     public static boolean containsId(String property) {
@@ -82,7 +82,7 @@ public enum EventResponseEnum {
     /**
      * Returns the {@link EventResponseEnum} to the given property.
      *
-     * @param property
+     * @param property to get
      * @return EventPropertyEnum
      */
     public static EventResponseEnum getProperty(String property) {

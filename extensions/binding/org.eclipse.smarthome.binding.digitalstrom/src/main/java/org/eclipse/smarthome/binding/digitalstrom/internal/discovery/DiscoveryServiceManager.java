@@ -32,6 +32,7 @@ import org.eclipse.smarthome.binding.digitalstrom.internal.providers.DsDeviceThi
 import org.eclipse.smarthome.config.discovery.AbstractDiscoveryService;
 import org.eclipse.smarthome.config.discovery.DiscoveryService;
 import org.eclipse.smarthome.core.thing.ThingTypeUID;
+import org.eclipse.smarthome.core.thing.type.ThingType;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.ServiceRegistration;
 
@@ -235,11 +236,6 @@ public class DiscoveryServiceManager
                     .get(DigitalSTROMBindingConstants.THING_TYPE_ZONE_TEMERATURE_CONTROL))
                             .configChanged(tempControlStatus);
         }
-    }
-
-    @Override
-    public void onTemperatureControlIsNotConfigured() {
-        // nothing to do
     }
 
     @Override

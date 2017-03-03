@@ -22,12 +22,12 @@ import org.slf4j.LoggerFactory;
  * <p>
  * In addition priorities can be assigned to jobs, but the following list shows the maximum evaluation of a
  * {@link SensorJob} per priority.
+ * </p>
  * <ul>
- * <li>low priority: read cycles before execution is set in {@link Config.LOW_PRIORITY_FACTOR}</li>
- * <li>medium priority: read cycles before execution is set in {@link Config.MEDIUM_PRIORITY_FACTOR}</li>
+ * <li>low priority: read cycles before execution is set in {@link Config}</li>
+ * <li>medium priority: read cycles before execution is set in {@link Config}</li>
  * <li>high priority: read cycles before execution 0</li>
  * </ul>
- * </p>
  *
  * @author Michael Ochel - Initial contribution
  * @author Matthias Siegele - Initial contribution
@@ -42,8 +42,8 @@ public class SensorJobExecutor extends AbstractSensorJobExecutor {
 
     /**
      * Creates a new {@link SensorJobExecutor}.
-     * 
-     * @param connectionManager
+     *
+     * @param connectionManager must not be null
      */
     public SensorJobExecutor(ConnectionManager connectionManager) {
         super(connectionManager);

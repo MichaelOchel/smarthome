@@ -7,6 +7,7 @@
  */
 package org.eclipse.smarthome.binding.digitalstrom.internal.lib.config;
 
+import org.eclipse.smarthome.binding.digitalstrom.internal.lib.event.EventListener;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.event.types.Event;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.sensorJobExecutor.SensorJobExecutor;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.sensorJobExecutor.sensorJob.SensorJob;
@@ -158,10 +159,10 @@ public class Config {
      * Creates a new {@link Config} and set the given hostAddress, userName, password and applicationToken. The other
      * configurations will be set to default.
      *
-     * @param hostAddress
-     * @param userName
-     * @param password
-     * @param applicationToken
+     * @param hostAddress of the digitalSTROM-Server, must not be null
+     * @param userName to login, can be null
+     * @param password to login, can be null
+     * @param applicationToken to login , can be null
      */
     public Config(String hostAddress, String userName, String password, String applicationToken) {
         this.host = hostAddress;
@@ -194,7 +195,7 @@ public class Config {
      * If the host dosen't use the default port (8080), the port has to be set after the host name. e.g.
      * <i>my-digitalSTROM-Server.com:58080</i>
      *
-     * @param hostAddress
+     * @param hostAddress of the digitalSTROM-Server
      */
     public void setHost(String hostAddress) {
         this.host = hostAddress;
@@ -212,7 +213,7 @@ public class Config {
     /**
      * Sets the username.
      *
-     * @param userName
+     * @param userName to set
      */
     public void setUserName(String userName) {
         this.userName = userName;
@@ -230,7 +231,7 @@ public class Config {
     /**
      * Sets the password.
      *
-     * @param password
+     * @param password to set
      */
     public void setPassword(String password) {
         this.password = password;
@@ -248,7 +249,7 @@ public class Config {
     /**
      * Sets the Application-Token.
      *
-     * @param applicationToken
+     * @param applicationToken to set
      */
     public void setAppToken(String applicationToken) {
         this.appToken = applicationToken;
@@ -266,7 +267,7 @@ public class Config {
     /**
      * Sets the connection timeout.
      *
-     * @param connectionTimeout
+     * @param connectionTimeout to set
      */
     public void setConnectionTimeout(int connectionTimeout) {
         this.connectionTimeout = connectionTimeout;
@@ -302,7 +303,7 @@ public class Config {
     /**
      * Sets the connection timeout for sensor readings from devices.
      *
-     * @param sensordataConnectionTimeout
+     * @param sensordataConnectionTimeout to set
      */
     public void setSensordataConnectionTimeout(int sensordataConnectionTimeout) {
         this.sensordataConnectionTimeout = sensordataConnectionTimeout;
@@ -320,7 +321,7 @@ public class Config {
     /**
      * Sets the connection timeout for sensor readings from devices.
      *
-     * @param sensordataReadTimeout
+     * @param sensordataReadTimeout to set
      */
     public void setSensordataReadTimeout(int sensordataReadTimeout) {
         this.sensordataReadTimeout = sensordataReadTimeout;
@@ -348,7 +349,7 @@ public class Config {
      * Sets the SSL-Certificate of the server, will be set automatically by the {@link HttpTransportImpl} if no
      * SSL-Certification path is set.
      *
-     * @param cert
+     * @param cert of the digitalSTROM-Server to set
      */
     public void setCert(String cert) {
         this.cert = cert;
@@ -357,7 +358,7 @@ public class Config {
     /**
      * Sets the path to the SSL-Certificate. It can be a absolute or relative path.
      *
-     * @param trustCertPath
+     * @param trustCertPath path to a SSL-Certificate
      */
     public void setTrustCertPath(String trustCertPath) {
         this.trustCertPath = trustCertPath;
@@ -413,7 +414,7 @@ public class Config {
      * Sets the interval of the polling frequency in milliseconds. The digitalSTROM-rules state that the
      * polling interval must to be at least 1 second.
      *
-     * @param pollingFrequency
+     * @param pollingFrequency to set
      */
     public void setPollingFrequency(int pollingFrequency) {
         this.pollingFrequency = pollingFrequency;
@@ -485,7 +486,7 @@ public class Config {
     /**
      * Sets the factor to prioritize medium {@link SensorJob}s in the {@link SensorJobExecutor} down.
      *
-     * @param mediumPriorityFactor
+     * @param mediumPriorityFactor to set
      */
     public void setMediumPriorityFactor(long mediumPriorityFactor) {
         this.mediumPriorityFactor = mediumPriorityFactor;
@@ -503,7 +504,7 @@ public class Config {
     /**
      * Sets the factor to prioritize low {@link SensorJob}s in the {@link SensorJobExecutor}down.
      *
-     * @param lowPriorityFactor
+     * @param lowPriorityFactor to set
      */
     public void setLowPriorityFactor(long lowPriorityFactor) {
         this.lowPriorityFactor = lowPriorityFactor;
@@ -521,7 +522,7 @@ public class Config {
     /**
      * Sets the polling interval in milliseconds to poll the {@link Event}s in the {@link EventListener}.
      *
-     * @param eventListenerRefreshinterval
+     * @param eventListenerRefreshinterval to set
      */
     public void setEventListenerRefreshinterval(int eventListenerRefreshinterval) {
         this.eventListenerRefreshinterval = eventListenerRefreshinterval;
@@ -541,7 +542,7 @@ public class Config {
      * Sets the max standby active power for a device. It's needed to set a {@link Device} with output mode
      * {@link OutputModeEnum#WIPE} on if it isen't any more in standby mode.
      *
-     * @param standbyActivePower
+     * @param standbyActivePower to set
      */
     public void setStandbyActivePower(int standbyActivePower) {
         this.standbyActivePower = standbyActivePower;
@@ -559,7 +560,7 @@ public class Config {
     /**
      * Sets the application name to generate the application token.
      *
-     * @param applicationName
+     * @param applicationName to set
      */
     public void setApplicationName(String applicationName) {
         this.applicationName = applicationName;
@@ -576,7 +577,7 @@ public class Config {
     /**
      * Updates this {@link Config} with the configuration of given {@link Config}.
      *
-     * @param config
+     * @param config new config
      */
     public void updateConfig(Config config) {
         setHost(config.getHost());

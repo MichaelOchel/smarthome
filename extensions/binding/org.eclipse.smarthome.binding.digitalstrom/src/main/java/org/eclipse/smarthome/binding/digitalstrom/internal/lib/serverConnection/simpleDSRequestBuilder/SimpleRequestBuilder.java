@@ -14,8 +14,7 @@ import org.apache.commons.lang.NullArgumentException;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.serverConnection.simpleDSRequestBuilder.constants.ExeptionConstants;
 
 /**
- * The {@link SimpleRequestBuilder} build a request string in format
- * /&ltinterface&lt/&ltrequestClass&gt/&ltfunction&gt[?&ltparameter&gt][&&ltparameter&gt]*.<br>
+ * The {@link SimpleRequestBuilder} build a request string.<br>
  * <br>
  * <i><b>Code example</b><br>
  * String requestString = {@link SimpleRequestBuilder}.{@link #buildNewRequest(String)}.<br>
@@ -105,11 +104,9 @@ public class SimpleRequestBuilder {
      * Adds a function to the request-string.
      *
      * @param functionKey must not be null
-     * @returns SimpleRequestBuilder with chosen function
+     * @return SimpleRequestBuilder with chosen function
      * @throws IllegalArgumentException if a function is already chosen
      * @throws NullArgumentException if the functionKey is null
-     *
-     * @return SimpleRequestBuilder
      */
     public SimpleRequestBuilder addFunction(String functionKey) throws IllegalArgumentException, NullArgumentException {
         return builder.addFunctionInt(functionKey);
@@ -194,7 +191,6 @@ public class SimpleRequestBuilder {
      *
      * @see java.lang.Object#equals()
      */
-    @SuppressWarnings("javadoc")
     public boolean equals(SimpleRequestBuilder builder) {
         return this.request.contains(builder.request);
     }

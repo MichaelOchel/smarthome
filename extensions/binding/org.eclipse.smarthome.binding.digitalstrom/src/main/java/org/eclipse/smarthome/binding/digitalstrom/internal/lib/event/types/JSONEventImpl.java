@@ -23,9 +23,9 @@ public class JSONEventImpl implements Event {
     private List<EventItem> eventItemList;
 
     /**
-     * Creates a new {@link JSONEventImpl} from the given digitalSTROM-Event {@link JSONArray}.
+     * Creates a new {@link JSONEventImpl} from the given digitalSTROM-Event {@link JsonArray}.
      *
-     * @param jsonEventArray
+     * @param jsonEventArray must not be null
      */
     public JSONEventImpl(JsonArray jsonEventArray) {
         this.eventItemList = new LinkedList<EventItem>();

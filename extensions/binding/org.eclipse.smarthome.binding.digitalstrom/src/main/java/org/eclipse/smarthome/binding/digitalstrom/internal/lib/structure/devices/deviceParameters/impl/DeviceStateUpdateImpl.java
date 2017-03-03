@@ -26,8 +26,8 @@ public class DeviceStateUpdateImpl implements DeviceStateUpdate {
     /**
      * Creates a new {@link DeviceStateUpdateImpl} with the given updateType and a value as {@link Object}.
      *
-     * @param updateType
-     * @param value
+     * @param updateType must not be null
+     * @param value must not be null
      */
     public DeviceStateUpdateImpl(String updateType, Object value) {
         this.UPDATE_TYPE = updateType;
@@ -37,8 +37,8 @@ public class DeviceStateUpdateImpl implements DeviceStateUpdate {
     /**
      * Creates a new {@link DeviceStateUpdateImpl} with the given updateType and a value as {@link Integer}.
      *
-     * @param updateType
-     * @param value
+     * @param updateType must not be null
+     * @param value must not be null
      */
     public DeviceStateUpdateImpl(String updateType, Integer value) {
         this.UPDATE_TYPE = updateType;
@@ -49,8 +49,8 @@ public class DeviceStateUpdateImpl implements DeviceStateUpdate {
      * Creates a new {@link DeviceStateUpdateImpl} through the given {@link DeviceBinaryInput} and value as
      * {@link Short}. The updateType as {@link String} will be automatically create.
      *
-     * @param updateDeviceBinary
-     * @param value
+     * @param updateDeviceBinary must not be null
+     * @param value must not be null
      */
     public DeviceStateUpdateImpl(DeviceBinarayInputEnum updateDeviceBinary, Short value) {
         this.UPDATE_TYPE = DeviceStateUpdate.BINARY_INPUT + updateDeviceBinary.getBinaryInputType();
@@ -61,8 +61,8 @@ public class DeviceStateUpdateImpl implements DeviceStateUpdate {
      * Creates a new {@link DeviceStateUpdateImpl} through the given {@link SensorEnum} and value as
      * {@link Integer}. The updateType as {@link String} will be automatically create.
      *
-     * @param updateSensorType
-     * @param value
+     * @param updateSensorType must not be null
+     * @param value must not be null
      */
     public DeviceStateUpdateImpl(SensorEnum updateSensorType, Integer value) {
         this.UPDATE_TYPE = DeviceStateUpdate.UPDATE_DEVICE_SENSOR + updateSensorType.getSensorType();
@@ -73,8 +73,8 @@ public class DeviceStateUpdateImpl implements DeviceStateUpdate {
      * Creates a new {@link DeviceStateUpdateImpl} through the given {@link SensorEnum} and value as
      * {@link Float}. The updateType as {@link String} will be automatically create.
      *
-     * @param updateSensorType
-     * @param value
+     * @param updateSensorType must not be null
+     * @param value must not be null
      */
     public DeviceStateUpdateImpl(SensorEnum updateSensorType, Float value) {
         this.UPDATE_TYPE = DeviceStateUpdate.UPDATE_DEVICE_SENSOR + updateSensorType.getSensorType();
@@ -84,8 +84,8 @@ public class DeviceStateUpdateImpl implements DeviceStateUpdate {
     /**
      * Creates a new {@link DeviceStateUpdateImpl} with the given updateType and a value as {@link Float}.
      *
-     * @param updateType
-     * @param value
+     * @param updateType must not be null
+     * @param value must not be null
      */
     public DeviceStateUpdateImpl(String updateType, Float value) {
         this.UPDATE_TYPE = updateType;
@@ -95,8 +95,8 @@ public class DeviceStateUpdateImpl implements DeviceStateUpdate {
     /**
      * Creates a new {@link DeviceStateUpdateImpl} with the given updateType and a value as {@link String}.
      *
-     * @param updateType
-     * @param value
+     * @param updateType must not be null
+     * @param value must not be null
      */
     public DeviceStateUpdateImpl(String updateType, String value) {
         this.UPDATE_TYPE = updateType;
@@ -104,11 +104,12 @@ public class DeviceStateUpdateImpl implements DeviceStateUpdate {
     }
 
     /**
-     * Creates a new {@link DeviceStateUpdateImpl} with the given updateType and a value as {@link Short[]}, e.g. for
+     * Creates a new {@link DeviceStateUpdateImpl} with the given updateType and a value as {@link Short}-array, e.g.
+     * for
      * scene updates.
      *
-     * @param updateType
-     * @param value
+     * @param updateType must not be null
+     * @param value must not be null
      */
     public DeviceStateUpdateImpl(String updateType, Short[] value) {
         this.UPDATE_TYPE = updateType;
@@ -118,8 +119,8 @@ public class DeviceStateUpdateImpl implements DeviceStateUpdate {
     /**
      * Creates a new {@link DeviceStateUpdateImpl} with the given updateType and a value as {@link Short}.
      *
-     * @param updateType
-     * @param value
+     * @param updateType must not be null
+     * @param value must not be null
      */
     public DeviceStateUpdateImpl(String updateType, Short value) {
         this.UPDATE_TYPE = updateType;

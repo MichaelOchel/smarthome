@@ -34,7 +34,7 @@ public class JSONDeviceSceneSpecImpl implements DeviceSceneSpec {
     /**
      * Creates a new {@link JSONDeviceSceneSpecImpl} through the digitalSTROM json response as {@link JsonObject}.
      *
-     * @param jObject
+     * @param jObject must not be null
      */
     public JSONDeviceSceneSpecImpl(JsonObject jObject) {
         if (jObject.get(JSONApiResponseKeysEnum.SCENE_ID.getKey()) != null) {
@@ -62,7 +62,7 @@ public class JSONDeviceSceneSpecImpl implements DeviceSceneSpec {
     /**
      * Creates a new {@link JSONDeviceSceneSpecImpl} through the given sceneID.
      *
-     * @param sceneID
+     * @param sceneID must not be null
      */
     public JSONDeviceSceneSpecImpl(Short sceneID) {
         this.scene = SceneEnum.getScene(sceneID);
@@ -71,7 +71,7 @@ public class JSONDeviceSceneSpecImpl implements DeviceSceneSpec {
     /**
      * Creates a new {@link JSONDeviceSceneSpecImpl} through the given sceneName.
      *
-     * @param sceneName
+     * @param sceneName must not be null
      */
     public JSONDeviceSceneSpecImpl(String sceneName) {
         try {

@@ -58,7 +58,7 @@ public enum ControlModes {
     /**
      * Returns the {@link ControlModes} of the given control mode id.
      *
-     * @param id
+     * @param id of the control mode
      * @return control mode
      */
     public static ControlModes getControlMode(short id) {

@@ -56,7 +56,7 @@ public enum ControlStates {
     /**
      * Returns the {@link ControlStates} of the given control state id.
      *
-     * @param id
+     * @param id of the control state
      * @return control state
      */
     public static ControlStates getControlState(short id) {

@@ -27,8 +27,8 @@ public class JSONDeviceConfigImpl implements DeviceConfig {
 
     /**
      * Creates a new {@link JSONDeviceConfigImpl}.
-     * 
-     * @param object
+     *
+     * @param object must not be null
      */
     public JSONDeviceConfigImpl(JsonObject object) {
         if (object.get(JSONApiResponseKeysEnum.CLASS.getKey()) != null) {

@@ -74,7 +74,7 @@ public class TemperatureControlValues extends BaseZoneIdentifier {
     }
 
     /**
-     * @see TemperatureControl#getControlDSUID()
+     * @see TemperatureControlStatus#getControlDSUID()
      * @return the controlDSUID
      */
     public String getControlDSUID() {
@@ -82,7 +82,7 @@ public class TemperatureControlValues extends BaseZoneIdentifier {
     }
 
     /**
-     * @see TemperatureControl#getIsConfigured()
+     * @see TemperatureControlStatus#getIsConfigured()
      * @return the isConfigured
      */
     public Boolean getIsConfigured() {
@@ -92,7 +92,7 @@ public class TemperatureControlValues extends BaseZoneIdentifier {
     /**
      * Returns the set temperature of the given operation mode.
      *
-     * @param operationMode
+     * @param operationMode must not be null
      * @return temperature of the operation mode
      */
     public Float getTemperation(OperationModes operationMode) {

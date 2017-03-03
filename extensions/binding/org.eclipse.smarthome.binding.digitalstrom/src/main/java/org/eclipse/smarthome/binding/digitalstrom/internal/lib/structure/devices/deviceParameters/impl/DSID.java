@@ -20,8 +20,8 @@ public class DSID {
 
     /**
      * Creates a new {@link DSID}.
-     * 
-     * @param dsid
+     *
+     * @param dsid to create
      */
     public DSID(String dsid) {
         this.dsid = dsid;

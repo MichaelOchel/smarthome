@@ -31,13 +31,13 @@ public interface DeviceConstants {
     /** default max output value */
     public final static short DEFAULT_MAX_OUTPUTVALUE = 255;
 
-    /** max output value if device (lamp -> yellow) is on */
+    /** max output value if device (lamp - yellow) is on */
     public final static short MAX_OUTPUT_VALUE_LIGHT = 255;
 
-    /** is open (special case: awning/marquee -> closed) */
+    /** is open (special case: awning/marquee - closed) */
     public final static int MAX_ROLLERSHUTTER = 65535;
 
-    /** is closed (special case: awning/marquee -> open) */
+    /** is closed (special case: awning/marquee - open) */
     public final static short MIN_ROLLERSHUTTER = 0;
 
     /** max slat angle by blind/jalousie */

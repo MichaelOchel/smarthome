@@ -26,16 +26,16 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * The {@link AbstractSensorJobExecutor} provides the working process to execute implementations of {@link SensorJobs}'s
+ * The {@link AbstractSensorJobExecutor} provides the working process to execute implementations of {@link SensorJob}'s
  * in the time interval set at the {@link Config}.
  * <p>
  * The following methods can be overridden by subclasses to implement a execution priority:
+ * </p>
  * <ul>
  * <li>{@link #addLowPriorityJob(SensorJob)}</li>
  * <li>{@link #addMediumPriorityJob(SensorJob)}</li>
  * <li>{@link #addHighPriorityJob(SensorJob)}</li>
  * </ul>
- * </p>
  *
  * @author Michael Ochel - Initial contribution
  * @author Matthias Siegele - Initial contribution
@@ -77,7 +77,7 @@ public abstract class AbstractSensorJobExecutor {
     /**
      * Creates a new {@link AbstractSensorJobExecutor}.
      *
-     * @param connectionManager
+     * @param connectionManager must not be null
      */
     public AbstractSensorJobExecutor(ConnectionManager connectionManager) {
         this.connectionManager = connectionManager;
@@ -127,7 +127,7 @@ public abstract class AbstractSensorJobExecutor {
     /**
      * Adds a high priority {@link SensorJob}.
      *
-     * @param sensorJob
+     * @param sensorJob to add
      */
     public void addHighPriorityJob(SensorJob sensorJob) {
         // can be Overridden to implement a priority
@@ -137,7 +137,7 @@ public abstract class AbstractSensorJobExecutor {
     /**
      * Adds a medium priority {@link SensorJob}.
      *
-     * @param sensorJob
+     * @param sensorJob to add
      */
     public void addMediumPriorityJob(SensorJob sensorJob) {
         // can be Overridden to implement a priority
@@ -147,7 +147,7 @@ public abstract class AbstractSensorJobExecutor {
     /**
      * Adds a low priority {@link SensorJob}.
      *
-     * @param sensorJob
+     * @param sensorJob to add
      */
     public void addLowPriorityJob(SensorJob sensorJob) {
         // can be Overridden to implement a priority
@@ -157,8 +157,8 @@ public abstract class AbstractSensorJobExecutor {
     /**
      * Adds a {@link SensorJob} with a given priority .
      *
-     * @param sensorJob
-     * @param priority
+     * @param sensorJob to add
+     * @param priority to update
      */
     public void addPriorityJob(SensorJob sensorJob, long priority) {
         if (sensorJob == null) {
@@ -173,7 +173,7 @@ public abstract class AbstractSensorJobExecutor {
     /**
      * Adds the given {@link SensorJob}.
      *
-     * @param sensorJob
+     * @param sensorJob to add
      */
     protected void addSensorJobToCircuitScheduler(SensorJob sensorJob) {
         synchronized (this.circuitSchedulerList) {
@@ -198,9 +198,9 @@ public abstract class AbstractSensorJobExecutor {
     }
 
     /**
-     * Removes all SensorJobs of a specific {@link device}.
+     * Removes all SensorJobs of a specific {@link Device}.
      *
-     * @param device
+     * @param device to remove
      */
     public void removeSensorJobs(Device device) {
         if (device != null) {
@@ -215,7 +215,7 @@ public abstract class AbstractSensorJobExecutor {
      * Removes the {@link SensorJob} with the given ID.
      *
      * @param device needed for the meterDSID
-     * @param ID
+     * @param ID of the {@link SensorJob} to remove
      */
     public void removeSensorJob(Device device, String ID) {
         if (device != null && ID != null) {

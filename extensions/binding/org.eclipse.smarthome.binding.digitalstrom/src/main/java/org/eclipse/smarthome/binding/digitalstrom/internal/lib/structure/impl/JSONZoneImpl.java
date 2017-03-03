@@ -37,7 +37,7 @@ public class JSONZoneImpl implements Zone {
     /**
      * Creates a new {@link JSONZoneImpl} through the {@link JsonObject}.
      *
-     * @param jObject
+     * @param jObject of the server response, must not be null
      */
     public JSONZoneImpl(JsonObject jObject) {
         this.groupList = new LinkedList<DetailedGroupInfo>();

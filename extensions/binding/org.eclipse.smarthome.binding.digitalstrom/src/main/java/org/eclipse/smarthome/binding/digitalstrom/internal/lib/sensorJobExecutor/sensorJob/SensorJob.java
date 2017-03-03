@@ -42,8 +42,8 @@ public interface SensorJob {
     /**
      * Executes the SensorJob.
      *
-     * @param dSAPI
-     * @param sessionToken
+     * @param dSAPI must not be null
+     * @param sessionToken to login
      */
     public void execute(DsAPI dSAPI, String sessionToken);
 

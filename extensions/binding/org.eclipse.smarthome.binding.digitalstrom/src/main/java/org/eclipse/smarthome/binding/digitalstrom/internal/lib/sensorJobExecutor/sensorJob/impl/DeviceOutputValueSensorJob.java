@@ -35,7 +35,7 @@ public class DeviceOutputValueSensorJob implements SensorJob {
     /**
      * Creates a new {@link DeviceOutputValueSensorJob} for the given {@link Device}.
      *
-     * @param device
+     * @param device to update
      */
     public DeviceOutputValueSensorJob(Device device) {
         this.device = device;
@@ -56,8 +56,7 @@ public class DeviceOutputValueSensorJob implements SensorJob {
         if (value != 1) {
             switch (this.index) {
                 case 0:
-                    this.device.updateInternalDeviceState(
-                            new DeviceStateUpdateImpl(DeviceStateUpdate.OUTPUT, value));
+                    this.device.updateInternalDeviceState(new DeviceStateUpdateImpl(DeviceStateUpdate.OUTPUT, value));
                     return;
                 case 2:
                     this.device.updateInternalDeviceState(
@@ -133,7 +132,7 @@ public class DeviceOutputValueSensorJob implements SensorJob {
     /**
      * Returns the id for a {@link DeviceOutputValueSensorJob} with the given {@link Device}.
      *
-     * @param device
+     * @param device to update
      * @return id
      */
     public static String getID(Device device) {

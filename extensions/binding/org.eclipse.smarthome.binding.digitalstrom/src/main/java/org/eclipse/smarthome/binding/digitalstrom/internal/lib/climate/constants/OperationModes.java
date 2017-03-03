@@ -37,8 +37,8 @@ public enum OperationModes {
 
     /**
      * Returns the {@link OperationModes} of the given operation mode id.
-     * 
-     * @param id
+     *
+     * @param id of the operation mode
      * @return operation mode
      */
     public static OperationModes getOperationMode(short id) {

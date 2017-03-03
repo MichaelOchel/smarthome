@@ -83,7 +83,7 @@ public class SceneHandler extends BaseThingHandler implements SceneStatusListene
     /**
      * Creates a new {@link SceneHandler}.
      *
-     * @param thing
+     * @param thing must not be null
      */
     public SceneHandler(Thing thing) {
         super(thing);
@@ -172,12 +172,14 @@ public class SceneHandler extends BaseThingHandler implements SceneStatusListene
      * group. The {@link SceneEnum} will be used to check, if the configured scene exists and is allowed to use.<br>
      * If the check succeed the scene-ID will be returned in format "[zoneID]-[groupID]-[SceneID]", otherwise one of the
      * following errors {@link String}s will returned:
+     * <ul>
      * <li>{@link #SCENE_WRONG}: Configured scene does not exist or cannot be used.</li>
      * <li>{@link #ZONE_WRONG} Configured zone does not exist.</li>
      * <li>{@link #GROUP_WRONG}: Configured group does not exist.</li>
      * <li>{@link #NO_STRUC_MAN}: StructureManager in BridgeHandler is null.</li>
      * <li>{@link #NO_SCENE}: Configured scene is null.</li>
-     * <li>{@link #NO_BRIDGE}: BridgeHandler is null.</li><br>
+     * <li>{@link #NO_BRIDGE}: BridgeHandler is null.</li>
+     * </ul>
      *
      * @param configuration (must not be null)
      * @param bridgeHandler (can be null)

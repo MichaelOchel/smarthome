@@ -7,6 +7,8 @@
  */
 package org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters;
 
+import org.eclipse.smarthome.binding.digitalstrom.internal.lib.sensorJobExecutor.SensorJobExecutor;
+import org.eclipse.smarthome.binding.digitalstrom.internal.lib.sensorJobExecutor.sensorJob.SensorJob;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.constants.DeviceBinarayInputEnum;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.constants.SensorEnum;
 
@@ -70,15 +72,15 @@ public interface DeviceStateUpdate {
      * Returns the state update value.
      * <p>
      * <b>NOTE:</b>
+     * </p>
      * <ul>
-     * <li>For all OnOff-types the value for off is < 0 and for on > 0.</li>
+     * <li>For all OnOff-types the value for off is lower than 0 and for on higher than 0.</li>
      * <li>For all Increase- and Decrease-types the value is the new output value.</li>
      * <li>For SceneCall-type the value is between 0 and 127.</li>
      * <li>For all SceneUndo-types the value is the new output value.</li>
      * <li>For all SensorUpdate-types will read the sensor data directly, if the value is 0, otherwise a
      * {@link SensorJob} will be added to the {@link SensorJobExecutor}.</li>
      * </ul>
-     * </p>
      *
      * @return new state value
      */
@@ -89,7 +91,6 @@ public interface DeviceStateUpdate {
      *
      * @return integer value
      * @see #getValue()
-     * @throws {@link ClassCastException}, if the value is not in a cast or parsable format.
      */
     public Integer getValueAsInteger();
 
@@ -106,7 +107,6 @@ public interface DeviceStateUpdate {
      *
      * @return short value
      * @see #getValue()
-     * @throws {@link ClassCastException}, if the value is not in a cast or parsable format.
      */
     public Short getValueAsShort();
 
@@ -115,16 +115,14 @@ public interface DeviceStateUpdate {
      *
      * @return float value
      * @see #getValue()
-     * @throws {@link ClassCastException}, if the value is not in a cast or parsable format.
      */
     public Float getValueAsFloat();
 
     /**
-     * Returns the value as {@link Short[]}.
+     * Returns the value as {@link Short}-array.
      *
      * @return short[] value
      * @see #getValue()
-     * @throws {@link ClassCastException}, if the value is not in a cast or parsable format.
      */
     public Short[] getValueAsShortArray();
 

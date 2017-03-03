@@ -16,6 +16,7 @@ import java.util.Set;
 
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.manager.ConnectionManager;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.manager.StructureManager;
+import org.eclipse.smarthome.binding.digitalstrom.internal.lib.serverConnection.DsAPI;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.serverConnection.impl.JSONResponseHandler;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.AbstractGeneralDeviceInformations;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.Circuit;
@@ -51,7 +52,7 @@ public class StructureManagerImpl implements StructureManager {
     /**
      * Creates a new {@link StructureManagerImpl} with the {@link Device}s of the given referenceDeviceList.
      *
-     * @param referenceDeviceList
+     * @param referenceDeviceList to add
      */
     public StructureManagerImpl(List<Device> referenceDeviceList) {
         handleStructure(referenceDeviceList);
@@ -60,8 +61,8 @@ public class StructureManagerImpl implements StructureManager {
     /**
      * Creates a new {@link StructureManagerImpl} with the {@link Device}s of the given referenceDeviceList.
      *
-     * @param referenceDeviceList
-     * @param referenceCircuitList
+     * @param referenceDeviceList to add
+     * @param referenceCircuitList to add
      */
     public StructureManagerImpl(List<Device> referenceDeviceList, List<Circuit> referenceCircuitList) {
         handleStructure(referenceDeviceList);

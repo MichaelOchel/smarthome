@@ -18,12 +18,14 @@ import java.util.Locale;
 import java.util.Set;
 
 import org.eclipse.smarthome.binding.digitalstrom.DigitalSTROMBindingConstants;
+import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.Device;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.constants.DeviceBinarayInputEnum;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.constants.FunctionalColorGroupEnum;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.constants.MeteringTypeEnum;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.constants.MeteringUnitsEnum;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.constants.OutputModeEnum;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.constants.SensorEnum;
+import org.eclipse.smarthome.core.thing.Channel;
 import org.eclipse.smarthome.core.thing.type.ChannelGroupType;
 import org.eclipse.smarthome.core.thing.type.ChannelGroupTypeUID;
 import org.eclipse.smarthome.core.thing.type.ChannelType;
@@ -103,8 +105,8 @@ public class DsChannelTypeProvider extends BaseDsI18n implements ChannelTypeProv
      * {@link OutputModeEnum} or null, if no channel type exists for the given {@link FunctionalColorGroupEnum} and
      * {@link OutputModeEnum}.
      *
-     * @param functionalGroup
-     * @param outputMode
+     * @param functionalGroup of the {@link Device}
+     * @param outputMode of the {@link Device}
      * @return the output channel type id or null
      */
     public static String getOutputChannelTypeID(FunctionalColorGroupEnum functionalGroup, OutputModeEnum outputMode) {
@@ -177,7 +179,7 @@ public class DsChannelTypeProvider extends BaseDsI18n implements ChannelTypeProv
     /**
      * Returns true, if the given channel type id is a output channel.
      *
-     * @param channelTypeID
+     * @param channelTypeID to check
      * @return true, if channel type id is output channel
      */
     public static boolean isOutputChannel(String channelTypeID) {
@@ -388,7 +390,7 @@ public class DsChannelTypeProvider extends BaseDsI18n implements ChannelTypeProv
     /**
      * Returns the supported item type for the given channel type id or null, if the channel type does not exist.
      *
-     * @param channelTypeID
+     * @param channelTypeID of the channel
      * @return item type or null
      */
     public static String getItemType(String channelTypeID) {

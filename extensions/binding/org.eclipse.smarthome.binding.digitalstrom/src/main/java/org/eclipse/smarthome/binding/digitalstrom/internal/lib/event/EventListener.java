@@ -106,7 +106,6 @@ public class EventListener {
      * {@link #addEventHandlers(List)}.
      *
      * @param connectionManager must not be null
-     * @param eventHandler must not be null
      */
     public EventListener(ConnectionManager connectionManager) {
         this.connManager = connectionManager;
@@ -123,7 +122,7 @@ public class EventListener {
 
     /**
      * Returns true, if the {@link EventListener} is started.
-     * 
+     *
      * @return true, if is started
      */
     public boolean isStarted() {
@@ -164,7 +163,7 @@ public class EventListener {
      * Adds a {@link List} of {@link EventHandler}'s and subscribe the supported event-types, if the
      * {@link EventListener} is started and the event-types are not already subscribed.
      *
-     * @param eventHandlers
+     * @param eventHandlers to add
      */
     public void addEventHandlers(List<EventHandler> eventHandlers) {
         if (eventHandlers != null) {
@@ -178,11 +177,11 @@ public class EventListener {
      * Adds a {@link EventHandler}'s and subscribe the supported event-types, if the
      * {@link EventListener} is started and the event-types are not already subscribed.<br>
      * <br>
-     * <b>Note:<b><br>
+     * <b>Note:</b><br>
      * If {@link #start()} was called before the {@link EventListener} will start now, otherwise you have to call
      * {@link #start()} to get notified by events.
      *
-     * @param eventHandler
+     * @param eventHandler to add
      */
     public void addEventHandler(EventHandler eventHandler) {
         if (eventHandler != null) {
@@ -210,7 +209,7 @@ public class EventListener {
      * Remove a {@link EventHandler} and unsubscribes the supported event-types, if the
      * {@link EventListener} is started and no other {@link EventHandler} needed the event-types.
      *
-     * @param eventHandler
+     * @param eventHandler to remove
      */
     public void removeEventHandler(EventHandler eventHandler) {
         if (eventHandler != null && eventHandlers != null && eventHandlers.contains(eventHandler)) {
@@ -247,8 +246,8 @@ public class EventListener {
     /**
      * Removes a subscribed event and unsubscibe it, if it is dosen't need by other {@link EventHandler}'s.
      *
-     * @param unsubscribeEvent
-     * @param eventHandlerID
+     * @param unsubscribeEvent event name to unsubscibe
+     * @param eventHandlerID EventHandler-ID of the EventHandler that unsubscibe a event
      */
     public void removeSubscribe(String unsubscribeEvent, String eventHandlerID) {
         if (subscribedEvents != null && !subscribedEvents.contains(unsubscribeEvent)) {
@@ -283,7 +282,7 @@ public class EventListener {
     /**
      * Adds a event and subscribed it, if it is not subscribed already.
      *
-     * @param subscribeEvent
+     * @param subscribeEvent event name to subscribe
      */
     public void addSubscribe(String subscribeEvent) {
         if (!subscribedEvents.contains(subscribeEvent)) {
@@ -298,7 +297,7 @@ public class EventListener {
     /**
      * Adds the events of the {@link List} and subscribe them, if a event is not subscribed already.
      *
-     * @param subscribeEvents
+     * @param subscribeEvents event name to subscribe
      */
     public void addSubscribeEvents(List<String> subscribeEvents) {
         for (String eventName : subscribeEvents) {

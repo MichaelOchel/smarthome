@@ -20,7 +20,8 @@ import org.slf4j.LoggerFactory;
  * {@link SceneOutputValueReadingJob}.
  * <p>
  * In addition priorities can be assigned to jobs therefore the {@link SceneReadingJobExecutor} offers the methods
- * {@link #addHighPriorityJob()}, {@link #addLowPriorityJob()} and {@link #addLowPriorityJob()}.
+ * {@link #addHighPriorityJob(SensorJob)}, {@link #addMediumPriorityJob(SensorJob)} and
+ * {@link #addLowPriorityJob(SensorJob)}.
  * </p>
  * <p>
  * <b>NOTE:</b><br>
@@ -38,8 +39,8 @@ public class SceneReadingJobExecutor extends AbstractSensorJobExecutor {
 
     /**
      * Creates a new {@link SceneReadingJobExecutor}.
-     * 
-     * @param connectionManager
+     *
+     * @param connectionManager must not be null
      */
     public SceneReadingJobExecutor(ConnectionManager connectionManager) {
         super(connectionManager);

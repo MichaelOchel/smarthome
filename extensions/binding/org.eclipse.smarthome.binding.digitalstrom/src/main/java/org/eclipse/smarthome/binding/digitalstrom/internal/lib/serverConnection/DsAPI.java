@@ -11,6 +11,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.eclipse.smarthome.binding.digitalstrom.internal.lib.climate.constants.ControlModes;
+import org.eclipse.smarthome.binding.digitalstrom.internal.lib.climate.constants.OperationModes;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.climate.jsonResponseContainer.BaseSensorValues;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.climate.jsonResponseContainer.impl.AssignedSensors;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.climate.jsonResponseContainer.impl.SensorValues;
@@ -36,16 +38,15 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 
 /**
- * digitalSTROM-API based on dSS-Version higher then 1.14.5
+ * digitalSTROM-API based on dSS-Version higher then 1.14.5.
+ * digitalSTROM documentation can be found at http://developer.digitalstrom.org/Architecture/v1.1/dss-json.pdf
  *
  * @author Alexander Betker - initial contributer
- * @see http://developer.digitalstrom.org/download/dss/dss-1.14.5-doc/dss-1.14.5-json_api.html
  *
  * @author Michael Ochel - add missing java-doc, update digitalSTROM-JSON-API as far as possible to the pdf version from
  *         June 19, 2014 and add checkConnection method and ALL_METERS constant
  * @author Matthias Siegele - add missing java-doc, update digitalSTROM-JSON-API as far as possible to the pdf version
  *         from June 19, 2014 and add checkConnection method and ALL_METERS constant
- * @see http://developer.digitalstrom.org/Architecture/v1.1/dss-json.pdf
  */
 public interface DsAPI {
 
@@ -60,7 +61,9 @@ public interface DsAPI {
      * or groupName are specified. Only devices contained in this group will be
      * addressed.
      *
-     * @param sessionToken can be null, if a {@link ConnectionManager} is registered at the {@link HttpTransport}
+     * @param sessionToken can be null, if a
+     *            {@link org.eclipse.smarthome.binding.digitalstrom.internal.lib.manager.ConnectionManager} is
+     *            registered at the {@link HttpTransport}
      * @param groupID not required
      * @param groupName not required
      * @param sceneNumber required
@@ -73,7 +76,9 @@ public interface DsAPI {
     /**
      * Returns all zones
      *
-     * @param sessionToken can be null, if a {@link ConnectionManager} is registered at the {@link HttpTransport}
+     * @param sessionToken can be null, if a
+     *            {@link org.eclipse.smarthome.binding.digitalstrom.internal.lib.manager.ConnectionManager} is
+     *            registered at the {@link HttpTransport}
      * @return Apartment
      */
     public Apartment getApartmentStructure(String sessionToken);
@@ -82,7 +87,9 @@ public interface DsAPI {
      * Returns the list of devices in the apartment. If unassigned is true,
      * only devices that are not assigned to a zone will be returned.
      *
-     * @param sessionToken can be null, if a {@link ConnectionManager} is registered at the {@link HttpTransport}
+     * @param sessionToken can be null, if a
+     *            {@link org.eclipse.smarthome.binding.digitalstrom.internal.lib.manager.ConnectionManager} is
+     *            registered at the {@link HttpTransport}
      * @return List of devices
      */
     public List<Device> getApartmentDevices(String sessionToken);
@@ -90,15 +97,19 @@ public interface DsAPI {
     /**
      * Returns an array containing all digitalSTROM-Meters of the apartment.
      *
-     * @param sessionToken can be null, if a {@link ConnectionManager} is registered at the {@link HttpTransport}
-     * @return
+     * @param sessionToken can be null, if a
+     *            {@link org.eclipse.smarthome.binding.digitalstrom.internal.lib.manager.ConnectionManager} is
+     *            registered at the {@link HttpTransport}
+     * @return List of all {@link Circuit}s
      */
     public List<Circuit> getApartmentCircuits(String sessionToken);
 
     /**
      * Returns a list of dSID's of all meters(dSMs)
      *
-     * @param sessionToken can be null, if a {@link ConnectionManager} is registered at the {@link HttpTransport}
+     * @param sessionToken can be null, if a
+     *            {@link org.eclipse.smarthome.binding.digitalstrom.internal.lib.manager.ConnectionManager} is
+     *            registered at the {@link HttpTransport}
      * @return String-List with dSID's
      */
     public List<String> getMeterList(String sessionToken);
@@ -107,12 +118,14 @@ public interface DsAPI {
      * Calls the sceneNumber on all devices in the given zone. If groupID or groupName
      * are specified only devices contained in this group will be addressed.
      *
-     * @param sessionToken can be null, if a {@link ConnectionManager} is registered at the {@link HttpTransport}
+     * @param sessionToken can be null, if a
+     *            {@link org.eclipse.smarthome.binding.digitalstrom.internal.lib.manager.ConnectionManager} is
+     *            registered at the {@link HttpTransport}
      * @param zoneID needs either id or name
      * @param zoneName needs either id or name
      * @param groupID not required
      * @param groupName not required
-     * @param sceneNumber required (only a zone/user scene is possible -> sceneNumber 0..63 )
+     * @param sceneNumber required (only a zone/user scene is possible - sceneNumber 0..63 )
      * @param force not required
      * @return true on success
      */
@@ -122,7 +135,9 @@ public interface DsAPI {
     /**
      * Turns the device on. This will call the scene "max" on the device.
      *
-     * @param sessionToken can be null, if a {@link ConnectionManager} is registered at the {@link HttpTransport}
+     * @param sessionToken can be null, if a
+     *            {@link org.eclipse.smarthome.binding.digitalstrom.internal.lib.manager.ConnectionManager} is
+     *            registered at the {@link HttpTransport}
      * @param dSID needs either dSID, dSUID or name
      * @param dSUID needs either dSID, dSUID or name
      * @param deviceName needs either dSID, dsUID or name
@@ -133,7 +148,9 @@ public interface DsAPI {
     /**
      * Turns the device off. This will call the scene "min" on the device.
      *
-     * @param sessionToken can be null, if a {@link ConnectionManager} is registered at the {@link HttpTransport}
+     * @param sessionToken can be null, if a
+     *            {@link org.eclipse.smarthome.binding.digitalstrom.internal.lib.manager.ConnectionManager} is
+     *            registered at the {@link HttpTransport}
      * @param dSID needs either dSID, dSUID or name
      * @param dSUID needs either dSID, dSUID or name
      * @param deviceName needs either dSID, dsUID or name
@@ -144,7 +161,9 @@ public interface DsAPI {
     /**
      * Sets the output value of device.
      *
-     * @param sessionToken can be null, if a {@link ConnectionManager} is registered at the {@link HttpTransport}
+     * @param sessionToken can be null, if a
+     *            {@link org.eclipse.smarthome.binding.digitalstrom.internal.lib.manager.ConnectionManager} is
+     *            registered at the {@link HttpTransport}
      * @param dSID needs either dSID, dSUID or name
      * @param dSUID needs either dSID, dSUID or name
      * @param deviceName needs either dSID, dsUID or name
@@ -156,7 +175,9 @@ public interface DsAPI {
     /**
      * Gets the value of configuration class at offset index.
      *
-     * @param sessionToken can be null, if a {@link ConnectionManager} is registered at the {@link HttpTransport}
+     * @param sessionToken can be null, if a
+     *            {@link org.eclipse.smarthome.binding.digitalstrom.internal.lib.manager.ConnectionManager} is
+     *            registered at the {@link HttpTransport}
      * @param dSID needs either dSID, dSUID or name
      * @param dSUID needs either dSID, dSUID or name
      * @param deviceName needs either dSID, dsUID or name
@@ -172,7 +193,9 @@ public interface DsAPI {
      * The available parameters and offsets depend on the features of the
      * hardware components.
      *
-     * @param sessionToken can be null, if a {@link ConnectionManager} is registered at the {@link HttpTransport}
+     * @param sessionToken can be null, if a
+     *            {@link org.eclipse.smarthome.binding.digitalstrom.internal.lib.manager.ConnectionManager} is
+     *            registered at the {@link HttpTransport}
      * @param dSID needs either dSID, dSUID or name
      * @param dSUID needs either dSID, dSUID or name
      * @param deviceName needs either dSID, dsUID or name
@@ -185,7 +208,9 @@ public interface DsAPI {
      * Sets the device output value at the given offset. The available
      * parameters and offsets depend on the features of the hardware components.
      *
-     * @param sessionToken can be null, if a {@link ConnectionManager} is registered at the {@link HttpTransport}
+     * @param sessionToken can be null, if a
+     *            {@link org.eclipse.smarthome.binding.digitalstrom.internal.lib.manager.ConnectionManager} is
+     *            registered at the {@link HttpTransport}
      * @param dSID needs either dSID, dSUID or name
      * @param dSUID needs either dSID, dSUID or name
      * @param deviceName needs either dSID, dsUID or name
@@ -199,7 +224,9 @@ public interface DsAPI {
     /**
      * Gets the device configuration for a specific scene command.
      *
-     * @param sessionToken can be null, if a {@link ConnectionManager} is registered at the {@link HttpTransport}
+     * @param sessionToken can be null, if a
+     *            {@link org.eclipse.smarthome.binding.digitalstrom.internal.lib.manager.ConnectionManager} is
+     *            registered at the {@link HttpTransport}
      * @param dSID needs either dSID, dSUID or name
      * @param dSUID needs either dSID, dSUID or name
      * @param deviceName needs either dSID, dsUID or name
@@ -212,7 +239,9 @@ public interface DsAPI {
     /**
      * Requests the sensor value for a given index.
      *
-     * @param sessionToken can be null, if a {@link ConnectionManager} is registered at the {@link HttpTransport}
+     * @param sessionToken can be null, if a
+     *            {@link org.eclipse.smarthome.binding.digitalstrom.internal.lib.manager.ConnectionManager} is
+     *            registered at the {@link HttpTransport}
      * @param dSID needs either dSID, dSUID or name
      * @param dSUID needs either dSID, dSUID or name
      * @param deviceName needs either dSID, dsUID or name
@@ -225,7 +254,9 @@ public interface DsAPI {
     /**
      * Calls scene sceneNumber on the device.
      *
-     * @param sessionToken can be null, if a {@link ConnectionManager} is registered at the {@link HttpTransport}
+     * @param sessionToken can be null, if a
+     *            {@link org.eclipse.smarthome.binding.digitalstrom.internal.lib.manager.ConnectionManager} is
+     *            registered at the {@link HttpTransport}
      * @param dSID needs either dSID, dSUID or name
      * @param dSUID needs either dSID, dSUID or name
      * @param deviceName needs either dSID, dsUID or name
@@ -242,11 +273,13 @@ public interface DsAPI {
      * using the same subscription id, this allows to retrieve a grouped output of the
      * events (i.e. get output of all subscribed by the given id).
      *
-     * @param sessionToken can be null, if a {@link ConnectionManager} is registered at the {@link HttpTransport}
+     * @param sessionToken can be null, if a
+     *            {@link org.eclipse.smarthome.binding.digitalstrom.internal.lib.manager.ConnectionManager} is
+     *            registered at the {@link HttpTransport}
      * @param eventName required
      * @param subscriptionID required
-     * @param connectionTimeout
-     * @param readTimeout
+     * @param connectionTimeout to set
+     * @param readTimeout to set
      * @return true on success
      */
     public boolean subscribeEvent(String sessionToken, String eventName, Integer subscriptionID, int connectionTimeout,
@@ -256,11 +289,13 @@ public interface DsAPI {
      * Unsubscribes from an event given by the name. The subscriptionID is a unique
      * id that was used in the subscribe call.
      *
-     * @param sessionToken can be null, if a {@link ConnectionManager} is registered at the {@link HttpTransport}
+     * @param sessionToken can be null, if a
+     *            {@link org.eclipse.smarthome.binding.digitalstrom.internal.lib.manager.ConnectionManager} is
+     *            registered at the {@link HttpTransport}
      * @param eventName required
      * @param subscriptionID required
-     * @param connectionTimeout
-     * @param readTimeout
+     * @param connectionTimeout to set
+     * @param readTimeout to set
      * @return true on success
      */
     public boolean unsubscribeEvent(String sessionToken, String eventName, Integer subscriptionID,
@@ -273,7 +308,9 @@ public interface DsAPI {
      * are taken place, can be specified (in ms). By default the timeout
      * is disabled: 0 (zero), if no events occur the call will block.
      *
-     * @param sessionToken can be null, if a {@link ConnectionManager} is registered at the {@link HttpTransport}
+     * @param sessionToken can be null, if a
+     *            {@link org.eclipse.smarthome.binding.digitalstrom.internal.lib.manager.ConnectionManager} is
+     *            registered at the {@link HttpTransport}
      * @param subscriptionID required
      * @param timeout optional
      * @return Event-String
@@ -283,7 +320,9 @@ public interface DsAPI {
     /**
      * Returns the dSS time in UTC seconds since epoch.
      *
-     * @param sessionToken can be null, if a {@link ConnectionManager} is registered at the {@link HttpTransport}
+     * @param sessionToken can be null, if a
+     *            {@link org.eclipse.smarthome.binding.digitalstrom.internal.lib.manager.ConnectionManager} is
+     *            registered at the {@link HttpTransport}
      * @return time
      */
     public int getTime(String sessionToken);
@@ -293,6 +332,7 @@ public interface DsAPI {
      * Returns the version of the digitalSTROM-Server software version as {@link Map}.<br>
      * <br>
      * <b>Key, value:</b><br>
+     * <ul>
      * <li><b>version</b> the dSS application version</li>
      * <li><b>distroVersion</b> the host platform firmware release (since v1.10)</li>
      * <li><b>Hardware</b> the host platform hardware identifier (since v1.10)</li>
@@ -301,6 +341,7 @@ public interface DsAPI {
      * <li><b>Ethernet</b> the host platform IEEE Mac address (since v1.10)</li>
      * <li><b>MachineID</b> the host system unique id (since v1.10)</li>
      * <li><b>Kernel</b> the host system Linux kernel release string (since v1.10)</li>
+     * </ul>
      *
      * @return the digitalSTROM-Server software version
      */
@@ -333,7 +374,9 @@ public interface DsAPI {
     /**
      * Returns the dSID of the digitalSTROM Server.
      *
-     * @param sessionToken can be null, if a {@link ConnectionManager} is registered at the {@link HttpTransport}
+     * @param sessionToken can be null, if a
+     *            {@link org.eclipse.smarthome.binding.digitalstrom.internal.lib.manager.ConnectionManager} is
+     *            registered at the {@link HttpTransport}
      * @return dSID
      */
     public Map<String, String> getDSID(String sessionToken);
@@ -350,8 +393,10 @@ public interface DsAPI {
     /**
      * Revokes an application token, caller must be logged in.
      *
-     * @param sessionToken can be null, if a {@link ConnectionManager} is registered at the {@link HttpTransport}
-     * @param applicationToken
+     * @param sessionToken can be null, if a
+     *            {@link org.eclipse.smarthome.binding.digitalstrom.internal.lib.manager.ConnectionManager} is
+     *            registered at the {@link HttpTransport}
+     * @param applicationToken to login
      * @return true, if successful, otherwise false
      */
     public boolean revokeToken(String applicationToken, String sessionToken);
@@ -359,7 +404,9 @@ public interface DsAPI {
     /**
      * Enables an application token, caller must be logged in.
      *
-     * @param sessionToken can be null, if a {@link ConnectionManager} is registered at the {@link HttpTransport}
+     * @param sessionToken can be null, if a
+     *            {@link org.eclipse.smarthome.binding.digitalstrom.internal.lib.manager.ConnectionManager} is
+     *            registered at the {@link HttpTransport}
      * @param applicationToken required
      * @return true, if successful, otherwise false
      */
@@ -368,7 +415,9 @@ public interface DsAPI {
     /**
      * Returns all resolutions stored on this dSS
      *
-     * @param sessionToken can be null, if a {@link ConnectionManager} is registered at the {@link HttpTransport}
+     * @param sessionToken can be null, if a
+     *            {@link org.eclipse.smarthome.binding.digitalstrom.internal.lib.manager.ConnectionManager} is
+     *            registered at the {@link HttpTransport}
      * @return List of resolutions
      */
     public List<Integer> getResolutions(String sessionToken);
@@ -382,7 +431,9 @@ public interface DsAPI {
      * the
      * set-syntax, currently it supports: .meters(dsid1,dsid2,...) and .meters(all)
      *
-     * @param sessionToken can be null, if a {@link ConnectionManager} is registered at the {@link HttpTransport}
+     * @param sessionToken can be null, if a
+     *            {@link org.eclipse.smarthome.binding.digitalstrom.internal.lib.manager.ConnectionManager} is
+     *            registered at the {@link HttpTransport}
      * @param type required
      * @param meterDSIDs required
      * @param unit optional
@@ -399,7 +450,9 @@ public interface DsAPI {
      * units: 'Wh' (default) and 'Ws' you can also see at {@link MeteringUnitsEnum}. <br>
      * The meterDSIDs parameter you can directly pass a {@link List} of the digitalSTROM-Meter dSID's as {@link String}.
      *
-     * @param sessionToken can be null, if a {@link ConnectionManager} is registered at the {@link HttpTransport}
+     * @param sessionToken can be null, if a
+     *            {@link org.eclipse.smarthome.binding.digitalstrom.internal.lib.manager.ConnectionManager} is
+     *            registered at the {@link HttpTransport}
      * @param type required
      * @param meterDSIDs required
      * @param unit optional
@@ -411,7 +464,9 @@ public interface DsAPI {
     /**
      * Checks the connection and returns the HTTP-Status-Code.
      *
-     * @param sessionToken can be null, if a {@link ConnectionManager} is registered at the {@link HttpTransport}
+     * @param sessionToken can be null, if a
+     *            {@link org.eclipse.smarthome.binding.digitalstrom.internal.lib.manager.ConnectionManager} is
+     *            registered at the {@link HttpTransport}
      * @return HTTP-Status-Code
      */
     public int checkConnection(String sessionToken);
@@ -421,7 +476,9 @@ public interface DsAPI {
      * <br>
      * At array position 0 is the output value and at position 1 the angle value, if the device is a blind.
      *
-     * @param sessionToken can be null, if a {@link ConnectionManager} is registered at the {@link HttpTransport}
+     * @param sessionToken can be null, if a
+     *            {@link org.eclipse.smarthome.binding.digitalstrom.internal.lib.manager.ConnectionManager} is
+     *            registered at the {@link HttpTransport}
      * @param dSID needs either dSID, dSUID or name
      * @param dSUID needs either dSID, dSUID or name
      * @param deviceName needs either dSID, dsUID or name
@@ -433,7 +490,9 @@ public interface DsAPI {
     /**
      * Calls the INC scene on the digitalSTROM-Device with the given dSID and returns true if the request was success.
      *
-     * @param sessionToken can be null, if a {@link ConnectionManager} is registered at the {@link HttpTransport}
+     * @param sessionToken can be null, if a
+     *            {@link org.eclipse.smarthome.binding.digitalstrom.internal.lib.manager.ConnectionManager} is
+     *            registered at the {@link HttpTransport}
      * @param dSID needs either dSID, dSUID or name
      * @param dSUID needs either dSID, dSUID or name
      * @param deviceName needs either dSID, dsUID or name
@@ -445,7 +504,9 @@ public interface DsAPI {
      * Calls the DEC scene on the digitalSTROM-Device with the given dSID and returns true if the request was
      * successful.
      *
-     * @param sessionToken can be null, if a {@link ConnectionManager} is registered at the {@link HttpTransport}
+     * @param sessionToken can be null, if a
+     *            {@link org.eclipse.smarthome.binding.digitalstrom.internal.lib.manager.ConnectionManager} is
+     *            registered at the {@link HttpTransport}
      * @param dSID needs either dSID, dSUID or name
      * @param dSUID needs either dSID, dSUID or name
      * @param deviceName needs either dSID, dsUID or name
@@ -457,21 +518,25 @@ public interface DsAPI {
      * Undos the given sceneNumer of the digitalSTROM-Device with the given dSID and returns true if the request was
      * successful.
      *
-     * @param sessionToken can be null, if a {@link ConnectionManager} is registered at the {@link HttpTransport}
+     * @param sessionToken can be null, if a
+     *            {@link org.eclipse.smarthome.binding.digitalstrom.internal.lib.manager.ConnectionManager} is
+     *            registered at the {@link HttpTransport}
      * @param dSID needs either dSID, dSUID or name
      * @param dSUID needs either dSID, dSUID or name
      * @param deviceName needs either dSID, dsUID or name
      * @param sceneNumber required
      * @return success true otherwise false
      */
-    public boolean undoDeviceScene(String sessionToken, DSID dsid, String dSUID, String deviceName, Scene sceneNumber);
+    public boolean undoDeviceScene(String sessionToken, DSID dSID, String dSUID, String deviceName, Scene sceneNumber);
 
     /**
      * Undo the given sceneNumer on the digitalSTROM apartment-group with the given groupID or groupName and returns
      * true
      * if the request was successful.
      *
-     * @param sessionToken can be null, if a {@link ConnectionManager} is registered at the {@link HttpTransport}
+     * @param sessionToken can be null, if a
+     *            {@link org.eclipse.smarthome.binding.digitalstrom.internal.lib.manager.ConnectionManager} is
+     *            registered at the {@link HttpTransport}
      * @param groupID needs either groupID or groupName
      * @param groupName needs either groupID or groupName
      * @param sceneNumber required
@@ -483,7 +548,9 @@ public interface DsAPI {
      * Undo the given sceneNumer on the digitalSTROM zone-group with the given zoneID or zoneName and groupID or
      * groupName and returns true if the request was successful.
      *
-     * @param sessionToken can be null, if a {@link ConnectionManager} is registered at the {@link HttpTransport}
+     * @param sessionToken can be null, if a
+     *            {@link org.eclipse.smarthome.binding.digitalstrom.internal.lib.manager.ConnectionManager} is
+     *            registered at the {@link HttpTransport}
      * @param zoneID needs either zoneID or zoneName
      * @param zoneName needs either zoneID or zoneName
      * @param groupID needs either groupID or groupName
@@ -497,7 +564,9 @@ public interface DsAPI {
     /**
      * Returns user defined name of the digitalSTROM installation.
      *
-     * @param sessionToken can be null, if a {@link ConnectionManager} is registered at the {@link HttpTransport}
+     * @param sessionToken can be null, if a
+     *            {@link org.eclipse.smarthome.binding.digitalstrom.internal.lib.manager.ConnectionManager} is
+     *            registered at the {@link HttpTransport}
      * @return name of the digitalSTROM installation
      */
     public String getInstallationName(String sessionToken);
@@ -505,7 +574,9 @@ public interface DsAPI {
     /**
      * Returns user defined name of the zone from the given zone id.
      *
-     * @param sessionToken can be null, if a {@link ConnectionManager} is registered at the {@link HttpTransport}
+     * @param sessionToken can be null, if a
+     *            {@link org.eclipse.smarthome.binding.digitalstrom.internal.lib.manager.ConnectionManager} is
+     *            registered at the {@link HttpTransport}
      * @param zoneID required
      * @return name of the given zone id
      */
@@ -514,18 +585,21 @@ public interface DsAPI {
     /**
      * Returns user defined name of the device from the given dSID
      *
-     * @param sessionToken can be null, if a {@link ConnectionManager} is registered at the {@link HttpTransport}
-     * @param dSID needs either dSID, dSUID or name
-     * @param dSUID needs either dSID, dSUID or name
-     * @param deviceName needs either dSID, dsUID or name
-     * @return name of the given device dSID
+     * @param sessionToken can be null, if a
+     *            {@link org.eclipse.smarthome.binding.digitalstrom.internal.lib.manager.ConnectionManager} is
+     *            registered at the {@link HttpTransport}
+     * @param dSID needs either dSID or dSUID
+     * @param dSUID needs either dSID or dSUID
+     * @return name of the device with the given dSID or dSUID
      */
     public String getDeviceName(String sessionToken, DSID dSID, String dSUID);
 
     /**
      * Returns user defined name of the circuit from the given dSID.
      *
-     * @param sessionToken can be null, if a {@link ConnectionManager} is registered at the {@link HttpTransport}
+     * @param sessionToken can be null, if a
+     *            {@link org.eclipse.smarthome.binding.digitalstrom.internal.lib.manager.ConnectionManager} is
+     *            registered at the {@link HttpTransport}
      * @param dSID required
      * @return name of the given circuit dSID
      */
@@ -534,9 +608,11 @@ public interface DsAPI {
     /**
      * Returns user defined name of the scene from the given zoneID, groupID and sceneID.
      *
-     * @param sessionToken can be null, if a {@link ConnectionManager} is registered at the {@link HttpTransport}
+     * @param sessionToken can be null, if a
+     *            {@link org.eclipse.smarthome.binding.digitalstrom.internal.lib.manager.ConnectionManager} is
+     *            registered at the {@link HttpTransport}
      * @param zoneID (0 is broadcast)
-     * @param zoneName
+     * @param zoneName of the zone
      * @param groupID (0 is broadcast)
      * @param sceneID (between 0 and 127)
      * @return name of the scene otherwise null
@@ -546,7 +622,9 @@ public interface DsAPI {
     /**
      * Returns the temperature control status to the given zone.
      *
-     * @param sessionToken can be null, if a {@link ConnectionManager} is registered at the {@link HttpTransport}
+     * @param sessionToken can be null, if a
+     *            {@link org.eclipse.smarthome.binding.digitalstrom.internal.lib.manager.ConnectionManager} is
+     *            registered at the {@link HttpTransport}
      * @param zoneID required or zoneName
      * @param zoneName required or zoneID
      * @return temperature control status to the given zone
@@ -569,7 +647,9 @@ public interface DsAPI {
      * CtrlAntiWindUp = Control integrator anti wind up: 0=inactive, 1=active
      * CtrlKeepFloorWarm = Control mode with higher priority on comfort: 0=inactive, 1=active
      *
-     * @param sessionToken can be null, if a {@link ConnectionManager} is registered at the {@link HttpTransport}
+     * @param sessionToken can be null, if a
+     *            {@link org.eclipse.smarthome.binding.digitalstrom.internal.lib.manager.ConnectionManager} is
+     *            registered at the {@link HttpTransport}
      * @param zoneID required or zoneName
      * @param zoneName required or zoneID
      * @return temperature control status with configuration parameters
@@ -580,7 +660,7 @@ public interface DsAPI {
     /**
      * Returns the temperature control values to their control modes of the given zone.
      * There are following control modes:
-     *
+     * <ul>
      * <li>0 Off</li>
      * <li>1 Comfort</li>
      * <li>2 Economy</li>
@@ -589,9 +669,11 @@ public interface DsAPI {
      * <li>5 Holiday</li>
      * <li>6 Cooling</li>
      * <li>7 CollingOff</li>
+     * </ul>
      *
-     *
-     * @param sessionToken can be null, if a {@link ConnectionManager} is registered at the {@link HttpTransport}
+     * @param sessionToken can be null, if a
+     *            {@link org.eclipse.smarthome.binding.digitalstrom.internal.lib.manager.ConnectionManager} is
+     *            registered at the {@link HttpTransport}
      * @param zoneID required or zoneName
      * @param zoneName required or zoneID
      * @return temperature control values of control modes
@@ -602,7 +684,9 @@ public interface DsAPI {
     /**
      * Set the configuration of the zone temperature control.
      *
-     * @param sessionToken can be null, if a {@link ConnectionManager} is registered at the {@link HttpTransport}
+     * @param sessionToken can be null, if a
+     *            {@link org.eclipse.smarthome.binding.digitalstrom.internal.lib.manager.ConnectionManager} is
+     *            registered at the {@link HttpTransport}
      * @param zoneID (required alternative zoneName)
      * @param zoneName (required alternative zoneID)
      * @param controlDSUID dSUID of the meter or service that runs the control algorithm for this zone (optional)
@@ -633,7 +717,9 @@ public interface DsAPI {
      * Returns the assigned Sensor dSUID of a zone.
      *
      *
-     * @param sessionToken can be null, if a {@link ConnectionManager} is registered at the {@link HttpTransport}
+     * @param sessionToken can be null, if a
+     *            {@link org.eclipse.smarthome.binding.digitalstrom.internal.lib.manager.ConnectionManager} is
+     *            registered at the {@link HttpTransport}
      * @param zoneID required or zoneName
      * @param zoneName required or zoneID
      * @return assigned Sensor dSUID of the given zone.
@@ -644,7 +730,9 @@ public interface DsAPI {
      * Sets the temperature control state of a given zone.<br>
      * Control states: 0=internal; 1=external; 2=exbackup; 3=emergency
      *
-     * @param sessionToken can be null, if a {@link ConnectionManager} is registered at the {@link HttpTransport}
+     * @param sessionToken can be null, if a
+     *            {@link org.eclipse.smarthome.binding.digitalstrom.internal.lib.manager.ConnectionManager} is
+     *            registered at the {@link HttpTransport}
      * @param zoneID required or zoneName
      * @param zoneName required or zoneID
      * @param controlState required
@@ -662,10 +750,12 @@ public interface DsAPI {
      * new value. If the control mode is {@link ControlModes#PID_CONTROL} it is the nominal temperature, otherwise it is
      * the control valve value.
      *
-     * @param sessionToken can be null, if a {@link ConnectionManager} is registered at the {@link HttpTransport}
+     * @param sessionToken can be null, if a
+     *            {@link org.eclipse.smarthome.binding.digitalstrom.internal.lib.manager.ConnectionManager} is
+     *            registered at the {@link HttpTransport}
      * @param zoneID required or zoneName
      * @param zoneName required or zoneID
-     * @param controlValues
+     * @param controlValues new control values
      * @return success true otherwise false
      */
     public boolean setZoneTemperatureControlValues(String sessionToken, Integer zoneID, String zoneName,
@@ -675,7 +765,9 @@ public interface DsAPI {
      * Returns the value of a Sensor of the given zone.
      *
      *
-     * @param sessionToken can be null, if a {@link ConnectionManager} is registered at the {@link HttpTransport}
+     * @param sessionToken can be null, if a
+     *            {@link org.eclipse.smarthome.binding.digitalstrom.internal.lib.manager.ConnectionManager} is
+     *            registered at the {@link HttpTransport}
      * @param zoneID required or zoneName
      * @param zoneName required or zoneID
      * @return value of a Sensor of the given zone
@@ -685,11 +777,13 @@ public interface DsAPI {
     /**
      * Set the source of a sensor in a zone to a given device source address.
      *
-     * @param sessionToken can be null, if a {@link ConnectionManager} is registered at the {@link HttpTransport}
+     * @param sessionToken can be null, if a
+     *            {@link org.eclipse.smarthome.binding.digitalstrom.internal.lib.manager.ConnectionManager} is
+     *            registered at the {@link HttpTransport}
      * @param zoneID required or zoneName
      * @param zoneName required or zoneID
-     * @param sensorType
-     * @param dSID
+     * @param sensorType to set
+     * @param dSID to set
      * @return success true otherwise false
      */
     public boolean setZoneSensorSource(String sessionToken, Integer zoneID, String zoneName, SensorEnum sensorType,
@@ -698,10 +792,12 @@ public interface DsAPI {
     /**
      * Remove all assignments for a particular sensor type in a zone.
      *
-     * @param sessionToken can be null, if a {@link ConnectionManager} is registered at the {@link HttpTransport}
+     * @param sessionToken can be null, if a
+     *            {@link org.eclipse.smarthome.binding.digitalstrom.internal.lib.manager.ConnectionManager} is
+     *            registered at the {@link HttpTransport}
      * @param zoneID required or zoneName
      * @param zoneName required or zoneID
-     * @param sensorType
+     * @param sensorType to clear
      * @return success true otherwise false
      *
      */
@@ -710,7 +806,9 @@ public interface DsAPI {
     /**
      * Returns internal status information of the temperature control of a zone.
      *
-     * @param sessionToken can be null, if a {@link ConnectionManager} is registered at the {@link HttpTransport}
+     * @param sessionToken can be null, if a
+     *            {@link org.eclipse.smarthome.binding.digitalstrom.internal.lib.manager.ConnectionManager} is
+     *            registered at the {@link HttpTransport}
      * @param zoneID required or zoneName
      * @param zoneName required or zoneID
      * @return internal status information of the temperature control of a zone
@@ -721,7 +819,9 @@ public interface DsAPI {
     /**
      * Returns the temperature control status of all zones.
      *
-     * @param sessionToken can be null, if a {@link ConnectionManager} is registered at the {@link HttpTransport}
+     * @param sessionToken can be null, if a
+     *            {@link org.eclipse.smarthome.binding.digitalstrom.internal.lib.manager.ConnectionManager} is
+     *            registered at the {@link HttpTransport}
      * @return temperature control status of all zones
      */
     public List<TemperatureControlStatus> getApartmentTemperatureControlStatus(String sessionToken);
@@ -729,7 +829,9 @@ public interface DsAPI {
     /**
      * Returns the temperature control status of all zones.
      *
-     * @param sessionToken can be null, if a {@link ConnectionManager} is registered at the {@link HttpTransport}
+     * @param sessionToken can be null, if a
+     *            {@link org.eclipse.smarthome.binding.digitalstrom.internal.lib.manager.ConnectionManager} is
+     *            registered at the {@link HttpTransport}
      * @return temperature control status of all zones
      */
     public HashMap<Integer, TemperatureControlConfig> getApartmentTemperatureControlConfig(String sessionToken);
@@ -737,7 +839,9 @@ public interface DsAPI {
     /**
      * Returns the temperature control status of all zones.
      *
-     * @param sessionToken can be null, if a {@link ConnectionManager} is registered at the {@link HttpTransport}
+     * @param sessionToken can be null, if a
+     *            {@link org.eclipse.smarthome.binding.digitalstrom.internal.lib.manager.ConnectionManager} is
+     *            registered at the {@link HttpTransport}
      * @return temperature control status of all zones
      */
     public HashMap<Integer, TemperatureControlValues> getApartmentTemperatureControlValues(String sessionToken);
@@ -746,7 +850,9 @@ public interface DsAPI {
      * Returns the assigned Sensor dSUID of all zones.
      *
      *
-     * @param sessionToken can be null, if a {@link ConnectionManager} is registered at the {@link HttpTransport}
+     * @param sessionToken can be null, if a
+     *            {@link org.eclipse.smarthome.binding.digitalstrom.internal.lib.manager.ConnectionManager} is
+     *            registered at the {@link HttpTransport}
      * @return assigned Sensor dSUID of all zones.
      */
     public HashMap<Integer, AssignedSensors> getApartmentAssignedSensors(String sessionToken);
@@ -754,7 +860,9 @@ public interface DsAPI {
     /**
      * Returns the value of a Sensor of all zones.
      *
-     * @param sessionToken can be null, if a {@link ConnectionManager} is registered at the {@link HttpTransport}
+     * @param sessionToken can be null, if a
+     *            {@link org.eclipse.smarthome.binding.digitalstrom.internal.lib.manager.ConnectionManager} is
+     *            registered at the {@link HttpTransport}
      * @return value of a Sensor of all zones
      */
     public HashMap<Integer, BaseSensorValues> getApartmentSensorValues(String sessionToken);
@@ -766,7 +874,9 @@ public interface DsAPI {
      * all device from zone4 would look like this: ’/apartment/zones/zone4/*(ZoneID,name)’.
      * More complex combinations (see example below) are also possible.
      *
-     * @param sessionToken can be null, if a {@link ConnectionManager} is registered at the {@link HttpTransport}
+     * @param sessionToken can be null, if a
+     *            {@link org.eclipse.smarthome.binding.digitalstrom.internal.lib.manager.ConnectionManager} is
+     *            registered at the {@link HttpTransport}
      * @param query required
      * @return response as {@link JsonObject}
      */
@@ -781,7 +891,9 @@ public interface DsAPI {
      * folder, nothing is extracted, and the node will not show up in the resulting
      * json structure.</i>
      *
-     * @param sessionToken can be null, if a {@link ConnectionManager} is registered at the {@link HttpTransport}
+     * @param sessionToken can be null, if a
+     *            {@link org.eclipse.smarthome.binding.digitalstrom.internal.lib.manager.ConnectionManager} is
+     *            registered at the {@link HttpTransport}
      * @param query required
      * @return response as {@link JsonObject}
      */
@@ -800,7 +912,9 @@ public interface DsAPI {
      * <b>Notice:</b> Setting output values without a group identification is strongly
      * unrecommended.<br>
      *
-     * @param sessionToken can be null, if a {@link ConnectionManager} is registered at the {@link HttpTransport}
+     * @param sessionToken can be null, if a
+     *            {@link org.eclipse.smarthome.binding.digitalstrom.internal.lib.manager.ConnectionManager} is
+     *            registered at the {@link HttpTransport}
      * @param zoneID or zoneName are required
      * @param zoneName or zoneID are required
      * @param groupID optional
@@ -813,10 +927,12 @@ public interface DsAPI {
 
     /**
      * <b>Description taken form digitalSTROM JSON-API:</b><br>
-     * Executes the ”blink” function on a group of devices in a zone for identification
+     * Executes the "blink" function on a group of devices in a zone for identification
      * purposes.
      *
-     * @param sessionToken can be null, if a {@link ConnectionManager} is registered at the {@link HttpTransport}
+     * @param sessionToken can be null, if a
+     *            {@link org.eclipse.smarthome.binding.digitalstrom.internal.lib.manager.ConnectionManager} is
+     *            registered at the {@link HttpTransport}
      * @param zoneID or zoneName are required
      * @param zoneName or zoneID are required
      * @param groupID optional
@@ -832,7 +948,9 @@ public interface DsAPI {
      * all devices in the selected zone. The reference for the sensor type definitions
      * can be found in the ds-basics document.
      *
-     * @param sessionToken can be null, if a {@link ConnectionManager} is registered at the {@link HttpTransport}
+     * @param sessionToken can be null, if a
+     *            {@link org.eclipse.smarthome.binding.digitalstrom.internal.lib.manager.ConnectionManager} is
+     *            registered at the {@link HttpTransport}
      * @param zoneID or zoneName are required
      * @param zoneName or zoneID are required
      * @param groupID optional
@@ -849,7 +967,9 @@ public interface DsAPI {
      * Returns the string value of the property, this call will fail if the property is
      * not of type ’string’.
      *
-     * @param sessionToken can be null, if a {@link ConnectionManager} is registered at the {@link HttpTransport}
+     * @param sessionToken can be null, if a
+     *            {@link org.eclipse.smarthome.binding.digitalstrom.internal.lib.manager.ConnectionManager} is
+     *            registered at the {@link HttpTransport}
      * @param path to property required
      * @return {@link String} value of the property
      */
@@ -860,7 +980,9 @@ public interface DsAPI {
      * Sets the string value of the property, this call will fail if the property is not
      * of type ’string’.
      *
-     * @param sessionToken can be null, if a {@link ConnectionManager} is registered at the {@link HttpTransport}
+     * @param sessionToken can be null, if a
+     *            {@link org.eclipse.smarthome.binding.digitalstrom.internal.lib.manager.ConnectionManager} is
+     *            registered at the {@link HttpTransport}
      * @param path to property required
      * @return {@link JsonArray} of child nodes
      */
@@ -871,7 +993,9 @@ public interface DsAPI {
      * Sets the string value of the property, this call will fail if the property is not
      * of type ’string’.
      *
-     * @param sessionToken can be null, if a {@link ConnectionManager} is registered at the {@link HttpTransport}
+     * @param sessionToken can be null, if a
+     *            {@link org.eclipse.smarthome.binding.digitalstrom.internal.lib.manager.ConnectionManager} is
+     *            registered at the {@link HttpTransport}
      * @param path required
      * @param value required
      * @return true, if successful
@@ -883,7 +1007,9 @@ public interface DsAPI {
      * Returns the integer value of the property, this call will fail if the property is
      * not of type ’integer’.
      *
-     * @param sessionToken can be null, if a {@link ConnectionManager} is registered at the {@link HttpTransport}
+     * @param sessionToken can be null, if a
+     *            {@link org.eclipse.smarthome.binding.digitalstrom.internal.lib.manager.ConnectionManager} is
+     *            registered at the {@link HttpTransport}
      * @param path required
      * @return {@link Integer} value of the property
      */
@@ -894,7 +1020,9 @@ public interface DsAPI {
      * Sets the integer value of the property, this call will fail if the property is not
      * of type ’integer’.
      *
-     * @param sessionToken can be null, if a {@link ConnectionManager} is registered at the {@link HttpTransport}
+     * @param sessionToken can be null, if a
+     *            {@link org.eclipse.smarthome.binding.digitalstrom.internal.lib.manager.ConnectionManager} is
+     *            registered at the {@link HttpTransport}
      * @param path required
      * @param value required
      * @return true, if successful
@@ -906,7 +1034,9 @@ public interface DsAPI {
      * Returns the boolean value of the property, this call will fail if the property is
      * not of type ’boolean’.
      *
-     * @param sessionToken can be null, if a {@link ConnectionManager} is registered at the {@link HttpTransport}
+     * @param sessionToken can be null, if a
+     *            {@link org.eclipse.smarthome.binding.digitalstrom.internal.lib.manager.ConnectionManager} is
+     *            registered at the {@link HttpTransport}
      * @param path required
      * @return {@link Boolean} value of the property
      */
@@ -917,7 +1047,9 @@ public interface DsAPI {
      * Returns the boolean value of the property, this call will fail if the property is
      * not of type ’boolean’.
      *
-     * @param sessionToken can be null, if a {@link ConnectionManager} is registered at the {@link HttpTransport}
+     * @param sessionToken can be null, if a
+     *            {@link org.eclipse.smarthome.binding.digitalstrom.internal.lib.manager.ConnectionManager} is
+     *            registered at the {@link HttpTransport}
      * @param path required
      * @param value required
      * @return true, if successful
@@ -926,10 +1058,12 @@ public interface DsAPI {
 
     /**
      * <b>Description taken form digitalSTROM JSON-API:</b><br>
-     * Returns the type of the property as {@link String}, this can be “none”, “string”, “integer” or
-     * “boolean”.
+     * Returns the type of the property as {@link String}, this can be "none", "string", "integer" or
+     * "boolean".
      *
-     * @param sessionToken can be null, if a {@link ConnectionManager} is registered at the {@link HttpTransport}
+     * @param sessionToken can be null, if a
+     *            {@link org.eclipse.smarthome.binding.digitalstrom.internal.lib.manager.ConnectionManager} is
+     *            registered at the {@link HttpTransport}
      * @param path required
      * @return the type of the property as {@link String}
      */
@@ -944,7 +1078,9 @@ public interface DsAPI {
      * - WRITEABLE <br>
      * - ARCHIVE <br>
      *
-     * @param sessionToken can be null, if a {@link ConnectionManager} is registered at the {@link HttpTransport}
+     * @param sessionToken can be null, if a
+     *            {@link org.eclipse.smarthome.binding.digitalstrom.internal.lib.manager.ConnectionManager} is
+     *            registered at the {@link HttpTransport}
      * @param path required
      * @return the type of the property as {@link String}
      */
@@ -954,7 +1090,9 @@ public interface DsAPI {
      * <b>Description taken form digitalSTROM JSON-API:</b><br>
      * Sets a given flag of a property.
      *
-     * @param sessionToken can be null, if a {@link ConnectionManager} is registered at the {@link HttpTransport}
+     * @param sessionToken can be null, if a
+     *            {@link org.eclipse.smarthome.binding.digitalstrom.internal.lib.manager.ConnectionManager} is
+     *            registered at the {@link HttpTransport}
      * @param path required
      * @param flag required
      * @param value required
@@ -966,7 +1104,9 @@ public interface DsAPI {
      * <b>Description taken form digitalSTROM JSON-API:</b><br>
      * Removes a property node.
      *
-     * @param sessionToken can be null, if a {@link ConnectionManager} is registered at the {@link HttpTransport}
+     * @param sessionToken can be null, if a
+     *            {@link org.eclipse.smarthome.binding.digitalstrom.internal.lib.manager.ConnectionManager} is
+     *            registered at the {@link HttpTransport}
      * @param path required
      * @return true, if successful
      */

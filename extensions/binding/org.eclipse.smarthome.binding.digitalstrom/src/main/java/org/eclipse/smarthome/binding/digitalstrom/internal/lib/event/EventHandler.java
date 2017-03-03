@@ -18,7 +18,7 @@ import org.eclipse.smarthome.binding.digitalstrom.internal.lib.event.types.Event
  * the {@link EventListener} knows whitch events it has to subscribe at the digitalSTROM-server and which handler has
  * to be informed. <br>
  * The implementation of the {@link EventHandler} also has to be registered through
- * {@link EventListener#addEventHandler(EventHandler)} to the {@link EventLister} and the {@link EventListener} has to
+ * {@link EventListener#addEventHandler(EventHandler)} to the {@link EventListener} and the {@link EventListener} has to
  * be started.<br>
  * <br>
  * To handle the {@link EventItem} the method {@link #handleEvent(EventItem)} has to be implemented.
@@ -31,7 +31,7 @@ public interface EventHandler {
     /**
      * Handles a {@link EventItem} e.g. which was detected by the {@link EventListener}.
      *
-     * @param eventItem
+     * @param eventItem to handle
      */
     public void handleEvent(EventItem eventItem);
 
@@ -45,7 +45,7 @@ public interface EventHandler {
     /**
      * Returns true, if the {@link EventHandler} supports the given event.
      *
-     * @param eventName
+     * @param eventName to check
      * @return true, if event is supported, otherwise false
      */
     public boolean supportsEvent(String eventName);
@@ -60,14 +60,14 @@ public interface EventHandler {
     /**
      * Sets a {@link EventListener} to this {@link EventHandler}.
      *
-     * @param eventListener
+     * @param eventListener to set
      */
     public void setEventListener(EventListener eventListener);
 
     /**
      * Unsets a {@link EventListener} to this {@link EventHandler}.
-     * 
-     * @param eventListener
+     *
+     * @param eventListener to unset
      */
     public void unsetEventListener(EventListener eventListener);
 }

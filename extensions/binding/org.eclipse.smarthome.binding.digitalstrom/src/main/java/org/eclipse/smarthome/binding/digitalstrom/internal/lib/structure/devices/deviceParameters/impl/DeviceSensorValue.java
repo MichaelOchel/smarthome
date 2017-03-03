@@ -27,7 +27,8 @@ import com.google.gson.JsonObject;
 /**
  * The {@link DeviceSensorValue} contains all needed information of an device sensor, e.g. the sensor type, to detect
  * which kind of sensor it is (see {@link SensorEnum}), the sensor index to read out sensor at the digitalSTROM device
- * by calling {@link DsAPI#getDeviceSensorValue(String, DSID, String, Short)} and as well as of course the value and
+ * by calling {@link DsAPI#getDeviceSensorValue(String, DSID, String, String, Short)} and as well as of course the value
+ * and
  * timestamp of the last sensor update.
  *
  * @author Michael Ochel - initial contributer
@@ -50,7 +51,7 @@ public class DeviceSensorValue {
      * Creates a new {@link DeviceSensorValue} through the {@link JsonObject} of the digitalSTROM json response for a
      * device.
      *
-     * @param sensorValue
+     * @param sensorValue must not be null
      */
     public DeviceSensorValue(JsonObject sensorValue) {
         if (sensorValue.get(JSONApiResponseKeysEnum.TYPE.getKey()) != null) {
@@ -83,7 +84,7 @@ public class DeviceSensorValue {
      * Creates a new {@link DeviceSensorValue} through the properties of a digitalSTROM
      * {@link EventNames#DEVICE_SENSOR_VALUE} event.
      *
-     * @param eventPropertie
+     * @param eventPropertie must not be null
      */
     public DeviceSensorValue(Map<EventResponseEnum, String> eventPropertie) {
         if (eventPropertie.get(EventResponseEnum.SENSOR_VALUE_FLOAT) != null) {
@@ -105,8 +106,8 @@ public class DeviceSensorValue {
     /**
      * Creates a new {@link DeviceSensorValue} through the {@link SensorEnum} and the sensor index.
      *
-     * @param sensorType
-     * @param sensorIndex
+     * @param sensorType must not be null
+     * @param sensorIndex must not be null
      */
     public DeviceSensorValue(SensorEnum sensorType, Short sensorIndex) {
         this.sensorType = sensorType;
@@ -178,8 +179,8 @@ public class DeviceSensorValue {
     /**
      * Sets a new internal digitalSTROM value as {@link Integer} and a new sensor value as {@link Float}.
      *
-     * @param floatValue
-     * @param dSvalue
+     * @param floatValue must not be null
+     * @param dSvalue must not be null
      * @return true, if set was successful
      */
     public boolean setValues(Float floatValue, Integer dSvalue) {
@@ -204,7 +205,7 @@ public class DeviceSensorValue {
 
     /**
      * Returns the sensor index to read the sensor value out though
-     * {@link DsAPI#getDeviceSensorValue(String, DSID, String, Short)}.
+     * {@link DsAPI#getDeviceSensorValue(String, DSID, String, String, Short)}.
      *
      * @return the sensorIndex
      */
@@ -214,7 +215,7 @@ public class DeviceSensorValue {
 
     /**
      * Returns the timestamp of the last set value as {@link Date}.
-     * 
+     *
      * @return the timestamp
      */
     public Date getTimestamp() {
@@ -223,7 +224,7 @@ public class DeviceSensorValue {
 
     /**
      * Returns true if the sensor value is valid.
-     * 
+     *
      * @return the valid
      */
     public boolean getValid() {

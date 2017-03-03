@@ -106,7 +106,7 @@ public class AssignedSensors extends BaseZoneIdentifier {
     /**
      * Returns the {@link AssignSensorType} of the given sensorType or null, if the given sensorType does not exist.
      *
-     * @param sensorType
+     * @param sensorType can be null
      * @return the {@link AssignSensorType} of the given sensorType or null
      */
     public AssignSensorType getAssignedSensorType(SensorEnum sensorType) {
@@ -123,7 +123,7 @@ public class AssignedSensors extends BaseZoneIdentifier {
     /**
      * Returns true, if the given sensorType exists at the zone, otherwise false.
      *
-     * @param sensorType
+     * @param sensorType can be null
      * @return true, if sensorType exists, otherwise false
      */
     public boolean existSensorType(SensorEnum sensorType) {

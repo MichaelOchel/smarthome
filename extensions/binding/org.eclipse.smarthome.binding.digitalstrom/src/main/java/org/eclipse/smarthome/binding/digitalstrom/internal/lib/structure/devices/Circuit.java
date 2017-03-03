@@ -146,126 +146,126 @@ public interface Circuit extends GeneralDeviceInformations {
 
     /**
      * Sets the connected devices flag.
-     * 
+     *
      * @param hasDevices the new connected devices flag
      */
     public void setHasDevices(Boolean hasDevices);
 
     /**
      * Returns true, if this {@link Circuit} is valid to metering power data, otherwise false.
-     * 
+     *
      * @return true, if is valid to metering power data
      */
     public Boolean getHasMetering();
 
     /**
      * Sets the flag hasMetering.
-     * 
+     *
      * @param hasMetering the new hasMetering flag.
      */
     public void setHasMetering(Boolean hasMetering);
 
     /**
      * Returns the vdc configuration URL of this {@link Circuit} as {@link String}.
-     * 
+     *
      * @return the vdc configuration URL
      */
     public String getVdcConfigURL();
 
     /**
      * Sets the vdc configuration URL of this {@link Circuit} as {@link String}.
-     * 
+     *
      * @param vdcConfigURL the new vdc configuration URL
      */
     public void setVdcConfigURL(String vdcConfigURL);
 
     /**
      * Returns the vdc mode UID of this {@link Circuit} as {@link String}.
-     * 
+     *
      * @return the vdc mode UID
      */
     public String getVdcModelUID();
 
     /**
      * Sets the vdc mode UID of this {@link Circuit} as {@link String}.
-     * 
+     *
      * @param vdcModelUID the new vdc mode UID
      */
     public void setVdcModelUID(String vdcModelUID);
 
     /**
      * Returns the vdc hardware GUID of this {@link Circuit} as {@link String}.
-     * 
+     *
      * @return the vdc hardware GUID
      */
     public String getVdcHardwareGuid();
 
     /**
      * Sets the vdc hardware GUID of this {@link Circuit} as {@link String}.
-     * 
+     *
      * @param vdcHardwareGuid the new vdc hardware GUID
      */
     public void setVdcHardwareGuid(String vdcHardwareGuid);
 
     /**
      * Returns the vdc hardware model GUID of this {@link Circuit} as {@link String}.
-     * 
+     *
      * @return the vdc hardware mode GUID
      */
     public String getVdcHardwareModelGuid();
 
     /**
      * Sets the vdc hardware model GUID of this {@link Circuit} as {@link String}.
-     * 
+     *
      * @param vdcHardwareModelGuid the new vdc model GUID
      */
     public void setVdcHardwareModelGuid(String vdcHardwareModelGuid);
 
     /**
      * Returns the vdc vendor GUID of this {@link Circuit} as {@link String}.
-     * 
+     *
      * @return the vdc vendor GUID
      */
     public String getVdcVendorGuid();
 
     /**
      * Sets the vdc vendor GUID of this {@link Circuit} as {@link String}.
-     * 
+     *
      * @param vdcVendorGuid the new vdc vendor GUID
      */
     public void setVdcVendorGuid(String vdcVendorGuid);
 
     /**
      * Returns the vdc oem GUID of this {@link Circuit} as {@link String}.
-     * 
+     *
      * @return the vdc oem GUID
      */
     public String getVdcOemGuid();
 
     /**
      * Sets the vdc oem GUID of this {@link Circuit} as {@link String}.
-     * 
+     *
      * @param vdcOemGuid the new vdc oem GUID
      */
     public void setVdcOemGuid(String vdcOemGuid);
 
     /**
      * Returns true, if actions from new {@link Device}'s will be ignored by this {@link Circuit}, otherwise false.
-     * 
+     *
      * @return true, if actions form new device will be ignored
      */
     public Boolean getIgnoreActionsFromNewDevices();
 
     /**
      * Sets the flag for ignore actions from new {@link Device}'s.
-     * 
+     *
      * @param ignoreActionsFromNewDevices the new ignore actions from new devices flag
      */
     public void setIgnoreActionsFromNewDevices(Boolean ignoreActionsFromNewDevices);
 
     /**
      * Adds a new {@link CachedMeteringValue} or update the existing, if the new one is newer.
-     * 
+     *
      * @param cachedMeteringValue the new {@link CachedMeteringValue}
      */
     public void addMeteringValue(CachedMeteringValue cachedMeteringValue);
@@ -273,16 +273,16 @@ public interface Circuit extends GeneralDeviceInformations {
     /**
      * Returns the value of the given {@link CachedMeteringValue} through the {@link MeteringTypeEnum} and
      * {@link MeteringUnitsEnum}.
-     * 
+     *
      * @param meteringType (must not be null)
-     * @param meteringUnit (can be null, default is {@link MeteringUnitsEnum#Wh})
+     * @param meteringUnit (can be null, default is {@link MeteringUnitsEnum#WH})
      * @return the metering value or -1, if the metering value dose not exist
      */
     public double getMeteringValue(MeteringTypeEnum meteringType, MeteringUnitsEnum meteringUnit);
 
     /**
      * Returns the {@link List} of all {@link CachedMeteringValue}'s.
-     * 
+     *
      * @return list of all {@link CachedMeteringValue}
      */
     public List<CachedMeteringValue> getAllCachedMeteringValues();

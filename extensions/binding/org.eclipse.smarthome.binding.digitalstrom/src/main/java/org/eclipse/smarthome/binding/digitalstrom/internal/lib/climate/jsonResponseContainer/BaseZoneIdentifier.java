@@ -25,8 +25,8 @@ public abstract class BaseZoneIdentifier implements ZoneIdentifier {
     /**
      * Creates a new {@link BaseZoneIdentifier} with an zone id and zone name.
      *
-     * @param zoneID
-     * @param zoneName
+     * @param zoneID must not be null
+     * @param zoneName can be null
      */
     public BaseZoneIdentifier(Integer zoneID, String zoneName) {
         this.zoneID = zoneID;
@@ -37,7 +37,7 @@ public abstract class BaseZoneIdentifier implements ZoneIdentifier {
      * Creates a new {@link BaseZoneIdentifier} through the {@link JsonObject} of the response of an digitalSTROM-API
      * apartment call.
      *
-     * @param jObject
+     * @param jObject must not be null
      */
     public BaseZoneIdentifier(JsonObject jObject) {
         if (jObject.get(JSONApiResponseKeysEnum.ID.getKey()) != null) {

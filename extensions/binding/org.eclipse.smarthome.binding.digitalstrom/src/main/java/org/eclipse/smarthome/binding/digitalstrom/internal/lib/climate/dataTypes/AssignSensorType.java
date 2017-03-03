@@ -23,8 +23,8 @@ public class AssignSensorType {
     /**
      * Create a new {@link AssignSensorType}.
      *
-     * @param sensorType
-     * @param dSUID
+     * @param sensorType must not be null
+     * @param dSUID must not be null
      */
     public AssignSensorType(SensorEnum sensorType, String dSUID) {
         SENSOR_TYPE = sensorType;

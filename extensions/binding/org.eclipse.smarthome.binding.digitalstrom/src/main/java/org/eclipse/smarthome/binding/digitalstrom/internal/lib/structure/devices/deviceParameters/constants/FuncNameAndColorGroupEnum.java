@@ -13,10 +13,10 @@ import java.util.HashMap;
  * The {@link FuncNameAndColorGroupEnum} contains all digitalSTROM functional group names and links to their
  * {@link FunctionalColorGroupEnum}.
  *
- * @see http://developer.digitalstrom.org/Architecture/ds-basics.pdf,
- *      "Table 1: digitalSTROM functional groups and their colors", page 9
  * @author Michael Ochel - Initial contribution
  * @author Matthias Siegele - Initial contribution
+ * @see <a href="http://developer.digitalstrom.org/Architecture/ds-basics.pdf">ds-basics.pdf
+ *      "Table 1: digitalSTROM functional groups and their colors", page 9</a>
  */
 
 public enum FuncNameAndColorGroupEnum {
@@ -68,7 +68,7 @@ public enum FuncNameAndColorGroupEnum {
     /**
      * Returns true, if contains the given output mode id in DigitalSTROM, otherwise false.
      *
-     * @param functionalNameGroupID
+     * @param functionalNameGroupID to contains
      * @return true, if contains
      */
     public static boolean containsColorGroup(Short functionalNameGroupID) {
@@ -78,7 +78,7 @@ public enum FuncNameAndColorGroupEnum {
     /**
      * Returns the {@link FuncNameAndColorGroupEnum} of the given functional name group id.
      *
-     * @param functionalNameGroupID
+     * @param functionalNameGroupID of the {@link FuncNameAndColorGroupEnum}
      * @return FunctionalNameAndColorGroupEnum
      */
     public static FuncNameAndColorGroupEnum getMode(Short functionalNameGroupID) {

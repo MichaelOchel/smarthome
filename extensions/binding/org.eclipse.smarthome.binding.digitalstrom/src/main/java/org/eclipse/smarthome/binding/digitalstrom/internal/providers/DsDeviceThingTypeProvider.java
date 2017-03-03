@@ -18,6 +18,7 @@ import java.util.Locale;
 import org.eclipse.smarthome.binding.digitalstrom.DigitalSTROMBindingConstants;
 import org.eclipse.smarthome.binding.digitalstrom.handler.CircuitHandler;
 import org.eclipse.smarthome.binding.digitalstrom.handler.DeviceHandler;
+import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.GeneralDeviceInformations;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.constants.MeteringTypeEnum;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.constants.MeteringUnitsEnum;
 import org.eclipse.smarthome.core.thing.ThingTypeUID;
@@ -126,7 +127,7 @@ public class DsDeviceThingTypeProvider extends BaseDsI18n implements ThingTypePr
             }
 
             return new ThingType(thingTypeUID,
-                    Lists.newArrayList(DigitalSTROMBindingConstants.THING_TYPE_ID_DSS_BRIDGE),
+                    Lists.newArrayList(DigitalSTROMBindingConstants.THING_TYPE_DSS_BRIDGE.getAsString()),
                     getLabelText(thingTypeUID.getId(), locale), getDescText(thingTypeUID.getId(), locale),
                     channelDefinitions, null, null, configDesc);
         } catch (IllegalArgumentException e) {

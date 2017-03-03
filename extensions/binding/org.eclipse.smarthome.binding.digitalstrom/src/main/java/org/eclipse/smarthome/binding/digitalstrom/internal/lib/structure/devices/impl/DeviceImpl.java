@@ -134,7 +134,7 @@ public class DeviceImpl extends AbstractGeneralDeviceInformations implements Dev
     /**
      * Creates a new {@link DeviceImpl} from the given DigitalSTROM-Device {@link JsonObject}.
      *
-     * @param deviceJsonObject
+     * @param deviceJsonObject json response of the digitalSTROM-Server, must not be null
      */
     public DeviceImpl(JsonObject deviceJsonObject) {
         super(deviceJsonObject);

@@ -29,33 +29,28 @@ public interface TemperatureControlStatusListener {
     /**
      * Will be called, if the configuration of the {@link TemperatureControlStatus} has changed.
      *
-     * @param tempControlStatus
+     * @param tempControlStatus that has changed
      */
     public void configChanged(TemperatureControlStatus tempControlStatus);
 
     /**
      * Will be called, if the target temperature has changed.
      *
-     * @param newValue
+     * @param newValue of the target temperature
      */
     public void onTargetTemperatureChanged(Float newValue);
 
     /**
      * Will be called, if the control value has changed.
      *
-     * @param newValue
+     * @param newValue of the control value
      */
     public void onControlValueChanged(Integer newValue);
 
     /**
-     * Will be called ,if the {@link TemperatureControlStatus#getIsConfigured()} changed to false.
-     */
-    public void onTemperatureControlIsNotConfigured();
-
-    /**
      * Registers a {@link TemperatureControlSensorTransmitter}.
      *
-     * @param temperatureSensorTransmitter
+     * @param temperatureSensorTransmitter to register
      */
     public void registerTemperatureSensorTransmitter(TemperatureControlSensorTransmitter temperatureSensorTransmitter);
 

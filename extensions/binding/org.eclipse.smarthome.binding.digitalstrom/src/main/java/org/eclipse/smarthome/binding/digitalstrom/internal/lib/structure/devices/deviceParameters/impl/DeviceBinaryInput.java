@@ -41,7 +41,7 @@ public class DeviceBinaryInput {
      * from digitalSTROM JSON-API or property-tree. Will be automatically added to a {@link DeviceImpl}, if binary
      * inputs exists.
      *
-     * @param jsonObject
+     * @param jsonObject must not be null
      */
     public DeviceBinaryInput(JsonObject jsonObject) {
         try {
@@ -77,7 +77,7 @@ public class DeviceBinaryInput {
 
     /**
      * Sets the state of this {@link DeviceBinaryInput}.
-     * 
+     *
      * @param state the state to set
      */
     public void setState(Short state) {
@@ -86,7 +86,7 @@ public class DeviceBinaryInput {
 
     /**
      * Returns the target group type id of this {@link DeviceBinaryInput}.
-     * 
+     *
      * @return the targetGroupType
      */
     public Short getTargetGroupType() {
@@ -95,7 +95,7 @@ public class DeviceBinaryInput {
 
     /**
      * Returns the target group id of this {@link DeviceBinaryInput}.
-     * 
+     *
      * @return the targetGroup
      */
     public Short getTargetGroup() {
@@ -105,7 +105,7 @@ public class DeviceBinaryInput {
     /**
      * Returns the input type id of this {@link DeviceBinaryInput}. Available input types see
      * {@link DeviceBinarayInputEnum}.
-     * 
+     *
      * @return the inputType
      */
     public Short getInputType() {
@@ -114,7 +114,7 @@ public class DeviceBinaryInput {
 
     /**
      * Returns the input id of this {@link DeviceBinaryInput}.
-     * 
+     *
      * @return the inputId
      */
     public Short getInputId() {

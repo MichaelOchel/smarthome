@@ -58,16 +58,9 @@ public interface ConnectionManager {
     public String getApplicationToken();
 
     /**
-     * Checks the connection with {@link #checkConnection()} and returns the current Session-Token.
-     *
-     * @return Session-Token
-     */
-    // public String checkConnectionAndGetSessionToken();
-
-    /**
      * Registers a {@link ConnectionListener} to this {@link ConnectionManager}.
      *
-     * @param connectionListener
+     * @param connectionListener to register
      */
     public void registerConnectionListener(ConnectionListener connectionListener);
 
@@ -87,17 +80,17 @@ public interface ConnectionManager {
     /**
      * Updates the login configuration.
      *
-     * @param hostAddress
-     * @param username
-     * @param password
-     * @param applicationToken
+     * @param hostAddress of the digitalSTROM-Server
+     * @param username to login
+     * @param password to login
+     * @param applicationToken to login
      */
     public void updateConfig(String hostAddress, String username, String password, String applicationToken);
 
     /**
      * Updates the {@link Config} with the given config.
      *
-     * @param config
+     * @param config to update
      */
     public void updateConfig(Config config);
 

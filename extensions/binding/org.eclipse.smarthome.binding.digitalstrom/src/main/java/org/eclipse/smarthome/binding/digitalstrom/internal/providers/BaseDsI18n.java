@@ -92,8 +92,8 @@ public abstract class BaseDsI18n {
     /**
      * Returns the internationalized label in the language of the {@link Locale} of the given key.
      *
-     * @param key
-     * @param locale
+     * @param key of internationalization label
+     * @param locale of the wished language
      * @return internationalized label
      * @see #getText(String, Locale)
      */
@@ -104,8 +104,8 @@ public abstract class BaseDsI18n {
     /**
      * Returns the internationalized description in the language of the {@link Locale} of the given key.
      *
-     * @param key
-     * @param locale
+     * @param key of internationalization description
+     * @param locale of the wished language
      * @return internationalized description
      * @see #getText(String, Locale)
      */
@@ -114,12 +114,12 @@ public abstract class BaseDsI18n {
     }
 
     /**
-     * Builds the key {@link String} through the given {@link Object}s. <br>
+     * Builds the key {@link String} through the given {@link Object}s.<br>
      * The key will be build as lower case {@link Object#toString()} + {@link #SEPERATOR} + {@link Object#toString()} +
      * ... , so the result {@link String} will be look like "object1_object2"
      *
-     * @param parts
-     * @return
+     * @param parts to join
+     * @return key
      */
     public static String buildIdentifier(Object... parts) {
         return StringUtils.join(parts, SEPERATOR).toLowerCase();

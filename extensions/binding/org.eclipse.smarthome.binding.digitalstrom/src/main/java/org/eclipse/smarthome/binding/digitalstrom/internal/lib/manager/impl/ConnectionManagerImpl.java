@@ -51,8 +51,9 @@ public class ConnectionManagerImpl implements ConnectionManager {
      * timeout and read timeout can be set, too.
      *
      * @param hostArddress (must not be null)
-     * @param connectTimeout (if connectTimeout < 0 the {@link Config#DEFAULT_CONNECTION_TIMEOUT} will be set)
-     * @param readTimeout (if readTimeout < 0 the {@link Config#DEFAULT_CONNECTION_TIMEOUT} will be set)
+     * @param connectTimeout (if connectTimeout is lower than 0 the {@link Config#DEFAULT_CONNECTION_TIMEOUT} will be
+     *            set)
+     * @param readTimeout (if readTimeout is lower than 0 the {@link Config#DEFAULT_CONNECTION_TIMEOUT} will be set)
      * @param username (can be null, if application token is set)
      * @param password (can be null, if application token is set
      * @param applicationToken (can be null, if username and password is set)

@@ -19,7 +19,7 @@ public interface HttpTransport {
      * Executes a digitalSTROM-request through calling {@link #execute(String, int, int)} with default connection time
      * out and read timeout.
      *
-     * @param request
+     * @param request to execute
      * @return response
      */
     public String execute(String request);
@@ -27,9 +27,9 @@ public interface HttpTransport {
     /**
      * Executes a digitalSTROM-request.
      *
-     * @param request
-     * @param connectTimeout
-     * @param readTimeout
+     * @param request to execute
+     * @param connectTimeout of execution
+     * @param readTimeout of execution
      * @return response
      */
     public String execute(String request, int connectTimeout, int readTimeout);
@@ -37,7 +37,7 @@ public interface HttpTransport {
     /**
      * Executes a digitalSTROM test request and returns the HTTP-Code.
      *
-     * @param testRequest
+     * @param testRequest to execute
      * @return HTTP-Code
      */
     public int checkConnection(String testRequest);

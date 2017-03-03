@@ -58,7 +58,7 @@ public class CircuitImpl extends AbstractGeneralDeviceInformations implements Ci
     /**
      * Creates a new {@link CircuitImpl} through the digitalSTROM json response as {@link JsonObject}.
      *
-     * @param jObject
+     * @param jObject of the digitalSTROM json response, must not be null
      */
     public CircuitImpl(JsonObject jObject) {
         super(jObject);

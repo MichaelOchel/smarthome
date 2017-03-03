@@ -34,8 +34,8 @@ public class SceneConfigReadingJob implements SensorJob {
     /**
      * Creates a new {@link SceneConfigReadingJob} for the given {@link Device} and the given sceneID.
      *
-     * @param device
-     * @param sceneID
+     * @param device to update
+     * @param sceneID to update
      */
     public SceneConfigReadingJob(Device device, short sceneID) {
         this.device = device;
@@ -109,8 +109,8 @@ public class SceneConfigReadingJob implements SensorJob {
     /**
      * Returns the id for a {@link SceneConfigReadingJob} with the given {@link Device} and sceneID.
      *
-     * @param device
-     * @param sceneID
+     * @param device to update
+     * @param sceneID to update
      * @return id
      */
     public static String getID(Device device, Short sceneID) {

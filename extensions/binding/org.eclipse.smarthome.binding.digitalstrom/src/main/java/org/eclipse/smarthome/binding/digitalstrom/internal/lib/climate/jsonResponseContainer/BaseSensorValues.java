@@ -105,7 +105,7 @@ public abstract class BaseSensorValues {
      * Returns the {@link CachedSensorValue} of the given sensor type or null, if no {@link CachedSensorValue} for the
      * given sensor type exists.
      *
-     * @param sensorType
+     * @param sensorType can be null
      * @return the {@link CachedSensorValue} of the given sensorType or null
      */
     public CachedSensorValue getCachedSensorValue(SensorEnum sensorType) {
@@ -122,7 +122,7 @@ public abstract class BaseSensorValues {
     /**
      * Returns true, if the given sensor type exist, otherwise false.
      *
-     * @param sensorType
+     * @param sensorType can be null
      * @return true, if the given sensor type exist, otherwise false
      */
     public boolean existSensorValue(SensorEnum sensorType) {

@@ -41,9 +41,9 @@ public class JSONCachedMeteringValueImpl implements CachedMeteringValue {
     /**
      * Creates a new {@link JSONCachedMeteringValueImpl}.
      *
-     * @param jObject
-     * @param meteringType
-     * @param meteringUnit
+     * @param jObject must not be null
+     * @param meteringType must not be null
+     * @param meteringUnit must not be null
      */
     public JSONCachedMeteringValueImpl(JsonObject jObject, MeteringTypeEnum meteringType,
             MeteringUnitsEnum meteringUnit) {

@@ -53,7 +53,7 @@ public class SceneDiscovery {
     private SceneStatusListener discovery = null;
 
     public final static String NAMEND_SCENE_QUERY = "/apartment/zones/*(ZoneID)/groups/*(group)/scenes/*(scene,name)";
-    // TODO: zur dSApi hinzufügen
+    // TODO: can be add to dSApi
     public final static String REACHABLE_SCENE_QUERY = "/json/zone/getReachableScenes?id=";
     public final static String Reachable_GROUPS_QUERY = "/json/apartment/getReachableGroups?token=";
 
@@ -69,7 +69,7 @@ public class SceneDiscovery {
     /**
      * Creates a new {@link SceneDiscovery} and generates only a list of all scenes, if genList is true.
      *
-     * @param genList
+     * @param genList yes/no (true/false)
      */
     public SceneDiscovery(boolean genList) {
         this.genList = genList;
@@ -224,8 +224,8 @@ public class SceneDiscovery {
     /**
      * Generates all reachable scenes.
      *
-     * @param connectionManager
-     * @param structureManager
+     * @param connectionManager must not be null
+     * @param structureManager must not be null
      */
     public void generateReachableScenes(final ConnectionManager connectionManager,
             final StructureManager structureManager) {
@@ -257,7 +257,6 @@ public class SceneDiscovery {
                                 }
                                 if (zoneID != null) {
                                     if (groupIdInter != null) {
-                                        // if (connectionManager.connectionEstablished()) {
                                         Short groupID = null;
                                         if (groupIdInter.hasNext()) {
                                             groupID = groupIdInter.next();
@@ -285,10 +284,12 @@ public class SceneDiscovery {
                                                 if (JSONResponseHandler.checkResponse(responsJsonObj)) {
                                                     JsonObject resultJsonObj = JSONResponseHandler
                                                             .getResultJsonObject(responsJsonObj);
-                                                    if (resultJsonObj.get(JSONApiResponseKeysEnum.REACHABLE_SCENES
-                                                            .getKey()) instanceof JsonArray) {
-                                                        JsonArray scenes = (JsonArray) resultJsonObj
-                                                                .get(JSONApiResponseKeysEnum.REACHABLE_SCENES.getKey());
+                                                    if (resultJsonObj
+                                                            .get(JSONApiResponseKeysEnum.REACHABLE_SCENES.getKey())
+                                                            .isJsonArray()) {
+                                                        JsonArray scenes = resultJsonObj
+                                                                .get(JSONApiResponseKeysEnum.REACHABLE_SCENES.getKey())
+                                                                .getAsJsonArray();
                                                         if (scenes != null) {
                                                             for (int i = 0; i < scenes.size(); i++) {
                                                                 discoverScene(scenes.get(i).getAsShort(), groupID);
@@ -368,9 +369,9 @@ public class SceneDiscovery {
     }
 
     /**
-     * Informs the registered {@link SceneStausListener} as scene discovery about a new scene.
+     * Informs the registered {@link SceneStatusListener} as scene discovery about a new scene.
      *
-     * @param scene
+     * @param scene that was discoverd
      */
     public void sceneDiscoverd(InternalScene scene) {
         if (scene != null) {
@@ -411,7 +412,7 @@ public class SceneDiscovery {
     /**
      * Registers the given {@link SceneStatusListener} as scene discovery.
      *
-     * @param listener
+     * @param listener to register
      */
     public void registerSceneDiscovery(SceneStatusListener listener) {
         this.discovery = listener;

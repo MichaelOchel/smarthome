@@ -33,7 +33,7 @@ public class EventItemImpl implements EventItem {
     /**
      * Creates a new {@link EventItemImpl} from the given digitalSTROM-Event-Item {@link JsonObject}.
      *
-     * @param jsonEventItem
+     * @param jsonEventItem must not be null
      */
     public EventItemImpl(JsonObject jsonEventItem) {
         name = jsonEventItem.get(JSONApiResponseKeysEnum.NAME.getKey()).getAsString();
@@ -85,7 +85,7 @@ public class EventItemImpl implements EventItem {
 
     /*
      * (non-Javadoc)
-     * 
+     *
      * @see java.lang.Object#toString()
      */
     @Override

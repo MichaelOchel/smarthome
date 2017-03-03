@@ -14,13 +14,11 @@ import java.util.HashMap;
  *
  * @author Michael Ochel - Initial contribution
  * @author Matthias Siegele - Initial contribution
- * @see http://developer.digitalstrom.org/Architecture/ds-basics.pdf Table 36: Output Mode Register, page 51
+ * @see <a href="http://developer.digitalstrom.org/Architecture/ds-basics.pdf">ds-basics.pdf, Table 40: Sensor Types
+ *      from ds-basic.pdf from 19.08.2015</a>
  */
 public enum SensorEnum {
     /*
-     * Table 40: Sensor Types from ds-basic.pdf (http://developer.digitalstrom.org/Architecture/ds-basics.pdf) from
-     * 19.08.2015
-     *
      * | Sensor Type | Description | Unit | Min | 12 Bit Max | 12 Bit Resolution |
      * -----------------------------------------------------------------------------------------------------------------
      * -------------------------------------------------------------
@@ -100,7 +98,7 @@ public enum SensorEnum {
     /**
      * Returns true, if the given typeIndex contains in digitalSTROM, otherwise false.
      *
-     * @param typeIndex
+     * @param typeIndex to contains
      * @return true, if contains otherwise false
      */
     public static boolean containsSensor(Short typeIndex) {
@@ -110,7 +108,7 @@ public enum SensorEnum {
     /**
      * Return true, if the given {@link SensorEnum} is a climate sensor, otherwise false.
      *
-     * @param sensorType
+     * @param sensorType to check
      * @return true, if {@link SensorEnum} is climate sensor, otherwise false.
      */
     public static boolean isClimateSensor(SensorEnum sensorType) {
@@ -147,7 +145,7 @@ public enum SensorEnum {
      * - {@link #OUTPUT_CURRENT_H}<br>
      * - {@link #POWER_CONSUMPTION}
      *
-     * @param sensorType
+     * @param sensorType to check
      * @return true, if {@link SensorEnum} is power sensor, otherwise false.
      */
     public static boolean isPowerSensor(SensorEnum sensorType) {
@@ -169,7 +167,7 @@ public enum SensorEnum {
     /**
      * Returns the {@link SensorEnum} for the given typeIndex, otherwise null.
      *
-     * @param typeIndex
+     * @param typeIndex of the {@link SensorEnum}
      * @return SensorEnum or null
      */
     public static SensorEnum getSensor(Short typeIndex) {

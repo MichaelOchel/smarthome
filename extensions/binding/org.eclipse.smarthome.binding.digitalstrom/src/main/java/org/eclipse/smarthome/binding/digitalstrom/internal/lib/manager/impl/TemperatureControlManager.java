@@ -199,14 +199,16 @@ public class TemperatureControlManager implements EventHandler, TemperatureContr
     /**
      * Registers a {@link TemperatureControlStatusListener} for a zone, if the temperation control for this zone is
      * configured. It can be also register a {@link TemperatureControlStatusListener} as discovery, if the
-     * {@link TemperatureControlStatusListener#getID()} returns {@link TemperatureControlStatusListener#DISCOVERY}.
+     * {@link TemperatureControlStatusListener#getTemperationControlStatusListenrID()} returns
+     * {@link TemperatureControlStatusListener#DISCOVERY}.
      *
-     * @param temperatureControlStatusListener
+     * @param temperatureControlStatusListener to register
      */
     public void registerTemperatureControlStatusListener(
             TemperatureControlStatusListener temperatureControlStatusListener) {
         if (temperatureControlStatusListener != null) {
-            if (temperatureControlStatusListener.getTemperationControlStatusListenrID().equals(TemperatureControlStatusListener.DISCOVERY)) {
+            if (temperatureControlStatusListener.getTemperationControlStatusListenrID()
+                    .equals(TemperatureControlStatusListener.DISCOVERY)) {
                 logger.debug("discovery is registered");
                 this.discovery = temperatureControlStatusListener;
                 if (temperationControlStatus != null) {
@@ -221,28 +223,28 @@ public class TemperatureControlManager implements EventHandler, TemperatureContr
                 TemperatureControlStatus tempConStat = checkAndGetTemperatureControlStatus(
                         temperatureControlStatusListener.getTemperationControlStatusListenrID());
                 if (tempConStat != null) {
-                    logger.debug("register listener with id " + temperatureControlStatusListener.getTemperationControlStatusListenrID());
-                    zoneTemperationControlListenerMap.put(temperatureControlStatusListener.getTemperationControlStatusListenrID(),
+                    logger.debug("register listener with id "
+                            + temperatureControlStatusListener.getTemperationControlStatusListenrID());
+                    zoneTemperationControlListenerMap.put(
+                            temperatureControlStatusListener.getTemperationControlStatusListenrID(),
                             temperatureControlStatusListener);
                     temperatureControlStatusListener.registerTemperatureSensorTransmitter(this);
-                    temperatureControlStatusListener.configChanged(tempConStat);
-                } else {
-                    // TODO: onTemperatureControlIsNotConfigured() zu configChanged(null) bzw. Abfrage ob isConfig...
-                    temperatureControlStatusListener.onTemperatureControlIsNotConfigured();
                 }
+                temperatureControlStatusListener.configChanged(tempConStat);
             }
         }
     }
 
     /**
-     * Unrigesters a {@link TemperatureControlStatusListener}, if it exist.
+     * Unregisters a {@link TemperatureControlStatusListener}, if it exist.
      *
-     * @param temperatureControlStatusListener
+     * @param temperatureControlStatusListener to unregister
      */
     public void unregisterTemperatureControlStatusListener(
             TemperatureControlStatusListener temperatureControlStatusListener) {
         if (temperatureControlStatusListener != null) {
-            if (temperatureControlStatusListener.getTemperationControlStatusListenrID().equals(TemperatureControlStatusListener.DISCOVERY)) {
+            if (temperatureControlStatusListener.getTemperationControlStatusListenrID()
+                    .equals(TemperatureControlStatusListener.DISCOVERY)) {
                 this.discovery = null;
                 return;
             }
@@ -250,7 +252,8 @@ public class TemperatureControlManager implements EventHandler, TemperatureContr
                 temperatureControlStatusListener = zoneTemperationControlListenerMap
                         .remove(temperatureControlStatusListener.getTemperationControlStatusListenrID());
                 if (discovery != null && temperatureControlStatusListener != null) {
-                    discovery.configChanged(temperationControlStatus.get(temperatureControlStatusListener.getTemperationControlStatusListenrID()));
+                    discovery.configChanged(temperationControlStatus
+                            .get(temperatureControlStatusListener.getTemperationControlStatusListenrID()));
                 }
             }
         }
@@ -260,7 +263,7 @@ public class TemperatureControlManager implements EventHandler, TemperatureContr
      * Returns the {@link TemperatureControlStatus} for the given zone, if the temperature control is configured,
      * otherwise it will be returned null.
      *
-     * @param zoneID
+     * @param zoneID to check
      * @return {@link TemperatureControlStatus} if the temperature control is configured, otherwise null
      */
     public TemperatureControlStatus checkAndGetTemperatureControlStatus(Integer zoneID) {
@@ -431,7 +434,7 @@ public class TemperatureControlManager implements EventHandler, TemperatureContr
      * Registers the given {@link SystemStateChangeListener}, which will be informed about heating system water state
      * changes.
      *
-     * @param systemStateChangeListener
+     * @param systemStateChangeListener to register
      */
     public void registerSystemStateChangeListener(SystemStateChangeListener systemStateChangeListener) {
         if (eventListener != null) {

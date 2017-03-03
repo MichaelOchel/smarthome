@@ -125,7 +125,7 @@ public class TemperatureControlStatus extends BaseTemperatureControl {
      * Returns the timestamp when the temperature was read out as {@link Date}.
      *
      * @return the temperatureTime
-     * @throws ParseException
+     * @throws ParseException see {@link DateFormat#parse(String)}
      */
     public Date getTemperatureTimeAsDate() throws ParseException {
         return formatter.parse(temperatureTime);
@@ -135,7 +135,6 @@ public class TemperatureControlStatus extends BaseTemperatureControl {
      * Returns the timestamp when the temperature was read out as {@link String}.
      *
      * @return the temperatureTime
-     * @throws ParseException
      */
     public String getTemperatureTimeAsString() {
         return temperatureTime;
@@ -154,7 +153,7 @@ public class TemperatureControlStatus extends BaseTemperatureControl {
      * Returns the timestamp as {@link Date} for the nominal value of the zone.
      *
      * @return the nominalValueTime
-     * @throws ParseException
+     * @throws ParseException see {@link DateFormat#parse(String)}
      */
     public Date getNominalValueTimeAsDate() throws ParseException {
         return formatter.parse(nominalValueTime);
@@ -182,7 +181,7 @@ public class TemperatureControlStatus extends BaseTemperatureControl {
      * Returns timestamp as {@link Date} for the control value for heating of the zone.
      *
      * @return the controlValueTime
-     * @throws ParseException
+     * @throws ParseException see {@link DateFormat#parse(String)}
      */
     public Date getControlValueTimeAsDate() throws ParseException {
         return formatter.parse(controlValueTime);

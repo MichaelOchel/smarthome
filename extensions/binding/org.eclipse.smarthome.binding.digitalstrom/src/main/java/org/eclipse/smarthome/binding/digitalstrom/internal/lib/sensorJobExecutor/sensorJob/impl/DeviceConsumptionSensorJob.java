@@ -35,8 +35,8 @@ public class DeviceConsumptionSensorJob implements SensorJob {
      * Creates a new {@link DeviceConsumptionSensorJob}. Through updateDevice you can set, if the {@link Device} will be
      * updates automatically.
      *
-     * @param device
-     * @param type
+     * @param device to update
+     * @param type to update
      * @param updateDevice (true = automatically device, otherwise false)
      * @see #DeviceConsumptionSensorJob(Device, SensorEnum)
      */
@@ -52,8 +52,8 @@ public class DeviceConsumptionSensorJob implements SensorJob {
      * Creates a new {@link DeviceConsumptionSensorJob} with the given {@link SensorEnum} for the given {@link Device}
      * and automatically {@link Device} update.
      *
-     * @param device
-     * @param type
+     * @param device to update
+     * @param type to update
      */
     public DeviceConsumptionSensorJob(Device device, SensorEnum type) {
         this.device = device;
@@ -127,8 +127,8 @@ public class DeviceConsumptionSensorJob implements SensorJob {
     /**
      * Returns the id for a {@link DeviceConsumptionSensorJob} with the given {@link Device} and {@link SensorEnum}.
      *
-     * @param device
-     * @param sensorType
+     * @param device to update
+     * @param sensorType to update
      * @return id
      */
     public static String getID(Device device, SensorEnum sensorType) {

@@ -32,7 +32,7 @@ public class JSONDetailedGroupInfoImpl implements DetailedGroupInfo {
     /**
      * Creates a new {@link JSONDetailedGroupInfoImpl} through the {@link JsonObject}.
      *
-     * @param jObject
+     * @param jObject of the server response, must not be null
      */
     public JSONDetailedGroupInfoImpl(JsonObject jObject) {
         this.deviceList = new LinkedList<String>();

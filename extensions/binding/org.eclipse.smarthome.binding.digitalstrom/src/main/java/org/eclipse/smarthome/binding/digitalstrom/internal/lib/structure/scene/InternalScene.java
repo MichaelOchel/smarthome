@@ -139,7 +139,7 @@ public class InternalScene {
     /**
      * This method has a device to call, if this scene was activated and the device state has changed.
      *
-     * @param sceneNumber
+     * @param sceneNumber new scene number
      */
     public void deviceSceneChanged(short sceneNumber) {
         if (this.SCENE_ID != sceneNumber) {
@@ -169,7 +169,7 @@ public class InternalScene {
     /**
      * Adds an affected {@link Device} to this {@link InternalScene} device list.
      *
-     * @param device
+     * @param device to add
      */
     public void addDevice(Device device) {
         if (!this.devices.contains(device)) {
@@ -188,7 +188,7 @@ public class InternalScene {
      * Overrides the existing device list of this {@link InternalScene} with a new reference to a {@link List} of
      * affected {@link Device}'s.
      *
-     * @param deviceList
+     * @param deviceList to add
      */
     public void addReferenceDevices(List<Device> deviceList) {
         this.devices = deviceList;
@@ -231,7 +231,7 @@ public class InternalScene {
     /**
      * Adds a {@link List} of affected {@link Device}'s.
      *
-     * @param deviceList
+     * @param deviceList to add
      */
     public void addDevices(List<Device> deviceList) {
         for (Device device : deviceList) {
@@ -242,7 +242,7 @@ public class InternalScene {
     /**
      * Removes a not anymore affected {@link Device} from the device list.
      *
-     * @param device
+     * @param device to remove
      */
     public void removeDevice(Device device) {
         this.devices.remove(device);
@@ -251,7 +251,7 @@ public class InternalScene {
     /**
      * Updates the affected {@link Device}'s with the given deviceList.
      *
-     * @param deviceList
+     * @param deviceList to update
      */
     public void updateDeviceList(List<Device> deviceList) {
         if (!this.devices.equals(deviceList)) {
@@ -272,7 +272,7 @@ public class InternalScene {
     /**
      * Sets the scene name.
      *
-     * @param sceneName
+     * @param sceneName to set
      */
     public void setSceneName(String sceneName) {
         this.sceneName = sceneName;
@@ -318,7 +318,7 @@ public class InternalScene {
     /**
      * Registers a {@link SceneStatusListener} to this {@link InternalScene}.
      *
-     * @param listener
+     * @param listener to register
      */
     public synchronized void registerSceneListener(SceneStatusListener listener) {
         this.listener = listener;

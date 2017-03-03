@@ -18,9 +18,12 @@ import java.util.HashMap;
  * @author Michael Ochel - add new scenes and missing java-doc
  * @author Mathias Siegele - add new scenes and missing java-doc
  *
- * @see http://developer.digitalstrom.org/Architecture/ds-basics.pdf appendix B, page 44
  */
 public enum SceneEnum implements Scene {
+
+    /*
+     * see http://developer.digitalstrom.org/Architecture/ds-basics.pdf appendix B, page 44
+     */
 
     /* Area scene commands */
     AREA_1_OFF((short) 1), // Set output value to Preset Area 1 Off (Default: Off)
@@ -135,7 +138,7 @@ public enum SceneEnum implements Scene {
     /**
      * Returns the {@link SceneEnum} for the given scene number.
      *
-     * @param sceneNumber
+     * @param sceneNumber of the {@link SceneEnum}
      * @return SceneEnum
      */
     public static SceneEnum getScene(short sceneNumber) {
@@ -145,7 +148,7 @@ public enum SceneEnum implements Scene {
     /**
      * Returns true, if the given scene number contains in digitalSTROM scenes, otherwise false.
      *
-     * @param sceneNumber
+     * @param sceneNumber to contains
      * @return true, if contains otherwise false
      */
     public static boolean containsScene(Short sceneNumber) {

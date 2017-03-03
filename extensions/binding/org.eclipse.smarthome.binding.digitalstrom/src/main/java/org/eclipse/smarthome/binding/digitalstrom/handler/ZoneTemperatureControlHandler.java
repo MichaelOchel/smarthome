@@ -9,6 +9,8 @@ package org.eclipse.smarthome.binding.digitalstrom.handler;
 
 import static org.eclipse.smarthome.binding.digitalstrom.DigitalSTROMBindingConstants.BINDING_ID;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -19,6 +21,7 @@ import org.eclipse.smarthome.binding.digitalstrom.internal.lib.climate.constants
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.climate.jsonResponseContainer.impl.TemperatureControlStatus;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.listener.TemperatureControlStatusListener;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.manager.StructureManager;
+import org.eclipse.smarthome.binding.digitalstrom.internal.lib.manager.impl.TemperatureControlManager;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.constants.FunctionalColorGroupEnum;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.constants.OutputModeEnum;
 import org.eclipse.smarthome.binding.digitalstrom.internal.providers.DsChannelTypeProvider;
@@ -44,7 +47,6 @@ import org.eclipse.smarthome.core.types.Command;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 
 /**
@@ -82,7 +84,7 @@ public class ZoneTemperatureControlHandler extends BaseThingHandler implements T
     /**
      * Creates a new {@link ZoneTemperatureControlHandler}.
      *
-     * @param thing
+     * @param thing must not be null
      */
     public ZoneTemperatureControlHandler(Thing thing) {
         super(thing);
@@ -253,47 +255,58 @@ public class ZoneTemperatureControlHandler extends BaseThingHandler implements T
 
     @Override
     public synchronized void configChanged(TemperatureControlStatus tempControlStatus) {
-        ControlModes controlMode = ControlModes.getControlMode(tempControlStatus.getControlMode());
-        ControlStates controlState = ControlStates.getControlState(tempControlStatus.getControlState());
-        if (controlMode != null && controlState != null) {
-            logger.debug("config changed: " + tempControlStatus.toString());
-            if (controlMode.equals(ControlModes.PID_CONTROL)
-                    && (currentChannelID == null
-                            || !currentChannelID.contains(DsChannelTypeProvider.TEMPERATURE_CONTROLLED))
-                    && !controlState.equals(ControlStates.EMERGENCY)) {
-                currentChannelID = DsChannelTypeProvider.getOutputChannelTypeID(FunctionalColorGroupEnum.BLUE,
-                        OutputModeEnum.TEMPRETURE_PWM);
-                loadChannel();
-                currentValue = tempControlStatus.getNominalValue();
-                updateState(currentChannelID, new DecimalType(currentValue.doubleValue()));
-            } else {
-                currentChannelID = DsChannelTypeProvider.getOutputChannelTypeID(FunctionalColorGroupEnum.BLUE,
-                        OutputModeEnum.HEATING_PWM);
-                loadChannel();
-                currentValue = tempControlStatus.getControlValue();
-                updateState(currentChannelID, new PercentType(fixPercent(currentValue.intValue())));
-                if (controlState.equals(ControlStates.EMERGENCY)) {
-                    updateStatus(ThingStatus.ONLINE, ThingStatusDetail.COMMUNICATION_ERROR,
-                            "The communication with temperation sensor fails. Temperature control state emergency (temperature control though the control value) is active.");
+        if (tempControlStatus != null && tempControlStatus.getIsConfigured()) {
+            ControlModes controlMode = ControlModes.getControlMode(tempControlStatus.getControlMode());
+            ControlStates controlState = ControlStates.getControlState(tempControlStatus.getControlState());
+            if (controlMode != null && controlState != null) {
+                logger.debug("config changed: " + tempControlStatus.toString());
+                if (controlMode.equals(ControlModes.OFF) && currentChannelID != null) {
+                    currentChannelID = null;
+                    loadChannel();
+                } else if (controlMode.equals(ControlModes.PID_CONTROL)
+                        && (currentChannelID == null
+                                || !currentChannelID.contains(DsChannelTypeProvider.TEMPERATURE_CONTROLLED))
+                        && !controlState.equals(ControlStates.EMERGENCY)) {
+                    currentChannelID = DsChannelTypeProvider.getOutputChannelTypeID(FunctionalColorGroupEnum.BLUE,
+                            OutputModeEnum.TEMPRETURE_PWM);
+                    loadChannel();
+                    currentValue = tempControlStatus.getNominalValue();
+                    updateState(currentChannelID, new DecimalType(currentValue.doubleValue()));
+                } else if (!controlMode.equals(ControlModes.PID_CONTROL) && !controlMode.equals(ControlModes.OFF)) {
+                    currentChannelID = DsChannelTypeProvider.getOutputChannelTypeID(FunctionalColorGroupEnum.BLUE,
+                            OutputModeEnum.HEATING_PWM);
+                    loadChannel();
+                    currentValue = tempControlStatus.getControlValue();
+                    updateState(currentChannelID, new PercentType(fixPercent(currentValue.intValue())));
+                    if (controlState.equals(ControlStates.EMERGENCY)) {
+                        updateStatus(ThingStatus.ONLINE, ThingStatusDetail.COMMUNICATION_ERROR,
+                                "The communication with temperation sensor fails. Temperature control state emergency (temperature control though the control value) is active.");
+                    }
                 }
+                // TODO: in case control-mode zone-follower it is maybe useful to add the followed zone-id, but this
+                // info is not in the control-status
+                Map<String, String> properties = editProperties();
+                properties.put("controlDSUID", tempControlStatus.getControlDSUID());
+                properties.put("controlMode", controlMode.getKey());
+                properties.put("controlState", controlState.getKey());
+                updateProperties(properties);
             }
-            // TODO: in case control-mode zone-follower it is maybe useful to add the followed zone-id, but this info is
-            // not in the control-status
-            Map<String, String> properties = editProperties();
-            properties.put("controlDSUID", tempControlStatus.getControlDSUID());
-            properties.put("controlMode", controlMode.getKey());
-            properties.put("controlState", controlState.getKey());
-            updateProperties(properties);
+        } else {
+            updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.CONFIGURATION_ERROR,
+                    "digitalSTROM temperature control is for this zone not configured in.");
         }
     }
 
     private synchronized void loadChannel() {
-        Channel channel = ChannelBuilder
-                .create(new ChannelUID(this.getThing().getUID(), currentChannelID),
-                        DsChannelTypeProvider.getItemType(currentChannelID))
-                .withType(new ChannelTypeUID(BINDING_ID, currentChannelID)).build();
+        List<Channel> newChannelList = new ArrayList<Channel>(1);
+        if (currentChannelID != null) {
+            newChannelList.add(ChannelBuilder
+                    .create(new ChannelUID(this.getThing().getUID(), currentChannelID),
+                            DsChannelTypeProvider.getItemType(currentChannelID))
+                    .withType(new ChannelTypeUID(BINDING_ID, currentChannelID)).build());
+        }
         ThingBuilder thingBuilder = editThing();
-        thingBuilder.withChannels(Lists.newArrayList(channel));
+        thingBuilder.withChannels(newChannelList);
         updateThing(thingBuilder.build());
         logger.debug("load channel: {} with item: {]", currentChannelID,
                 DsChannelTypeProvider.getItemType(currentChannelID));
@@ -315,12 +328,6 @@ public class ZoneTemperatureControlHandler extends BaseThingHandler implements T
 
     private int fixPercent(int value) {
         return value < 0 ? 0 : value > 100 ? 100 : value;
-    }
-
-    @Override
-    public void onTemperatureControlIsNotConfigured() {
-        updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.CONFIGURATION_ERROR,
-                "digitalSTROM temperature control is for this zone not configured in.");
     }
 
     @Override

@@ -8,6 +8,7 @@
 package org.eclipse.smarthome.binding.digitalstrom.internal.lib.manager;
 
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.event.EventHandler;
+import org.eclipse.smarthome.binding.digitalstrom.internal.lib.event.EventListener;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.listener.ConnectionListener;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.listener.DeviceStatusListener;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.listener.ManagerStatusListener;
@@ -15,6 +16,8 @@ import org.eclipse.smarthome.binding.digitalstrom.internal.lib.listener.SceneSta
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.listener.TotalPowerConsumptionListener;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.listener.stateEnums.ManagerStates;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.listener.stateEnums.ManagerTypes;
+import org.eclipse.smarthome.binding.digitalstrom.internal.lib.sensorJobExecutor.SceneReadingJobExecutor;
+import org.eclipse.smarthome.binding.digitalstrom.internal.lib.sensorJobExecutor.SensorJobExecutor;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.sensorJobExecutor.sensorJob.SensorJob;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.Device;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.DeviceStateUpdate;
@@ -25,7 +28,7 @@ import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.scene.I
  * The {@link DeviceStatusManager} is responsible for the synchronization between the internal model of the
  * digitalSTROM-devices and the real existing digitalSTROM-devices. You can change the state of an device by sending a
  * direct command to the devices or by calling a scene. Furthermore the {@link DeviceStatusManager} get informed over
- * the {@link ScenesManager} by the {@link EventListener} if scenes are called by external sources. All
+ * the {@link SceneManager} by the {@link EventListener} if scenes are called by external sources. All
  * configurations of the physically device will be synchronized to the internally managed model and updated as required.
  * The {@link DeviceStatusManager} also initializes {@link SensorJob}'s with the {@link SensorJobExecutor} and
  * {@link SceneReadingJobExecutor} to update required sensor and scene data.
@@ -33,28 +36,29 @@ import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.scene.I
  * <p>
  * Therefore the {@link DeviceStatusManager} uses the {@link StructureManager} for the internal management of the
  * structure of the digitalSTROM-system, {@link ConnectionManager} to check the connectivity,
- * {@link ScenesManager} to identify externally called scenes and to update the affected devices of these
+ * {@link SceneManager} to identify externally called scenes and to update the affected devices of these
  * called scenes to the internal model. The most methods of the above-named managers will be directly called over the
  * {@link DeviceStatusManager}, because they are linked to the affected managers.
  * </P>
  * <p>
  * To get informed by all relevant information you can register some useful listeners. Here the list of all listeners
  * which can registered or unregistered:
+ * </p>
  * <ul>
  * <li>{@link DeviceStatusListener} over {@link #registerDeviceListener(DeviceStatusListener)} respectively
  * {@link #unregisterDeviceListener(DeviceStatusListener)}</li>
  * <li>{@link SceneStatusListener} over {@link #registerSceneListener(SceneStatusListener)} respectively
  * {@link #unregisterSceneListener(SceneStatusListener)}</li>
- * <li>{@link TotalPowerConsumtionListener} over
+ * <li>{@link TotalPowerConsumptionListener} over
  * {@link #registerTotalPowerConsumptionListener(TotalPowerConsumptionListener)} respectively
- * {@link #unregisterTotalPowerConsumptionListener(TotalPowerConsumptionListener)}</li>
+ * {@link #unregisterTotalPowerConsumptionListener()}</li>
  * <li>{@link ManagerStatusListener} over {@link #registerStatusListener(ManagerStatusListener)}
  * respectively {@link #unregisterStatusListener()}</li>
  * <li>{@link ConnectionListener} over {@link #registerDeviceListener(DeviceStatusListener)} respectively
  * {@link #unregisterDeviceListener(DeviceStatusListener)}</li>
  * </ul>
  * For what the listener can be used please have a look at the listener.
- * </p>
+ *
  *
  * @author Michael Ochel - Initial contribution
  * @author Matthias Siegele - Initial contribution
@@ -89,7 +93,7 @@ public interface DeviceStatusManager extends EventHandler {
      * <br>
      * It also reads out the current output value of the device and updates it, if the command was send successful.
      *
-     * @param device
+     * @param device which will send a stop command
      */
     public void sendStopComandsToDSS(Device device);
 
@@ -100,24 +104,24 @@ public interface DeviceStatusManager extends EventHandler {
      * <br>
      * It also updates the device if the command was send successful.
      *
-     * @param device
-     * @param deviceStateUpdate
+     * @param device device which will send a command
+     * @param deviceStateUpdate command to send
      */
     public void sendComandsToDSS(Device device, DeviceStateUpdate deviceStateUpdate);
 
     /**
-     * This method adds a {@link SensorJobs} with the appropriate priority to the {@link SensorJobExecuter}.
+     * This method adds a {@link SensorJob} with the appropriate priority to the {@link SensorJob}.
      *
-     * @param sensorJob
-     * @param priority
+     * @param sensorJob to update sensor data
+     * @param priority to update
      */
     public void updateSensorData(SensorJob sensorJob, String priority);
 
     /**
-     * This method adds a {@link SensorJobs} with the appropriate priority to the {@link SceneReadingJobExecuter}.
+     * This method adds a {@link SensorJob} with the appropriate priority to the {@link SceneReadingJobExecutor}.
      *
-     * @param device
-     * @param deviceStateUpdate
+     * @param device device which will update scene data
+     * @param deviceStateUpdate scene data to update
      */
     public void updateSceneData(Device device, DeviceStateUpdate deviceStateUpdate);
 
@@ -125,7 +129,7 @@ public interface DeviceStatusManager extends EventHandler {
      * Registers the given {@link DeviceStatusListener} to the {@link Device}, if it exists or registers it as a
      * device discovery, if the id of the {@link DeviceStatusListener} is {@link DeviceStatusListener#DEVICE_DISCOVERY}.
      *
-     * @param deviceListener
+     * @param deviceListener to rigister
      */
     public void registerDeviceListener(DeviceStatusListener deviceListener);
 
@@ -133,14 +137,14 @@ public interface DeviceStatusManager extends EventHandler {
      * Unregisters the given {@link DeviceStatusListener} from the {@link Device}, if it exists or unregisters the
      * device discovery, if the id of the {@link DeviceStatusListener} is {@link DeviceStatusListener#DEVICE_DISCOVERY}.
      *
-     * @param deviceListener
+     * @param deviceListener to unregister
      */
     public void unregisterDeviceListener(DeviceStatusListener deviceListener);
 
     /**
      * Registers the given {@link TotalPowerConsumptionListener} to this {@link DeviceStatusManager}.
      *
-     * @param totalPowerConsumptionListener
+     * @param totalPowerConsumptionListener to register
      */
     public void registerTotalPowerConsumptionListener(TotalPowerConsumptionListener totalPowerConsumptionListener);
 
@@ -154,7 +158,7 @@ public interface DeviceStatusManager extends EventHandler {
      * scene discovery to the {@link SceneManager}, if the id of the {@link SceneStatusListener} is
      * {@link SceneStatusListener#SCENE_DISCOVERY}.
      *
-     * @param sceneListener
+     * @param sceneListener to register
      */
     public void registerSceneListener(SceneStatusListener sceneListener);
 
@@ -163,14 +167,14 @@ public interface DeviceStatusManager extends EventHandler {
      * scene discovery from the {@link SceneManager}, if the id of the {@link SceneStatusListener} is
      * {@link SceneStatusListener#SCENE_DISCOVERY}.
      *
-     * @param sceneListener
+     * @param sceneListener to unregister
      */
     public void unregisterSceneListener(SceneStatusListener sceneListener);
 
     /**
      * Registers the given {@link ConnectionListener} to the {@link ConnectionManager}.
      *
-     * @param connectionListener
+     * @param connectionListener to register
      */
     public void registerConnectionListener(ConnectionListener connectionListener);
 
@@ -182,7 +186,7 @@ public interface DeviceStatusManager extends EventHandler {
     /**
      * Removes the {@link Device} with the given dSID from the internal model, if it exists.
      *
-     * @param dSID
+     * @param dSID of the {@link Device} which will be removed
      */
     public void removeDevice(String dSID);
 
@@ -190,7 +194,7 @@ public interface DeviceStatusManager extends EventHandler {
      * Registers the given {@link ManagerStatusListener} to all available managers. What manager are available please
      * have a look at {@link ManagerTypes}.
      *
-     * @param statusListener
+     * @param statusListener to register
      */
     public void registerStatusListener(ManagerStatusListener statusListener);
 

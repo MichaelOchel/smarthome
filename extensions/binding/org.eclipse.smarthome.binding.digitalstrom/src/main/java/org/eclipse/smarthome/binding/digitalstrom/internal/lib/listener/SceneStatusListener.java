@@ -42,14 +42,14 @@ public interface SceneStatusListener {
     /**
      * This method is called whenever a {@link InternalScene} is removed.
      *
-     * @param scene
+     * @param scene that was removed
      */
     public void onSceneRemoved(InternalScene scene);
 
     /**
      * This method is called whenever a {@link InternalScene} is added.
      *
-     * @param scene
+     * @param scene that was added
      */
     public void onSceneAdded(InternalScene scene);
 

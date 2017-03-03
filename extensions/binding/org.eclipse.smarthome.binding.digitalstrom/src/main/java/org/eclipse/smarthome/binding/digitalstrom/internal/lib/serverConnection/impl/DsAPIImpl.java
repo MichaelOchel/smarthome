@@ -86,7 +86,7 @@ public class DsAPIImpl implements DsAPI {
     /**
      * Create a new {@link DsAPIImpl} with the given {@link HttpTransport}.
      *
-     * @param transport
+     * @param transport for connection, must not be null
      */
     public DsAPIImpl(HttpTransport transport) {
         this.transport = transport;
@@ -96,9 +96,9 @@ public class DsAPIImpl implements DsAPI {
      * Creates a new {@link DsAPIImpl} with creating a new {@link HttpTransport}, parameters see
      * {@link HttpTransportImpl#HttpTransportImpl(String, int, int)}.
      *
-     * @param uri
-     * @param connectTimeout
-     * @param readTimeout
+     * @param uri of the digitalSTROM-Server, must not be null
+     * @param connectTimeout to set
+     * @param readTimeout to set
      */
     public DsAPIImpl(String uri, int connectTimeout, int readTimeout) {
         this.transport = new HttpTransportImpl(uri, connectTimeout, readTimeout);
@@ -108,10 +108,10 @@ public class DsAPIImpl implements DsAPI {
      * Creates a new {@link DsAPIImpl} with creating a new {@link HttpTransport}, parameters see
      * {@link HttpTransportImpl#HttpTransportImpl(String, int, int, boolean)}.
      *
-     * @param uri
-     * @param connectTimeout
-     * @param readTimeout
-     * @param aceptAllCerts
+     * @param uri of the digitalSTROM-Server, must not be null
+     * @param connectTimeout to set
+     * @param readTimeout to set
+     * @param aceptAllCerts yes/no (true/false)
      */
     public DsAPIImpl(String uri, int connectTimeout, int readTimeout, boolean aceptAllCerts) {
         this.transport = new HttpTransportImpl(uri, connectTimeout, readTimeout, aceptAllCerts);

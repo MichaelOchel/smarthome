@@ -21,8 +21,8 @@ public interface SystemStateChangeListener {
     /**
      * Will be called, if a digitalSTROM system state has changed.
      *
-     * @param stateType
-     * @param newState
+     * @param stateType of the digitalSTROM system state
+     * @param newState of the digitalSTROM system state
      */
     public void onSystemStateChanged(String stateType, String newState);
 }

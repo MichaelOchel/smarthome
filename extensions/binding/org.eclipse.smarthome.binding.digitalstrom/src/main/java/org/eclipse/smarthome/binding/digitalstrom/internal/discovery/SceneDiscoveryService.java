@@ -14,6 +14,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.eclipse.smarthome.binding.digitalstrom.handler.BridgeHandler;
+import org.eclipse.smarthome.binding.digitalstrom.handler.SceneHandler;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.constants.FuncNameAndColorGroupEnum;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.scene.InternalScene;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.scene.constants.SceneEnum;
@@ -46,7 +47,7 @@ public class SceneDiscoveryService extends AbstractDiscoveryService {
      *
      * @param bridgeHandler (must not be null)
      * @param supportedThingType (must not be null)
-     * @throws IllegalArgumentException
+     * @throws IllegalArgumentException see {@link AbstractDiscoveryService#AbstractDiscoveryService(int)}
      */
     public SceneDiscoveryService(BridgeHandler bridgeHandler, ThingTypeUID supportedThingType)
             throws IllegalArgumentException {
@@ -182,6 +183,7 @@ public class SceneDiscoveryService extends AbstractDiscoveryService {
      * Creates a {@link DiscoveryResult} of the given {@link InternalScene}, if the scene exists, if it is allowed to
      * use the scene
      * and if the scene is not one of the following scenes:
+     * <ul>
      * <li>{@link SceneEnum#INCREMENT}</li>
      * <li>{@link SceneEnum#DECREMENT}</li>
      * <li>{@link SceneEnum#STOP}</li>
@@ -207,7 +209,8 @@ public class SceneDiscoveryService extends AbstractDiscoveryService {
      * <li>{@link SceneEnum#ENERGY_OVERLOAD}</li>
      * <li>{@link SceneEnum#ALARM_SIGNAL}</li>
      * <li>{@link SceneEnum#AUTO_STANDBY}</li>
-     * <li>{@link SceneEnum#ZONE_ACTIVE}</li><br>
+     * <li>{@link SceneEnum#ZONE_ACTIVE}</li>
+     * </ul>
      *
      * @param scene (must not be null)
      */

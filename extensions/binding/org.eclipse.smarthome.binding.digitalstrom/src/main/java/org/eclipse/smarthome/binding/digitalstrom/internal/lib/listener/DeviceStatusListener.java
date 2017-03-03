@@ -22,7 +22,7 @@ import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices
  * informed, if a new {@link Device} or {@link Circuit} is added or removed from the digitalSTROM-System.<br>
  * For that the {@link DeviceStatusListener} has to be registered on the
  * {@link DeviceStatusManager#registerDeviceListener(DeviceStatusListener)}. Then the {@link DeviceStatusListener} gets
- * informed by the methods {@link #onDeviceAdded(Device)} and {@link #onDeviceRemoved(Device)}.
+ * informed by the methods {@link #onDeviceAdded(Object)} and {@link #onDeviceRemoved(Object)}.
  * </p>
  *
  * @author Michael Ochel - Initial contribution
@@ -40,21 +40,21 @@ public interface DeviceStatusListener {
      * This method is called whenever the state of the {@link Device} has changed and passes the new device state as an
      * {@link DeviceStateUpdate} object.
      *
-     * @param deviceStateUpdate
+     * @param deviceStateUpdate new device status
      */
     public void onDeviceStateChanged(DeviceStateUpdate deviceStateUpdate);
 
     /**
      * This method is called whenever a device is removed.
      *
-     * @param device
+     * @param device which is removed
      */
     public void onDeviceRemoved(Object device);
 
     /**
      * This method is called whenever a device is added.
      *
-     * @param device
+     * @param device which is added
      */
     public void onDeviceAdded(Object device);
 
@@ -70,7 +70,7 @@ public interface DeviceStatusListener {
     /**
      * This method is called whenever a scene configuration is added to a device.
      *
-     * @param sceneID
+     * @param sceneID of a read scene configuration
      */
     public void onSceneConfigAdded(short sceneID);
 

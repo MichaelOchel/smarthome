@@ -218,6 +218,12 @@ public class DeviceStatusManagerImpl implements DeviceStatusManager {
         this.eventListener = eventListener;
     }
 
+    /**
+     * Check and updates the {@link Device} structure, configurations and status.
+     *
+     * @author Michael Ochel - initial contributer
+     * @author Matthias Siegele - initial contributer
+     */
     private class PollingRunnable implements Runnable {
         private boolean devicesLoaded = false;
         private long nextSensorUpdate = 0;
@@ -242,6 +248,8 @@ public class DeviceStatusManagerImpl implements DeviceStatusManager {
 
                 List<Device> currentDeviceList = getDetailedDevices();
 
+                // TODO: May be it is better to separate the total power consumption update in a extra Thread. See next
+                // TODO.
                 // update the current total power consumption
                 if (nextSensorUpdate <= System.currentTimeMillis()) {
                     // check circuits
@@ -267,6 +275,10 @@ public class DeviceStatusManagerImpl implements DeviceStatusManager {
                     DSID currentDeviceDSID = currentDevice.getDSID();
                     Device eshDevice = tempDeviceMap.remove(currentDeviceDSID);
 
+                    // TODO: May be it is better to separate the Device-Status updates (send commands to dSS) and the
+                    // structure and configuration updates. That will be optimize the time to send commands and the
+                    // structure and configuration updates can be execute at a higher interval. For that the
+                    // DeviceHandler have to inform this DeviceStatusManager to check the updates in a extra Thread.
                     if (eshDevice != null) {
                         checkDeviceConfig(currentDevice, eshDevice);
 
@@ -573,7 +585,7 @@ public class DeviceStatusManagerImpl implements DeviceStatusManager {
         /**
          * Creates a new {@link TrashDevice}.
          *
-         * @param device
+         * @param device to put in {@link TrashDevice}
          */
         public TrashDevice(Device device) {
             this.device = device;
@@ -592,7 +604,7 @@ public class DeviceStatusManagerImpl implements DeviceStatusManager {
         /**
          * Returns true if the time for the {@link TrashDevice} is over and it can be deleted.
          *
-         * @param dayOfYear
+         * @param dayOfYear day of the current year
          * @return true = time to delete | false = not time to delete
          */
         public boolean isTimeToDelete(int dayOfYear) {
@@ -739,7 +751,7 @@ public class DeviceStatusManagerImpl implements DeviceStatusManager {
      * Updates the {@link Device} status of the given {@link Device} with handling outstanding commands, which are saved
      * as {@link DeviceStateUpdate}'s.
      *
-     * @param eshDevice
+     * @param eshDevice to update
      */
     public synchronized void updateDevice(Device eshDevice) {
         logger.debug("Check device updates");

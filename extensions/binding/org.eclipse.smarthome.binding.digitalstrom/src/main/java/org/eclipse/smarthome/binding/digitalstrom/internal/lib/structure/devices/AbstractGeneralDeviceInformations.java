@@ -35,8 +35,8 @@ public abstract class AbstractGeneralDeviceInformations implements GeneralDevice
     /**
      * Creates a new {@link AbstractGeneralDeviceInformations} through the digitalSTROM json response as
      * {@link JsonObject}.
-     * 
-     * @param jsonDeviceObject
+     *
+     * @param jsonDeviceObject json response of the digitalSTROM-Server, must not be null
      */
     public AbstractGeneralDeviceInformations(JsonObject jsonDeviceObject) {
         if (jsonDeviceObject.get(JSONApiResponseKeysEnum.NAME.getKey()) != null) {

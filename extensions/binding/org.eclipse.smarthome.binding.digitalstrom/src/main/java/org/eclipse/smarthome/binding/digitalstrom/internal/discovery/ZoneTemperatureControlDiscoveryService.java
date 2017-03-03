@@ -16,6 +16,7 @@ import java.util.Map;
 import org.apache.commons.lang.StringUtils;
 import org.eclipse.smarthome.binding.digitalstrom.DigitalSTROMBindingConstants;
 import org.eclipse.smarthome.binding.digitalstrom.handler.BridgeHandler;
+import org.eclipse.smarthome.binding.digitalstrom.handler.ZoneTemperatureControlHandler;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.climate.jsonResponseContainer.impl.TemperatureControlStatus;
 import org.eclipse.smarthome.config.discovery.AbstractDiscoveryService;
 import org.eclipse.smarthome.config.discovery.DiscoveryResult;
@@ -31,7 +32,7 @@ import com.google.common.collect.Sets;
  * The {@link ZoneTemperatureControlDiscoveryService} discovers all digitalSTROM zones which have temperature control
  * configured. The thing-type has to be given to the
  * {@link #ZoneTemperatureControlDiscoveryService(BridgeHandler, ThingTypeUID)} as {@link ThingTypeUID}. The supported
- * {@link ThingTypeUID} can be found at {@link ZoneTemperatureControlDiscoveryService#SUPPORTED_THING_TYPES}
+ * {@link ThingTypeUID} can be found at {@link ZoneTemperatureControlHandler#SUPPORTED_THING_TYPES}
  *
  * @author Michael Ochel
  * @author Matthias Siegele
@@ -46,9 +47,9 @@ public class ZoneTemperatureControlDiscoveryService extends AbstractDiscoverySer
     /**
      * Creates a new {@link ZoneTemperatureControlDiscoveryService}.
      *
-     * @param bridgeHandler
-     * @param supportedThingType
-     * @throws IllegalArgumentException
+     * @param bridgeHandler must not be null
+     * @param supportedThingType must not be null
+     * @throws IllegalArgumentException see {@link AbstractDiscoveryService#AbstractDiscoveryService(int)}
      */
     public ZoneTemperatureControlDiscoveryService(BridgeHandler bridgeHandler, ThingTypeUID supportedThingType)
             throws IllegalArgumentException {
@@ -76,7 +77,7 @@ public class ZoneTemperatureControlDiscoveryService extends AbstractDiscoverySer
      * Method for the background discovery
      *
      * @see org.eclipse.smarthome.binding.digitalstrom.internal.lib.listener.TemperatureControlStatusListener#configChanged(TemperatureControlStatus)
-     * @param tempControlStatus
+     * @param tempControlStatus can be null
      */
     public void configChanged(TemperatureControlStatus tempControlStatus) {
         if (isBackgroundDiscoveryEnabled()) {

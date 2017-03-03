@@ -30,8 +30,8 @@ public class JSONApartmentImpl implements Apartment {
 
     /**
      * Creates a new {@link JSONApartmentImpl} through the {@link JsonObject}.
-     * 
-     * @param jObject
+     *
+     * @param jObject of the server response, must not be null
      */
     public JSONApartmentImpl(JsonObject jObject) {
         if (jObject.get(JSONApiResponseKeysEnum.ZONES.getKey()) instanceof JsonArray) {

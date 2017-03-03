@@ -70,13 +70,6 @@ Discoverable scenes are all user named scenes, group scenes that are reachable b
 
 If you only want to discover one of the thing types, you can start a discovery scan on the thing type you wish have discovered. You can use the command line command, e.g.: ``smarthome:discovery start digitalstrom:namedScene`` to start the scan. What thing types this binding supports please have a look at **Supported Things**. 
 
-### Rule specific notice
-
-If you want to create a rule, which uses things of the digitalSTROM-Binding, there are also two things you have to  consider.
-
-1. If the rule contains several digitalSTROM-Devices, which can be summarized in a digitalSTROM-Scene, e.g. some lights in a zone, please use a equivalent supported scene. That will significantly reduce the comments to the digitalSTROM-Server, increases performance and does not bypasses the digitalSTROM state-machine.
-2. If you implement your own temperature control algorithm for a zone/room, e.g. because you want to use other temperature sensors, and call more than one digitalSTROM-BL-KM200, please use the *zone_temperature_control* for valve value control. The *zone_temperature_control* for valve value control will call all digitalSTROM-BL-KM200 with one command and increases so the performance. To get the needed channel at the *zone_temperature_control* you have to choose a control mode unequal *pid-controlled* for the affected zone at the digitalSTROM-heating-control-app.2. 
-
 ## Thing Configuration and Properties
 
 ### digitalSTROM-Server
@@ -233,8 +226,6 @@ The Scene-Thing-Type *Named-Scene* and *Group-Scene* have all parameters. The *A
 
 ### Textual configuration examples
 
-### Textual configuration examples
-
 Usually the discovery works reliable, so that a manual configuration is not needed.
 
 However, at the thing file, a manual configuration looks e.g. like 
@@ -257,7 +248,7 @@ Thing digitalstrom:circuit:circuit (digitalstrom:dssBridge:myDssBridge) [ dSID="
 Thing digitalstrom:zone_temperature_control:zone_temperature_control3 (digitalstrom:dssBridge:myDssBridge)  [ zoneID="3"]
 ```
 
-#### digitalSTROM-Zone-Temperature-Control
+#### digitalSTROM-Group-Scene
 ```
 Thing digitalstrom:groupScene:preset1 (digitalstrom:dssBridge:myDssBridge) [ zoneID="3", groupID="1", sceneID="5"]
 ```
@@ -540,3 +531,10 @@ If you configure your system with textual configuration files, like *\*.thing*, 
 <!-- 1. can be delete, if it is able to dynamically change the thing-configurations and the thing-structure by textual configurations  
 1. Currently the automatically generated channels for devices and so on, have to be created in the textual configurations, too. Thats because dynamically thing changes are only allowed for non static thing-configurations at this moment.-->
 * The feature of the persisting of scene-configurations, to get the scene-configurations after a restart faster (see *digitalSTROM-Scenes* above), will not support by textural configured things, because the properties can not be persist in this case. 
+
+### Rule specific notice
+
+If you want to create a rule, which uses things of the digitalSTROM-Binding, there are also two things you have to  consider.
+
+1. If the rule contains several digitalSTROM-Devices, which can be summarized in a digitalSTROM-Scene, e.g. some lights in a zone, please use a equivalent supported scene. That will significantly reduce the comments to the digitalSTROM-Server, increases performance and does not bypasses the digitalSTROM state-machine.
+2. If you implement your own temperature control algorithm for a zone/room, e.g. because you want to use other temperature sensors, and call more than one digitalSTROM-BL-KM200, please use the *zone_temperature_control* for valve value control. The *zone_temperature_control* for valve value control will call all digitalSTROM-BL-KM200 with one command and increases so the performance. To get the needed channel at the *zone_temperature_control* you have to choose a control mode unequal *pid-controlled* for the affected zone at the digitalSTROM-heating-control-app. 

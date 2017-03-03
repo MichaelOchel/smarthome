@@ -63,7 +63,7 @@ public class CircuitHandler extends BaseThingHandler implements DeviceStatusList
     /**
      * Creates a new {@link CircuitHandler}.
      *
-     * @param thing
+     * @param thing must not be null
      */
     public CircuitHandler(Thing thing) {
         super(thing);

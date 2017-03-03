@@ -15,10 +15,10 @@ import com.google.common.collect.Lists;
 /**
  * The {@link FunctionalColorGroupEnum} contains all digitalSTROM functional color groups.
  *
- * @see http://developer.digitalstrom.org/Architecture/ds-basics.pdf,
- *      "Table 1: digitalSTROM functional groups and their colors", page 9 [04.09.2015]
  * @author Michael Ochel - Initial contribution
  * @author Matthias Siegele - Initial contribution
+ * @see <a href="http://developer.digitalstrom.org/Architecture/ds-basics.pdf">ds-basics.pdf,
+ *      "Table 1: digitalSTROM functional groups and their colors", page 9 [04.09.2015]</a>
  */
 public enum FunctionalColorGroupEnum {
     /*
@@ -65,7 +65,7 @@ public enum FunctionalColorGroupEnum {
     /**
      * Returns true, if contains the given functional color group id in digitalSTROM exits, otherwise false.
      *
-     * @param functionalColorGroupID
+     * @param functionalColorGroupID to contains
      * @return true, if contains
      */
     public static boolean containsColorGroup(Short functionalColorGroupID) {
@@ -75,7 +75,7 @@ public enum FunctionalColorGroupEnum {
     /**
      * Returns the {@link FunctionalColorGroupEnum} of the given color id.
      *
-     * @param functionalColorGroupID
+     * @param functionalColorGroupID of the {@link FunctionalColorGroupEnum}
      * @return {@link FunctionalColorGroupEnum} of the id
      */
     public static FunctionalColorGroupEnum getColorGroup(Short functionalColorGroupID) {

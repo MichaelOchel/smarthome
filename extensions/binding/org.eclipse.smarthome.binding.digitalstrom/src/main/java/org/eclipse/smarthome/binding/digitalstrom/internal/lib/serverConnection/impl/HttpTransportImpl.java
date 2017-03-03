@@ -38,6 +38,7 @@ import javax.xml.bind.DatatypeConverter;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.config.Config;
+import org.eclipse.smarthome.binding.digitalstrom.internal.lib.listener.ConnectionListener;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.manager.ConnectionManager;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.serverConnection.HttpTransport;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.serverConnection.simpleDSRequestBuilder.constants.ParameterKeys;
@@ -103,7 +104,7 @@ public class HttpTransportImpl implements HttpTransport {
      * all SSL-Certificates. The {@link Config} will be automatically added from the configurations of the given
      * {@link ConnectionManager}.
      *
-     * @param connectionManager
+     * @param connectionManager to check connection, can be null
      * @param exeptAllCerts (true = all will ignore)
      */
     public HttpTransportImpl(ConnectionManager connectionManager, boolean exeptAllCerts) {
@@ -116,7 +117,7 @@ public class HttpTransportImpl implements HttpTransport {
      * Creates a new {@link HttpTransportImpl} with configurations of the given {@link Config} and set ignore all
      * SSL-Certificates.
      *
-     * @param config
+     * @param config to get configurations, must not be null
      * @param exeptAllCerts (true = all will ignore)
      */
     public HttpTransportImpl(Config config, boolean exeptAllCerts) {
@@ -127,7 +128,7 @@ public class HttpTransportImpl implements HttpTransport {
     /**
      * Creates a new {@link HttpTransportImpl} with configurations of the given {@link Config}.
      *
-     * @param config
+     * @param config to get configurations, must not be null
      */
     public HttpTransportImpl(Config config) {
         this.config = config;
@@ -137,7 +138,7 @@ public class HttpTransportImpl implements HttpTransport {
     /**
      * Creates a new {@link HttpTransportImpl}.
      *
-     * @param uri
+     * @param uri of the server, must not be null
      */
     public HttpTransportImpl(String uri) {
         init(uri, Config.DEFAULT_CONNECTION_TIMEOUT, Config.DEFAULT_READ_TIMEOUT, false);
@@ -146,7 +147,7 @@ public class HttpTransportImpl implements HttpTransport {
     /**
      * Creates a new {@link HttpTransportImpl} and set ignore all SSL-Certificates.
      *
-     * @param uri
+     * @param uri of the server, must not be null
      * @param exeptAllCerts (true = all will ignore)
      */
     public HttpTransportImpl(String uri, boolean exeptAllCerts) {
@@ -156,9 +157,9 @@ public class HttpTransportImpl implements HttpTransport {
     /**
      * Creates a new {@link HttpTransportImpl}.
      *
-     * @param uri
-     * @param connectTimeout
-     * @param readTimeout
+     * @param uri of the server, must not be null
+     * @param connectTimeout to set
+     * @param readTimeout to set
      */
     public HttpTransportImpl(String uri, int connectTimeout, int readTimeout) {
         init(uri, connectTimeout, readTimeout, false);
@@ -167,9 +168,9 @@ public class HttpTransportImpl implements HttpTransport {
     /**
      * Creates a new {@link HttpTransportImpl} and set ignore all SSL-Certificates..
      *
-     * @param uri
-     * @param connectTimeout
-     * @param readTimeout
+     * @param uri of the server, must not be null
+     * @param connectTimeout to set
+     * @param readTimeout to set
      * @param exeptAllCerts (true = all will ignore)
      */
     public HttpTransportImpl(String uri, int connectTimeout, int readTimeout, boolean exeptAllCerts) {
@@ -286,7 +287,7 @@ public class HttpTransportImpl implements HttpTransport {
             } else if (e instanceof java.net.UnknownHostException) {
                 informConnectionManager(-5);
             } else if (connectionManager != null) {
-                logger.error("An IOException occurred by executing jsonRequest: " + request, e);
+                // logger.error("An IOException occurred by executing jsonRequest: " + request, e);
                 informConnectionManager(-1);
             }
         } finally {
@@ -386,7 +387,7 @@ public class HttpTransportImpl implements HttpTransport {
             if (e instanceof java.net.UnknownHostException) {
                 return -5;
             }
-            logger.error("An IOException occurred by executing jsonRequest: " + testRequest, e);
+            // logger.error("An IOException occurred by executing jsonRequest: " + testRequest, e);
         }
         return -1;
     }

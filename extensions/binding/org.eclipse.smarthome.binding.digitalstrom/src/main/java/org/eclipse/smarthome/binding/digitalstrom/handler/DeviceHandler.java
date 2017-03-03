@@ -89,7 +89,7 @@ public class DeviceHandler extends BaseThingHandler implements DeviceStatusListe
     /**
      * Creates a new {@link DeviceHandler}.
      *
-     * @param thing
+     * @param thing must not be null
      */
     public DeviceHandler(Thing thing) {
         super(thing);
@@ -142,19 +142,6 @@ public class DeviceHandler extends BaseThingHandler implements DeviceStatusListe
             initialize();
         }
     }
-
-    /*
-     * @Override
-     * public void handleConfigurationUpdate(Map<String, Object> configurationParmeters) {
-     * Configuration configuration = editConfiguration();
-     * for (Entry<String, Object> configurationParmeter : configurationParmeters.entrySet()) {
-     * configuration.put(configurationParmeter.getKey(), configurationParmeter.getValue());
-     * }
-     * updateConfiguration(configuration);
-     * // check device info, load sensor priorities into the device and load sensor channels of the thing
-     * loadSensorChannels();
-     * }
-     */
 
     @Override
     public void bridgeStatusChanged(ThingStatusInfo bridgeStatusInfo) {
@@ -637,8 +624,8 @@ public class DeviceHandler extends BaseThingHandler implements DeviceStatusListe
                         addLoadedSensorChannel(channelID);
                     } else {
                         logger.debug("remove {} binary input channel", channelID);
-                        channelListChanged = true;
-                        removeLoadedSensorChannel(channelID);
+                        channelInter.remove();
+                        channelListChanged = removeLoadedSensorChannel(channelID);
                     }
                 } else {
                     SensorEnum sensorType = getSensorEnum(channelID);
