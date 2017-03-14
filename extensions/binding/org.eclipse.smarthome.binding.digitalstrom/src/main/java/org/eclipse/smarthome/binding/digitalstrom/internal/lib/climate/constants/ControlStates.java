@@ -63,7 +63,7 @@ public enum ControlStates {
         try {
             return CONTROL_STATES[id];
         } catch (IndexOutOfBoundsException e) {
-            // throw new IllegalArgumentException("The id dosen not exist, id have to be between 0 and 4.");
+            // throw new IllegalArgumentException("The id does not exist, id have to be between 0 and 4.");
             return null;
         }
     }

@@ -51,12 +51,11 @@ public class DigitalSTROMHandlerFactory extends BaseThingHandlerFactory {
     /**
      * Contains all supported {@link ThingTypeUID}'s.
      */
-    public final static Set<ThingTypeUID> SUPPORTED_THING_TYPES = Sets
-            .union(SceneHandler.SUPPORTED_THING_TYPES,
-                    Sets.union(BridgeHandler.SUPPORTED_THING_TYPES,
-                            Sets.union(DeviceHandler.SUPPORTED_THING_TYPES,
-                                    Sets.union(ZoneTemperatureControlHandler.SUPPORTED_THING_TYPES,
-                                            CircuitHandler.SUPPORTED_THING_TYPES))));
+    public final static Set<ThingTypeUID> SUPPORTED_THING_TYPES = Sets.union(SceneHandler.SUPPORTED_THING_TYPES,
+            Sets.union(BridgeHandler.SUPPORTED_THING_TYPES,
+                    Sets.union(DeviceHandler.SUPPORTED_THING_TYPES,
+                            Sets.union(ZoneTemperatureControlHandler.SUPPORTED_THING_TYPES,
+                                    CircuitHandler.SUPPORTED_THING_TYPES))));
 
     private HashMap<ThingUID, BridgeHandler> bridgeHandlers = null;
 
@@ -178,10 +177,6 @@ public class DigitalSTROMHandlerFactory extends BaseThingHandlerFactory {
     private ThingUID getSceneUID(ThingTypeUID thingTypeUID, ThingUID thingUID, Configuration configuration,
             ThingUID bridgeUID) {
         if (thingUID == null) {
-            // if (thingUID.getId().split("-").length == 3) {
-            // return thingUID;
-            // }
-
             String sceneID = SceneHandler.getSceneID(configuration, bridgeHandlers.get(bridgeUID));
             switch (sceneID) {
                 case SceneHandler.SCENE_WRONG:

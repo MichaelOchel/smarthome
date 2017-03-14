@@ -248,7 +248,7 @@ public class DeviceStatusManagerImpl implements DeviceStatusManager {
 
                 List<Device> currentDeviceList = getDetailedDevices();
 
-                // TODO: May be it is better to separate the total power consumption update in a extra Thread. See next
+                // TODO: Maybe it is better to separate the total power consumption update in a extra Thread. See next
                 // TODO.
                 // update the current total power consumption
                 if (nextSensorUpdate <= System.currentTimeMillis()) {
@@ -275,10 +275,10 @@ public class DeviceStatusManagerImpl implements DeviceStatusManager {
                     DSID currentDeviceDSID = currentDevice.getDSID();
                     Device eshDevice = tempDeviceMap.remove(currentDeviceDSID);
 
-                    // TODO: May be it is better to separate the Device-Status updates (send commands to dSS) and the
-                    // structure and configuration updates. That will be optimize the time to send commands and the
-                    // structure and configuration updates can be execute at a higher interval. For that the
-                    // DeviceHandler have to inform this DeviceStatusManager to check the updates in a extra Thread.
+                    // TODO: Maybe it is better to separate the Device-Status updates (send commands to dSS) and the
+                    // structure and configuration updates. That will optimize the time to send commands and the
+                    // structure and configuration updates can be executed at a higher interval. For that the
+                    // DeviceHandler has to inform this DeviceStatusManager to check the updates in an extra Thread.
                     if (eshDevice != null) {
                         checkDeviceConfig(currentDevice, eshDevice);
 
@@ -342,7 +342,7 @@ public class DeviceStatusManagerImpl implements DeviceStatusManager {
                             }
                         }
                         if (deviceDiscovery != null) {
-                            // only inform discover, if the device is with output or a sensor device
+                            // only informs discovery, if the device is a output or a sensor device
                             deviceDiscovery.onDeviceAdded(currentDevice);
                             logger.debug("inform DeviceStatusListener: {} about removed device with dSID {}",
                                     DeviceStatusListener.DEVICE_DISCOVERY, currentDevice.getDSID().getValue());
@@ -622,11 +622,12 @@ public class DeviceStatusManagerImpl implements DeviceStatusManager {
         if (newDevice == null || internalDevice == null) {
             return;
         }
-        // check device availability has changed and inform the deviceStatusListener about the change.
+        // check device availability has changed and informs the deviceStatusListener about the change.
         // NOTE:
-        // The device is not availability for the digitalSTROM-Server, it has not been deleted and are therefore set to
+        // The device is not availability for the digitalSTROM-Server, it has not been deleted and therefore it is set
+        // to
         // OFFLINE.
-        // To delete an alternate algorithm is responsible.
+        // An alternate algorithm is responsible for deletion.
         if (newDevice.isPresent() != internalDevice.isPresent()) {
             internalDevice.setIsPresent(newDevice.isPresent());
         }
@@ -971,7 +972,7 @@ public class DeviceStatusManagerImpl implements DeviceStatusManager {
                         break;
                     case DeviceStateUpdate.SLAT_ANGLE_DECREASE:
                         // By UPDATE_SLAT_ANGLE_DECREASE, UPDATE_SLAT_ANGLE_INCREASE with value unequal 1 which will
-                        // handle in the pollingRunnable and UPDATE_OPEN_CLOSE_ANGLE the value will be set without
+                        // handled in the pollingRunnable and UPDATE_OPEN_CLOSE_ANGLE the value will be set without
                         // checking, because it was triggered by setting the slat position.
                         requestSuccsessful = true;
                         break;

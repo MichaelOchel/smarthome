@@ -269,9 +269,6 @@ public class DeviceSensorValue {
             return false;
         }
         if (obj.getClass() != getClass()) {
-            // if (obj instanceof SensorEnum) {
-            // return sensorType.equals(obj);
-            // }
             return false;
         }
         DeviceSensorValue other = (DeviceSensorValue) obj;

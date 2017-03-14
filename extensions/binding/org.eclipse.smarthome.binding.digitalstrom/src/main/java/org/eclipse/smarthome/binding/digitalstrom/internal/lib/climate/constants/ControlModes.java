@@ -65,7 +65,7 @@ public enum ControlModes {
         try {
             return CONTROL_MODES[id];
         } catch (IndexOutOfBoundsException e) {
-            // throw new IllegalArgumentException("The id dosen not exist, id have to be between 0 and 4.");
+            // throw new IllegalArgumentException("The id does not exist, id have to be between 0 and 4.");
             return null;
         }
     }

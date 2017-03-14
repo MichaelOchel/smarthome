@@ -177,13 +177,11 @@ public class DeviceDiscoveryService extends AbstractDiscoveryService {
      * @param device (must not be null)
      */
     public void onDeviceRemoved(GeneralDeviceInformations device) {
-        // if (deviceType.equals(device.getHWinfo().substring(0, 2))) {
         ThingUID thingUID = getThingUID(device);
 
         if (thingUID != null) {
             thingRemoved(thingUID);
         }
-        // }
     }
 
     /**

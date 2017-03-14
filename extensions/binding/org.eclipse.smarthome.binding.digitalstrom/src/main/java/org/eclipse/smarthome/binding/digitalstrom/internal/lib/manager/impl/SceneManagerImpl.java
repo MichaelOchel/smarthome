@@ -196,7 +196,7 @@ public class SceneManagerImpl implements SceneManager {
     }
 
     private boolean isEcho(String dsid, short sceneId) {
-        // sometimes the dS-event have a dSUID saved in the dSID
+        // sometimes the dS-event has a dSUID saved in the dSID
         if (structureManager.getDeviceByDSUID(dsid) != null) {
             dsid = structureManager.getDeviceByDSUID(dsid).getDSID().getValue();
         }

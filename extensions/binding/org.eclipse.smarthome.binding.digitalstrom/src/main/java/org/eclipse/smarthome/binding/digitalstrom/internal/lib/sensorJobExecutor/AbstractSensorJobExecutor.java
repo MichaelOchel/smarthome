@@ -140,7 +140,7 @@ public abstract class AbstractSensorJobExecutor {
      * @param sensorJob to add
      */
     public void addMediumPriorityJob(SensorJob sensorJob) {
-        // can be Overridden to implement a priority
+        // can be overridden to implement a priority
         addSensorJobToCircuitScheduler(sensorJob);
     }
 
@@ -150,7 +150,7 @@ public abstract class AbstractSensorJobExecutor {
      * @param sensorJob to add
      */
     public void addLowPriorityJob(SensorJob sensorJob) {
-        // can be Overridden to implement a priority
+        // can be overridden to implement a priority
         addSensorJobToCircuitScheduler(sensorJob);
     }
 

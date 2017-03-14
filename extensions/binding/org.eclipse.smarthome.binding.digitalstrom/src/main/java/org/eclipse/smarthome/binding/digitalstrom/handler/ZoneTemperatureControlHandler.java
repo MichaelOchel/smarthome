@@ -97,7 +97,7 @@ public class ZoneTemperatureControlHandler extends BaseThingHandler implements T
             if (getBridge() != null) {
                 bridgeStatusChanged(getBridge().getStatusInfo());
             } else {
-                // Set status to OFFLINE if no bridge is available e.g. because the bridge has been removed and the
+                // Set status to OFFLINE, if no bridge is available e.g. because the bridge has been removed and the
                 // Thing was reinitialized.
                 updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.NONE, "Bridge is missing!");
             }
@@ -283,7 +283,7 @@ public class ZoneTemperatureControlHandler extends BaseThingHandler implements T
                                 "The communication with temperation sensor fails. Temperature control state emergency (temperature control though the control value) is active.");
                     }
                 }
-                // TODO: in case control-mode zone-follower it is maybe useful to add the followed zone-id, but this
+                // TODO: in case of control-mode zone-follower it is maybe useful to add the followed zone-id, but this
                 // info is not in the control-status
                 Map<String, String> properties = editProperties();
                 properties.put("controlDSUID", tempControlStatus.getControlDSUID());
