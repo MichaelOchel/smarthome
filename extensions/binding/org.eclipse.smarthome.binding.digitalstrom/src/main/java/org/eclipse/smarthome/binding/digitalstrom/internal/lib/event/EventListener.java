@@ -118,6 +118,7 @@ public class EventListener {
     public synchronized void stop() {
         logger.debug("Stop EventListener");
         isStarted = false;
+        internalStop();
     }
 
     /**
@@ -148,6 +149,7 @@ public class EventListener {
     public synchronized void start() {
         logger.debug("Start EventListener");
         isStarted = true;
+        internalStart();
     }
 
     private void internalStart() {
