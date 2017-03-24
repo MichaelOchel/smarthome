@@ -16,9 +16,13 @@ import java.util.Set;
 
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.manager.ConnectionManager;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.manager.StructureManager;
+import org.eclipse.smarthome.binding.digitalstrom.internal.lib.serverConnection.DsAPI;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.serverConnection.impl.JSONResponseHandler;
+import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.AbstractGeneralDeviceInformations;
+import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.Circuit;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.Device;
-import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.DSID;
+import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.CachedMeteringValue;
+import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.impl.DSID;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
@@ -28,12 +32,18 @@ import com.google.gson.JsonObject;
  *
  * @author Michael Ochel - Initial contribution
  * @author Matthias Siegele - Initial contribution
- *
  */
 public class StructureManagerImpl implements StructureManager {
 
+    /**
+     * Query to get all zone and group names. Can be executed with {@link DsAPI#query(String, String)} or
+     * {@link DsAPI#query2(String, String)}.
+     */
+    public final String ZONE_GROUP_NAMES = "/json/property/query?query=/apartment/zones/*(ZoneID,name)/groups/*(group,name)";
+
     private Map<Integer, HashMap<Short, List<Device>>> zoneGroupDeviceMap;
     private Map<DSID, Device> deviceMap;
+    private Map<DSID, Circuit> circuitMap = null;
     private Map<String, DSID> dSUIDToDSIDMap;
 
     private Map<Integer, Object[]> zoneGroupIdNameMap = null;
@@ -42,10 +52,21 @@ public class StructureManagerImpl implements StructureManager {
     /**
      * Creates a new {@link StructureManagerImpl} with the {@link Device}s of the given referenceDeviceList.
      *
-     * @param referenceDeviceList
+     * @param referenceDeviceList to add
      */
     public StructureManagerImpl(List<Device> referenceDeviceList) {
         handleStructure(referenceDeviceList);
+    }
+
+    /**
+     * Creates a new {@link StructureManagerImpl} with the {@link Device}s of the given referenceDeviceList.
+     *
+     * @param referenceDeviceList to add
+     * @param referenceCircuitList to add
+     */
+    public StructureManagerImpl(List<Device> referenceDeviceList, List<Circuit> referenceCircuitList) {
+        handleStructure(referenceDeviceList);
+        addCircuitList(referenceCircuitList);
     }
 
     /**
@@ -55,55 +76,53 @@ public class StructureManagerImpl implements StructureManager {
 
     }
 
-    private final String ZONE_GROUP_NAMES = "/json/property/query?query=/apartment/zones/*(ZoneID,name)/groups/*(group,name)";
-
     @Override
     public boolean generateZoneGroupNames(ConnectionManager connectionManager) {
-        if (connectionManager.checkConnection()) {
-            String response = connectionManager.getHttpTransport()
-                    .execute(this.ZONE_GROUP_NAMES + "&token=" + connectionManager.getSessionToken());
-            if (response == null) {
-                return false;
-            } else {
-                JsonObject responsJsonObj = JSONResponseHandler.toJsonObject(response);
-                if (JSONResponseHandler.checkResponse(responsJsonObj)) {
-                    JsonObject resultJsonObj = JSONResponseHandler.getResultJsonObject(responsJsonObj);
-                    if (resultJsonObj.get("zones") instanceof JsonArray) {
-                        JsonArray zones = (JsonArray) resultJsonObj.get("zones");
-                        if (this.zoneGroupIdNameMap == null) {
-                            this.zoneGroupIdNameMap = new HashMap<Integer, Object[]>(zones.size());
-                            this.zoneGroupNameIdMap = new HashMap<String, Object[]>(zones.size());
-                        }
-                        if (zones != null) {
-                            for (int i = 0; i < zones.size(); i++) {
-                                if (((JsonObject) zones.get(i)).get("groups") instanceof JsonArray) {
-                                    JsonArray groups = (JsonArray) ((JsonObject) zones.get(i)).get("groups");
-                                    if (groups.size() != 0) {
-                                        Object[] zoneIdNameGroups = new Object[2];
-                                        Object[] zoneNameIdGroups = new Object[2];
-                                        int zoneID = ((JsonObject) zones.get(i)).get("ZoneID").getAsInt();
-                                        String zoneName = ((JsonObject) zones.get(i)).get("name").getAsString();
-                                        zoneIdNameGroups[0] = zoneName;
-                                        zoneNameIdGroups[0] = zoneID;
-                                        HashMap<Short, String> groupIdNames = new HashMap<Short, String>();
-                                        HashMap<String, Short> groupNameIds = new HashMap<String, Short>();
-                                        for (int k = 0; k < groups.size(); k++) {
-                                            short groupID = ((JsonObject) groups.get(k)).get("group").getAsShort();
-                                            String groupName = ((JsonObject) groups.get(k)).get("name").getAsString();
-                                            groupIdNames.put(groupID, groupName);
-                                            groupNameIds.put(groupName, groupID);
-                                        }
-                                        zoneIdNameGroups[1] = groupIdNames;
-                                        zoneNameIdGroups[1] = groupNameIds;
-                                        this.zoneGroupIdNameMap.put(zoneID, zoneIdNameGroups);
-                                        this.zoneGroupNameIdMap.put(zoneName, zoneNameIdGroups);
+        // if (connectionManager.checkConnection()) {
+        String response = connectionManager.getHttpTransport()
+                .execute(this.ZONE_GROUP_NAMES + "&token=" + connectionManager.getSessionToken());
+        if (response == null) {
+            return false;
+        } else {
+            JsonObject responsJsonObj = JSONResponseHandler.toJsonObject(response);
+            if (JSONResponseHandler.checkResponse(responsJsonObj)) {
+                JsonObject resultJsonObj = JSONResponseHandler.getResultJsonObject(responsJsonObj);
+                if (resultJsonObj.get("zones") instanceof JsonArray) {
+                    JsonArray zones = (JsonArray) resultJsonObj.get("zones");
+                    if (this.zoneGroupIdNameMap == null) {
+                        this.zoneGroupIdNameMap = new HashMap<Integer, Object[]>(zones.size());
+                        this.zoneGroupNameIdMap = new HashMap<String, Object[]>(zones.size());
+                    }
+                    if (zones != null) {
+                        for (int i = 0; i < zones.size(); i++) {
+                            if (((JsonObject) zones.get(i)).get("groups") instanceof JsonArray) {
+                                JsonArray groups = (JsonArray) ((JsonObject) zones.get(i)).get("groups");
+                                if (groups.size() != 0) {
+                                    Object[] zoneIdNameGroups = new Object[2];
+                                    Object[] zoneNameIdGroups = new Object[2];
+                                    int zoneID = ((JsonObject) zones.get(i)).get("ZoneID").getAsInt();
+                                    String zoneName = ((JsonObject) zones.get(i)).get("name").getAsString();
+                                    zoneIdNameGroups[0] = zoneName;
+                                    zoneNameIdGroups[0] = zoneID;
+                                    HashMap<Short, String> groupIdNames = new HashMap<Short, String>();
+                                    HashMap<String, Short> groupNameIds = new HashMap<String, Short>();
+                                    for (int k = 0; k < groups.size(); k++) {
+                                        short groupID = ((JsonObject) groups.get(k)).get("group").getAsShort();
+                                        String groupName = ((JsonObject) groups.get(k)).get("name").getAsString();
+                                        groupIdNames.put(groupID, groupName);
+                                        groupNameIds.put(groupName, groupID);
                                     }
+                                    zoneIdNameGroups[1] = groupIdNames;
+                                    zoneNameIdGroups[1] = groupNameIds;
+                                    this.zoneGroupIdNameMap.put(zoneID, zoneIdNameGroups);
+                                    this.zoneGroupNameIdMap.put(zoneName, zoneNameIdGroups);
                                 }
                             }
                         }
                     }
                 }
             }
+            // }
         }
         return true;
     }
@@ -175,12 +194,9 @@ public class StructureManagerImpl implements StructureManager {
         if (deviceMap == null) {
             deviceMap = Collections.synchronizedMap(new HashMap<DSID, Device>()); // deviceList.size()
         }
-        if (dSUIDToDSIDMap == null) {
-            dSUIDToDSIDMap = Collections.synchronizedMap(new HashMap<String, DSID>()); // deviceList.size()
-        }
         if (device.getDSID() != null) {
             deviceMap.put(device.getDSID(), device);
-            dSUIDToDSIDMap.put(device.getDSUID(), device.getDSID());
+            addDSIDtoDSUID((AbstractGeneralDeviceInformations) device);
         }
     }
 
@@ -189,7 +205,7 @@ public class StructureManagerImpl implements StructureManager {
      * and an {@link HashMap} as value. This {@link HashMap} has the group id as key and a {@link List}
      * with all digitalSTROM {@link Device}s.<br>
      * <br>
-     * <b>Note:</b> the zone id 0 is the broadcast address and the group id 0 too.
+     * <b>Note:</b> the zone id 0 is the broadcast address and the group id 0, too.
      */
     private void handleStructure(List<Device> deviceList) {
         HashMap<Short, List<Device>> groupXHashMap = new HashMap<Short, List<Device>>();
@@ -350,5 +366,76 @@ public class StructureManagerImpl implements StructureManager {
     @Override
     public Set<Integer> getZoneIDs() {
         return this.zoneGroupDeviceMap != null ? this.zoneGroupDeviceMap.keySet() : null;
+    }
+
+    @Override
+    public void addCircuitList(List<Circuit> referenceCircuitList) {
+        for (Circuit circuit : referenceCircuitList) {
+            addCircuit(circuit);
+        }
+    }
+
+    @Override
+    public Circuit addCircuit(Circuit circuit) {
+        if (circuitMap == null) {
+            circuitMap = Collections.synchronizedMap(new HashMap<DSID, Circuit>());
+        }
+        addDSIDtoDSUID((AbstractGeneralDeviceInformations) circuit);
+        return circuitMap.put(circuit.getDSID(), circuit);
+    }
+
+    private void addDSIDtoDSUID(AbstractGeneralDeviceInformations deviceInfo) {
+        if (dSUIDToDSIDMap == null) {
+            dSUIDToDSIDMap = Collections.synchronizedMap(new HashMap<String, DSID>());
+        }
+        if (deviceInfo.getDSID() != null) {
+            dSUIDToDSIDMap.put(deviceInfo.getDSUID(), deviceInfo.getDSID());
+        }
+    }
+
+    @Override
+    public Circuit getCircuitByDSID(DSID dSID) {
+        return circuitMap != null ? circuitMap.get(dSID) : null;
+    }
+
+    @Override
+    public Circuit getCircuitByDSUID(String dSUID) {
+        return dSUIDToDSIDMap.get(dSUID) != null ? getCircuitByDSID(dSUIDToDSIDMap.get(dSUID)) : null;
+    }
+
+    @Override
+    public Circuit getCircuitByDSID(String dSID) {
+        return getCircuitByDSID(new DSID(dSID));
+    }
+
+    @Override
+    public Circuit updateCircuitConfig(Circuit newCircuit) {
+        if (circuitMap != null) {
+            Circuit intCircuit = circuitMap.get(newCircuit.getDSID());
+            if (intCircuit != null && !intCircuit.equals(newCircuit)) {
+                for (CachedMeteringValue meteringValue : intCircuit.getAllCachedMeteringValues()) {
+                    newCircuit.addMeteringValue(meteringValue);
+                }
+                if (intCircuit.isListenerRegisterd()) {
+                    newCircuit.registerDeviceStatusListener(intCircuit.getDeviceStatusListener());
+                }
+            }
+        }
+        return addCircuit(newCircuit);
+    }
+
+    @Override
+    public Circuit deleteCircuit(DSID dSID) {
+        return circuitMap.remove(dSID);
+    }
+
+    @Override
+    public Circuit deleteCircuit(String dSUID) {
+        return dSUIDToDSIDMap.get(dSUID) != null ? deleteCircuit(dSUIDToDSIDMap.get(dSUID)) : null;
+    }
+
+    @Override
+    public Map<DSID, Circuit> getCircuitMap() {
+        return circuitMap != null ? new HashMap<DSID, Circuit>(circuitMap) : new HashMap<DSID, Circuit>();
     }
 }

@@ -58,16 +58,9 @@ public interface ConnectionManager {
     public String getApplicationToken();
 
     /**
-     * Checks the connection with {@link #checkConnection()} and returns the current Session-Token.
-     *
-     * @return Session-Token
-     */
-    public String checkConnectionAndGetSessionToken();
-
-    /**
      * Registers a {@link ConnectionListener} to this {@link ConnectionManager}.
      *
-     * @param connectionListener
+     * @param connectionListener to register
      */
     public void registerConnectionListener(ConnectionListener connectionListener);
 
@@ -87,17 +80,17 @@ public interface ConnectionManager {
     /**
      * Updates the login configuration.
      *
-     * @param hostAddress
-     * @param username
-     * @param password
-     * @param applicationToken
+     * @param hostAddress of the digitalSTROM-Server
+     * @param username to login
+     * @param password to login
+     * @param applicationToken to login
      */
     public void updateConfig(String hostAddress, String username, String password, String applicationToken);
 
     /**
      * Updates the {@link Config} with the given config.
      *
-     * @param config
+     * @param config to update
      */
     public void updateConfig(Config config);
 
@@ -112,4 +105,38 @@ public interface ConnectionManager {
      * Informs this {@link ConnectionManager} that the {@link Config} has been updated.
      */
     public void configHasBeenUpdated();
+
+    /**
+     * Generates and returns a new session token.
+     *
+     * @return new session token
+     */
+    public String getNewSessionToken();
+
+    /**
+     * Checks the connection through the given HTTP-Response-Code or exception code. If a {@link ConnectionListener} is
+     * registered this method also informs the registered {@link ConnectionListener} if the connection state has
+     * changed. <br>
+     * <br>
+     * <b>Exception-Codes:</b><br>
+     * <b>-1</b> general exception<br>
+     * <b>-2</b> MalformedURLException<br>
+     * <b>-3</b> java.net.ConnectException<br>
+     * <b>-4</b> SocketTimeoutException<br>
+     * <b>-5</b> java.net.UnknownHostException<br>
+     * <br>
+     * <b>Code for authentication problems:</b> -6<br>
+     *
+     *
+     * @param code exception or HTTP-Response-Code
+     * @return true, if connection is valid
+     */
+    public boolean checkConnection(int code);
+
+    /**
+     * Returns true, if connection is established, otherwise false.
+     *
+     * @return true, if connection is established, otherwise false
+     */
+    public boolean connectionEstablished();
 }

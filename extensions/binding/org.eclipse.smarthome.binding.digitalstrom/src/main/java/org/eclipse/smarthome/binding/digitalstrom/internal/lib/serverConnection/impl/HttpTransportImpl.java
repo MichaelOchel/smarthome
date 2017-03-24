@@ -38,7 +38,9 @@ import javax.xml.bind.DatatypeConverter;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.config.Config;
+import org.eclipse.smarthome.binding.digitalstrom.internal.lib.manager.ConnectionManager;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.serverConnection.HttpTransport;
+import org.eclipse.smarthome.binding.digitalstrom.internal.lib.serverConnection.simpleDSRequestBuilder.constants.ParameterKeys;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -49,13 +51,20 @@ import org.slf4j.LoggerFactory;
  * {@link Config#getCert()}. If there is no SSL-Certificate, but an path to an external SSL-Certificate file what is set
  * in {@link Config#getTrustCertPath()} this will be set. If no SSL-Certificate is set in the {@link Config} it will be
  * red out from the server and set in {@link Config#setCert(String)}.
- * 
+ *
  * <p>
  * If no {@link Config} is given the SSL-Certificate will be stored locally.
- * 
+ *
  * <p>
  * The method {@link #writePEMCertFile(String)} saves the SSL-Certificate in a file at the given path. If all
  * SSL-Certificates shout be ignored the flag <i>exeptAllCerts</i> have to be true at the constructor
+ * </p>
+ * <p>
+ * If a {@link ConnectionManager} is given at the constructor, the session-token is not needed by requests and the
+ * {@link ConnectionListener}, which is registered at the {@link ConnectionManager}, will be automatically informed
+ * about
+ * connection state changes through the {@link #execute(String, int, int)} method.
+ * </p>
  *
  * @author Michael Ochel - Initial contribution
  * @author Matthias Siegele - Initial contribution
@@ -73,7 +82,11 @@ public class HttpTransportImpl implements HttpTransport {
     private int connectTimeout;
     private int readTimeout;
 
+    // private long lastRequest = 0;
+
     private Config config = null;
+
+    private ConnectionManager connectionManager = null;
 
     private String cert = null;
     private SSLSocketFactory sslSocketFactory = null;
@@ -86,10 +99,24 @@ public class HttpTransportImpl implements HttpTransport {
     };
 
     /**
+     * Creates a new {@link HttpTransportImpl} with registration of the given {@link ConnectionManager} and set ignore
+     * all SSL-Certificates. The {@link Config} will be automatically added from the configurations of the given
+     * {@link ConnectionManager}.
+     *
+     * @param connectionManager to check connection, can be null
+     * @param exeptAllCerts (true = all will ignore)
+     */
+    public HttpTransportImpl(ConnectionManager connectionManager, boolean exeptAllCerts) {
+        this.connectionManager = connectionManager;
+        this.config = connectionManager.getConfig();
+        init(config.getHost(), config.getConnectionTimeout(), config.getReadTimeout(), exeptAllCerts);
+    }
+
+    /**
      * Creates a new {@link HttpTransportImpl} with configurations of the given {@link Config} and set ignore all
      * SSL-Certificates.
      *
-     * @param config
+     * @param config to get configurations, must not be null
      * @param exeptAllCerts (true = all will ignore)
      */
     public HttpTransportImpl(Config config, boolean exeptAllCerts) {
@@ -100,7 +127,7 @@ public class HttpTransportImpl implements HttpTransport {
     /**
      * Creates a new {@link HttpTransportImpl} with configurations of the given {@link Config}.
      *
-     * @param config
+     * @param config to get configurations, must not be null
      */
     public HttpTransportImpl(Config config) {
         this.config = config;
@@ -110,7 +137,7 @@ public class HttpTransportImpl implements HttpTransport {
     /**
      * Creates a new {@link HttpTransportImpl}.
      *
-     * @param uri
+     * @param uri of the server, must not be null
      */
     public HttpTransportImpl(String uri) {
         init(uri, Config.DEFAULT_CONNECTION_TIMEOUT, Config.DEFAULT_READ_TIMEOUT, false);
@@ -119,7 +146,7 @@ public class HttpTransportImpl implements HttpTransport {
     /**
      * Creates a new {@link HttpTransportImpl} and set ignore all SSL-Certificates.
      *
-     * @param uri
+     * @param uri of the server, must not be null
      * @param exeptAllCerts (true = all will ignore)
      */
     public HttpTransportImpl(String uri, boolean exeptAllCerts) {
@@ -129,19 +156,28 @@ public class HttpTransportImpl implements HttpTransport {
     /**
      * Creates a new {@link HttpTransportImpl}.
      *
-     * @param uri
-     * @param connectTimeout
-     * @param readTimeout
+     * @param uri of the server, must not be null
+     * @param connectTimeout to set
+     * @param readTimeout to set
      */
     public HttpTransportImpl(String uri, int connectTimeout, int readTimeout) {
         init(uri, connectTimeout, readTimeout, false);
     }
 
+    /**
+     * Creates a new {@link HttpTransportImpl} and set ignore all SSL-Certificates..
+     *
+     * @param uri of the server, must not be null
+     * @param connectTimeout to set
+     * @param readTimeout to set
+     * @param exeptAllCerts (true = all will ignore)
+     */
     public HttpTransportImpl(String uri, int connectTimeout, int readTimeout, boolean exeptAllCerts) {
         init(uri, connectTimeout, readTimeout, exeptAllCerts);
     }
 
     private void init(String uri, int connectTimeout, int readTimeout, boolean exeptAllCerts) {
+        logger.debug("init HttpTransportImpl");
         this.uri = fixURI(uri);
         this.connectTimeout = connectTimeout;
         this.readTimeout = readTimeout;
@@ -197,6 +233,8 @@ public class HttpTransportImpl implements HttpTransport {
         return execute(request, this.connectTimeout, this.readTimeout);
     }
 
+    private short loginCounter = 0;
+
     @Override
     public String execute(String request, int connectTimeout, int readTimeout) {
         // NOTE: We will only show exceptions in the debug level, because they will be handled in the checkConnection()
@@ -204,20 +242,101 @@ public class HttpTransportImpl implements HttpTransport {
         // execute the next time, by TimeOutExceptions. By other exceptions the checkConnection() method handles it in
         // max 1 second.
         String response = null;
+        HttpsURLConnection connection = null;
         try {
-            HttpsURLConnection connection = getConnection(request, connectTimeout, readTimeout);
+            request = checkSessionToken(request);
+            connection = getConnection(request, connectTimeout, readTimeout);
             if (connection != null) {
                 connection.connect();
                 if (connection.getResponseCode() == HttpURLConnection.HTTP_OK) {
                     response = IOUtils.toString(connection.getInputStream());
+                    if (!response.contains("Authentication failed")) {
+                        if (loginCounter > 0) {
+                            connectionManager.checkConnection(connection.getResponseCode());
+                        }
+                        loginCounter = 0;
+                    } else {
+                        connectionManager.checkConnection(-6);
+                        loginCounter++;
+                    }
                 }
                 connection.disconnect();
+                if (response == null && connectionManager != null && loginCounter < 2) {
+                    if (connection.getResponseCode() == HttpURLConnection.HTTP_FORBIDDEN) {
+                        execute(addSessionToken(request, connectionManager.getNewSessionToken()), connectTimeout,
+                                readTimeout);
+                        loginCounter++;
+                    } else {
+                        connectionManager.checkConnection(connection.getResponseCode());
+                        loginCounter++;
+                        return null;
+                    }
+                }
                 return response;
             }
+        } catch (SocketTimeoutException e) {
+            informConnectionManager(-4);
+        } catch (java.net.ConnectException e) {
+            informConnectionManager(-3);
         } catch (MalformedURLException e) {
+            informConnectionManager(-2);
         } catch (IOException e) {
+            if (e instanceof java.net.ConnectException) {
+                informConnectionManager(-3);
+            } else if (e instanceof java.net.UnknownHostException) {
+                informConnectionManager(-5);
+            } else if (connectionManager != null) {
+                // logger.error("An IOException occurred by executing jsonRequest: " + request, e);
+                informConnectionManager(-1);
+            }
+        } finally {
+            if (connection != null) {
+                connection.disconnect();
+            }
         }
         return null;
+    }
+
+    private boolean informConnectionManager(int code) {
+        if (connectionManager != null && loginCounter < 2) {
+            connectionManager.checkConnection(code);
+            return true;
+        }
+        return false;
+    }
+
+    private String checkSessionToken(String request) {
+        if (checkNeededSessionToken(request)) {
+            if (connectionManager != null) {
+                String sessionToken = connectionManager.getSessionToken();
+                if (sessionToken == null) {
+                    return addSessionToken(request, connectionManager.getNewSessionToken());
+                }
+                request = addSessionToken(request, sessionToken);
+            }
+        }
+        return request;
+    }
+
+    private boolean checkNeededSessionToken(String request) {
+        String functionName = StringUtils.substringAfterLast(StringUtils.substringBefore(request, "?"), "/");
+        return !DsAPIImpl.METHODS_MUST_NOT_BE_LOGGED_IN.contains(functionName);
+    }
+
+    private String addSessionToken(String request, String sessionToken) {
+        if (!request.contains(ParameterKeys.TOKEN)) {
+            if (request.contains("?")) {
+                request = request + "&" + ParameterKeys.TOKEN + "=" + sessionToken;
+            } else {
+                request = request + "?" + ParameterKeys.TOKEN + "=" + sessionToken;
+            }
+        } else {
+            request = StringUtils.replaceOnce(request,
+                    StringUtils.substringBefore(StringUtils.substringAfter(request, ParameterKeys.TOKEN + "="), "&"),
+                    sessionToken);
+
+        }
+        return request;
     }
 
     private HttpsURLConnection getConnection(String request, int connectTimeout, int readTimeout) throws IOException {
@@ -246,6 +365,11 @@ public class HttpTransportImpl implements HttpTransport {
             HttpsURLConnection connection = getConnection(testRequest, connectTimeout, readTimeout);
             if (connection != null) {
                 connection.connect();
+                if (connection.getResponseCode() == HttpURLConnection.HTTP_OK) {
+                    if (IOUtils.toString(connection.getInputStream()).contains("Authentication failed")) {
+                        return -6;
+                    }
+                }
                 connection.disconnect();
                 return connection.getResponseCode();
             }
@@ -262,7 +386,7 @@ public class HttpTransportImpl implements HttpTransport {
             if (e instanceof java.net.UnknownHostException) {
                 return -5;
             }
-            logger.error("An IOException occurred by executing jsonRequest: " + testRequest, e);
+            // logger.error("An IOException occurred by executing jsonRequest: " + testRequest, e);
         }
         return -1;
     }
@@ -395,10 +519,9 @@ public class HttpTransportImpl implements HttpTransport {
     }
 
     private String getPEMCertificateFromServer(String host) {
+        HttpsURLConnection connection = null;
         try {
             URL url = new URL(host);
-
-            HttpsURLConnection connection = null;
 
             connection = (HttpsURLConnection) url.openConnection();
             connection.setHostnameVerifier(hostnameVerifier);
@@ -413,11 +536,27 @@ public class HttpTransportImpl implements HttpTransport {
                 return BEGIN_CERT + DatatypeConverter.printBase64Binary(by) + END_CERT;
             }
         } catch (MalformedURLException e) {
-            logger.error("A MalformedURLException occurred: ", e);
+            if (!informConnectionManager(-2)) {
+                logger.error("A MalformedURLException occurred: ", e);
+            }
         } catch (IOException e) {
-            logger.error("An IOException occurred: ", e);
+            short code = -1;
+            if (e instanceof java.net.ConnectException) {
+                code = -3;
+            } else if (e instanceof java.net.UnknownHostException) {
+                code = -5;
+            } else {
+                code = -1;
+            }
+            if (!informConnectionManager(code) || code == -1) {
+                logger.error("An IOException occurred: ", e);
+            }
         } catch (CertificateEncodingException e) {
             logger.error("A CertificateEncodingException occurred: ", e);
+        } finally {
+            if (connection != null) {
+                connection.disconnect();
+            }
         }
         return null;
     }

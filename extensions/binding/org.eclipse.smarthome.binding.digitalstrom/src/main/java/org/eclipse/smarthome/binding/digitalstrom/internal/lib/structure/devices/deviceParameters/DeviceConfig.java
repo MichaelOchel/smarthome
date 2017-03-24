@@ -10,7 +10,7 @@ package org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.device
 /**
  * The {@link DeviceConfig} saves device configurations.
  *
- * @author Alexander Betker
+ * @author Alexander Betker - initial contributer
  * @author Michael Ochel - add missing java-doc
  * @author Matthias Siegele - add missing java-doc
  */

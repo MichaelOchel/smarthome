@@ -13,6 +13,10 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
+import org.eclipse.smarthome.binding.digitalstrom.internal.lib.event.EventListener;
+import org.eclipse.smarthome.binding.digitalstrom.internal.lib.event.constants.EventNames;
+import org.eclipse.smarthome.binding.digitalstrom.internal.lib.event.constants.EventResponseEnum;
+import org.eclipse.smarthome.binding.digitalstrom.internal.lib.event.types.EventItem;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.listener.ManagerStatusListener;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.listener.SceneStatusListener;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.listener.stateEnums.ManagerStates;
@@ -21,15 +25,14 @@ import org.eclipse.smarthome.binding.digitalstrom.internal.lib.manager.Connectio
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.manager.SceneManager;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.manager.StructureManager;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.Device;
-import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.DSID;
+import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.impl.DSID;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.scene.InternalScene;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.scene.SceneDiscovery;
-import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.scene.constants.EventPropertyEnum;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.scene.constants.SceneEnum;
-import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.scene.sceneEvent.EventItem;
-import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.scene.sceneEvent.EventListener;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import com.google.common.collect.Lists;
 
 /**
  * The {@link SceneManagerImpl} is the implementation of the {@link SceneManager}.
@@ -40,27 +43,48 @@ import org.slf4j.LoggerFactory;
  */
 public class SceneManagerImpl implements SceneManager {
 
+    /**
+     * Contains all supported event-types.
+     */
+    public static final List<String> SUPPORTED_EVENTS = Lists.newArrayList(EventNames.CALL_SCENE,
+            EventNames.UNDO_SCENE);
+
     private Logger logger = LoggerFactory.getLogger(SceneManagerImpl.class);
 
     private List<String> echoBox = Collections.synchronizedList(new LinkedList<String>());
     private Map<String, InternalScene> internalSceneMap = Collections
             .synchronizedMap(new HashMap<String, InternalScene>());
 
-    private EventListener eventListener;
-    private StructureManager structureManager;
-    private ConnectionManager connectionManager;
-    private SceneDiscovery discovery;
+    private EventListener eventListener = null;
+    private StructureManager structureManager = null;
+    private ConnectionManager connectionManager = null;
+    private SceneDiscovery discovery = null;
     private ManagerStatusListener statusListener = null;
 
     private ManagerStates state = ManagerStates.STOPPED;
     private boolean scenesGenerated = false;
 
+    /**
+     * Creates a new {@link SceneManagerImpl} through the given managers.
+     *
+     * @param connectionManager (must not be null)
+     * @param structureManager (must not be null)
+     */
     public SceneManagerImpl(ConnectionManager connectionManager, StructureManager structureManager) {
         this.structureManager = structureManager;
         this.connectionManager = connectionManager;
         this.discovery = new SceneDiscovery(this);
     }
 
+    /**
+     * Same constructor like {@link #SceneManagerImpl(ConnectionManager, StructureManager)}, but a
+     * {@link ManagerStatusListener} can be set, too.
+     *
+     * @param connectionManager (must not be null)
+     * @param structureManager (must not be null)
+     * @param statusListener (can be null)
+     * @see #SceneManagerImpl(ConnectionManager, StructureManager)
+     */
     public SceneManagerImpl(ConnectionManager connectionManager, StructureManager structureManager,
             ManagerStatusListener statusListener) {
         this.structureManager = structureManager;
@@ -69,20 +93,45 @@ public class SceneManagerImpl implements SceneManager {
         this.statusListener = statusListener;
     }
 
+    /**
+     * Same constructor like {@link #SceneManagerImpl(ConnectionManager, StructureManager, ManagerStatusListener)}, but
+     * a {@link EventListener} can be set, too.
+     *
+     * @param connectionManager (must not be null)
+     * @param structureManager (must not be null)
+     * @param statusListener (can be null)
+     * @param eventListener (can be null)
+     * @see #SceneManagerImpl(ConnectionManager, StructureManager, ManagerStatusListener)
+     */
+    public SceneManagerImpl(ConnectionManager connectionManager, StructureManager structureManager,
+            ManagerStatusListener statusListener, EventListener eventListener) {
+        this.structureManager = structureManager;
+        this.connectionManager = connectionManager;
+        this.discovery = new SceneDiscovery(this);
+        this.statusListener = statusListener;
+        this.eventListener = eventListener;
+    }
+
     @Override
     public void start() {
+        logger.debug("start SceneManager");
         if (eventListener == null) {
+            logger.debug("no EventListener is set, create a new EventListener");
             eventListener = new EventListener(connectionManager, this);
+        } else {
+            logger.debug("EventListener is set, add this SceneManager as EventHandler");
+            eventListener.addEventHandler(this);
         }
-        this.eventListener.start();
+        eventListener.start();
+        logger.debug("start SceneManager");
         stateChanged(ManagerStates.RUNNING);
     }
 
     @Override
     public void stop() {
-        if (this.eventListener != null) {
-            this.eventListener.stop();
-            this.eventListener = null;
+        logger.debug("stop SceneManager");
+        if (eventListener != null) {
+            eventListener.removeEventHandler(this);
         }
         this.discovery.stop();
         this.stateChanged(ManagerStates.STOPPED);
@@ -92,22 +141,22 @@ public class SceneManagerImpl implements SceneManager {
     public void handleEvent(EventItem eventItem) {
         if (eventItem != null) {
             boolean isCallScene = true;
-            String isCallStr = eventItem.getProperties().get(EventPropertyEnum.EVENT_NAME);
+            String isCallStr = eventItem.getName();
             if (isCallStr != null) {
-                isCallScene = isCallStr.equals("callScene");
+                isCallScene = isCallStr.equals(EventNames.CALL_SCENE);
             }
 
             boolean isDeviceCall = false;
-            String deviceCallStr = eventItem.getProperties().get(EventPropertyEnum.IS_DEVICE_CALL);
+            String deviceCallStr = eventItem.getSource().get(EventResponseEnum.IS_DEVICE);
             if (deviceCallStr != null) {
-                isDeviceCall = deviceCallStr.equals("true");
+                isDeviceCall = Boolean.parseBoolean(deviceCallStr);
             }
 
             if (isDeviceCall) {
                 String dsidStr = null;
-                dsidStr = eventItem.getProperties().get(EventPropertyEnum.DSID);
+                dsidStr = eventItem.getSource().get(EventResponseEnum.DSID);
                 short sceneId = -1;
-                String sceneStr = eventItem.getProperties().get(EventPropertyEnum.SCENEID);
+                String sceneStr = eventItem.getProperties().get(EventResponseEnum.SCENEID);
                 if (sceneStr != null) {
                     try {
                         sceneId = Short.parseShort(sceneStr);
@@ -117,6 +166,7 @@ public class SceneManagerImpl implements SceneManager {
                 }
 
                 if (!isEcho(dsidStr, sceneId)) {
+                    logger.debug(eventItem.getName() + " event for device: " + dsidStr);
                     if (isCallScene) {
                         this.callDeviceScene(dsidStr, sceneId);
                     } else {
@@ -125,13 +175,15 @@ public class SceneManagerImpl implements SceneManager {
                 }
             } else {
                 String intSceneID = null;
-                String zoneIDStr = eventItem.getProperties().get(EventPropertyEnum.ZONEID);
-                String sceneIDStr = eventItem.getProperties().get(EventPropertyEnum.SCENEID);
-                String groupIDStr = eventItem.getProperties().get(EventPropertyEnum.GROUPID);
+                String zoneIDStr = eventItem.getSource().get(EventResponseEnum.ZONEID);
+                String groupIDStr = eventItem.getSource().get(EventResponseEnum.GROUPID);
+                String sceneIDStr = eventItem.getProperties().get(EventResponseEnum.SCENEID);
 
                 if (zoneIDStr != null && sceneIDStr != null && groupIDStr != null) {
                     intSceneID = zoneIDStr + "-" + groupIDStr + "-" + sceneIDStr;
                     if (!isEcho(intSceneID)) {
+                        logger.debug(eventItem.getName() + " event for scene: " + zoneIDStr + "-" + groupIDStr + "-"
+                                + sceneIDStr);
                         if (isCallScene) {
                             this.callInternalScene(intSceneID);
                         } else {
@@ -144,11 +196,12 @@ public class SceneManagerImpl implements SceneManager {
     }
 
     private boolean isEcho(String dsid, short sceneId) {
-        // sometimes the dS-event have a dSUID saved in the dSID
+        // sometimes the dS-event has a dSUID saved in the dSID
         if (structureManager.getDeviceByDSUID(dsid) != null) {
             dsid = structureManager.getDeviceByDSUID(dsid).getDSID().getValue();
         }
         String echo = dsid + "-" + sceneId;
+        logger.debug(echo);
         return isEcho(echo);
     }
 
@@ -183,6 +236,22 @@ public class SceneManagerImpl implements SceneManager {
                 scene.addReferenceDevices(this.structureManager.getReferenceDeviceListFromZoneXGroupX(scene.getZoneID(),
                         scene.getGroupID()));
                 this.internalSceneMap.put(scene.getID(), scene);
+                scene.activateScene();
+            }
+        }
+    }
+
+    @Override
+    public void callInternalSceneWithoutDiscovery(Integer zoneID, Short groupID, Short sceneID) {
+        InternalScene intScene = this.internalSceneMap.get(zoneID + "-" + groupID + "-" + sceneID);
+        if (intScene != null) {
+            intScene.activateScene();
+        } else {
+            InternalScene scene = new InternalScene(zoneID, groupID, sceneID, null);
+            if (structureManager.checkZoneGroupID(scene.getZoneID(), scene.getGroupID())) {
+                scene.addReferenceDevices(this.structureManager.getReferenceDeviceListFromZoneXGroupX(scene.getZoneID(),
+                        scene.getGroupID()));
+                scene.activateScene();
             }
         }
     }
@@ -241,10 +310,8 @@ public class SceneManagerImpl implements SceneManager {
             short groupID = Short.parseShort(sceneData[1]);
             short sceneNumber = Short.parseShort(sceneData[2]);
             String sceneName = null;
-            if (connectionManager.checkConnection()) {
-                sceneName = connectionManager.getDigitalSTROMAPI().getSceneName(connectionManager.getSessionToken(),
-                        zoneID, groupID, sceneNumber);
-            }
+            sceneName = connectionManager.getDigitalSTROMAPI().getSceneName(connectionManager.getSessionToken(), zoneID,
+                    null, groupID, sceneNumber);
             InternalScene intScene = null;
             if (SceneEnum.getScene(sceneNumber) != null && structureManager.checkZoneGroupID(zoneID, groupID)) {
                 if (sceneName == null) {
@@ -339,6 +406,7 @@ public class SceneManagerImpl implements SceneManager {
             String id = sceneListener.getSceneStatusListenerID();
             if (id.equals(SceneStatusListener.SCENE_DISCOVERY)) {
                 discovery.registerSceneDiscovery(sceneListener);
+                logger.debug("Scene-Discovery registrated");
                 for (InternalScene scene : internalSceneMap.values()) {
                     discovery.sceneDiscoverd(scene);
                 }
@@ -350,6 +418,7 @@ public class SceneManagerImpl implements SceneManager {
                     addInternalScene(createNewScene(id));
                     registerSceneListener(sceneListener);
                 }
+                logger.debug("SceneStatusListener with id {} is registrated", sceneListener.getSceneStatusListenerID());
             }
         }
     }
@@ -360,11 +429,14 @@ public class SceneManagerImpl implements SceneManager {
             String id = sceneListener.getSceneStatusListenerID();
             if (id.equals(SceneStatusListener.SCENE_DISCOVERY)) {
                 this.discovery.unRegisterDiscovery();
+                logger.debug("Scene-Discovery unregistrated");
             } else {
                 InternalScene intScene = this.internalSceneMap.get(sceneListener.getSceneStatusListenerID());
                 if (intScene != null) {
                     intScene.unregisterSceneListener();
                 }
+                logger.debug("SceneStatusListener with id {} is unregistrated",
+                        sceneListener.getSceneStatusListenerID());
             }
         }
     }
@@ -388,6 +460,22 @@ public class SceneManagerImpl implements SceneManager {
             stateChanged(ManagerStates.RUNNING);
         }
         if (String.valueOf(scenesGenerated).contains("2")) {
+            String type = "nan";
+            switch (String.valueOf(scenesGenerated).indexOf("2")) {
+                case 0:
+                    type = "namedScens";
+                    break;
+                case 1:
+                    type = "appScenes";
+                    break;
+                case 2:
+                    type = "zoneScenes";
+                    break;
+                case 3:
+                    type = "reachableScenes";
+                    break;
+            }
+            logger.warn("Not all scenes are generated, try it again. Scene type {} is not generated.", type);
             stateChanged(ManagerStates.RUNNING);
         }
     }
@@ -427,5 +515,36 @@ public class SceneManagerImpl implements SceneManager {
     @Override
     public void unregisterStatusListener() {
         this.statusListener = null;
+    }
+
+    @Override
+    public String getUID() {
+        return this.getClass().getSimpleName() + "-" + SUPPORTED_EVENTS.toString();
+    }
+
+    @Override
+    public List<String> getSupportetEvents() {
+        return SUPPORTED_EVENTS;
+    }
+
+    @Override
+    public boolean supportsEvent(String eventName) {
+        return SUPPORTED_EVENTS.contains(eventName);
+    }
+
+    @Override
+    public void setEventListener(EventListener eventListener) {
+        if (this.eventListener != null) {
+            this.eventListener.removeEventHandler(this);
+        }
+        this.eventListener = eventListener;
+    }
+
+    @Override
+    public void unsetEventListener(EventListener eventListener) {
+        if (this.eventListener != null) {
+            this.eventListener.removeEventHandler(this);
+        }
+        this.eventListener = null;
     }
 }

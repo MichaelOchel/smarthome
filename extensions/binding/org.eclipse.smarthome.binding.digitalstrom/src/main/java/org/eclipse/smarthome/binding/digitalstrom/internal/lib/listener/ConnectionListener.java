@@ -71,15 +71,15 @@ public interface ConnectionListener {
     /**
      * This method is called whenever the connection state has changed from {@link #CONNECTION_LOST}
      * to {@link #CONNECTION_RESUMED} and vice versa. It also will be called if the application-token is generated over
-     * {@link APPLICATION_TOKEN_GENERATED}.
+     * {@link #APPLICATION_TOKEN_GENERATED}.
      *
-     * @param newConnectionState
+     * @param newConnectionState of the connection
      */
     public void onConnectionStateChange(String newConnectionState);
 
     /**
      * This method is called whenever the connection state has changed to {@link #NOT_AUTHENTICATED} or
-     * {@link CONNECTION_LOST}
+     * {@link #CONNECTION_LOST}
      * and also passes the reason why. Reason can be:
      * <ul>
      * <li>{@link #WRONG_APP_TOKEN} if the given application-token can't be used.</li>
@@ -90,8 +90,8 @@ public interface ConnectionListener {
      * </li>
      * </ul>
      *
-     * @param newConnectionState
-     * @param reason
+     * @param newConnectionState of the connection
+     * @param reason why the connection is failed
      */
     public void onConnectionStateChange(String newConnectionState, String reason);
 }

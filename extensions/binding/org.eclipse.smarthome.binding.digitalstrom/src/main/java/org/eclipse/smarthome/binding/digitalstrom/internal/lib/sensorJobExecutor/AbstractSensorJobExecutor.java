@@ -20,16 +20,17 @@ import org.eclipse.smarthome.binding.digitalstrom.internal.lib.manager.Connectio
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.sensorJobExecutor.sensorJob.SensorJob;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.serverConnection.DsAPI;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.Device;
-import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.DSID;
+import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.impl.DSID;
 import org.eclipse.smarthome.core.common.ThreadPoolManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * The {@link AbstractSensorJobExecutor} provides the working process to execute implementations of {@link SensorJobs}'s
+ * The {@link AbstractSensorJobExecutor} provides the working process to execute implementations of {@link SensorJob}'s
  * in the time interval set at the {@link Config}.
  * <p>
  * The following methods can be overridden by subclasses to implement a execution priority:
+ * </p>
  * <ul>
  * <li>{@link #addLowPriorityJob(SensorJob)}</li>
  * <li>{@link #addMediumPriorityJob(SensorJob)}</li>
@@ -63,7 +64,7 @@ public abstract class AbstractSensorJobExecutor {
         @Override
         public void run() {
             SensorJob sensorJob = circuit.getNextSensorJob();
-            if (sensorJob != null && connectionManager.checkConnection()) {
+            if (sensorJob != null) {
                 sensorJob.execute(dSAPI, connectionManager.getSessionToken());
             }
             if (circuit.noMoreJobs()) {
@@ -73,6 +74,11 @@ public abstract class AbstractSensorJobExecutor {
         }
     };
 
+    /**
+     * Creates a new {@link AbstractSensorJobExecutor}.
+     *
+     * @param connectionManager must not be null
+     */
     public AbstractSensorJobExecutor(ConnectionManager connectionManager) {
         this.connectionManager = connectionManager;
         config = connectionManager.getConfig();
@@ -121,37 +127,53 @@ public abstract class AbstractSensorJobExecutor {
     /**
      * Adds a high priority {@link SensorJob}.
      *
-     * @param sensorJob
+     * @param sensorJob to add
      */
-    protected void addHighPriorityJob(SensorJob sensorJob) {
-        // TODO: can be Overridden to implement a priority
+    public void addHighPriorityJob(SensorJob sensorJob) {
+        // can be Overridden to implement a priority
         addSensorJobToCircuitScheduler(sensorJob);
     }
 
     /**
      * Adds a medium priority {@link SensorJob}.
      *
-     * @param sensorJob
+     * @param sensorJob to add
      */
-    protected void addMediumPriorityJob(SensorJob sensorJob) {
-        // TODO: can be Overridden to implement a priority
+    public void addMediumPriorityJob(SensorJob sensorJob) {
+        // can be overridden to implement a priority
         addSensorJobToCircuitScheduler(sensorJob);
     }
 
     /**
      * Adds a low priority {@link SensorJob}.
      *
-     * @param sensorJob
+     * @param sensorJob to add
      */
-    protected void addLowPriorityJob(SensorJob sensorJob) {
-        // TODO: can be Overridden to implement a priority
+    public void addLowPriorityJob(SensorJob sensorJob) {
+        // can be overridden to implement a priority
         addSensorJobToCircuitScheduler(sensorJob);
+    }
+
+    /**
+     * Adds a {@link SensorJob} with a given priority .
+     *
+     * @param sensorJob to add
+     * @param priority to update
+     */
+    public void addPriorityJob(SensorJob sensorJob, long priority) {
+        if (sensorJob == null) {
+            return;
+        }
+        sensorJob.setInitalisationTime(priority);
+        addSensorJobToCircuitScheduler(sensorJob);
+        logger.debug("Add SensorJob from device with dSID {} and priority {} to AbstractJobExecutor",
+                sensorJob.getDSID(), priority);
     }
 
     /**
      * Adds the given {@link SensorJob}.
      *
-     * @param sensorJob
+     * @param sensorJob to add
      */
     protected void addSensorJobToCircuitScheduler(SensorJob sensorJob) {
         synchronized (this.circuitSchedulerList) {
@@ -176,15 +198,30 @@ public abstract class AbstractSensorJobExecutor {
     }
 
     /**
-     * Removes all SensorJobs of a specific {@link device}.
+     * Removes all SensorJobs of a specific {@link Device}.
      *
-     * @param device
+     * @param device to remove
      */
     public void removeSensorJobs(Device device) {
         if (device != null) {
             CircuitScheduler circuit = getCircuitScheduler(device.getMeterDSID());
             if (circuit != null) {
                 circuit.removeSensorJob(device.getDSID());
+            }
+        }
+    }
+
+    /**
+     * Removes the {@link SensorJob} with the given ID.
+     *
+     * @param device needed for the meterDSID
+     * @param ID of the {@link SensorJob} to remove
+     */
+    public void removeSensorJob(Device device, String ID) {
+        if (device != null && ID != null) {
+            CircuitScheduler circuit = getCircuitScheduler(device.getMeterDSID());
+            if (circuit != null) {
+                circuit.removeSensorJob(ID);
             }
         }
     }

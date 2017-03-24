@@ -9,19 +9,27 @@ package org.eclipse.smarthome.binding.digitalstrom.handler;
 
 import static org.eclipse.smarthome.binding.digitalstrom.DigitalSTROMBindingConstants.*;
 
+import java.math.BigDecimal;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
 
 import org.apache.commons.lang.StringUtils;
 import org.eclipse.smarthome.binding.digitalstrom.DigitalSTROMBindingConstants;
+import org.eclipse.smarthome.binding.digitalstrom.internal.lib.climate.jsonResponseContainer.impl.TemperatureControlStatus;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.config.Config;
+import org.eclipse.smarthome.binding.digitalstrom.internal.lib.event.EventListener;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.listener.ConnectionListener;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.listener.DeviceStatusListener;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.listener.ManagerStatusListener;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.listener.SceneStatusListener;
+import org.eclipse.smarthome.binding.digitalstrom.internal.lib.listener.TemperatureControlStatusListener;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.listener.TotalPowerConsumptionListener;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.listener.stateEnums.ManagerStates;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.listener.stateEnums.ManagerTypes;
@@ -33,9 +41,14 @@ import org.eclipse.smarthome.binding.digitalstrom.internal.lib.manager.impl.Conn
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.manager.impl.DeviceStatusManagerImpl;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.manager.impl.SceneManagerImpl;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.manager.impl.StructureManagerImpl;
+import org.eclipse.smarthome.binding.digitalstrom.internal.lib.manager.impl.TemperatureControlManager;
+import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.Circuit;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.Device;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.DeviceStateUpdate;
+import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.constants.MeteringTypeEnum;
+import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.constants.MeteringUnitsEnum;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.scene.InternalScene;
+import org.eclipse.smarthome.binding.digitalstrom.internal.providers.DsChannelTypeProvider;
 import org.eclipse.smarthome.config.core.Configuration;
 import org.eclipse.smarthome.core.library.types.DecimalType;
 import org.eclipse.smarthome.core.thing.Bridge;
@@ -56,8 +69,8 @@ import org.slf4j.LoggerFactory;
  * The {@link BridgeHandler} is the handler for a digitalSTROM-Server and connects it to
  * the framework.<br>
  * All {@link DeviceHandler}s and {@link SceneHandler}s use the {@link BridgeHandler} to execute the actual
- * commands.
- * <p>
+ * commands.<br>
+ * <br>
  * The {@link BridgeHandler} also:
  * <ul>
  * <li>manages the {@link DeviceStatusManager} (starts, stops, register {@link DeviceStatusListener},
@@ -76,21 +89,31 @@ public class BridgeHandler extends BaseBridgeHandler
 
     private Logger logger = LoggerFactory.getLogger(BridgeHandler.class);
 
+    /**
+     * Contains all supported thing types of this handler
+     */
     public final static Set<ThingTypeUID> SUPPORTED_THING_TYPES = Collections.singleton(THING_TYPE_DSS_BRIDGE);
+
+    private static final long RECONNECT_TRACKER_INTERVAL = 15;
 
     /* DS-Manager */
     private ConnectionManager connMan;
     private StructureManager structMan;
     private SceneManager sceneMan;
     private DeviceStatusManager devStatMan;
+    private TemperatureControlManager tempContMan;
 
-    private List<SceneStatusListener> sceneListener;
-    private List<DeviceStatusListener> devListener;
+    private EventListener eventListener;
+    private ScheduledFuture<?> reconnectTracker = null;
+
+    private DeviceStatusListener deviceDiscovery = null;
+    private SceneStatusListener sceneDiscovery = null;
+    private TemperatureControlStatusListener temperatureControlDiscovery = null;
     private Config config = null;
 
     List<SceneStatusListener> unregisterSceneStatusListeners = null;
-    private boolean generatingScenes = false;
-    private int connectionTimeoutCounter = 0;
+    private short connectionTimeoutCounter = 0;
+    private short ignoredTimeouts = 5;
 
     private class Initializer implements Runnable {
 
@@ -104,61 +127,105 @@ public class BridgeHandler extends BaseBridgeHandler
 
         @Override
         public void run() {
-            logger.info("Checking connection");
-            if (connMan == null) {
-                connMan = new ConnectionManagerImpl(config, bridge, true);
-            } else {
-                connMan.registerConnectionListener(bridge);
-                connMan.configHasBeenUpdated();
-            }
-
-            logger.info("Initializing digitalSTROM Manager");
-            if (structMan == null) {
-                structMan = new StructureManagerImpl();
-            }
-            if (sceneMan == null) {
-                sceneMan = new SceneManagerImpl(connMan, structMan);
-            }
-            if (devStatMan == null) {
-                devStatMan = new DeviceStatusManagerImpl(connMan, structMan, sceneMan, bridge);
-            } else {
-                devStatMan.registerStatusListener(bridge);
-            }
-            structMan.generateZoneGroupNames(connMan);
-
-            devStatMan.registerTotalPowerConsumptionListener(bridge);
-
-            if (connMan.checkConnection()) {
-                devStatMan.start();
-            }
-
-            boolean configChanged = false;
-            Configuration configuration = bridge.getConfig();
-            if (connMan.getApplicationToken() != null) {
-                configuration.remove(USER_NAME);
-                configuration.remove(PASSWORD);
-                logger.debug("Application-Token is: " + connMan.getApplicationToken());
-                configuration.put(APPLICATION_TOKEN, connMan.getApplicationToken());
-                configChanged = true;
-            }
-            if (StringUtils.isNotBlank((String) configuration.get(DigitalSTROMBindingConstants.DS_NAME))
-                    && connMan.checkConnection()) {
-                String dSSname = connMan.getDigitalSTROMAPI().getInstallationName(connMan.getSessionToken());
-
-                if (dSSname != null) {
-                    configuration.put(DS_NAME, dSSname);
+            try {
+                logger.info("Checking connection");
+                if (connMan == null) {
+                    connMan = new ConnectionManagerImpl(config, bridge, true);
+                } else {
+                    connMan.registerConnectionListener(bridge);
+                    connMan.configHasBeenUpdated();
                 }
-            }
-            if (configChanged) {
-                updateConfiguration(configuration);
-            }
-            if (StringUtils.isBlank(getThing().getProperties().get(DigitalSTROMBindingConstants.SERVER_CERT))
-                    && StringUtils.isNotBlank(config.getCert())) {
-                updateProperty(DigitalSTROMBindingConstants.SERVER_CERT, config.getCert());
+
+                logger.info("Initializing digitalSTROM Manager " + connMan);
+                if (eventListener == null) {
+                    eventListener = new EventListener(connMan);
+                }
+                if (structMan == null) {
+                    structMan = new StructureManagerImpl();
+                }
+                if (sceneMan == null) {
+                    sceneMan = new SceneManagerImpl(connMan, structMan, bridge, eventListener);
+                }
+                if (devStatMan == null) {
+                    devStatMan = new DeviceStatusManagerImpl(connMan, structMan, sceneMan, bridge, eventListener);
+                } else {
+                    devStatMan.registerStatusListener(bridge);
+                }
+
+                devStatMan.registerTotalPowerConsumptionListener(bridge);
+
+                if (connMan.checkConnection()) {
+                    logger.debug("connection established, start services");
+                    if (TemperatureControlManager.isHeatingControllerInstallated(connMan)) {
+                        if (tempContMan == null) {
+                            tempContMan = new TemperatureControlManager(connMan, eventListener,
+                                    temperatureControlDiscovery);
+                            temperatureControlDiscovery = null;
+                        } else {
+                            if (temperatureControlDiscovery != null) {
+                                tempContMan.registerTemperatureControlStatusListener(temperatureControlDiscovery);
+                            }
+                        }
+
+                    }
+                    structMan.generateZoneGroupNames(connMan);
+                    devStatMan.start();
+                    eventListener.start();
+                }
+
+                boolean configChanged = false;
+                Configuration configuration = bridge.getConfig();
+                if (connMan.getApplicationToken() != null) {
+                    configuration.remove(USER_NAME);
+                    configuration.remove(PASSWORD);
+                    logger.debug("Application-Token is: " + connMan.getApplicationToken());
+                    configuration.put(APPLICATION_TOKEN, connMan.getApplicationToken());
+                    configChanged = true;
+                }
+                Map<String, String> properties = editProperties();
+                String dSSname = connMan.getDigitalSTROMAPI().getInstallationName(connMan.getSessionToken());
+                if (dSSname != null) {
+                    properties.put(DS_NAME, dSSname);
+                }
+                Map<String, String> dsidMap = connMan.getDigitalSTROMAPI().getDSID(connMan.getSessionToken());
+                if (dsidMap != null) {
+                    logger.debug(dsidMap.toString());
+                    properties.putAll(dsidMap);
+                }
+                Map<String, String> versions = connMan.getDigitalSTROMAPI().getSystemVersion();
+                if (versions != null) {
+                    properties.putAll(versions);
+                }
+                if (StringUtils.isBlank(getThing().getProperties().get(DigitalSTROMBindingConstants.SERVER_CERT))
+                        && StringUtils.isNotBlank(config.getCert())) {
+                    properties.put(DigitalSTROMBindingConstants.SERVER_CERT, config.getCert());
+                    // updateProperty(DigitalSTROMBindingConstants.SERVER_CERT, config.getCert());
+                }
+                logger.debug("update properties");
+                updateProperties(properties);
+
+                if (configChanged) {
+                    updateConfiguration(configuration);
+                }
+                thingUpdatedInt(getThing());
+            } catch (Exception e) {
+                logger.debug("An exception occurred: ", e);
             }
         }
     };
 
+    // @Override
+    private void thingUpdatedInt(Thing thing) {
+        // dispose();
+        this.thing = thing;
+        // initialize();
+    }
+
+    /**
+     * Creates a new {@link BridgeHandler}.
+     *
+     * @param bridge must not be null
+     */
     public BridgeHandler(Bridge bridge) {
         super(bridge);
     }
@@ -187,76 +254,78 @@ public class BridgeHandler extends BaseBridgeHandler
     }
 
     private Config loadAndCheckConfig() {
-        Configuration thingConfig = super.getConfig();
-        Config config = loadAndCheckConnectionData(thingConfig);
-        if (config == null) {
-            return null;
-        }
-        logger.info("Loading configuration");
-        ArrayList<String> numberExc = null;
-        // Parameters can't be null, because of an existing default value.
-        if (StringUtils
-                .isNotBlank(thingConfig.get(DigitalSTROMBindingConstants.SENSOR_DATA_UPDATE_INTERVAL).toString())) {
-            try {
-                config.setSensordataRefreshInterval(Integer.parseInt(
-                        thingConfig.get(DigitalSTROMBindingConstants.SENSOR_DATA_UPDATE_INTERVAL).toString() + "000"));
-            } catch (NumberFormatException e) {
+        try {
+            Configuration thingConfig = super.getConfig();
+            Config config = loadAndCheckConnectionData(thingConfig);
+            if (config == null) {
+                return null;
+            }
+            logger.info("Loading configuration");
+            ArrayList<String> numberExc = null;
+            // Parameters can't be null, because of an existing default value.
+            if (thingConfig.get(DigitalSTROMBindingConstants.SENSOR_DATA_UPDATE_INTERVAL) instanceof BigDecimal) {
+                config.setSensordataRefreshInterval(
+                        ((BigDecimal) thingConfig.get(DigitalSTROMBindingConstants.SENSOR_DATA_UPDATE_INTERVAL))
+                                .intValue() * 1000);
+            } else {
                 if (numberExc == null) {
                     numberExc = new ArrayList<String>();
                 }
-                numberExc.add("\"Sensor update interval\"");
+                numberExc.add("\"Sensor update interval\" ( "
+                        + thingConfig.get(DigitalSTROMBindingConstants.SENSOR_DATA_UPDATE_INTERVAL) + ")");
             }
-        }
-        if (StringUtils
-                .isNotBlank(thingConfig.get(DigitalSTROMBindingConstants.TOTAL_POWER_UPDATE_INTERVAL).toString())) {
-            try {
-                config.setTotalPowerUpdateInterval(Integer.parseInt(
-                        thingConfig.get(DigitalSTROMBindingConstants.TOTAL_POWER_UPDATE_INTERVAL).toString() + "000"));
-            } catch (NumberFormatException e) {
+            if (thingConfig.get(DigitalSTROMBindingConstants.TOTAL_POWER_UPDATE_INTERVAL) instanceof BigDecimal) {
+                config.setTotalPowerUpdateInterval(
+                        ((BigDecimal) thingConfig.get(DigitalSTROMBindingConstants.TOTAL_POWER_UPDATE_INTERVAL))
+                                .intValue() * 1000);
+            } else {
                 if (numberExc == null) {
                     numberExc = new ArrayList<String>();
                 }
-                numberExc.add("\"Total power update interval\"");
+                numberExc.add("\"Total power update interval\" ("
+                        + thingConfig.get(DigitalSTROMBindingConstants.TOTAL_POWER_UPDATE_INTERVAL) + ")");
             }
-        }
-        if (StringUtils.isNotBlank(thingConfig.get(DigitalSTROMBindingConstants.SENSOR_WAIT_TIME).toString())) {
-            try {
-                config.setSensorReadingWaitTime(Integer
-                        .parseInt(thingConfig.get(DigitalSTROMBindingConstants.SENSOR_WAIT_TIME).toString() + "000"));
-            } catch (NumberFormatException e) {
+            if (thingConfig.get(DigitalSTROMBindingConstants.SENSOR_WAIT_TIME) instanceof BigDecimal) {
+                config.setSensorReadingWaitTime(
+                        ((BigDecimal) thingConfig.get(DigitalSTROMBindingConstants.SENSOR_WAIT_TIME)).intValue()
+                                * 1000);
+            } else {
                 if (numberExc == null) {
                     numberExc = new ArrayList<String>();
                 }
-                numberExc.add("\"Wait time sensor reading\"");
+                numberExc.add("\"Wait time sensor reading\" ("
+                        + thingConfig.get(DigitalSTROMBindingConstants.SENSOR_WAIT_TIME) + ")");
             }
-        }
-        if (StringUtils.isNotBlank(
-                thingConfig.get(DigitalSTROMBindingConstants.DEFAULT_TRASH_DEVICE_DELETE_TIME_KEY).toString())) {
-            try {
-                config.setTrashDeviceDeleteTime(Integer.parseInt(
-                        thingConfig.get(DigitalSTROMBindingConstants.DEFAULT_TRASH_DEVICE_DELETE_TIME_KEY).toString()));
-            } catch (NumberFormatException e) {
+            if (thingConfig
+                    .get(DigitalSTROMBindingConstants.DEFAULT_TRASH_DEVICE_DELETE_TIME_KEY) instanceof BigDecimal) {
+                config.setTrashDeviceDeleteTime(((BigDecimal) thingConfig
+                        .get(DigitalSTROMBindingConstants.DEFAULT_TRASH_DEVICE_DELETE_TIME_KEY)).intValue());
+            } else {
                 if (numberExc == null) {
                     numberExc = new ArrayList<String>();
                 }
-                numberExc.add("\"Days to be slaked trash bin devices\"");
+                numberExc.add("\"Days to be slaked trash bin devices\" ("
+                        + thingConfig.get(DigitalSTROMBindingConstants.DEFAULT_TRASH_DEVICE_DELETE_TIME_KEY) + ")");
             }
-        }
-        if (numberExc != null) {
-            String excText = "The field ";
-            for (int i = 0; i < numberExc.size(); i++) {
-                excText = excText + numberExc.get(i);
-                if (i < numberExc.size() - 2) {
-                    excText = excText + ", ";
-                } else if (i < numberExc.size() - 1) {
-                    excText = excText + " and ";
+            if (numberExc != null) {
+                String excText = "The field ";
+                for (int i = 0; i < numberExc.size(); i++) {
+                    excText = excText + numberExc.get(i);
+                    if (i < numberExc.size() - 2) {
+                        excText = excText + ", ";
+                    } else if (i < numberExc.size() - 1) {
+                        excText = excText + " and ";
+                    }
                 }
+                updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.CONFIGURATION_ERROR,
+                        excText + " have to be a number.");
+                return null;
             }
-            updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.CONFIGURATION_ERROR, excText + " have to be a number.");
-            return null;
-        }
-        if (StringUtils.isNotBlank(getThing().getProperties().get(DigitalSTROMBindingConstants.SERVER_CERT))) {
-            config.setCert(getThing().getProperties().get(DigitalSTROMBindingConstants.SERVER_CERT));
+            if (StringUtils.isNotBlank(getThing().getProperties().get(DigitalSTROMBindingConstants.SERVER_CERT))) {
+                config.setCert(getThing().getProperties().get(DigitalSTROMBindingConstants.SERVER_CERT));
+            }
+        } catch (Exception e) {
+            logger.debug("An exception occurred: ", e);
         }
         return config;
     }
@@ -275,12 +344,18 @@ public class BridgeHandler extends BaseBridgeHandler
         }
         if (thingConfig.get(USER_NAME) != null) {
             config.setUserName(thingConfig.get(USER_NAME).toString());
+        } else {
+            config.setUserName(null);
         }
         if (thingConfig.get(PASSWORD) != null) {
             config.setPassword(thingConfig.get(PASSWORD).toString());
+        } else {
+            config.setPassword(null);
         }
         if (thingConfig.get(APPLICATION_TOKEN) != null) {
             config.setAppToken(thingConfig.get(APPLICATION_TOKEN).toString());
+        } else {
+            config.setAppToken(null);
         }
 
         if (!checkLoginConfig(config)) {
@@ -292,6 +367,12 @@ public class BridgeHandler extends BaseBridgeHandler
     @Override
     public void dispose() {
         logger.debug("Handler disposed");
+        if (reconnectTracker != null && !reconnectTracker.isCancelled()) {
+            reconnectTracker.cancel(true);
+        }
+        if (eventListener != null) {
+            eventListener.stop();
+        }
         if (devStatMan != null) {
             devStatMan.unregisterTotalPowerConsumptionListener();
             devStatMan.unregisterStatusListener();
@@ -305,17 +386,7 @@ public class BridgeHandler extends BaseBridgeHandler
     @Override
     public void handleCommand(ChannelUID channelUID, Command command) {
         if (command instanceof RefreshType) {
-            switch (channelUID.getId()) {
-                case CHANNEL_ID_TOTAL_ACTIVE_POWER:
-                    updateState(channelUID, new DecimalType(devStatMan.getTotalPowerConsumption()));
-                    break;
-                case CHANNEL_ID_TOTAL_ELECTRIC_METER:
-                    updateState(channelUID, new DecimalType(devStatMan.getTotalEnergyMeterValue()));
-                    break;
-                default:
-                    logger.debug("Command received for an unknown channel: {}", channelUID.getId());
-                    break;
-            }
+            channelLinked(channelUID);
         } else {
             logger.debug("Command {} is not supported for channel: {}", command, channelUID.getId());
         }
@@ -358,20 +429,28 @@ public class BridgeHandler extends BaseBridgeHandler
             }
 
             if (deviceStatusListener.getDeviceStatusListenerID() != null) {
-                devStatMan.registerDeviceListener(deviceStatusListener);
+                if (devStatMan.getManagerState().equals(ManagerStates.RUNNING)) {
+                    devStatMan.registerDeviceListener(deviceStatusListener);
+                    return;
+                }
+                if (deviceStatusListener.getDeviceStatusListenerID().equals(DeviceStatusListener.DEVICE_DISCOVERY)) {
+                    devStatMan.registerDeviceListener(deviceStatusListener);
+                }
             } else {
                 throw new IllegalArgumentException("It's not allowed to pass a DeviceStatusListener with ID = null.");
             }
         } else {
-            devListener = new LinkedList<DeviceStatusListener>();
-            devListener.add(deviceStatusListener);
+            if (deviceStatusListener.getDeviceStatusListenerID().equals(DeviceStatusListener.DEVICE_DISCOVERY)) {
+                deviceDiscovery = deviceStatusListener;
+            }
         }
+
     }
 
     /**
      * Unregisters a new {@link DeviceStatusListener} on the {@link BridgeHandler}.
      *
-     * @param devicetatusListener (must not be null)
+     * @param deviceStatusListener (must not be null)
      */
     public void unregisterDeviceStatusListener(DeviceStatusListener deviceStatusListener) {
         if (this.devStatMan != null) {
@@ -386,10 +465,10 @@ public class BridgeHandler extends BaseBridgeHandler
     /**
      * Registers a new {@link SceneStatusListener} on the {@link BridgeHandler}.
      *
-     * @param deviceStatusListener (must not be null)
+     * @param sceneStatusListener (must not be null)
      */
     public synchronized void registerSceneStatusListener(SceneStatusListener sceneStatusListener) {
-        if (this.sceneMan != null && !generatingScenes) {
+        if (this.sceneMan != null) {
             if (sceneStatusListener == null) {
                 throw new IllegalArgumentException("It's not allowed to pass null.");
             }
@@ -400,10 +479,9 @@ public class BridgeHandler extends BaseBridgeHandler
                 throw new IllegalArgumentException("It's not allowed to pass a SceneStatusListener with ID = null.");
             }
         } else {
-            if (sceneListener == null) {
-                sceneListener = new LinkedList<SceneStatusListener>();
+            if (sceneStatusListener.getSceneStatusListenerID().equals(SceneStatusListener.SCENE_DISCOVERY)) {
+                sceneDiscovery = sceneStatusListener;
             }
-            sceneListener.add(sceneStatusListener);
         }
 
     }
@@ -414,27 +492,22 @@ public class BridgeHandler extends BaseBridgeHandler
      * @param sceneStatusListener (must not be null)
      */
     public void unregisterSceneStatusListener(SceneStatusListener sceneStatusListener) {
-        if (this.sceneMan != null && !generatingScenes) {
+        if (this.sceneMan != null) {
             if (sceneStatusListener.getSceneStatusListenerID() != null) {
                 this.sceneMan.unregisterSceneListener(sceneStatusListener);
             } else {
                 throw new IllegalArgumentException("It's not allowed to pass a SceneStatusListener with ID = null..");
             }
-        } else {
-            if (unregisterSceneStatusListeners == null) {
-                unregisterSceneStatusListeners = new LinkedList<SceneStatusListener>();
-            }
-            unregisterSceneStatusListeners.add(sceneStatusListener);
         }
     }
 
     /**
      * Has to be called from a removed Thing-Child to rediscovers the Thing.
      *
-     * @param scene or device id (must not be null)
+     * @param id = scene or device id (must not be null)
      */
     public void childThingRemoved(String id) {
-        if (id.split("-").length == 3) {
+        if (id != null && id.split("-").length == 3) {
             InternalScene scene = sceneMan.getInternalScene(id);
             if (scene != null) {
                 sceneMan.removeInternalScene(id);
@@ -448,7 +521,7 @@ public class BridgeHandler extends BaseBridgeHandler
     /**
      * Delegate a stop command from a Thing to the {@link DeviceStatusManager#sendStopComandsToDSS(Device)}.
      *
-     * @param device
+     * @param device can be null
      */
     public void stopOutputValue(Device device) {
         this.devStatMan.sendStopComandsToDSS(device);
@@ -456,32 +529,43 @@ public class BridgeHandler extends BaseBridgeHandler
 
     @Override
     public void channelLinked(ChannelUID channelUID) {
-        switch (channelUID.getId()) {
-            case CHANNEL_ID_TOTAL_ACTIVE_POWER:
-                if (devStatMan != null) {
+        if (devStatMan != null) {
+            MeteringTypeEnum meteringType = DsChannelTypeProvider.getMeteringType(channelUID.getId());
+            if (meteringType != null) {
+                if (meteringType.equals(MeteringTypeEnum.ENERGY)) {
+                    onEnergyMeterValueChanged(devStatMan.getTotalEnergyMeterValue());
+                } else {
                     onTotalPowerConsumptionChanged(devStatMan.getTotalPowerConsumption());
                 }
-                break;
-            case CHANNEL_ID_TOTAL_ELECTRIC_METER:
-                if (devStatMan != null) {
-                    onEnergyMeterValueChanged(devStatMan.getTotalEnergyMeterValue());
-                }
+            } else {
+                logger.warn("Channel with id {} is not known for the thing with id {}.", channelUID.getId(),
+                        getThing().getUID());
+            }
         }
     }
 
     @Override
     public void onTotalPowerConsumptionChanged(int newPowerConsumption) {
-        updateChannelState(CHANNEL_ID_TOTAL_ACTIVE_POWER, newPowerConsumption);
+        updateChannelState(MeteringTypeEnum.CONSUMPTION, MeteringUnitsEnum.WH, newPowerConsumption);
     }
 
     @Override
     public void onEnergyMeterValueChanged(int newEnergyMeterValue) {
-        updateChannelState(CHANNEL_ID_TOTAL_ELECTRIC_METER, newEnergyMeterValue * 0.001);
+        updateChannelState(MeteringTypeEnum.ENERGY, MeteringUnitsEnum.WH, newEnergyMeterValue * 0.001);
     }
 
-    private void updateChannelState(String channelID, double value) {
+    @Override
+    public void onEnergyMeterWsValueChanged(int newEnergyMeterValue) {
+        // not needed
+    }
+
+    private void updateChannelState(MeteringTypeEnum meteringType, MeteringUnitsEnum meteringUnit, double value) {
+        String channelID = DsChannelTypeProvider.getMeteringChannelID(meteringType, meteringUnit, true);
         if (getThing().getChannel(channelID) != null) {
-            updateState(new ChannelUID(getThing().getUID(), channelID), new DecimalType(value));
+            updateState(
+                    new ChannelUID(getThing().getUID(),
+                            DsChannelTypeProvider.getMeteringChannelID(meteringType, meteringUnit, true)),
+                    new DecimalType(value));
         }
     }
 
@@ -491,14 +575,18 @@ public class BridgeHandler extends BaseBridgeHandler
             case CONNECTION_LOST:
                 updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.COMMUNICATION_ERROR,
                         "The connection to the digitalSTROM-Server cannot be established.");
-                devStatMan.stop();
-                break;
+                startReconnectTracker();
+                return;
             case CONNECTION_RESUMED:
                 if (connectionTimeoutCounter > 0) {
-                    setStatus(ThingStatus.ONLINE);
-                    devStatMan.start();
+                    if (connMan.checkConnection()) {
+                        restartServices();
+                        setStatus(ThingStatus.ONLINE);
+                    }
                 }
-                break;
+                // reset connection timeout counter
+                connectionTimeoutCounter = 0;
+                return;
             case APPLICATION_TOKEN_GENERATED:
                 if (connMan != null) {
                     Configuration config = this.getConfig();
@@ -511,18 +599,61 @@ public class BridgeHandler extends BaseBridgeHandler
                 }
                 return;
             default:
+                return;
         }
-        // reset connection timeout counter
-        connectionTimeoutCounter = 0;
     }
 
     private void setStatus(ThingStatus status) {
+        logger.debug("set status to: " + status);
         updateStatus(status);
         for (Thing thing : getThing().getThings()) {
             ThingHandler handler = thing.getHandler();
             if (handler != null) {
-                handler.initialize();
+                handler.bridgeStatusChanged(getThing().getStatusInfo());
             }
+        }
+    }
+
+    private void startReconnectTracker() {
+        if (reconnectTracker == null || reconnectTracker.isCancelled()) {
+            logger.debug("Connection lost, stop all services and start reconnectTracker.");
+            stopServices();
+            reconnectTracker = scheduler.scheduleAtFixedRate(new Runnable() {
+
+                @Override
+                public void run() {
+                    if (connMan != null) {
+                        boolean conStat = connMan.checkConnection();
+                        logger.debug("check connection = " + conStat);
+                        if (conStat) {
+                            restartServices();
+                            reconnectTracker.cancel(false);
+                        }
+                    }
+                }
+            }, RECONNECT_TRACKER_INTERVAL, RECONNECT_TRACKER_INTERVAL, TimeUnit.SECONDS);
+        }
+    }
+
+    private void stopServices() {
+        if (devStatMan != null && !devStatMan.getManagerState().equals(ManagerStates.STOPPED)) {
+            devStatMan.stop();
+        }
+        if (eventListener != null && eventListener.isStarted()) {
+            eventListener.stop();
+        }
+    }
+
+    private void restartServices() {
+        logger.debug("reconnect, stop reconnection tracker and restart services");
+        if (reconnectTracker != null && !reconnectTracker.isCancelled()) {
+            reconnectTracker.cancel(true);
+        }
+        if (devStatMan != null) {
+            devStatMan.start();
+        }
+        if (eventListener != null) {
+            eventListener.start();
         }
     }
 
@@ -533,23 +664,28 @@ public class BridgeHandler extends BaseBridgeHandler
                 case WRONG_APP_TOKEN:
                     updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.CONFIGURATION_ERROR,
                             "User defined Application-Token is wrong. "
-                                    + "Please set user name and password to generate an Application-Token or set an valide Application-Token.");
-                    break;
+                                    + "Please set user name and password to generate an Application-Token or set an valid Application-Token.");
+                    stopServices();
+                    return;
                 case WRONG_USER_OR_PASSWORD:
                     updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.CONFIGURATION_ERROR,
                             "The set username or password is wrong.");
-                    break;
+                    stopServices();
+                    return;
                 case NO_USER_PASSWORD:
                     updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.CONFIGURATION_ERROR,
                             "No username or password is set to generate Application-Token. Please set user name and password or Application-Token.");
-                    break;
+                    stopServices();
+                    return;
                 case CONNECTON_TIMEOUT:
                     // ignore the first connection timeout
-                    if (connectionTimeoutCounter++ > 0) {
+                    if (connectionTimeoutCounter++ > ignoredTimeouts) {
                         updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.COMMUNICATION_ERROR,
                                 "Connection lost because connection timeout to Server.");
+                        break;
+                    } else {
+                        return;
                     }
-                    return;
                 case HOST_NOT_FOUND:
                     updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.COMMUNICATION_ERROR,
                             "Server not found! Please check these points:\n" + " - Is digitalSTROM-Server turned on?\n"
@@ -567,11 +703,8 @@ public class BridgeHandler extends BaseBridgeHandler
             }
             // reset connection timeout counter
             connectionTimeoutCounter = 0;
-            if (devStatMan != null) {
-                devStatMan.stop();
-            }
+            startReconnectTracker();
         }
-
     }
 
     /**
@@ -597,7 +730,7 @@ public class BridgeHandler extends BaseBridgeHandler
      * Delegates a scene command of a Thing to the
      * {@link DeviceStatusManager#sendSceneComandsToDSS(InternalScene, boolean)}
      *
-     * @param the called scene
+     * @param scene the called scene
      * @param call_undo (true = call scene | false = undo scene)
      */
     public void sendSceneComandToDSS(InternalScene scene, boolean call_undo) {
@@ -610,8 +743,8 @@ public class BridgeHandler extends BaseBridgeHandler
      * Delegates a device command of a Thing to the
      * {@link DeviceStatusManager#sendComandsToDSS(Device, DeviceStateUpdate)}
      *
-     * @param device
-     * @param deviceStateUpdate
+     * @param device can be null
+     * @param deviceStateUpdate can be null
      */
     public void sendComandsToDSS(Device device, DeviceStateUpdate deviceStateUpdate) {
         if (devStatMan != null) {
@@ -642,20 +775,21 @@ public class BridgeHandler extends BaseBridgeHandler
         if (managerType.equals(ManagerTypes.DEVICE_STATUS_MANAGER)) {
             switch (state) {
                 case INITIALIZING:
+                    if (deviceDiscovery != null) {
+                        devStatMan.registerDeviceListener(deviceDiscovery);
+                        deviceDiscovery = null;
+                    }
                     logger.info("Building digitalSTROM model");
                     break;
                 case RUNNING:
-                    if (devListener != null) {
-                        for (DeviceStatusListener deviceListener : devListener) {
-                            devStatMan.registerDeviceListener(deviceListener);
-                        }
-                    }
-                    setStatus(ThingStatus.ONLINE);
+                    updateStatus(ThingStatus.ONLINE);
                     break;
                 case STOPPED:
                     if (!getThing().getStatusInfo().getStatusDetail().equals(ThingStatusDetail.COMMUNICATION_ERROR)
-                            && !getThing().getStatusInfo().getStatusDetail().equals(ThingStatusDetail.CONFIGURATION_ERROR)) {
+                            && !getThing().getStatusInfo().getStatusDetail()
+                                    .equals(ThingStatusDetail.CONFIGURATION_ERROR)) {
                         updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.NONE, "DeviceStatusManager is stopped.");
+                        devStatMan.start();
                     }
                     break;
                 default:
@@ -665,24 +799,75 @@ public class BridgeHandler extends BaseBridgeHandler
         if (managerType.equals(ManagerTypes.SCENE_MANAGER)) {
             switch (state) {
                 case GENERATING_SCENES:
-                    generatingScenes = true;
+                    logger.debug("SceneManager reports that he is generating scenes");
+                    if (sceneDiscovery != null) {
+                        sceneMan.registerSceneListener(sceneDiscovery);
+                        sceneDiscovery = null;
+                    }
                     break;
                 case RUNNING:
-                    if (unregisterSceneStatusListeners != null) {
-                        for (SceneStatusListener sceneListener : this.unregisterSceneStatusListeners) {
-                            sceneMan.registerSceneListener(sceneListener);
-                        }
-                    }
-                    if (sceneListener != null) {
-                        for (SceneStatusListener sceneListener : this.sceneListener) {
-                            sceneMan.registerSceneListener(sceneListener);
-                        }
-                    }
-                    generatingScenes = false;
+                    logger.debug("SceneManager reports that he is running");
                     break;
                 default:
                     break;
             }
         }
+    }
+
+    /**
+     * Returns a {@link List} of all {@link Circuit}'s.
+     *
+     * @return circuit list
+     */
+    public List<Circuit> getCircuits() {
+        logger.debug("circuits: " + this.structMan.getCircuitMap().values().toString());
+        return this.structMan != null && this.structMan.getCircuitMap() != null
+                ? new LinkedList<Circuit>(this.structMan.getCircuitMap().values()) : null;
+    }
+
+    /**
+     * Returns the {@link TemperatureControlManager} or null if no one exist.
+     *
+     * @return {@link TemperatureControlManager}
+     */
+    public TemperatureControlManager getTemperatureControlManager() {
+        return tempContMan;
+    }
+
+    /**
+     * Registers the given {@link TemperatureControlStatusListener} to the {@link TemperatureControlManager}.
+     *
+     * @param temperatureControlStatusListener can be null
+     */
+    public void registerTemperatureControlStatusListener(
+            TemperatureControlStatusListener temperatureControlStatusListener) {
+        if (tempContMan != null) {
+            tempContMan.registerTemperatureControlStatusListener(temperatureControlStatusListener);
+        } else if (TemperatureControlStatusListener.DISCOVERY
+                .equals(temperatureControlStatusListener.getTemperationControlStatusListenrID())) {
+            this.temperatureControlDiscovery = temperatureControlStatusListener;
+        }
+    }
+
+    /**
+     * Unregisters the given {@link TemperatureControlStatusListener} from the {@link TemperatureControlManager}.
+     *
+     * @param temperatureControlStatusListener can be null
+     */
+    public void unregisterTemperatureControlStatusListener(
+            TemperatureControlStatusListener temperatureControlStatusListener) {
+        if (tempContMan != null) {
+            tempContMan.unregisterTemperatureControlStatusListener(temperatureControlStatusListener);
+        }
+    }
+
+    /**
+     * see {@link TemperatureControlManager#getTemperatureControlStatusFromAllZones()}
+     *
+     * @return all temperature control status objects
+     */
+    public Collection<TemperatureControlStatus> getTemperatureControlStatusFromAllZones() {
+        return tempContMan != null ? tempContMan.getTemperatureControlStatusFromAllZones()
+                : new LinkedList<TemperatureControlStatus>();
     }
 }

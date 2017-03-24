@@ -11,11 +11,16 @@ import java.util.Calendar;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map.Entry;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.config.Config;
+import org.eclipse.smarthome.binding.digitalstrom.internal.lib.event.EventListener;
+import org.eclipse.smarthome.binding.digitalstrom.internal.lib.event.constants.EventNames;
+import org.eclipse.smarthome.binding.digitalstrom.internal.lib.event.constants.EventResponseEnum;
+import org.eclipse.smarthome.binding.digitalstrom.internal.lib.event.types.EventItem;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.listener.ConnectionListener;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.listener.DeviceStatusListener;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.listener.ManagerStatusListener;
@@ -35,15 +40,20 @@ import org.eclipse.smarthome.binding.digitalstrom.internal.lib.sensorJobExecutor
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.sensorJobExecutor.sensorJob.impl.SceneConfigReadingJob;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.sensorJobExecutor.sensorJob.impl.SceneOutputValueReadingJob;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.serverConnection.DsAPI;
+import org.eclipse.smarthome.binding.digitalstrom.internal.lib.serverConnection.constants.JSONApiResponseKeysEnum;
+import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.Circuit;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.Device;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.CachedMeteringValue;
-import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.DSID;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.DeviceConstants;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.DeviceStateUpdate;
-import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.DeviceStateUpdateImpl;
-import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.MeteringTypeEnum;
-import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.MeteringUnitsEnum;
-import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.SensorEnum;
+import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.constants.DeviceBinarayInputEnum;
+import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.constants.MeteringTypeEnum;
+import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.constants.MeteringUnitsEnum;
+import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.constants.OutputModeEnum;
+import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.constants.SensorEnum;
+import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.impl.DSID;
+import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.impl.DeviceStateUpdateImpl;
+import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.impl.DeviceImpl;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.scene.InternalScene;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.scene.constants.ApartmentSceneEnum;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.scene.constants.SceneEnum;
@@ -51,8 +61,12 @@ import org.eclipse.smarthome.core.common.ThreadPoolManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.google.common.collect.Lists;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+
 /**
- * The {@link DeviceStatusManagerImpl} is the implementation of the the {@link DeviceStatusManager}.
+ * The {@link DeviceStatusManagerImpl} is the implementation of the {@link DeviceStatusManager}.
  *
  * @author Michael Ochel - Initial contribution
  * @author Matthias Siegele - Initial contribution
@@ -61,8 +75,26 @@ public class DeviceStatusManagerImpl implements DeviceStatusManager {
 
     private Logger logger = LoggerFactory.getLogger(DeviceStatusManagerImpl.class);
 
+    /**
+     * Contains all supported event-types.
+     */
+    public static final List<String> SUPPORTED_EVENTS = Lists.newArrayList(EventNames.DEVICE_SENSOR_VALUE,
+            EventNames.DEVICE_BINARY_INPUT_EVENT);
+
     private final ScheduledExecutorService scheduler = ThreadPoolManager.getScheduledPool(Config.THREADPOOL_NAME);
     private ScheduledFuture<?> pollingScheduler = null;
+
+    /**
+     * Query to get all {@link Device}'s with more informations than {@link DsAPI#getApartmentDevices(String)}. Can be
+     * executed with {@link DsAPI#query(String, String)} or {@link DsAPI#query2(String, String)}.
+     */
+    public static final String GET_DETAILD_DEVICES = "/apartment/zones/zone0(*)/devices/*(*)/*(*)/*(*)";
+    /**
+     * Query to get the last called scenes of all groups in digitalSTROM. Can be executed with
+     * {@link DsAPI#query(String, String)} or
+     * {@link DsAPI#query2(String, String)}.
+     */
+    public static final String LAST_CALL_SCENE_QUERY = "/apartment/zones/*(*)/groups/*(*)/*(*)";
 
     private ConnectionManager connMan;
     private StructureManager strucMan;
@@ -72,45 +104,103 @@ public class DeviceStatusManagerImpl implements DeviceStatusManager {
 
     private SensorJobExecutor sensorJobExecutor = null;
     private SceneReadingJobExecutor sceneJobExecutor = null;
+    private EventListener eventListener = null;
 
-    private List<String> meters = null;
     private List<TrashDevice> trashDevices = new LinkedList<TrashDevice>();
 
     private long lastBinCheck = 0;
     private ManagerStates state = ManagerStates.STOPPED;
 
     private int tempConsumption = 0;
-    private int totalPowerConsumption = 0;
     private int tempEnergyMeter = 0;
-    private int totalEnergyMeter = 0;
+    private int tempEnergyMeterWs = 0;
 
     private DeviceStatusListener deviceDiscovery = null;
     private TotalPowerConsumptionListener totalPowerConsumptionListener = null;
     private ManagerStatusListener statusListener = null;
 
+    /**
+     * Creates a new {@link DeviceStatusManagerImpl} through the given {@link Config} object, which has to be contains
+     * all needed parameters like host address, authentication data and so on. This constructor the
+     * {@link DeviceStatusManagerImpl} will be create all needed managers itself.
+     *
+     * @param config (must not be null)
+     */
     public DeviceStatusManagerImpl(Config config) {
-        init(new ConnectionManagerImpl(config), null, null, null);
+        init(new ConnectionManagerImpl(config), null, null, null, null);
     }
 
+    /**
+     * Creates a new {@link DeviceStatusManagerImpl}. The given fields needed to create {@link ConnectionManager}
+     * through the constructor {@link ConnectionManagerImpl#ConnectionManagerImpl(String, String, String, String)}. All
+     * other needed manager will be automatically created, too.
+     *
+     * @param hostAddress (must not be null)
+     * @param user (can be null, if appToken is set)
+     * @param password (can be null, if appToken is set)
+     * @param appToken (can be null, if user and password is set)
+     */
     public DeviceStatusManagerImpl(String hostAddress, String user, String password, String appToken) {
-        init(new ConnectionManagerImpl(hostAddress, user, password, false), null, null, null);
+        init(new ConnectionManagerImpl(hostAddress, user, password, false), null, null, null, null);
     }
 
+    /**
+     * Creates a new {@link DeviceStatusManagerImpl} with the given managers. If the {@link StructureManager} or
+     * {@link SceneManager} is null, they will be automatically created.
+     *
+     * @param connMan (must not be null)
+     * @param strucMan (can be null)
+     * @param sceneMan (can be null)
+     */
     public DeviceStatusManagerImpl(ConnectionManager connMan, StructureManager strucMan, SceneManager sceneMan) {
-        init(connMan, strucMan, sceneMan, null);
+        init(connMan, strucMan, sceneMan, null, null);
     }
 
+    /**
+     * Same constructor like {@link #DeviceStatusManagerImpl(ConnectionManager, StructureManager, SceneManager)}, but a
+     * {@link ManagerStatusListener} can be set, too.
+     *
+     * @param connMan (must not be null)
+     * @param strucMan (can be null)
+     * @param sceneMan (can be null)
+     * @param statusListener (can be null)
+     * @see #DeviceStatusManagerImpl(ConnectionManager, StructureManager, SceneManager)
+     */
     public DeviceStatusManagerImpl(ConnectionManager connMan, StructureManager strucMan, SceneManager sceneMan,
             ManagerStatusListener statusListener) {
-        init(connMan, strucMan, sceneMan, statusListener);
+        init(connMan, strucMan, sceneMan, statusListener, null);
     }
 
+    /**
+     * Same constructor like
+     * {@link #DeviceStatusManagerImpl(ConnectionManager, StructureManager, SceneManager, ManagerStatusListener)}, but a
+     * {@link EventListener} can be set, too.
+     *
+     * @param connMan (must not be null)
+     * @param strucMan (can be null)
+     * @param sceneMan (can be null)
+     * @param statusListener (can be null)
+     * @param eventListener (can be null)
+     * @see #DeviceStatusManagerImpl(ConnectionManager, StructureManager, SceneManager, ManagerStatusListener)
+     */
+    public DeviceStatusManagerImpl(ConnectionManager connMan, StructureManager strucMan, SceneManager sceneMan,
+            ManagerStatusListener statusListener, EventListener eventListener) {
+        init(connMan, strucMan, sceneMan, statusListener, eventListener);
+    }
+
+    /**
+     * Creates a new {@link DeviceStatusManagerImpl} with the given {@link ConnectionManager}. The
+     * {@link StructureManager} and
+     * {@link SceneManager} will be automatically created.
+     *
+     * @param connMan (must not be null)
+     */
     public DeviceStatusManagerImpl(ConnectionManager connMan) {
-        init(connMan, null, null, null);
+        init(connMan, null, null, null, null);
     }
 
     private void init(ConnectionManager connMan, StructureManager strucMan, SceneManager sceneMan,
-            ManagerStatusListener statusListener) {
+            ManagerStatusListener statusListener, EventListener eventListener) {
         this.connMan = connMan;
         this.digitalSTROMClient = connMan.getDigitalSTROMAPI();
         this.config = connMan.getConfig();
@@ -125,15 +215,22 @@ public class DeviceStatusManagerImpl implements DeviceStatusManager {
             this.sceneMan = new SceneManagerImpl(connMan, strucMan, statusListener);
         }
         this.statusListener = statusListener;
+        this.eventListener = eventListener;
     }
 
+    /**
+     * Check and updates the {@link Device} structure, configurations and status.
+     *
+     * @author Michael Ochel - initial contributer
+     * @author Matthias Siegele - initial contributer
+     */
     private class PollingRunnable implements Runnable {
         private boolean devicesLoaded = false;
         private long nextSensorUpdate = 0;
 
         @Override
         public void run() {
-            if (connMan.checkConnection()) {
+            try {
                 if (!getManagerState().equals(ManagerStates.RUNNING)) {
                     logger.debug("Thread started");
                     if (devicesLoaded) {
@@ -149,14 +246,27 @@ public class DeviceStatusManagerImpl implements DeviceStatusManager {
                     tempDeviceMap = new HashMap<DSID, Device>();
                 }
 
-                List<Device> currentDeviceList = digitalSTROMClient.getApartmentDevices(connMan.getSessionToken(),
-                        false);
+                List<Device> currentDeviceList = getDetailedDevices();
 
+                // TODO: Maybe it is better to separate the total power consumption update in a extra Thread. See next
+                // TODO.
                 // update the current total power consumption
-                if (totalPowerConsumptionListener != null && nextSensorUpdate <= System.currentTimeMillis()) {
-                    meters = digitalSTROMClient.getMeterList(connMan.getSessionToken());
-                    totalPowerConsumptionListener.onTotalPowerConsumptionChanged(getTotalPowerConsumption());
-                    totalPowerConsumptionListener.onEnergyMeterValueChanged(getTotalEnergyMeterValue());
+                if (nextSensorUpdate <= System.currentTimeMillis()) {
+                    // check circuits
+                    List<Circuit> circuits = digitalSTROMClient.getApartmentCircuits(connMan.getSessionToken());
+                    for (Circuit circuit : circuits) {
+                        if (strucMan.getCircuitByDSID(circuit.getDSID()) != null) {
+                            if (!circuit.equals(strucMan.getCircuitByDSID(circuit.getDSID()))) {
+                                strucMan.updateCircuitConfig(circuit);
+                            }
+                        } else {
+                            strucMan.addCircuit(circuit);
+                            if (deviceDiscovery != null) {
+                                deviceDiscovery.onDeviceAdded(circuit);
+                            }
+                        }
+                    }
+                    getMeterData();
                     nextSensorUpdate = System.currentTimeMillis() + config.getTotalPowerUpdateInterval();
                 }
 
@@ -165,6 +275,10 @@ public class DeviceStatusManagerImpl implements DeviceStatusManager {
                     DSID currentDeviceDSID = currentDevice.getDSID();
                     Device eshDevice = tempDeviceMap.remove(currentDeviceDSID);
 
+                    // TODO: Maybe it is better to separate the Device-Status updates (send commands to dSS) and the
+                    // structure and configuration updates. That will optimize the time to send commands and the
+                    // structure and configuration updates can be executed at a higher interval. For that the
+                    // DeviceHandler has to inform this DeviceStatusManager to check the updates in an extra Thread.
                     if (eshDevice != null) {
                         checkDeviceConfig(currentDevice, eshDevice);
 
@@ -174,9 +288,9 @@ public class DeviceStatusManagerImpl implements DeviceStatusManager {
                                 DeviceStateUpdate deviceStateUpdate = eshDevice.getNextDeviceUpdateState();
                                 if (deviceStateUpdate != null) {
                                     switch (deviceStateUpdate.getType()) {
-                                        case DeviceStateUpdate.UPDATE_BRIGHTNESS:
-                                        case DeviceStateUpdate.UPDATE_SLAT_ANGLE_INCREASE:
-                                        case DeviceStateUpdate.UPDATE_SLAT_ANGLE_DECREASE:
+                                        case DeviceStateUpdate.OUTPUT:
+                                        case DeviceStateUpdate.SLAT_ANGLE_INCREASE:
+                                        case DeviceStateUpdate.SLAT_ANGLE_DECREASE:
                                             filterCommand(deviceStateUpdate, eshDevice);
                                             break;
                                         case DeviceStateUpdate.UPDATE_SCENE_CONFIG:
@@ -184,7 +298,11 @@ public class DeviceStatusManagerImpl implements DeviceStatusManager {
                                             updateSceneData(eshDevice, deviceStateUpdate);
                                             break;
                                         case DeviceStateUpdate.UPDATE_OUTPUT_VALUE:
-                                            readOutputValue(eshDevice);
+                                            if (deviceStateUpdate.getValueAsInteger() > -1) {
+                                                readOutputValue(eshDevice);
+                                            } else {
+                                                removeSensorJob(eshDevice, deviceStateUpdate);
+                                            }
                                             break;
                                         default:
                                             sendComandsToDSS(eshDevice, deviceStateUpdate);
@@ -224,11 +342,10 @@ public class DeviceStatusManagerImpl implements DeviceStatusManager {
                             }
                         }
                         if (deviceDiscovery != null) {
-                            if (currentDevice.isDeviceWithOutput()) {
-                                deviceDiscovery.onDeviceAdded(currentDevice);
-                                logger.debug("inform DeviceStatusListener: {} about removed device with dSID {}",
-                                        DeviceStatusListener.DEVICE_DISCOVERY, currentDevice.getDSID().getValue());
-                            }
+                            // only informs discovery, if the device is a output or a sensor device
+                            deviceDiscovery.onDeviceAdded(currentDevice);
+                            logger.debug("inform DeviceStatusListener: {} about removed device with dSID {}",
+                                    DeviceStatusListener.DEVICE_DISCOVERY, currentDevice.getDSID().getValue());
                         } else {
                             logger.debug(
                                     "The device discovery is not registrated, can't inform device discovery about found device.");
@@ -240,11 +357,14 @@ public class DeviceStatusManagerImpl implements DeviceStatusManager {
                     if (!strucMan.getDeviceMap().values().isEmpty()) {
                         logger.debug("Devices loaded");
                         devicesLoaded = true;
+                        setInizialStateWithLastCallScenes();
                         stateChanged(ManagerStates.RUNNING);
+                    } else {
+                        logger.info("No devices found");
                     }
                 }
 
-                if (!sceneMan.scenesGenerated()
+                if (!sceneMan.scenesGenerated() && devicesLoaded
                         && !sceneMan.getManagerState().equals(ManagerStates.GENERATING_SCENES)) {
                     logger.debug(sceneMan.getManagerState().toString());
                     sceneMan.generateScenes();
@@ -254,7 +374,7 @@ public class DeviceStatusManagerImpl implements DeviceStatusManager {
                     logger.debug("Found removed devices.");
 
                     trashDevices.add(new TrashDevice(device));
-                    DeviceStatusListener listener = device.unregisterDeviceStateListener();
+                    DeviceStatusListener listener = device.unregisterDeviceStatusListener();
                     if (listener != null) {
                         listener.onDeviceRemoved(null);
                     }
@@ -281,48 +401,67 @@ public class DeviceStatusManagerImpl implements DeviceStatusManager {
                     }
                     lastBinCheck = System.currentTimeMillis();
                 }
+            } catch (Exception e) {
+                logger.error("An exception occurred: ", e);
             }
+        }
+
+        private List<Device> getDetailedDevices() {
+            List<Device> deviceList = new LinkedList<Device>();
+            JsonObject result = connMan.getDigitalSTROMAPI().query2(connMan.getSessionToken(), GET_DETAILD_DEVICES);
+            if (result != null && result.isJsonObject()) {
+                if (result.getAsJsonObject().get("zone0").isJsonObject()) {
+                    result = result.getAsJsonObject().get("zone0").getAsJsonObject();
+                    for (Entry<String, JsonElement> entry : result.entrySet()) {
+                        if (!(entry.getKey().equals(JSONApiResponseKeysEnum.ZONE_ID.getKey())
+                                && entry.getKey().equals(JSONApiResponseKeysEnum.NAME.getKey()))
+                                && entry.getValue().isJsonObject()) {
+                            deviceList.add(new DeviceImpl(entry.getValue().getAsJsonObject()));
+                        }
+                    }
+                }
+            }
+            return deviceList;
         }
 
         private void filterCommand(DeviceStateUpdate deviceStateUpdate, Device device) {
             String stateUpdateType = deviceStateUpdate.getType();
             short newAngle = 0;
-            if (stateUpdateType.equals(DeviceStateUpdate.UPDATE_SLAT_ANGLE_INCREASE)
-                    || stateUpdateType.equals(DeviceStateUpdate.UPDATE_SLAT_ANGLE_DECREASE)) {
+            if (stateUpdateType.equals(DeviceStateUpdate.SLAT_ANGLE_INCREASE)
+                    || stateUpdateType.equals(DeviceStateUpdate.SLAT_ANGLE_DECREASE)) {
                 newAngle = device.getAnglePosition();
             }
             DeviceStateUpdate nextDeviceStateUpdate = device.getNextDeviceUpdateState();
             while (nextDeviceStateUpdate != null && nextDeviceStateUpdate.getType().equals(stateUpdateType)) {
                 switch (stateUpdateType) {
-                    case DeviceStateUpdate.UPDATE_BRIGHTNESS:
+                    case DeviceStateUpdate.OUTPUT:
                         deviceStateUpdate = nextDeviceStateUpdate;
                         nextDeviceStateUpdate = device.getNextDeviceUpdateState();
                         break;
-                    case DeviceStateUpdate.UPDATE_SLAT_ANGLE_INCREASE:
-                        if (deviceStateUpdate.getValue() == 1) {
+                    case DeviceStateUpdate.SLAT_ANGLE_INCREASE:
+                        if (deviceStateUpdate.getValueAsInteger() == 1) {
                             newAngle = (short) (newAngle + DeviceConstants.ANGLE_STEP_SLAT);
                         }
                         break;
-                    case DeviceStateUpdate.UPDATE_SLAT_ANGLE_DECREASE:
-                        if (deviceStateUpdate.getValue() == 1) {
+                    case DeviceStateUpdate.SLAT_ANGLE_DECREASE:
+                        if (deviceStateUpdate.getValueAsInteger() == 1) {
                             newAngle = (short) (newAngle - DeviceConstants.ANGLE_STEP_SLAT);
                         }
                         break;
                 }
             }
-            if (stateUpdateType.equals(DeviceStateUpdate.UPDATE_SLAT_ANGLE_INCREASE)
-                    || stateUpdateType.equals(DeviceStateUpdate.UPDATE_SLAT_ANGLE_DECREASE)) {
+            if (stateUpdateType.equals(DeviceStateUpdate.SLAT_ANGLE_INCREASE)
+                    || stateUpdateType.equals(DeviceStateUpdate.SLAT_ANGLE_DECREASE)) {
                 if (newAngle > device.getMaxSlatAngle()) {
                     newAngle = (short) device.getMaxSlatAngle();
                 }
                 if (newAngle < device.getMinSlatAngle()) {
                     newAngle = (short) device.getMinSlatAngle();
                 }
-                if (!(stateUpdateType.equals(DeviceStateUpdate.UPDATE_SLAT_ANGLE_INCREASE)
-                        && checkAngleIsMinMax(device) == 1)
-                        || !(stateUpdateType.equals(DeviceStateUpdate.UPDATE_SLAT_ANGLE_DECREASE)
+                if (!(stateUpdateType.equals(DeviceStateUpdate.SLAT_ANGLE_INCREASE) && checkAngleIsMinMax(device) == 1)
+                        || !(stateUpdateType.equals(DeviceStateUpdate.SLAT_ANGLE_DECREASE)
                                 && checkAngleIsMinMax(device) == 0)) {
-                    deviceStateUpdate = new DeviceStateUpdateImpl(DeviceStateUpdate.UPDATE_SLAT_ANGLE, newAngle);
+                    deviceStateUpdate = new DeviceStateUpdateImpl(DeviceStateUpdate.SLAT_ANGLE, newAngle);
                 }
             }
             sendComandsToDSS(device, deviceStateUpdate);
@@ -338,13 +477,43 @@ public class DeviceStatusManagerImpl implements DeviceStatusManager {
 
     };
 
+    private void removeSensorJob(Device eshDevice, DeviceStateUpdate deviceStateUpdate) {
+        switch (deviceStateUpdate.getType()) {
+            case DeviceStateUpdate.UPDATE_SCENE_CONFIG:
+                if (sceneJobExecutor != null) {
+                    sceneJobExecutor.removeSensorJob(eshDevice,
+                            SceneConfigReadingJob.getID(eshDevice, deviceStateUpdate.getSceneId()));
+                }
+                break;
+            case DeviceStateUpdate.UPDATE_SCENE_OUTPUT:
+                if (sceneJobExecutor != null) {
+                    sceneJobExecutor.removeSensorJob(eshDevice,
+                            SceneOutputValueReadingJob.getID(eshDevice, deviceStateUpdate.getSceneId()));
+                }
+                break;
+            case DeviceStateUpdate.UPDATE_OUTPUT_VALUE:
+                if (sensorJobExecutor != null) {
+                    sensorJobExecutor.removeSensorJob(eshDevice, DeviceOutputValueSensorJob.getID(eshDevice));
+                }
+                break;
+        }
+        if (deviceStateUpdate.isSensorUpdateType()) {
+            if (sensorJobExecutor != null) {
+                logger.debug("remove SensorJob with ID: "
+                        + DeviceConsumptionSensorJob.getID(eshDevice, deviceStateUpdate.getTypeAsSensorEnum()));
+                sensorJobExecutor.removeSensorJob(eshDevice,
+                        DeviceConsumptionSensorJob.getID(eshDevice, deviceStateUpdate.getTypeAsSensorEnum()));
+            }
+        }
+    }
+
     @Override
     public ManagerTypes getManagerType() {
         return ManagerTypes.DEVICE_STATUS_MANAGER;
     }
 
     @Override
-    public ManagerStates getManagerState() {
+    public synchronized ManagerStates getManagerState() {
         return state;
     }
 
@@ -357,12 +526,13 @@ public class DeviceStatusManagerImpl implements DeviceStatusManager {
 
     @Override
     public synchronized void start() {
-        logger.debug("start pollingScheduler");
+        logger.debug("start DeviceStatusManager");
         if (pollingScheduler == null || pollingScheduler.isCancelled()) {
             pollingScheduler = scheduler.scheduleWithFixedDelay(new PollingRunnable(), 0, config.getPollingFrequency(),
                     TimeUnit.MILLISECONDS);
-            sceneMan.start();
+            logger.debug("start pollingScheduler");
         }
+        sceneMan.start();
         if (sceneJobExecutor != null) {
             this.sceneJobExecutor.startExecutor();
         }
@@ -370,24 +540,34 @@ public class DeviceStatusManagerImpl implements DeviceStatusManager {
         if (sensorJobExecutor != null) {
             this.sensorJobExecutor.startExecutor();
         }
+        if (eventListener != null) {
+            eventListener.addEventHandler(this);
+        } else {
+            eventListener = new EventListener(connMan, this);
+            eventListener.start();
+        }
     }
 
     @Override
     public synchronized void stop() {
-        logger.debug("stop pollingScheduler");
+        logger.debug("stop DeviceStatusManager");
+        stateChanged(ManagerStates.STOPPED);
         if (sceneMan != null) {
             sceneMan.stop();
         }
         if (pollingScheduler != null && !pollingScheduler.isCancelled()) {
             pollingScheduler.cancel(true);
             pollingScheduler = null;
-            stateChanged(ManagerStates.STOPPED);
+            logger.debug("stop pollingScheduler");
         }
         if (sceneJobExecutor != null) {
             this.sceneJobExecutor.shutdown();
         }
         if (sensorJobExecutor != null) {
             this.sensorJobExecutor.shutdown();
+        }
+        if (eventListener != null) {
+            eventListener.removeEventHandler(this);
         }
     }
 
@@ -405,7 +585,7 @@ public class DeviceStatusManagerImpl implements DeviceStatusManager {
         /**
          * Creates a new {@link TrashDevice}.
          *
-         * @param device
+         * @param device to put in {@link TrashDevice}
          */
         public TrashDevice(Device device) {
             this.device = device;
@@ -424,7 +604,7 @@ public class DeviceStatusManagerImpl implements DeviceStatusManager {
         /**
          * Returns true if the time for the {@link TrashDevice} is over and it can be deleted.
          *
-         * @param dayOfYear
+         * @param dayOfYear day of the current year
          * @return true = time to delete | false = not time to delete
          */
         public boolean isTimeToDelete(int dayOfYear) {
@@ -443,11 +623,12 @@ public class DeviceStatusManagerImpl implements DeviceStatusManager {
         if (newDevice == null || internalDevice == null) {
             return;
         }
-        // check device availability has changed and inform the deviceStatusListener about the change.
+        // check device availability has changed and informs the deviceStatusListener about the change.
         // NOTE:
-        // The device is not availability for the digitalSTROM-Server, it has not been deleted and are therefore set to
+        // The device is not availability for the digitalSTROM-Server, it has not been deleted and therefore it is set
+        // to
         // OFFLINE.
-        // To delete an alternate algorithm is responsible.
+        // An alternate algorithm is responsible for deletion.
         if (newDevice.isPresent() != internalDevice.isPresent()) {
             internalDevice.setIsPresent(newDevice.isPresent());
         }
@@ -462,7 +643,20 @@ public class DeviceStatusManagerImpl implements DeviceStatusManager {
             internalDevice.setName(newDevice.getName());
         }
         if (newDevice.getOutputMode() != null && !newDevice.getOutputMode().equals(internalDevice.getOutputMode())) {
+            if (deviceDiscovery != null) {
+                if (OutputModeEnum.DISABLED.equals(internalDevice.getOutputMode())
+                        || OutputModeEnum.outputModeIsTemperationControlled(internalDevice.getOutputMode())) {
+                    deviceDiscovery.onDeviceAdded(newDevice);
+                }
+                if (OutputModeEnum.DISABLED.equals(newDevice.getOutputMode())
+                        || OutputModeEnum.outputModeIsTemperationControlled(newDevice.getOutputMode())) {
+                    deviceDiscovery.onDeviceRemoved(newDevice);
+                }
+            }
             internalDevice.setOutputMode(newDevice.getOutputMode());
+        }
+        if (!newDevice.getBinaryInputs().equals(internalDevice.getBinaryInputs())) {
+            internalDevice.setBinaryInputs(newDevice.getBinaryInputs());
         }
         strucMan.updateDevice(newDevice);
     }
@@ -481,40 +675,36 @@ public class DeviceStatusManagerImpl implements DeviceStatusManager {
                     logger.error("An exception occurred", e);
                 }
             }
-            if (this.connMan.checkConnection()) {
-                lastSceneCall = System.currentTimeMillis();
-                boolean requestSuccsessfull = false;
-                if (scene.getZoneID() == 0) {
-                    if (call_undo) {
-                        logger.debug(scene.getGroupID() + " " + scene.getSceneID() + " "
-                                + ApartmentSceneEnum.getApartmentScene(scene.getSceneID()));
-                        requestSuccsessfull = this.digitalSTROMClient.callApartmentScene(connMan.getSessionToken(),
-                                scene.getGroupID(), null, ApartmentSceneEnum.getApartmentScene(scene.getSceneID()),
-                                false);
-                    } else {
-                        requestSuccsessfull = this.digitalSTROMClient.undoApartmentScene(connMan.getSessionToken(),
-                                scene.getGroupID(), null, ApartmentSceneEnum.getApartmentScene(scene.getSceneID()));
-                    }
+            lastSceneCall = System.currentTimeMillis();
+            boolean requestSuccsessfull = false;
+            if (scene.getZoneID() == 0) {
+                if (call_undo) {
+                    logger.debug(scene.getGroupID() + " " + scene.getSceneID() + " "
+                            + ApartmentSceneEnum.getApartmentScene(scene.getSceneID()));
+                    requestSuccsessfull = this.digitalSTROMClient.callApartmentScene(connMan.getSessionToken(),
+                            scene.getGroupID(), null, ApartmentSceneEnum.getApartmentScene(scene.getSceneID()), false);
                 } else {
-                    if (call_undo) {
-                        requestSuccsessfull = this.digitalSTROMClient.callZoneScene(connMan.getSessionToken(),
-                                scene.getZoneID(), null, scene.getGroupID(), null,
-                                SceneEnum.getScene(scene.getSceneID()), false);
-                    } else {
-                        requestSuccsessfull = this.digitalSTROMClient.undoZoneScene(connMan.getSessionToken(),
-                                scene.getZoneID(), null, scene.getGroupID(), null,
-                                SceneEnum.getScene(scene.getSceneID()));
-                    }
+                    requestSuccsessfull = this.digitalSTROMClient.undoApartmentScene(connMan.getSessionToken(),
+                            scene.getGroupID(), null, ApartmentSceneEnum.getApartmentScene(scene.getSceneID()));
                 }
+            } else {
+                if (call_undo) {
+                    requestSuccsessfull = this.digitalSTROMClient.callZoneScene(connMan.getSessionToken(),
+                            scene.getZoneID(), null, scene.getGroupID(), null, SceneEnum.getScene(scene.getSceneID()),
+                            false);
+                } else {
+                    requestSuccsessfull = this.digitalSTROMClient.undoZoneScene(connMan.getSessionToken(),
+                            scene.getZoneID(), null, scene.getGroupID(), null, SceneEnum.getScene(scene.getSceneID()));
+                }
+            }
 
-                logger.debug("Was the scene call succsessful?: " + requestSuccsessfull);
-                if (requestSuccsessfull) {
-                    this.sceneMan.addEcho(scene.getID());
-                    if (call_undo) {
-                        scene.activateScene();
-                    } else {
-                        scene.deactivateScene();
-                    }
+            logger.debug("Was the scene call succsessful?: " + requestSuccsessfull);
+            if (requestSuccsessfull) {
+                this.sceneMan.addEcho(scene.getID());
+                if (call_undo) {
+                    scene.activateScene();
+                } else {
+                    scene.deactivateScene();
                 }
             }
         }
@@ -526,9 +716,7 @@ public class DeviceStatusManagerImpl implements DeviceStatusManager {
 
             @Override
             public void run() {
-                if (connMan.checkConnection()) {
-                }
-                if (digitalSTROMClient.callDeviceScene(connMan.getSessionToken(), device.getDSID(), null,
+                if (digitalSTROMClient.callDeviceScene(connMan.getSessionToken(), device.getDSID(), null, null,
                         SceneEnum.STOP, true)) {
                     sceneMan.addEcho(device.getDSID().getValue(), SceneEnum.STOP.getSceneNumber());
                     readOutputValue(device);
@@ -544,31 +732,36 @@ public class DeviceStatusManagerImpl implements DeviceStatusManager {
         }
 
         int outputValue = this.digitalSTROMClient.getDeviceOutputValue(connMan.getSessionToken(), device.getDSID(),
-                null, outputIndex);
+                null, null, outputIndex);
         if (outputValue != -1) {
             if (!device.isShade()) {
-                device.updateInternalDeviceState(
-                        new DeviceStateUpdateImpl(DeviceStateUpdate.UPDATE_BRIGHTNESS, outputValue));
+                device.updateInternalDeviceState(new DeviceStateUpdateImpl(DeviceStateUpdate.OUTPUT, outputValue));
             } else {
                 device.updateInternalDeviceState(
-                        new DeviceStateUpdateImpl(DeviceStateUpdate.UPDATE_SLATPOSITION, outputValue));
+                        new DeviceStateUpdateImpl(DeviceStateUpdate.SLATPOSITION, outputValue));
                 if (device.isBlind()) {
                     outputValue = this.digitalSTROMClient.getDeviceOutputValue(connMan.getSessionToken(),
-                            device.getDSID(), null, DeviceConstants.DEVICE_SENSOR_SLAT_ANGLE_OUTPUT);
+                            device.getDSID(), null, null, DeviceConstants.DEVICE_SENSOR_SLAT_ANGLE_OUTPUT);
                     device.updateInternalDeviceState(
-                            new DeviceStateUpdateImpl(DeviceStateUpdate.UPDATE_SLAT_ANGLE, outputValue));
+                            new DeviceStateUpdateImpl(DeviceStateUpdate.SLAT_ANGLE, outputValue));
                 }
             }
         }
     }
 
+    /**
+     * Updates the {@link Device} status of the given {@link Device} with handling outstanding commands, which are saved
+     * as {@link DeviceStateUpdate}'s.
+     *
+     * @param eshDevice to update
+     */
     public synchronized void updateDevice(Device eshDevice) {
         logger.debug("Check device updates");
         // check device state updates
         while (!eshDevice.isDeviceUpToDate()) {
             DeviceStateUpdate deviceStateUpdate = eshDevice.getNextDeviceUpdateState();
             if (deviceStateUpdate != null) {
-                if (deviceStateUpdate.getType() != DeviceStateUpdate.UPDATE_BRIGHTNESS) {
+                if (deviceStateUpdate.getType() != DeviceStateUpdate.OUTPUT) {
                     if (deviceStateUpdate.getType() == DeviceStateUpdate.UPDATE_SCENE_CONFIG
                             || deviceStateUpdate.getType() == DeviceStateUpdate.UPDATE_SCENE_OUTPUT) {
                         updateSceneData(eshDevice, deviceStateUpdate);
@@ -578,7 +771,7 @@ public class DeviceStatusManagerImpl implements DeviceStatusManager {
                 } else {
                     DeviceStateUpdate nextDeviceStateUpdate = eshDevice.getNextDeviceUpdateState();
                     while (nextDeviceStateUpdate != null
-                            && nextDeviceStateUpdate.getType() == DeviceStateUpdate.UPDATE_BRIGHTNESS) {
+                            && nextDeviceStateUpdate.getType() == DeviceStateUpdate.OUTPUT) {
                         deviceStateUpdate = nextDeviceStateUpdate;
                         nextDeviceStateUpdate = eshDevice.getNextDeviceUpdateState();
                     }
@@ -655,16 +848,34 @@ public class DeviceStatusManagerImpl implements DeviceStatusManager {
 
     @Override
     public synchronized void sendComandsToDSS(Device device, DeviceStateUpdate deviceStateUpdate) {
-        if (connMan.checkConnection()) {
-            boolean requestSuccsessful = false;
-            boolean commandHaveNoEffect = false;
-            if (deviceStateUpdate != null) {
+        boolean requestSuccsessful = false;
+        boolean commandHaveNoEffect = false;
+        if (deviceStateUpdate != null) {
+            if (deviceStateUpdate.isSensorUpdateType()) {
+                SensorEnum sensorType = deviceStateUpdate.getTypeAsSensorEnum();
+                if (deviceStateUpdate.getValueAsInteger() == 0) {
+                    updateSensorData(new DeviceConsumptionSensorJob(device, sensorType),
+                            device.getPowerSensorRefreshPriority(sensorType));
+                    return;
+                } else if (deviceStateUpdate.getValueAsInteger() < 0) {
+                    removeSensorJob(device, deviceStateUpdate);
+                    return;
+                } else {
+                    int consumption = this.digitalSTROMClient.getDeviceSensorValue(connMan.getSessionToken(),
+                            device.getDSID(), null, null, device.getSensorIndex(sensorType));
+                    if (consumption >= 0) {
+                        device.setDeviceSensorDsValueBySensorJob(sensorType, consumption);
+                        // device.updateInternalDeviceState(new DeviceStateUpdateImpl(sensorType, consumption));
+                        requestSuccsessful = true;
+                    }
+                }
+            } else {
                 switch (deviceStateUpdate.getType()) {
-                    case DeviceStateUpdate.UPDATE_BRIGHTNESS_DECREASE:
-                    case DeviceStateUpdate.UPDATE_SLAT_DECREASE:
+                    case DeviceStateUpdate.OUTPUT_DECREASE:
+                    case DeviceStateUpdate.SLAT_DECREASE:
                         if (checkIsAllreadyMinMax(device) != 0) {
                             requestSuccsessful = digitalSTROMClient.decreaseValue(connMan.getSessionToken(),
-                                    device.getDSID());
+                                    device.getDSID(), null, null);
                             if (requestSuccsessful) {
                                 sceneMan.addEcho(device.getDSID().getValue(), SceneEnum.DECREMENT.getSceneNumber());
                             }
@@ -672,11 +883,11 @@ public class DeviceStatusManagerImpl implements DeviceStatusManager {
                             commandHaveNoEffect = true;
                         }
                         break;
-                    case DeviceStateUpdate.UPDATE_BRIGHTNESS_INCREASE:
-                    case DeviceStateUpdate.UPDATE_SLAT_INCREASE:
+                    case DeviceStateUpdate.OUTPUT_INCREASE:
+                    case DeviceStateUpdate.SLAT_INCREASE:
                         if (checkIsAllreadyMinMax(device) != 1) {
                             requestSuccsessful = digitalSTROMClient.increaseValue(connMan.getSessionToken(),
-                                    device.getDSID());
+                                    device.getDSID(), null, null);
                             if (requestSuccsessful) {
                                 sceneMan.addEcho(device.getDSID().getValue(), SceneEnum.INCREMENT.getSceneNumber());
                             }
@@ -684,20 +895,20 @@ public class DeviceStatusManagerImpl implements DeviceStatusManager {
                             commandHaveNoEffect = true;
                         }
                         break;
-                    case DeviceStateUpdate.UPDATE_BRIGHTNESS:
-                        if (device.getOutputValue() != deviceStateUpdate.getValue()) {
+                    case DeviceStateUpdate.OUTPUT:
+                        if (device.getOutputValue() != deviceStateUpdate.getValueAsInteger()) {
                             requestSuccsessful = digitalSTROMClient.setDeviceValue(connMan.getSessionToken(),
-                                    device.getDSID(), null, deviceStateUpdate.getValue());
+                                    device.getDSID(), null, null, deviceStateUpdate.getValueAsInteger());
                         } else {
                             commandHaveNoEffect = true;
                         }
                         break;
-                    case DeviceStateUpdate.UPDATE_OPEN_CLOSE:
-                    case DeviceStateUpdate.UPDATE_ON_OFF:
-                        if (deviceStateUpdate.getValue() > 0) {
+                    case DeviceStateUpdate.OPEN_CLOSE:
+                    case DeviceStateUpdate.ON_OFF:
+                        if (deviceStateUpdate.getValueAsInteger() > 0) {
                             if (checkIsAllreadyMinMax(device) != 1) {
                                 requestSuccsessful = digitalSTROMClient.turnDeviceOn(connMan.getSessionToken(),
-                                        device.getDSID(), null);
+                                        device.getDSID(), null, null);
                                 if (requestSuccsessful) {
                                     sceneMan.addEcho(device.getDSID().getValue(), SceneEnum.MAXIMUM.getSceneNumber());
                                 }
@@ -707,40 +918,37 @@ public class DeviceStatusManagerImpl implements DeviceStatusManager {
                         } else {
                             if (checkIsAllreadyMinMax(device) != 0) {
                                 requestSuccsessful = digitalSTROMClient.turnDeviceOff(connMan.getSessionToken(),
-                                        device.getDSID(), null);
+                                        device.getDSID(), null, null);
                                 if (requestSuccsessful) {
                                     sceneMan.addEcho(device.getDSID().getValue(), SceneEnum.MINIMUM.getSceneNumber());
-                                }
-                                if (sensorJobExecutor != null) {
-                                    sensorJobExecutor.removeSensorJobs(device);
                                 }
                             } else {
                                 commandHaveNoEffect = true;
                             }
                         }
                         break;
-                    case DeviceStateUpdate.UPDATE_SLATPOSITION:
-                        if (device.getSlatPosition() != deviceStateUpdate.getValue()) {
+                    case DeviceStateUpdate.SLATPOSITION:
+                        if (device.getSlatPosition() != deviceStateUpdate.getValueAsInteger()) {
                             requestSuccsessful = digitalSTROMClient.setDeviceOutputValue(connMan.getSessionToken(),
-                                    device.getDSID(), null, DeviceConstants.DEVICE_SENSOR_SLAT_POSITION_OUTPUT,
-                                    deviceStateUpdate.getValue());
+                                    device.getDSID(), null, null, DeviceConstants.DEVICE_SENSOR_SLAT_POSITION_OUTPUT,
+                                    deviceStateUpdate.getValueAsInteger());
                         } else {
                             commandHaveNoEffect = true;
                         }
                         break;
-                    case DeviceStateUpdate.UPDATE_SLAT_STOP:
+                    case DeviceStateUpdate.SLAT_STOP:
                         this.sendStopComandsToDSS(device);
                         break;
-                    case DeviceStateUpdate.UPDATE_SLAT_MOVE:
-                        if (deviceStateUpdate.getValue() > 0) {
+                    case DeviceStateUpdate.SLAT_MOVE:
+                        if (deviceStateUpdate.getValueAsInteger() > 0) {
                             requestSuccsessful = digitalSTROMClient.turnDeviceOn(connMan.getSessionToken(),
-                                    device.getDSID(), null);
+                                    device.getDSID(), null, null);
                             if (requestSuccsessful) {
                                 sceneMan.addEcho(device.getDSID().getValue(), SceneEnum.MAXIMUM.getSceneNumber());
                             }
                         } else {
                             requestSuccsessful = digitalSTROMClient.turnDeviceOff(connMan.getSessionToken(),
-                                    device.getDSID(), null);
+                                    device.getDSID(), null, null);
                             if (requestSuccsessful) {
                                 sceneMan.addEcho(device.getDSID().getValue(), SceneEnum.MINIMUM.getSceneNumber());
                             }
@@ -752,78 +960,34 @@ public class DeviceStatusManagerImpl implements DeviceStatusManager {
                     case DeviceStateUpdate.UPDATE_CALL_SCENE:
                         if (SceneEnum.getScene((short) deviceStateUpdate.getValue()) != null) {
                             requestSuccsessful = digitalSTROMClient.callDeviceScene(connMan.getSessionToken(),
-                                    device.getDSID(), null, SceneEnum.getScene((short) deviceStateUpdate.getValue()),
-                                    true);
+                                    device.getDSID(), null, null,
+                                    SceneEnum.getScene((short) deviceStateUpdate.getValue()), true);
                         }
                         break;
                     case DeviceStateUpdate.UPDATE_UNDO_SCENE:
                         if (SceneEnum.getScene((short) deviceStateUpdate.getValue()) != null) {
                             requestSuccsessful = digitalSTROMClient.undoDeviceScene(connMan.getSessionToken(),
-                                    device.getDSID(), SceneEnum.getScene((short) deviceStateUpdate.getValue()));
+                                    device.getDSID(), null, null,
+                                    SceneEnum.getScene((short) deviceStateUpdate.getValue()));
                         }
                         break;
-                    case DeviceStateUpdate.UPDATE_ACTIVE_POWER:
-                        if (deviceStateUpdate.getValue() == 0) {
-                            logger.debug("Device need active power SensorData update");
-                            updateSensorData(new DeviceConsumptionSensorJob(device, SensorEnum.ACTIVE_POWER),
-                                    device.getActivePowerRefreshPriority());
-                            return;
-                        } else {
-                            int consumption = this.digitalSTROMClient.getDeviceSensorValue(connMan.getSessionToken(),
-                                    device.getDSID(), null, SensorEnum.ACTIVE_POWER);
-                            if (consumption >= 0) {
-                                device.updateInternalDeviceState(
-                                        new DeviceStateUpdateImpl(DeviceStateUpdate.UPDATE_ACTIVE_POWER, consumption));
-                                requestSuccsessful = true;
-                            }
-                        }
-                    case DeviceStateUpdate.UPDATE_OUTPUT_CURRENT:
-                        if (deviceStateUpdate.getValue() == 0) {
-                            logger.debug("Device need output current SensorData update");
-                            updateSensorData(new DeviceConsumptionSensorJob(device, SensorEnum.OUTPUT_CURRENT),
-                                    device.getOutputCurrentRefreshPriority());
-                            return;
-                        } else {
-                            int consumption = this.digitalSTROMClient.getDeviceSensorValue(connMan.getSessionToken(),
-                                    device.getDSID(), null, SensorEnum.OUTPUT_CURRENT);
-                            if (consumption >= 0) {
-                                device.updateInternalDeviceState(new DeviceStateUpdateImpl(
-                                        DeviceStateUpdate.UPDATE_OUTPUT_CURRENT, consumption));
-                                requestSuccsessful = true;
-                            }
-                        }
-                    case DeviceStateUpdate.UPDATE_ELECTRIC_METER:
-                        if (deviceStateUpdate.getValue() == 0) {
-                            logger.debug("Device need electric meter SensorData update");
-                            updateSensorData(new DeviceConsumptionSensorJob(device, SensorEnum.ELECTRIC_METER),
-                                    device.getElectricMeterRefreshPriority());
-                            return;
-                        } else {
-                            int consumption = this.digitalSTROMClient.getDeviceSensorValue(connMan.getSessionToken(),
-                                    device.getDSID(), null, SensorEnum.ELECTRIC_METER);
-                            if (consumption >= 0) {
-                                device.updateInternalDeviceState(new DeviceStateUpdateImpl(
-                                        DeviceStateUpdate.UPDATE_ELECTRIC_METER, consumption));
-                                requestSuccsessful = true;
-                            }
-                        }
-                    case DeviceStateUpdate.UPDATE_SLAT_ANGLE_DECREASE:
+                    case DeviceStateUpdate.SLAT_ANGLE_DECREASE:
                         // By UPDATE_SLAT_ANGLE_DECREASE, UPDATE_SLAT_ANGLE_INCREASE with value unequal 1 which will
-                        // handle in the pollingRunnable and UPDATE_OPEN_CLOSE_ANGLE the value will be set without
+                        // handled in the pollingRunnable and UPDATE_OPEN_CLOSE_ANGLE the value will be set without
                         // checking, because it was triggered by setting the slat position.
                         requestSuccsessful = true;
                         break;
-                    case DeviceStateUpdate.UPDATE_SLAT_ANGLE_INCREASE:
+                    case DeviceStateUpdate.SLAT_ANGLE_INCREASE:
                         requestSuccsessful = true;
                         break;
-                    case DeviceStateUpdate.UPDATE_OPEN_CLOSE_ANGLE:
+                    case DeviceStateUpdate.OPEN_CLOSE_ANGLE:
                         requestSuccsessful = true;
                         break;
-                    case DeviceStateUpdate.UPDATE_SLAT_ANGLE:
-                        if (device.getAnglePosition() != deviceStateUpdate.getValue()) {
+                    case DeviceStateUpdate.SLAT_ANGLE:
+                        if (device.getAnglePosition() != deviceStateUpdate.getValueAsInteger()) {
                             requestSuccsessful = digitalSTROMClient.setDeviceOutputValue(connMan.getSessionToken(),
-                                    device.getDSID(), null, DeviceConstants.DEVICE_SENSOR_SLAT_ANGLE_OUTPUT,
-                                    deviceStateUpdate.getValue());
+                                    device.getDSID(), null, null, DeviceConstants.DEVICE_SENSOR_SLAT_ANGLE_OUTPUT,
+                                    deviceStateUpdate.getValueAsInteger());
                         } else {
                             commandHaveNoEffect = true;
                         }
@@ -836,19 +1000,19 @@ public class DeviceStatusManagerImpl implements DeviceStatusManager {
                     default:
                         return;
                 }
-                if (commandHaveNoEffect) {
-                    logger.debug("Command {} for device with dSID {} not send to dSS, because it has no effect!",
-                            deviceStateUpdate.getType(), device.getDSID().getValue());
-                    return;
-                }
-                if (requestSuccsessful) {
-                    logger.debug("Send {} command to dSS and updateInternalDeviceState for device with dSID {}.",
-                            deviceStateUpdate.getType(), device.getDSID().getValue());
-                    device.updateInternalDeviceState(deviceStateUpdate);
-                } else {
-                    logger.debug("Can't send {} command for device with dSID {} to dSS!", deviceStateUpdate.getType(),
-                            device.getDSID().getValue());
-                }
+            }
+            if (commandHaveNoEffect) {
+                logger.debug("Command {} for device with dSID {} not send to dSS, because it has no effect!",
+                        deviceStateUpdate.getType(), device.getDSID().getValue());
+                return;
+            }
+            if (requestSuccsessful) {
+                logger.debug("Send {} command to dSS and updateInternalDeviceState for device with dSID {}.",
+                        deviceStateUpdate.getType(), device.getDSID().getValue());
+                device.updateInternalDeviceState(deviceStateUpdate);
+            } else {
+                logger.debug("Can't send {} command for device with dSID {} to dSS!", deviceStateUpdate.getType(),
+                        device.getDSID().getValue());
             }
         }
     }
@@ -860,15 +1024,24 @@ public class DeviceStatusManagerImpl implements DeviceStatusManager {
             this.sensorJobExecutor.startExecutor();
         }
         if (sensorJob != null && priority != null) {
-            if (priority.contains(Config.REFRESH_PRIORITY_HIGH)) {
-                sensorJobExecutor.addHighPriorityJob(sensorJob);
-            } else if (priority.contains(Config.REFRESH_PRIORITY_MEDIUM)) {
-                sensorJobExecutor.addMediumPriorityJob(sensorJob);
-            } else if (priority.contains(Config.REFRESH_PRIORITY_LOW)) {
-                sensorJobExecutor.addLowPriorityJob(sensorJob);
-            } else {
-                logger.debug("Sensor data update priority do {}  not exist! Please check the input!", priority);
-                return;
+            switch (priority) {
+                case Config.REFRESH_PRIORITY_HIGH:
+                    sensorJobExecutor.addHighPriorityJob(sensorJob);
+                    break;
+                case Config.REFRESH_PRIORITY_MEDIUM:
+                    sensorJobExecutor.addMediumPriorityJob(sensorJob);
+                    break;
+                case Config.REFRESH_PRIORITY_LOW:
+                    sensorJobExecutor.addLowPriorityJob(sensorJob);
+                    break;
+                default:
+                    try {
+                        long prio = Long.parseLong(priority);
+                        sensorJobExecutor.addPriorityJob(sensorJob, prio);
+                    } catch (NumberFormatException e) {
+                        logger.debug("Sensor data update priority do not exist! Please check the input!");
+                        return;
+                    }
             }
             logger.debug("Add new sensorJob {} with priority: {} to sensorJobExecuter", sensorJob.toString(), priority);
         }
@@ -882,40 +1055,23 @@ public class DeviceStatusManagerImpl implements DeviceStatusManager {
         }
 
         if (deviceStateUpdate != null) {
-            if (deviceStateUpdate.getValue() < 1000) {
+            if (deviceStateUpdate.getScenePriority() > -1) {
                 if (deviceStateUpdate.getType().equals(DeviceStateUpdate.UPDATE_SCENE_OUTPUT)) {
-                    sceneJobExecutor.addHighPriorityJob(
-                            new SceneOutputValueReadingJob(device, (short) deviceStateUpdate.getValue()));
-                    DeviceOutputValueSensorJob devOutJob = new DeviceOutputValueSensorJob(device);
-                    devOutJob.setInitalisationTime(0);
-                    updateSensorData(devOutJob, Config.REFRESH_PRIORITY_HIGH);
+                    sceneJobExecutor.addPriorityJob(
+                            new SceneOutputValueReadingJob(device, deviceStateUpdate.getSceneId()),
+                            deviceStateUpdate.getScenePriority().longValue());
                 } else {
-                    sceneJobExecutor.addHighPriorityJob(
-                            new SceneConfigReadingJob(device, (short) deviceStateUpdate.getValue()));
+                    sceneJobExecutor.addPriorityJob(new SceneConfigReadingJob(device, deviceStateUpdate.getSceneId()),
+                            deviceStateUpdate.getScenePriority().longValue());
                 }
-            } else if (deviceStateUpdate.getValue() < 2000) {
-                if (deviceStateUpdate.getType().equals(DeviceStateUpdate.UPDATE_SCENE_OUTPUT)) {
-                    sceneJobExecutor.addMediumPriorityJob(
-                            new SceneOutputValueReadingJob(device, (short) (deviceStateUpdate.getValue() - 1000)));
-                } else {
-                    sceneJobExecutor.addMediumPriorityJob(
-                            new SceneConfigReadingJob(device, (short) (deviceStateUpdate.getValue() - 1000)));
+                if (deviceStateUpdate.getScenePriority() == 0) {
+                    updateSensorData(new DeviceOutputValueSensorJob(device), "0");
                 }
-            } else if (deviceStateUpdate.getValue() >= 2000 && deviceStateUpdate.getValue() < 3000) {
-                if (deviceStateUpdate.getType().equals(DeviceStateUpdate.UPDATE_SCENE_OUTPUT)) {
-                    sceneJobExecutor.addLowPriorityJob(
-                            new SceneOutputValueReadingJob(device, (short) (deviceStateUpdate.getValue() - 2000)));
-                } else {
-                    sceneJobExecutor.addLowPriorityJob(
-                            new SceneConfigReadingJob(device, (short) (deviceStateUpdate.getValue() - 2000)));
-                }
+                logger.debug("Add new sceneReadingJob with priority: {} to SceneReadingJobExecuter",
+                        deviceStateUpdate.getScenePriority());
             } else {
-                logger.debug("Device state update value {} is out of range. Please check the input!",
-                        deviceStateUpdate.getValue());
-                return;
+                removeSensorJob(device, deviceStateUpdate);
             }
-            logger.debug("Add new sceneReadingJob with priority: {} to SceneReadingJobExecuter",
-                    new Integer(deviceStateUpdate.getValue()).toString().charAt(0));
         }
     }
 
@@ -923,18 +1079,29 @@ public class DeviceStatusManagerImpl implements DeviceStatusManager {
     public void registerDeviceListener(DeviceStatusListener deviceListener) {
         if (deviceListener != null) {
             String id = deviceListener.getDeviceStatusListenerID();
-            logger.debug("register DeviceListener with id: " + id);
             if (id.equals(DeviceStatusListener.DEVICE_DISCOVERY)) {
                 this.deviceDiscovery = deviceListener;
+                logger.debug("register Device-Discovery ");
                 for (Device device : strucMan.getDeviceMap().values()) {
                     deviceDiscovery.onDeviceAdded(device);
+                }
+                for (Circuit circuit : strucMan.getCircuitMap().values()) {
+                    deviceDiscovery.onDeviceAdded(circuit);
                 }
             } else {
                 Device intDevice = strucMan.getDeviceByDSID(deviceListener.getDeviceStatusListenerID());
                 if (intDevice != null) {
-                    intDevice.registerDeviceStateListener(deviceListener);
+                    logger.debug("register DeviceListener with id: {} to Device ", id);
+                    intDevice.registerDeviceStatusListener(deviceListener);
                 } else {
-                    deviceListener.onDeviceRemoved(null);
+                    Circuit intCircuit = strucMan
+                            .getCircuitByDSID(new DSID(deviceListener.getDeviceStatusListenerID()));
+                    if (intCircuit != null) {
+                        logger.debug("register DeviceListener with id: {} to Circuit ", id);
+                        intCircuit.registerDeviceStatusListener(deviceListener);
+                    } else {
+                        deviceListener.onDeviceRemoved(null);
+                    }
                 }
             }
         }
@@ -944,12 +1111,22 @@ public class DeviceStatusManagerImpl implements DeviceStatusManager {
     public void unregisterDeviceListener(DeviceStatusListener deviceListener) {
         if (deviceListener != null) {
             String id = deviceListener.getDeviceStatusListenerID();
+            logger.debug("unregister DeviceListener with id: " + id);
             if (id.equals(DeviceStatusListener.DEVICE_DISCOVERY)) {
                 this.deviceDiscovery = null;
             } else {
                 Device intDevice = strucMan.getDeviceByDSID(deviceListener.getDeviceStatusListenerID());
                 if (intDevice != null) {
-                    intDevice.unregisterDeviceStateListener();
+                    intDevice.unregisterDeviceStatusListener();
+                } else {
+                    Circuit intCircuit = strucMan
+                            .getCircuitByDSID(new DSID(deviceListener.getDeviceStatusListenerID()));
+                    if (intCircuit != null) {
+                        intCircuit.unregisterDeviceStatusListener();
+                        if (deviceDiscovery != null) {
+                            deviceDiscovery.onDeviceAdded(intCircuit);
+                        }
+                    }
                 }
             }
         }
@@ -1009,32 +1186,162 @@ public class DeviceStatusManagerImpl implements DeviceStatusManager {
     @Override
     public int getTotalPowerConsumption() {
         List<CachedMeteringValue> cachedConsumptionMeteringValues = digitalSTROMClient
-                .getLatest(connMan.getSessionToken(), MeteringTypeEnum.consumption, meters, MeteringUnitsEnum.W);
+                .getLatest(connMan.getSessionToken(), MeteringTypeEnum.CONSUMPTION, DsAPI.ALL_METERS, null);
         if (cachedConsumptionMeteringValues != null) {
             tempConsumption = 0;
             for (CachedMeteringValue value : cachedConsumptionMeteringValues) {
                 tempConsumption += value.getValue();
-            }
-            if (tempConsumption != totalPowerConsumption) {
-                totalPowerConsumption = tempConsumption;
+                if (strucMan.getCircuitByDSID(value.getDsid()) != null) {
+                    strucMan.getCircuitByDSID(value.getDsid()).addMeteringValue(value);
+                }
             }
         }
-        return totalPowerConsumption;
+        return tempConsumption;
+    }
+
+    private void getMeterData() {
+        int val = getTotalPowerConsumption();
+        if (totalPowerConsumptionListener != null) {
+            totalPowerConsumptionListener.onTotalPowerConsumptionChanged(val);
+        }
+        val = getTotalEnergyMeterValue();
+        if (totalPowerConsumptionListener != null) {
+            totalPowerConsumptionListener.onEnergyMeterValueChanged(val);
+        }
+
     }
 
     @Override
     public int getTotalEnergyMeterValue() {
         List<CachedMeteringValue> cachedEnergyMeteringValues = digitalSTROMClient.getLatest(connMan.getSessionToken(),
-                MeteringTypeEnum.energy, meters, MeteringUnitsEnum.Wh);
+                MeteringTypeEnum.ENERGY, DsAPI.ALL_METERS, null);
         if (cachedEnergyMeteringValues != null) {
             tempEnergyMeter = 0;
             for (CachedMeteringValue value : cachedEnergyMeteringValues) {
                 tempEnergyMeter += value.getValue();
-            }
-            if (tempEnergyMeter != totalEnergyMeter) {
-                totalEnergyMeter = tempEnergyMeter;
+                if (strucMan.getCircuitByDSID(value.getDsid()) != null) {
+                    strucMan.getCircuitByDSID(value.getDsid()).addMeteringValue(value);
+                }
             }
         }
-        return totalEnergyMeter;
+        return tempEnergyMeter;
+    }
+
+    @Override
+    public int getTotalEnergyMeterWsValue() {
+        List<CachedMeteringValue> cachedEnergyMeteringValues = digitalSTROMClient.getLatest(connMan.getSessionToken(),
+                MeteringTypeEnum.ENERGY, DsAPI.ALL_METERS, MeteringUnitsEnum.WS);
+        if (cachedEnergyMeteringValues != null) {
+            tempEnergyMeterWs = 0;
+            for (CachedMeteringValue value : cachedEnergyMeteringValues) {
+                tempEnergyMeterWs += value.getValue();
+                if (strucMan.getCircuitByDSID(value.getDsid()) != null) {
+                    strucMan.getCircuitByDSID(value.getDsid()).addMeteringValue(value);
+                }
+            }
+        }
+        return tempEnergyMeterWs;
+    }
+
+    private void setInizialStateWithLastCallScenes() {
+        if (sceneMan != null) {
+            JsonObject response = connMan.getDigitalSTROMAPI().query2(connMan.getSessionToken(), LAST_CALL_SCENE_QUERY);
+            if (response.isJsonObject()) {
+                for (Entry<String, JsonElement> entry : response.entrySet()) {
+                    if (entry.getValue().isJsonObject()) {
+                        JsonObject zone = entry.getValue().getAsJsonObject();
+                        int zoneID = -1;
+                        short groupID = -1;
+                        short sceneID = -1;
+                        if (zone.get(JSONApiResponseKeysEnum.ZONE_ID.getKey()) != null) {
+                            zoneID = zone.get(JSONApiResponseKeysEnum.ZONE_ID.getKey()).getAsInt();
+                        }
+                        for (Entry<String, JsonElement> groupEntry : zone.entrySet()) {
+                            if (groupEntry.getKey().startsWith("group") && groupEntry.getValue().isJsonObject()) {
+                                JsonObject group = groupEntry.getValue().getAsJsonObject();
+                                if (group.get(JSONApiResponseKeysEnum.DEVICES.getKey()) != null) {
+                                    if (group.get(JSONApiResponseKeysEnum.GROUP.getKey()) != null) {
+                                        groupID = group.get(JSONApiResponseKeysEnum.GROUP.getKey()).getAsShort();
+                                    }
+                                    if (group.get(JSONApiResponseKeysEnum.LAST_CALL_SCENE.getKey()) != null) {
+                                        sceneID = group.get(JSONApiResponseKeysEnum.LAST_CALL_SCENE.getKey())
+                                                .getAsShort();
+                                    }
+                                    if (zoneID > -1 && groupID > -1 && sceneID > -1) {
+                                        logger.debug(
+                                                "inizial state, call scene " + zoneID + "-" + groupID + "-" + sceneID);
+                                        sceneMan.callInternalSceneWithoutDiscovery(zoneID, groupID, sceneID);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    @Override
+    public void handleEvent(EventItem eventItem) {
+        if (EventNames.DEVICE_SENSOR_VALUE.equals(eventItem.getName())
+                || EventNames.DEVICE_BINARY_INPUT_EVENT.equals(eventItem.getName())) {
+            logger.debug("Detect " + eventItem.getName() + " eventItem=" + eventItem.toString());
+            Device dev = getDeviceOfEvent(eventItem);
+            if (dev != null) {
+                if (EventNames.DEVICE_SENSOR_VALUE.equals(eventItem.getName())) {
+                    dev.setDeviceSensorByEvent(eventItem);
+                } else {
+                    DeviceBinarayInputEnum binaryInputType = DeviceBinarayInputEnum.getdeviceBinarayInput(
+                            Short.parseShort(eventItem.getProperties().get(EventResponseEnum.INPUT_TYPE)));
+                    Short newState = Short.parseShort(eventItem.getProperties().get(EventResponseEnum.INPUT_STATE));
+                    if (binaryInputType != null) {
+                        dev.setBinaryInputState(binaryInputType, newState);
+                    }
+                }
+            }
+        }
+    }
+
+    private Device getDeviceOfEvent(EventItem eventItem) {
+        if (eventItem.getSource().get(EventResponseEnum.DSID) != null) {
+            String dSID = eventItem.getSource().get(EventResponseEnum.DSID);
+            Device dev = strucMan.getDeviceByDSID(dSID);
+            if (dev == null) {
+                dev = strucMan.getDeviceByDSUID(dSID);
+            }
+            return dev;
+        }
+        return null;
+    }
+
+    @Override
+    public List<String> getSupportetEvents() {
+        return SUPPORTED_EVENTS;
+    }
+
+    @Override
+    public boolean supportsEvent(String eventName) {
+        return SUPPORTED_EVENTS.contains(eventName);
+    }
+
+    @Override
+    public String getUID() {
+        return getClass().getName();
+    }
+
+    @Override
+    public void setEventListener(EventListener eventListener) {
+        if (this.eventListener != null) {
+            this.eventListener.removeEventHandler(this);
+        }
+        this.eventListener = eventListener;
+    }
+
+    @Override
+    public void unsetEventListener(EventListener eventListener) {
+        if (this.eventListener != null) {
+            this.eventListener.removeEventHandler(this);
+        }
+        this.eventListener = null;
     }
 }

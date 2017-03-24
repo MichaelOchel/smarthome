@@ -29,16 +29,21 @@ public class JSONDetailedGroupInfoImpl implements DetailedGroupInfo {
     private short groupId = 0;
     private List<String> deviceList = null;
 
+    /**
+     * Creates a new {@link JSONDetailedGroupInfoImpl} through the {@link JsonObject}.
+     *
+     * @param jObject of the server response, must not be null
+     */
     public JSONDetailedGroupInfoImpl(JsonObject jObject) {
         this.deviceList = new LinkedList<String>();
-        if (jObject.get(JSONApiResponseKeysEnum.GROUP_NAME.getKey()) != null) {
-            name = jObject.get(JSONApiResponseKeysEnum.GROUP_NAME.getKey()).getAsString();
+        if (jObject.get(JSONApiResponseKeysEnum.NAME.getKey()) != null) {
+            name = jObject.get(JSONApiResponseKeysEnum.NAME.getKey()).getAsString();
         }
-        if (jObject.get(JSONApiResponseKeysEnum.GROUP_ID.getKey()) != null) {
-            this.groupId = jObject.get(JSONApiResponseKeysEnum.GROUP_ID.getKey()).getAsShort();
+        if (jObject.get(JSONApiResponseKeysEnum.ID.getKey()) != null) {
+            this.groupId = jObject.get(JSONApiResponseKeysEnum.ID.getKey()).getAsShort();
         }
-        if (jObject.get(JSONApiResponseKeysEnum.GROUP_DEVICES.getKey()) instanceof JsonArray) {
-            JsonArray array = (JsonArray) jObject.get(JSONApiResponseKeysEnum.GROUP_DEVICES.getKey());
+        if (jObject.get(JSONApiResponseKeysEnum.DEVICES.getKey()) instanceof JsonArray) {
+            JsonArray array = (JsonArray) jObject.get(JSONApiResponseKeysEnum.DEVICES.getKey());
 
             for (int i = 0; i < array.size(); i++) {
                 if (array.get(i) != null) {

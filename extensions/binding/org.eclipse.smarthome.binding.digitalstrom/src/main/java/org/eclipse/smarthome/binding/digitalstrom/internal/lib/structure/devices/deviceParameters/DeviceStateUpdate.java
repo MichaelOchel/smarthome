@@ -9,6 +9,8 @@ package org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.device
 
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.sensorJobExecutor.SensorJobExecutor;
 import org.eclipse.smarthome.binding.digitalstrom.internal.lib.sensorJobExecutor.sensorJob.SensorJob;
+import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.constants.DeviceBinarayInputEnum;
+import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.constants.SensorEnum;
 
 /**
  * Represents a device state update for lights, joker, shades and sensor data.
@@ -19,32 +21,37 @@ import org.eclipse.smarthome.binding.digitalstrom.internal.lib.sensorJobExecutor
 public interface DeviceStateUpdate {
 
     // Update types
-
+    // TODO: SLAT is in principle the same like OUTPUT, so may it is better to delete SLAT... and change all to OUTPUT..
+    // in certain circumstances it is also better to rename SLAT_ANGLE to e.g. SECONDARY_OUTPUT
     // light
-    public final static String UPDATE_BRIGHTNESS = "brightness";
-    public final static String UPDATE_ON_OFF = "OnOff";
-    public final static String UPDATE_BRIGHTNESS_INCREASE = "brightnessIncrese";
-    public final static String UPDATE_BRIGHTNESS_DECREASE = "brightnessDecrese";
-    public final static String UPDATE_BRIGHTNESS_STOP = "brightnessStop";
-    public final static String UPDATE_BRIGHTNESS_MOVE = "brightnessMove";
+    public final static String OUTPUT = "output";
+    public final static String ON_OFF = "OnOff";
+    public final static String OUTPUT_INCREASE = "outputIncrese";
+    public final static String OUTPUT_DECREASE = "outputDecrese";
+    public final static String OUTPUT_STOP = "outputStop";
+    public final static String OUTPUT_MOVE = "outputMove";
 
     // shades
-    public final static String UPDATE_SLATPOSITION = "slatposition";
-    public static final String UPDATE_SLAT_ANGLE = "slatAngle";
-    public final static String UPDATE_SLAT_INCREASE = "slatIncrese";
-    public final static String UPDATE_SLAT_DECREASE = "slatDecrese";
-    public static final String UPDATE_SLAT_ANGLE_INCREASE = "slatAngleIncrese";
-    public static final String UPDATE_SLAT_ANGLE_DECREASE = "slatAngleDecrese";
-    public final static String UPDATE_OPEN_CLOSE = "openClose";
-    public static final String UPDATE_OPEN_CLOSE_ANGLE = "openCloseAngle";
-    public final static String UPDATE_SLAT_MOVE = "slatMove";
-    public final static String UPDATE_SLAT_STOP = "slatStop";
+    public final static String SLATPOSITION = "slatposition";
+    public static final String SLAT_ANGLE = "slatAngle";
+    public final static String SLAT_INCREASE = "slatIncrese";
+    public final static String SLAT_DECREASE = "slatDecrese";
+    public static final String SLAT_ANGLE_INCREASE = "slatAngleIncrese";
+    public static final String SLAT_ANGLE_DECREASE = "slatAngleDecrese";
+    public final static String OPEN_CLOSE = "openClose";
+    public static final String OPEN_CLOSE_ANGLE = "openCloseAngle";
+    public final static String SLAT_MOVE = "slatMove";
+    public final static String SLAT_STOP = "slatStop";
 
     // sensor data
-    public final static String UPDATE_ACTIVE_POWER = "activePower";
-    public final static String UPDATE_OUTPUT_CURRENT = "outputCurrent";
-    public final static String UPDATE_ELECTRIC_METER = "electricMeter";
     public final static String UPDATE_OUTPUT_VALUE = "outputValue";
+    public final static String UPDATE_DEVICE_SENSOR = "deviceSensor-";
+
+    // metering data
+    public final static String UPDATE_CIRCUIT_METER = "circuitMeter";
+
+    // binary inputs
+    public static final String BINARY_INPUT = "binaryInput-";
 
     // scene
     /** A scene call can have the value between 0 and 127. */
@@ -57,12 +64,17 @@ public interface DeviceStateUpdate {
     /** command to refresh the output value of an device. */
     public static final String REFRESH_OUTPUT = "refreshOutput";
 
+    // standard values
+    public static final int ON_VALUE = 1;
+    public static final int OFF_VALUE = -1;
+
     /**
      * Returns the state update value.
      * <p>
      * <b>NOTE:</b>
+     * </p>
      * <ul>
-     * <li>For all OnOff-types the value for off is < 0 and for on > 0.</li>
+     * <li>For all OnOff-types the value for off is lower than 0 and for on higher than 0.</li>
      * <li>For all Increase- and Decrease-types the value is the new output value.</li>
      * <li>For SceneCall-type the value is between 0 and 127.</li>
      * <li>For all SceneUndo-types the value is the new output value.</li>
@@ -72,7 +84,47 @@ public interface DeviceStateUpdate {
      *
      * @return new state value
      */
-    public int getValue();
+    public Object getValue();
+
+    /**
+     * Returns the value as {@link Integer}.
+     *
+     * @return integer value
+     * @see #getValue()
+     */
+    public Integer getValueAsInteger();
+
+    /**
+     * Returns the value as {@link String}.
+     *
+     * @return string value
+     * @see #getValue()
+     */
+    public String getValueAsString();
+
+    /**
+     * Returns the value as {@link Short}.
+     *
+     * @return short value
+     * @see #getValue()
+     */
+    public Short getValueAsShort();
+
+    /**
+     * Returns the value as {@link Float}.
+     *
+     * @return float value
+     * @see #getValue()
+     */
+    public Float getValueAsFloat();
+
+    /**
+     * Returns the value as {@link Short}-array.
+     *
+     * @return short[] value
+     * @see #getValue()
+     */
+    public Short[] getValueAsShortArray();
 
     /**
      * Returns the state update type.
@@ -80,4 +132,57 @@ public interface DeviceStateUpdate {
      * @return state update type
      */
     public String getType();
+
+    /**
+     * Returns the update type as {@link SensorEnum} or null, if the type is not a {@link #UPDATE_DEVICE_SENSOR} type.
+     *
+     * @return type as {@link SensorEnum} or null
+     */
+    public SensorEnum getTypeAsSensorEnum();
+
+    /**
+     * Returns true, if this {@link DeviceStateUpdate} is a {@link #UPDATE_DEVICE_SENSOR} type, otherwise false.
+     *
+     * @return true, if it is a sensor type
+     */
+    public boolean isSensorUpdateType();
+
+    /**
+     * Returns the scene id of this {@link DeviceStateUpdate}, if this {@link DeviceStateUpdate} is a scene update type,
+     * otherwise it will be returned -1.
+     *
+     * @return the scene id or -1
+     */
+    public Short getSceneId();
+
+    /**
+     * Returns the scene configuration or output reading priority, if this {@link DeviceStateUpdate} is a
+     * {@link #UPDATE_SCENE_CONFIG} or {@link #UPDATE_SCENE_OUTPUT} type.
+     *
+     * @return scene reading priority
+     */
+    public Short getScenePriority();
+
+    /**
+     * Returns true, if this {@link DeviceStateUpdate} is a {@link #UPDATE_SCENE_CONFIG} or {@link #UPDATE_SCENE_OUTPUT}
+     * type, otherwise false.
+     *
+     * @return true, if it is a scene reading type
+     */
+    public boolean isSceneUpdateType();
+
+    /**
+     * Returns the update type as {@link DeviceBinarayInputEnum} or null, if the type is not a {@link #BINARY_INPUT}
+     * type.
+     *
+     * @return type as {@link DeviceBinarayInputEnum} or null
+     */
+    public DeviceBinarayInputEnum getTypeAsDeviceBinarayInputEnum();
+
+    /**
+     * Returns true, if this {@link DeviceStateUpdate} is a {@link #BINARY_INPUT} type, otherwise false.
+     *
+     * @return true, if it is a binary input type
+     */
+    public boolean isBinarayInputType();
 }

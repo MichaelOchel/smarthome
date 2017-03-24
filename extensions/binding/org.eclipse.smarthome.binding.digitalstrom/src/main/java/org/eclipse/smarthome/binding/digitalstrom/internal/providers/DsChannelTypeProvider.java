@@ -7,14 +7,23 @@
  */
 package org.eclipse.smarthome.binding.digitalstrom.internal.providers;
 
+import static org.eclipse.smarthome.binding.digitalstrom.DigitalSTROMBindingConstants.BINDING_ID;
+
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
+import java.util.Set;
 
 import org.eclipse.smarthome.binding.digitalstrom.DigitalSTROMBindingConstants;
-import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.SensorEnum;
-import org.eclipse.smarthome.core.i18n.TranslationProvider;
+import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.constants.DeviceBinarayInputEnum;
+import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.constants.FunctionalColorGroupEnum;
+import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.constants.MeteringTypeEnum;
+import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.constants.MeteringUnitsEnum;
+import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.constants.OutputModeEnum;
+import org.eclipse.smarthome.binding.digitalstrom.internal.lib.structure.devices.deviceParameters.constants.SensorEnum;
 import org.eclipse.smarthome.core.thing.type.ChannelGroupType;
 import org.eclipse.smarthome.core.thing.type.ChannelGroupTypeUID;
 import org.eclipse.smarthome.core.thing.type.ChannelType;
@@ -22,10 +31,7 @@ import org.eclipse.smarthome.core.thing.type.ChannelTypeProvider;
 import org.eclipse.smarthome.core.thing.type.ChannelTypeUID;
 import org.eclipse.smarthome.core.types.StateDescription;
 import org.eclipse.smarthome.core.types.StateOption;
-import org.osgi.framework.Bundle;
-import org.osgi.service.component.ComponentContext;
 
-import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 
 /**
@@ -36,197 +42,451 @@ import com.google.common.collect.Sets;
  * @author Matthias Siegele - Initial contribution
  *
  */
-public class DsChannelTypeProvider implements ChannelTypeProvider {
+public class DsChannelTypeProvider extends BaseDsI18n implements ChannelTypeProvider {
 
-    public static final List<String> SUPPORTED_CHANNEL_TYPES = Lists.newArrayList(
-            DigitalSTROMBindingConstants.CHANNEL_ID_BRIGHTNESS, DigitalSTROMBindingConstants.CHANNEL_ID_LIGHT_SWITCH,
-            DigitalSTROMBindingConstants.CHANNEL_ID_COMBINED_2_STAGE_SWITCH,
-            DigitalSTROMBindingConstants.CHANNEL_ID_COMBINED_3_STAGE_SWITCH,
-            DigitalSTROMBindingConstants.CHANNEL_ID_GENERAL_DIMM,
-            DigitalSTROMBindingConstants.CHANNEL_ID_GENERAL_SWITCH,
-            DigitalSTROMBindingConstants.CHANNEL_ID_GENERAL_COMBINED_2_STAGE_SWITCH,
-            DigitalSTROMBindingConstants.CHANNEL_ID_GENERAL_COMBINED_3_STAGE_SWITCH,
-            DigitalSTROMBindingConstants.CHANNEL_ID_SCENE, DigitalSTROMBindingConstants.CHANNEL_ID_SHADE,
-            DigitalSTROMBindingConstants.CHANNEL_ID_ELECTRIC_METER,
-            DigitalSTROMBindingConstants.CHANNEL_ID_OUTPUT_CURRENT,
-            DigitalSTROMBindingConstants.CHANNEL_ID_ACTIVE_POWER,
-            DigitalSTROMBindingConstants.CHANNEL_ID_TOTAL_ACTIVE_POWER,
-            DigitalSTROMBindingConstants.CHANNEL_ID_TOTAL_ELECTRIC_METER,
-            DigitalSTROMBindingConstants.CHANNEL_ID_SHADE_ANGLE);
-
-    private TranslationProvider i18n = null;
-    private Bundle bundle = null;
+    // channelID building (effect group type + (nothing || SEPERATOR + item type || SEPERATOR + extended item type) e.g.
+    // light_switch, shade or shade_angle
+    // channel effect group type
+    public final static String LIGHT = "light"; // and tag
+    public final static String SHADE = "shade"; // and tag
+    public final static String HEATING = "heating"; // and tag
+    public final static String GENERAL = "general";
+    public final static String SCENE = "scene";
+    // channel extended item type
+    public final static String WIPE = "wipe";
+    public final static String ANGLE = "angle";
+    public final static String STAGE = "stage"; // pre stageses e.g. 2+STAGE_SWITCH
+    public final static String TEMPERATURE_CONTROLLED = "temperature_controlled";
 
     // item types
-    private final String DIMMER = "Dimmer";
-    private final String SWITCH = "Switch";
-    private final String SHADE = "Rollershutter";
-    private final String STRING = "String";
-    private final String NUMBER = "Number";
+    public final static String DIMMER = "Dimmer";
+    public final static String SWITCH = "Switch";
+    public final static String ROLLERSHUTTER = "Rollershutter";
+    public final static String STRING = "String";
+    public final static String NUMBER = "Number";
 
-    private StateDescription getSensorStateDescription(String shortcutUnit) {
-        return shortcutUnit.equals(SensorEnum.ELECTRIC_METER.getUnitShortcut())
-                ? new StateDescription(null, null, null, "%.3f " + shortcutUnit, true, null)
-                : new StateDescription(null, null, null, "%d " + shortcutUnit, true, null);
-    }
+    public final static String TOTAL_PRE = "total";
+    public static final String BINARY_INPUT_PRE = "binary_input";
+    public static final String OPTION = "opt";
 
-    private StateDescription getCombinedStageDescription(short stages, boolean isLight, Locale locale) {
-        List<StateOption> stateOptions = new ArrayList<StateOption>();
-        if (isLight) {
-            stateOptions.add(new StateOption(DigitalSTROMBindingConstants.OPTION_COMBINED_BOTH_OFF,
-                    getText("OPTION_BOTH_LIGHTS_OFF", locale)));
-            stateOptions.add(new StateOption(DigitalSTROMBindingConstants.OPTION_COMBINED_BOTH_ON,
-                    getText("OPTION_BOTH_LIGHTS_ON", locale)));
-            stateOptions.add(new StateOption(DigitalSTROMBindingConstants.OPTION_COMBINED_FIRST_ON,
-                    getText("OPTION_FIRST_LIGHT_ON", locale)));
-            if (stages == 3) {
-                stateOptions.add(new StateOption(DigitalSTROMBindingConstants.OPTION_COMBINED_SECOND_ON,
-                        getText("OPTION_SECOND_LIGHT_ON", locale)));
+    // tags
+    private final String GE = "GE";
+    private final String GR = "GR";
+    private final String BL = "BL";
+    private final String SW = "SW";
+    private final String DS = "DS";
+    private final String JOKER = "JOKER";
+
+    // categories
+    private final String CATEGORY_BLINDES = "Blinds";
+    private final String CATEGORY_DIMMABLE_LIGHT = "DimmableLight";
+    private final String CATEGORY_CARBONE_DIOXIDE = "CarbonDioxide";
+    private final String CATEGORY_ENERGY = "Energy";
+    private final String CATEGORY_HUMIDITY = "Humidity";
+    private final String CATEGORY_BRIGHTNESS = "Brightness";
+    private final String CATEGORY_LIGHT = "Light";
+    private final String CATEGORY_PRESSURE = "Pressure";
+    private final String CATEGORY_SOUND_VOLUME = "SoundVolume";
+    private final String CATEGORY_TEMPERATURE = "Temperature";
+    private final String CATEGORY_WIND = "Wind";
+    private final String CATEGORY_RAIN = "Rain";
+    private final String CATEGORY_BATTERY = "Battery";
+    private final String CATEGORY_DOOR = "Door";
+    private final String CATEGORY_WINDOW = "Window";
+    private final String CATEGORY_GARAGE_DOOR = "GarageDoor";
+    private final String CATEGORY_SMOKE = "Smoke";
+    private final String CATEGORY_ALARM = "Alarm";
+    private final String CATEGORY_MOTION = "Motion";
+
+    /**
+     * Returns the output channel type id as {@link String} for the given {@link FunctionalColorGroupEnum} and
+     * {@link OutputModeEnum} or null, if no channel type exists for the given {@link FunctionalColorGroupEnum} and
+     * {@link OutputModeEnum}.
+     *
+     * @param functionalGroup of the {@link Device}
+     * @param outputMode of the {@link Device}
+     * @return the output channel type id or null
+     */
+    public static String getOutputChannelTypeID(FunctionalColorGroupEnum functionalGroup, OutputModeEnum outputMode) {
+        if (functionalGroup != null && outputMode != null) {
+            String channelPreID = GENERAL;
+            if (functionalGroup.equals(FunctionalColorGroupEnum.YELLOW)) {
+                channelPreID = LIGHT;
             }
-        } else {
-            stateOptions.add(new StateOption(DigitalSTROMBindingConstants.OPTION_COMBINED_BOTH_OFF,
-                    getText("OPTION_BOTH_RELAIS_OFF", locale)));
-            stateOptions.add(new StateOption(DigitalSTROMBindingConstants.OPTION_COMBINED_BOTH_ON,
-                    getText("OPTION_BOTH_RELAIS_ON", locale)));
-            stateOptions.add(new StateOption(DigitalSTROMBindingConstants.OPTION_COMBINED_FIRST_ON,
-                    getText("OPTION_FIRST_RELAIS_ON", locale)));
-            if (stages == 3) {
-                stateOptions.add(new StateOption(DigitalSTROMBindingConstants.OPTION_COMBINED_SECOND_ON,
-                        getText("OPTION_SECOND_RELAIS_ON", locale)));
+            if (functionalGroup.equals(FunctionalColorGroupEnum.GREY)) {
+                if (outputMode.equals(OutputModeEnum.POSITION_CON)) {
+                    return buildIdentifier(SHADE);
+                }
+                if (outputMode.equals(OutputModeEnum.POSITION_CON_US)) {
+                    return buildIdentifier(SHADE, ANGLE);
+                }
+            }
+            if (functionalGroup.equals(FunctionalColorGroupEnum.BLUE)) {
+                channelPreID = HEATING;
+                if (OutputModeEnum.outputModeIsTemperationControlled(outputMode)) {
+                    return buildIdentifier(channelPreID, TEMPERATURE_CONTROLLED);
+                }
+            }
+            if (OutputModeEnum.outputModeIsSwitch(outputMode)) {
+                return buildIdentifier(channelPreID, SWITCH);
+            }
+            if (OutputModeEnum.outputModeIsDimmable(outputMode)) {
+                return buildIdentifier(channelPreID, DIMMER);
+            }
+            if (!channelPreID.equals(HEATING)) {
+                if (outputMode.equals(OutputModeEnum.COMBINED_2_STAGE_SWITCH)) {
+                    return buildIdentifier(channelPreID, "2", STAGE);
+                }
+                if (outputMode.equals(OutputModeEnum.COMBINED_3_STAGE_SWITCH)) {
+                    return buildIdentifier(channelPreID, "3", STAGE);
+                }
             }
         }
-        return new StateDescription(null, null, null, null, false, stateOptions);
+        return null;
     }
 
-    protected void activate(ComponentContext componentContext) {
-        this.bundle = componentContext.getBundleContext().getBundle();
+    public static String getMeteringChannelID(MeteringTypeEnum type, MeteringUnitsEnum unit, boolean isTotal) {
+        if (isTotal) {
+            return buildIdentifier(TOTAL_PRE, type, unit);
+        } else {
+            return buildIdentifier(type, unit);
+        }
     }
 
-    protected void deactivate(ComponentContext componentContext) {
-        this.bundle = null;
+    public static MeteringTypeEnum getMeteringType(String channelID) {
+        // check metering channel
+        String[] meteringChannelSplit = channelID.split(SEPERATOR);
+        if (meteringChannelSplit.length > 1) {
+            short offset = 0;
+            // if total_
+            if (meteringChannelSplit.length == 3) {
+                offset = 1;
+            }
+            try {
+                // check through IllegalArgumentException, if channel is metering
+                return MeteringTypeEnum.valueOf(meteringChannelSplit[0 + offset].toUpperCase());
+            } catch (IllegalArgumentException e) {
+                return null;
+            }
+        }
+        return null;
     }
 
-    protected void setTranslationProvider(TranslationProvider i18n) {
-        this.i18n = i18n;
-    };
+    private static List<String> supportedOutputChannelTypes = new ArrayList<>();
 
-    protected void unsetTranslationProvider(TranslationProvider i18n) {
-        this.i18n = null;
-    };
+    /**
+     * Returns true, if the given channel type id is a output channel.
+     *
+     * @param channelTypeID to check
+     * @return true, if channel type id is output channel
+     */
+    public static boolean isOutputChannel(String channelTypeID) {
+        return supportedOutputChannelTypes.contains(channelTypeID);
+    }
 
-    private String getText(String key, Locale locale) {
-        return i18n != null ? i18n.getText(bundle, key, i18n.getText(bundle, key, key, Locale.ENGLISH), locale) : key;
+    @Override
+    protected void init() {
+        String channelIDpre = GENERAL;
+        for (short i = 0; i < 3; i++) {
+            if (i == 1) {
+                channelIDpre = LIGHT;
+            }
+            if (i == 2) {
+                channelIDpre = HEATING;
+                supportedOutputChannelTypes.add(buildIdentifier(channelIDpre, TEMPERATURE_CONTROLLED));
+            }
+            supportedOutputChannelTypes.add(buildIdentifier(channelIDpre, SWITCH));
+            supportedOutputChannelTypes.add(buildIdentifier(channelIDpre, DIMMER));
+            if (i < 2) {
+                supportedOutputChannelTypes.add(buildIdentifier(channelIDpre, "2", STAGE));
+                supportedOutputChannelTypes.add(buildIdentifier(channelIDpre, "3", STAGE));
+            }
+        }
+        channelIDpre = SHADE;
+        supportedOutputChannelTypes.add(channelIDpre);
+        supportedOutputChannelTypes.add(buildIdentifier(channelIDpre, ANGLE));
+        supportedOutputChannelTypes.add(SCENE);
+    }
+
+    private String getSensorCategory(SensorEnum sensorType) {
+        switch (sensorType) {
+            case ACTIVE_POWER:
+            case ELECTRIC_METER:
+            case OUTPUT_CURRENT:
+            case OUTPUT_CURRENT_H:
+            case POWER_CONSUMPTION:
+                return CATEGORY_ENERGY;
+            case AIR_PRESSURE:
+                return CATEGORY_PRESSURE;
+            case CARBON_DIOXIDE:
+                return CATEGORY_CARBONE_DIOXIDE;
+            case PRECIPITATION:
+                return CATEGORY_RAIN;
+            case RELATIVE_HUMIDITY_INDOORS:
+            case RELATIVE_HUMIDITY_OUTDOORS:
+                return CATEGORY_HUMIDITY;
+            case ROOM_TEMPERATURE_CONTROL_VARIABLE:
+                break;
+            case ROOM_TEMPERATURE_SET_POINT:
+                break;
+            case TEMPERATURE_INDOORS:
+            case TEMPERATURE_OUTDOORS:
+                return CATEGORY_TEMPERATURE;
+            case WIND_DIRECTION:
+            case WIND_SPEED:
+                return CATEGORY_WIND;
+            case SOUND_PRESSURE_LEVEL:
+                return CATEGORY_SOUND_VOLUME;
+            case BRIGHTNESS_INDOORS:
+            case BRIGHTNESS_OUTDOORS:
+                return CATEGORY_BRIGHTNESS;
+            default:
+                break;
+
+        }
+        return null;
+    }
+
+    private String getBinaryInputCategory(DeviceBinarayInputEnum binaryInputType) {
+        switch (binaryInputType) {
+            case BATTERY_STATUS_IS_LOW:
+                return CATEGORY_BATTERY;
+            case SUN_RADIATION:
+            case SUN_PROTECTION:
+            case TWILIGHT:
+            case BRIGHTNESS:
+                return CATEGORY_BRIGHTNESS;
+            case HEATING_OPERATION_ON_OFF:
+            case CHANGE_OVER_HEATING_COOLING:
+            case TEMPERATION_BELOW_LIMIT:
+                return CATEGORY_TEMPERATURE;
+            case DOOR_IS_OPEN:
+                return CATEGORY_DOOR;
+            case GARAGE_DOOR_IS_OPEN:
+                return CATEGORY_GARAGE_DOOR;
+            case PRESENCE:
+            case PRESENCE_IN_DARKNESS:
+            case MOTION:
+            case MOTION_IN_DARKNESS:
+                return CATEGORY_MOTION;
+            case RAIN:
+                return CATEGORY_RAIN;
+            case SMOKE:
+                return CATEGORY_SMOKE;
+            case WINDOW_IS_OPEN:
+            case WINDOW_IS_TILTED:
+                return CATEGORY_WINDOW;
+            case WIND_STRENGHT_ABOVE_LIMIT:
+                return CATEGORY_WIND;
+            case FROST:
+                return CATEGORY_ALARM;
+            default:
+                break;
+
+        }
+        return null;
+    }
+
+    private StateDescription getSensorStateDescription(SensorEnum sensorType) {
+        // the digitalSTROM resolution for temperature in kelvin is not correct but sensor-events and cached values are
+        // shown in °C so we will use this unit for temperature sensors
+        String unitShortCut = sensorType.getUnitShortcut();
+        if (unitShortCut.equals("%")) {
+            unitShortCut = "%%";
+        }
+        if (sensorType.toString().contains("TEMPERATURE")) {
+            unitShortCut = "°C";
+        }
+        return new StateDescription(null, null, null, sensorType.getPattern() + " " + unitShortCut, true, null);
+    }
+
+    private String getStageChannelOption(String type, String option) {
+        return buildIdentifier(type, STAGE, OPTION, option);
+    }
+
+    private StateDescription getStageDescription(String channelID, Locale locale) {
+        if (channelID.contains(STAGE.toLowerCase())) {
+            List<StateOption> stateOptions = new ArrayList<StateOption>();
+            if (channelID.contains(LIGHT)) {
+                stateOptions.add(new StateOption(DigitalSTROMBindingConstants.OPTION_COMBINED_BOTH_OFF, getText(
+                        getStageChannelOption(LIGHT, DigitalSTROMBindingConstants.OPTION_COMBINED_BOTH_OFF), locale)));
+                stateOptions.add(new StateOption(DigitalSTROMBindingConstants.OPTION_COMBINED_BOTH_ON, getText(
+                        getStageChannelOption(LIGHT, DigitalSTROMBindingConstants.OPTION_COMBINED_BOTH_ON), locale)));
+                stateOptions.add(new StateOption(DigitalSTROMBindingConstants.OPTION_COMBINED_FIRST_ON, getText(
+                        getStageChannelOption(LIGHT, DigitalSTROMBindingConstants.OPTION_COMBINED_FIRST_ON), locale)));
+                if (channelID.contains("3")) {
+                    stateOptions.add(new StateOption(DigitalSTROMBindingConstants.OPTION_COMBINED_SECOND_ON, getText(
+                            getStageChannelOption(LIGHT, DigitalSTROMBindingConstants.OPTION_COMBINED_SECOND_ON),
+                            locale)));
+                }
+            } else {
+                stateOptions.add(new StateOption(DigitalSTROMBindingConstants.OPTION_COMBINED_BOTH_OFF,
+                        getText(getStageChannelOption(GENERAL, DigitalSTROMBindingConstants.OPTION_COMBINED_BOTH_OFF),
+                                locale)));
+                stateOptions.add(new StateOption(DigitalSTROMBindingConstants.OPTION_COMBINED_BOTH_ON, getText(
+                        getStageChannelOption(GENERAL, DigitalSTROMBindingConstants.OPTION_COMBINED_BOTH_ON), locale)));
+                stateOptions.add(new StateOption(DigitalSTROMBindingConstants.OPTION_COMBINED_FIRST_ON,
+                        getText(getStageChannelOption(GENERAL, DigitalSTROMBindingConstants.OPTION_COMBINED_FIRST_ON),
+                                locale)));
+                if (channelID.contains("3")) {
+                    stateOptions.add(new StateOption(DigitalSTROMBindingConstants.OPTION_COMBINED_SECOND_ON, getText(
+                            getStageChannelOption(GENERAL, DigitalSTROMBindingConstants.OPTION_COMBINED_SECOND_ON),
+                            locale)));
+                }
+            }
+            return new StateDescription(null, null, null, null, false, stateOptions);
+        }
+        if (channelID.contains(TEMPERATURE_CONTROLLED)) {
+            return new StateDescription(new BigDecimal(0), new BigDecimal(50), new BigDecimal(0.1), "%.1f °C", false,
+                    null);
+        }
+        return null;
+    }
+
+    private String getCategory(String channelID) {
+        if (channelID.contains(LIGHT)) {
+            if (channelID.contains(DIMMER.toLowerCase())) {
+                return CATEGORY_DIMMABLE_LIGHT;
+            }
+            return CATEGORY_LIGHT;
+        }
+        if (channelID.contains(SHADE)) {
+            if (channelID.contains(ANGLE.toLowerCase())) {
+                return CATEGORY_BLINDES;
+            }
+            return ROLLERSHUTTER;
+        }
+        if (channelID.contains(TEMPERATURE_CONTROLLED)) {
+            return CATEGORY_TEMPERATURE;
+        }
+        return null;
+    }
+
+    private Set<String> getTags(String channelID, Locale locale) {
+        if (channelID.contains(LIGHT)) {
+            return Sets.newHashSet(getText(GE, locale), getText(DS, locale), getText(LIGHT, locale));
+        }
+        if (channelID.contains(GENERAL)) {
+            return Sets.newHashSet(getText(SW, locale), getText(DS, locale), getText(JOKER, locale));
+        }
+        if (channelID.contains(SHADE)) {
+            return Sets.newHashSet(getText(GR, locale), getText(DS, locale), getText("SHADE", locale));
+        }
+        if (channelID.contains(SCENE)) {
+            return Sets.newHashSet(getText(SCENE, locale), getText(DS, locale));
+        }
+        if (channelID.contains(HEATING)) {
+            return Sets.newHashSet(getText(BL, locale), getText(DS, locale), getText(HEATING, locale));
+        }
+        return null;
+    }
+
+    private Set<String> getSimpleTags(String channelID, Locale locale) {
+        return Sets.newHashSet(getText(channelID, locale), getText(channelID, locale));
+    }
+
+    /**
+     * Returns the supported item type for the given channel type id or null, if the channel type does not exist.
+     *
+     * @param channelTypeID of the channel
+     * @return item type or null
+     */
+    public static String getItemType(String channelTypeID) {
+        if (channelTypeID != null) {
+            if (stringContains(channelTypeID, STAGE)) {
+                return STRING;
+            }
+            if (stringContains(channelTypeID, SWITCH) || stringContains(channelTypeID, SCENE)
+                    || stringContains(channelTypeID, WIPE) || stringContains(channelTypeID, BINARY_INPUT_PRE)) {
+                return SWITCH;
+            }
+            if (stringContains(channelTypeID, DIMMER) || stringContains(channelTypeID, ANGLE)) {
+                return DIMMER;
+            }
+            if (stringContains(channelTypeID, TEMPERATURE_CONTROLLED)) {
+                return NUMBER;
+            }
+            if (channelTypeID.contains(SHADE)) {
+                return ROLLERSHUTTER;
+            }
+        }
+        return null;
+    }
+
+    private static boolean stringContains(String string, String compare) {
+        return string.toLowerCase().contains(compare.toLowerCase());
     }
 
     @Override
     public Collection<ChannelType> getChannelTypes(Locale locale) {
-        List<ChannelType> channelTypeList = new ArrayList<ChannelType>();
-        for (String channelTypeId : SUPPORTED_CHANNEL_TYPES) {
+        List<ChannelType> channelTypeList = new LinkedList<ChannelType>();
+        for (String channelTypeId : supportedOutputChannelTypes) {
             channelTypeList.add(
                     getChannelType(new ChannelTypeUID(DigitalSTROMBindingConstants.BINDING_ID, channelTypeId), locale));
         }
+        for (SensorEnum sensorType : SensorEnum.values()) {
+            channelTypeList.add(getChannelType(
+                    new ChannelTypeUID(DigitalSTROMBindingConstants.BINDING_ID, buildIdentifier(sensorType)), locale));
+        }
+
+        for (MeteringTypeEnum meteringType : MeteringTypeEnum.values()) {
+            channelTypeList.add(getChannelType(new ChannelTypeUID(DigitalSTROMBindingConstants.BINDING_ID,
+                    buildIdentifier(meteringType, MeteringUnitsEnum.WH)), locale));
+            channelTypeList.add(getChannelType(new ChannelTypeUID(DigitalSTROMBindingConstants.BINDING_ID,
+                    buildIdentifier(TOTAL_PRE, meteringType, MeteringUnitsEnum.WH)), locale));
+        }
+
+        for (DeviceBinarayInputEnum binaryInput : DeviceBinarayInputEnum.values()) {
+            channelTypeList.add(getChannelType(new ChannelTypeUID(DigitalSTROMBindingConstants.BINDING_ID,
+                    buildIdentifier(BINARY_INPUT_PRE, binaryInput)), locale));
+        }
+
         return channelTypeList;
     }
 
     @Override
     public ChannelType getChannelType(ChannelTypeUID channelTypeUID, Locale locale) {
         if (channelTypeUID.getBindingId().equals(DigitalSTROMBindingConstants.BINDING_ID)) {
-            switch (channelTypeUID.getId()) {
-                case DigitalSTROMBindingConstants.CHANNEL_ID_BRIGHTNESS:
-                    return new ChannelType(channelTypeUID, false, DIMMER, getText("CHANNEL_BRIGHTNESS_LABEL", locale),
-                            getText("CHANNEL_BRIGHTNESS_DESCRIPTION", locale), "dimmableLight",
-                            Sets.newHashSet(getText("YELLOW", locale), getText("DS", locale), getText("LIGHT", locale)),
-                            null, null);
-                case DigitalSTROMBindingConstants.CHANNEL_ID_LIGHT_SWITCH:
-                    return new ChannelType(channelTypeUID, false, SWITCH, getText("CHANNEL_LIGHT_SWITCH_LABEL", locale),
-                            getText("CHANNEL_LIGHT_SWITCH_DESCRIPTION", locale), "light",
-                            Sets.newHashSet(getText("YELLOW", locale), getText("DS", locale), getText("LIGHT", locale)),
-                            null, null);
-                case DigitalSTROMBindingConstants.CHANNEL_ID_GENERAL_DIMM:
-                    return new ChannelType(channelTypeUID, false, DIMMER, getText("CHANNEL_GENERAL_DIMM_LABEL", locale),
-                            getText("CHANNEL_GENERAL_DIMM_DESCRIPTION", locale), null,
-                            Sets.newHashSet(getText("BLACK", locale), getText("DS", locale), getText("JOKER", locale)),
-                            null, null);
-                case DigitalSTROMBindingConstants.CHANNEL_ID_GENERAL_SWITCH:
-                    return new ChannelType(channelTypeUID, false, SWITCH,
-                            getText("CHANNEL_GENERAL_SWITCH_LABEL", locale),
-                            getText("CHANNEL_GENERAL_SWITCH_DESCRIPTION", locale), null,
-                            Sets.newHashSet(getText("BLACK", locale), getText("DS", locale), getText("JOKER", locale)),
-                            null, null);
-                case DigitalSTROMBindingConstants.CHANNEL_ID_COMBINED_2_STAGE_SWITCH:
-                    return new ChannelType(channelTypeUID, false, STRING,
-                            getText("CHANNEL_COMBINED_2_STAGE_SWITCH_LABEL", locale),
-                            getText("CHANNEL_COMBINED_2_STAGE_SWITCH_DESCRIPTION", locale), "Lights",
-                            Sets.newHashSet(getText("YELLOW", locale), getText("DS", locale), getText("LIGHT", locale),
-                                    getText("UMR", locale)),
-                            getCombinedStageDescription((short) 2, true, locale), null);
-                case DigitalSTROMBindingConstants.CHANNEL_ID_COMBINED_3_STAGE_SWITCH:
-                    return new ChannelType(channelTypeUID, false, STRING,
-                            getText("CHANNEL_COMBINED_3_STAGE_SWITCH_LABEL", locale),
-                            getText("CHANNEL_COMBINED_3_STAGE_SWITCH_DESCRIPTION", locale), "Lights",
-                            Sets.newHashSet(getText("YELLOW", locale), getText("DS", locale), getText("LIGHT", locale),
-                                    getText("UMR", locale)),
-                            getCombinedStageDescription((short) 3, true, locale), null);
-                case DigitalSTROMBindingConstants.CHANNEL_ID_GENERAL_COMBINED_2_STAGE_SWITCH:
-                    return new ChannelType(channelTypeUID, false, STRING,
-                            getText("CHANNEL_GENERAL_COMBINED_2_STAGE_SWITCH_LABEL", locale),
-                            getText("CHANNEL_GENERAL_COMBINED_2_STAGE_SWITCH_DESCRIPTION", locale), null,
-                            Sets.newHashSet(getText("BLACK", locale), getText("DS", locale), getText("UMR", locale)),
-                            getCombinedStageDescription((short) 2, true, locale), null);
-                case DigitalSTROMBindingConstants.CHANNEL_ID_GENERAL_COMBINED_3_STAGE_SWITCH:
-                    return new ChannelType(channelTypeUID, false, STRING,
-                            getText("CHANNEL_GENERAL_COMBINED_3_STAGE_SWITCH_LABEL", locale),
-                            getText("CHANNEL_GENERAL_COMBINED_3_STAGE_SWITCH_DESCRIPTION", locale), null,
-                            Sets.newHashSet(getText("BLACK", locale), getText("DS", locale), getText("UMR", locale)),
-                            getCombinedStageDescription((short) 3, true, locale), null);
-                case DigitalSTROMBindingConstants.CHANNEL_ID_SHADE:
-                    return new ChannelType(channelTypeUID, false, SHADE, getText("CHANNEL_SHADE_LABEL", locale),
-                            getText("CHANNEL_SHADE_DESCRIPTION", locale), "Blinds",
-                            Sets.newHashSet(getText("GREY", locale), getText("DS", locale), getText("SHADE", locale)),
-                            null, null);
-                case DigitalSTROMBindingConstants.CHANNEL_ID_SHADE_ANGLE:
-                    return new ChannelType(channelTypeUID, false, DIMMER, getText("CHANNEL_SHADE_ANGLE_LABEL", locale),
-                            getText("CHANNEL_SHADE_ANGLE_DESCRIPTION", locale), "Blinds",
-                            Sets.newHashSet(getText("GREY", locale), getText("DS", locale), getText("SHADE", locale)),
-                            null, null);
-                case DigitalSTROMBindingConstants.CHANNEL_ID_ACTIVE_POWER:
-                    return new ChannelType(channelTypeUID, false, NUMBER, getText("CHANNEL_ACTIVE_POWER_LABEL", locale),
-                            getText("CHANNEL_ACTIVE_POWER_DESCRIPTION", locale), null,
-                            Sets.newHashSet(getText("ACTIVE_POWER", locale), getText("POWER_CONSUMPTION", locale),
-                                    getText("DS", locale)),
-                            getSensorStateDescription(SensorEnum.ACTIVE_POWER.getUnitShortcut()), null);
-                case DigitalSTROMBindingConstants.CHANNEL_ID_ELECTRIC_METER:
-                    return new ChannelType(channelTypeUID, false, NUMBER,
-                            getText("CHANNEL_ELECTRIC_METER_LABEL", locale),
-                            getText("CHANNEL_ELECTRIC_METER_DESCRIPTION", locale), "Energy",
-                            Sets.newHashSet(getText("ELECTRIC_METER", locale), getText("DS", locale)),
-                            getSensorStateDescription(SensorEnum.ELECTRIC_METER.getUnitShortcut()), null);
-                case DigitalSTROMBindingConstants.CHANNEL_ID_OUTPUT_CURRENT:
-                    return new ChannelType(channelTypeUID, false, NUMBER,
-                            getText("CHANNEL_OUTPUT_CURRENT_LABEL", locale),
-                            getText("CHANNEL_OUTPUT_CURRENT_DESCRIPTION", locale), "Energy",
-                            Sets.newHashSet(getText("OUTPUT_CURRENT", locale), getText("DS", locale)),
-                            getSensorStateDescription(SensorEnum.OUTPUT_CURRENT.getUnitShortcut()), null);
-                case DigitalSTROMBindingConstants.CHANNEL_ID_TOTAL_ACTIVE_POWER:
-                    return new ChannelType(channelTypeUID, false, NUMBER,
-                            getText("CHANNEL_TOTAL_ACTIVE_POWER_LABEL", locale),
-                            getText("CHANNEL_TOTAL_ACTIVE_POWER_DESCRIPTION", locale), "Energy",
-                            Sets.newHashSet(getText("ACTIVE_POWER", locale), getText("POWER_CONSUMPTION", locale),
-                                    getText("DS", locale)),
-                            getSensorStateDescription(SensorEnum.ACTIVE_POWER.getUnitShortcut()), null);
-                case DigitalSTROMBindingConstants.CHANNEL_ID_TOTAL_ELECTRIC_METER:
-                    return new ChannelType(channelTypeUID, false, NUMBER,
-                            getText("CHANNEL_TOTAL_ELECTRIC_METER_LABEL", locale),
-                            getText("CHANNEL_TOTAL_ELECTRIC_METER_DESCRIPTION", locale), "Energy",
-                            Sets.newHashSet(getText("ELECTRIC_METER", locale), getText("DS", locale)),
-                            getSensorStateDescription(SensorEnum.ELECTRIC_METER.getUnitShortcut()), null);
-                case DigitalSTROMBindingConstants.CHANNEL_ID_SCENE:
-                    return new ChannelType(channelTypeUID, false, SWITCH, getText("CHANNEL_SCENE_LABEL", locale),
-                            getText("CHANNEL_SCENE_DESCRIPTION", locale), "Energy",
-                            Sets.newHashSet(getText("SCENE", locale), getText("DS", locale)), null, null);
+            String channelID = channelTypeUID.getId();
+            try {
+                SensorEnum sensorType = SensorEnum.valueOf(channelTypeUID.getId().toUpperCase());
+                return new ChannelType(channelTypeUID, false, NUMBER, getLabelText(channelID, locale),
+                        getDescText(channelID, locale), getSensorCategory(sensorType), getSimpleTags(channelID, locale),
+                        getSensorStateDescription(sensorType), null);
+            } catch (IllegalArgumentException e) {
+                if (supportedOutputChannelTypes.contains(channelID)) {
+                    return new ChannelType(channelTypeUID, false, getItemType(channelID),
+                            getLabelText(channelID, locale), getDescText(channelID, locale), getCategory(channelID),
+                            getTags(channelID, locale), getStageDescription(channelID, locale), null);
+                }
+                MeteringTypeEnum meteringType = getMeteringType(channelID);
+                if (meteringType != null) {
+                    String pattern = "%.3f kWh";
+
+                    if (MeteringTypeEnum.CONSUMPTION.equals(meteringType)) {
+                        pattern = "%d W";
+                    }
+                    return new ChannelType(channelTypeUID, false, NUMBER, getLabelText(channelID, locale),
+                            getDescText(channelID, locale), CATEGORY_ENERGY,
+                            Sets.newHashSet(getLabelText(channelID, locale), getText(DS, locale)),
+                            new StateDescription(null, null, null, pattern, true, null), null);
+                }
+                try {
+                    DeviceBinarayInputEnum binarayInputType = DeviceBinarayInputEnum
+                            .valueOf(channelTypeUID.getId().replaceAll(BINARY_INPUT_PRE + SEPERATOR, "").toUpperCase());
+                    return new ChannelType(channelTypeUID, false, getItemType(channelID),
+                            getLabelText(channelID, locale), getDescText(channelID, locale),
+                            getBinaryInputCategory(binarayInputType), getSimpleTags(channelTypeUID.getId(), locale),
+                            new StateDescription(null, null, null, null, true, null), null);
+                } catch (IllegalArgumentException e1) {
+                    // ignore
+                }
             }
+
         }
+
         return null;
+
     }
 
     @Override
@@ -237,5 +497,25 @@ public class DsChannelTypeProvider implements ChannelTypeProvider {
     @Override
     public Collection<ChannelGroupType> getChannelGroupTypes(Locale locale) {
         return null;
+    }
+
+    /**
+     * Returns the {@link ChannelGroupTypeUID} for the given {@link SensorEnum}.
+     *
+     * @param sensorType (must not be null)
+     * @return the channel type uid
+     */
+    public static ChannelTypeUID getSensorChannelUID(SensorEnum sensorType) {
+        return new ChannelTypeUID(BINDING_ID, buildIdentifier(sensorType));
+    }
+
+    /**
+     * Returns the {@link ChannelGroupTypeUID} for the given {@link DeviceBinarayInputEnum}.
+     *
+     * @param binaryInputType (must not be null)
+     * @return the channel type uid
+     */
+    public static ChannelTypeUID getBinaryInputChannelUID(DeviceBinarayInputEnum binaryInputType) {
+        return new ChannelTypeUID(BINDING_ID, buildIdentifier(BINARY_INPUT_PRE, binaryInputType));
     }
 }
