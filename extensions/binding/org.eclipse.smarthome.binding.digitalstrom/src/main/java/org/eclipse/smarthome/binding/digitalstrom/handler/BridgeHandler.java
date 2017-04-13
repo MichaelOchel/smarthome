@@ -199,7 +199,6 @@ public class BridgeHandler extends BaseBridgeHandler
                 if (StringUtils.isBlank(getThing().getProperties().get(DigitalSTROMBindingConstants.SERVER_CERT))
                         && StringUtils.isNotBlank(config.getCert())) {
                     properties.put(DigitalSTROMBindingConstants.SERVER_CERT, config.getCert());
-                    // updateProperty(DigitalSTROMBindingConstants.SERVER_CERT, config.getCert());
                 }
                 logger.debug("update properties");
                 updateProperties(properties);
@@ -214,11 +213,8 @@ public class BridgeHandler extends BaseBridgeHandler
         }
     };
 
-    // @Override
     private void thingUpdatedInt(Thing thing) {
-        // dispose();
         this.thing = thing;
-        // initialize();
     }
 
     /**

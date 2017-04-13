@@ -15,9 +15,9 @@ The digitalSTROM-Server is required for accessing any other digitalSTROM-Devices
 
 ### digitalSTROM-Devices
 
-At this point almost all available **GE**, **SW**, **GR** and **BL** digitalSTROM-Devices with an set output-mode, unequal *disabled*, are supported by this binding. Furthermore sensor devices like the **dS-iSens200** and **SW-devices** with binary-inputs are supported. Last but not least the **circuit** (dS-Meter) is supported, too. They will provide the power consumption and electric meter as channels.
+At this point almost all available **GE**, **SW**, **GR** and **BL** digitalSTROM-Devices with a set output-mode, unequal *disabled*, are supported by this binding. Furthermore sensor devices like the **dS-iSens200** and **SW-devices** with binary-inputs are supported. Last but not least the **circuit** (dS-Meter) is supported, too. They will provide the power consumption and electric meter as channels.
 
-For that there are identically named thing types. Only the *GR* type has a channel (shade), which cannot be changed. The other types adds their channels dynamically affected by the set color-group and output-mode. They also automatically change or add the channels, if the color-group or output-mode has changed through the dSS-web-configuration or the configured sensor priorities of the thing has changed.
+For that there are identically named thing types. Only the *GR* type has a channel (shade), which cannot be changed. The other types add their channels dynamically affected by the set color-group and output-mode. They also automatically change or add the channels, if the color-group or output-mode has changed through the dSS-web-configuration or the configured sensor priorities of the thing has changed.
 
 - The following table shows all tested digitalSTROM-Devices with their output-modes.
 
@@ -37,7 +37,7 @@ For that there are identically named thing types. Only the *GR* type has a chann
 | BL-KM200 | switch, pwm | blue |
 
 - Binary-inputs were tested with SW-UMR200.
-- Sensor channels were tested with dS-iSens200 and power sensor with all other supported devices, which are listed in the upper table.
+- Sensor channels were tested with dS-iSens200 and power sensor with all other supported devices, which are listed in the table above.
 
 ### digitalSTROM-Scenes
 
@@ -52,7 +52,7 @@ Furthermore the digitalSTROM-Scene concept is part of the digitalSTROM-Binding. 
  
 ### digitalSTROM-Zone-Temperature-Control
 
-Last but not least, the digitalSTROM-Zone-Temperature-Control is also supported, if a zone-temerature-control is configured, as thing-type **zone_temperature_control**. The difference between the digitalSTROM-heating-control-app is, that their are no operation-modes, like *comfort* or *eco*. You can directly set the target temperature, in case *pid-control* is configured, otherwise you can set the value in percent of heating valves at the zone. The needed channels will be added automatically, as it is also the case at the devices. 
+Last but not least, the digitalSTROM-Zone-Temperature-Control is also supported, if a zone-temerature-control is configured, as thing-type **zone_temperature_control**. The difference between the digitalSTROM-heating-control-app is, that there are no operation-modes, like *comfort* or *eco*. You can directly set the target temperature, in case *pid-control* is configured, otherwise you can set the value in percent of heating valves at the zone. The needed channels will be added automatically, as it is also the case at the devices. 
 
 ## Discovery
 
@@ -62,7 +62,7 @@ digitalSTROM-Scenes can be discovered, too. The background scene-discovery is de
  
 Discoverable scenes are all user named scenes, group scenes that are reachable by local push-buttons, zone scenes and apartment scenes. The discovery also will discover all called scenes, if they aren't automatically discovered yet. Temperature control scenes, like *eco* will be ignored, so they can not be discoverd. 
 
-If you only want to discover one of the thing types, you can start a discovery scan on the thing type you wish have discovered. You can use the command line command, e.g.: ``smarthome:discovery start digitalstrom:namedScene`` to start the scan. What thing types this binding supports please have a look at **Supported Things**. 
+If you only want to discover one of the thing types, you can start a discovery scan on the thing type you want to have discovered. You can use the command line command, e.g.: ``smarthome:discovery start digitalstrom:namedScene`` to start the scan. Which thing types this binding supports, please have a look at **Supported Things**. 
 
 ## Thing Configuration and Properties
 
@@ -72,7 +72,7 @@ The digitalSTROM-Server thing has the following configuration parameter groups: 
 
 #### Connection configuration
 
-If the digitalSTROM-Server isn’t found automatically, e.g. because the server isn’t placed at the local network or the mDNS-service is deactivated, you have to insert the network address or URL and the authentication data manually through the graphical user interface or type it into the \*.thing with textual configuration. If you use for authentication the user name and password, the application-token will be automatically get from the digitalSTROM-Server, if their is already a token for this application, otherwise a new application-token will be generated.   
+If the digitalSTROM-Server isn’t found automatically, e.g. because the server isn’t placed at the local network or the mDNS-service is deactivated, you have to insert the network address or URL and the authentication data manually through the graphical user interface or type it into the \*.thing with textual configuration. If you use your user name and password for authentication and there is already a token for this application, it will be automatically retrieved from the digitalSTROM-Server, otherwise a new application-token will be generated.   
 
 | Parameter Label | Parameter ID | Description  | Required | Advanced 
 |--------------|------------|--------------------------------|----------------- |------------- |
@@ -176,7 +176,7 @@ A digitalSTROM-Meter needs, like the digitalSTROM-Devices, only the unique digit
 
 #### Properties
 
-In contrast to the digitalSTROM-Device there are other informatically properties. The following table shows the available properties:
+In contrast to the digitalSTROM-Device there are other informal properties. The following table shows the available properties:
 
 | Property-Name | Description |
 | ------------- | ------------------------------------- |
