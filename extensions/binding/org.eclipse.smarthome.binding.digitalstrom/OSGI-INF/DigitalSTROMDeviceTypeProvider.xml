@@ -11,7 +11,7 @@
 <scr:component xmlns:scr="http://www.osgi.org/xmlns/scr/v1.1.0" immediate="true"
 	name="org.eclipse.smarthome.binding.digitalstrom.internal.providers.DsDeviceThingTypeProvider">
 	<implementation class="org.eclipse.smarthome.binding.digitalstrom.internal.providers.DsDeviceThingTypeProvider" />
- <reference bind="setI18nProvider" cardinality="1..1" interface="org.eclipse.smarthome.core.i18n.I18nProvider" name="I18nprovider" policy="dynamic" unbind="unsetI18nProvider"/>
+    <reference bind="setTranslationProvider" cardinality="1..1" interface="org.eclipse.smarthome.core.i18n.TranslationProvider" name="TranslationProvider" policy="dynamic" unbind="unsetTranslationProvider"/>
  <service>
     <provide interface="org.eclipse.smarthome.core.thing.binding.ThingTypeProvider"/>
  </service>

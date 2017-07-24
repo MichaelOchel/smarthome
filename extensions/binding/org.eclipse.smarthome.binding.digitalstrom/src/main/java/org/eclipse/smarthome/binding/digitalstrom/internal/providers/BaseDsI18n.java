@@ -10,12 +10,13 @@ package org.eclipse.smarthome.binding.digitalstrom.internal.providers;
 import java.util.Locale;
 
 import org.apache.commons.lang.StringUtils;
-import org.eclipse.smarthome.core.i18n.I18nProvider;
+import org.eclipse.smarthome.core.i18n.TranslationProvider;
 import org.osgi.framework.Bundle;
 import org.osgi.service.component.ComponentContext;
 
 /**
- * The {@link BaseDsI18n} provides the internationalization service in form of the {@link I18nProvider} of the
+ * The {@link BaseDsI18n} provides the internationalization service in form of the
+ * {@link org.eclipse.smarthome.core.i18n.TranslationProvider} of the
  * digitalSTROM-Bindings. So this class can be implement e.g. by provider implementations like the
  * {@link org.eclipse.smarthome.core.thing.type.ChannelTypeProvider}.
  *
@@ -28,7 +29,7 @@ public abstract class BaseDsI18n {
     public final static String DESC_ID = "desc";
     public final static String SEPERATOR = "_";
 
-    private I18nProvider i18n = null;
+    private TranslationProvider translationProvider = null;
     private Bundle bundle = null;
 
     /**
@@ -59,21 +60,21 @@ public abstract class BaseDsI18n {
     }
 
     /**
-     * Sets the {@link I18nProvider} at the {@link BaseDsI18n}.
+     * Sets the {@link TranslationProvider} at the {@link BaseDsI18n}.
      *
-     * @param i18n
+     * @param translationProvider
      */
-    protected void setI18nProvider(I18nProvider i18n) {
-        this.i18n = i18n;
+    protected void setTranslationProvider(TranslationProvider translationProvider) {
+        this.translationProvider = translationProvider;
     };
 
     /**
-     * Unsets the {@link I18nProvider} at the {@link BaseDsI18n}.
+     * Unsets the {@link TranslationProvider} at the {@link BaseDsI18n}.
      *
-     * @param i18n
+     * @param translationProvider
      */
-    protected void unsetI18nProvider(I18nProvider i18n) {
-        this.i18n = null;
+    protected void unsetTranslationProvider(TranslationProvider translationProvider) {
+        this.translationProvider = null;
     };
 
     /**
@@ -86,7 +87,10 @@ public abstract class BaseDsI18n {
      * @return internationalized text
      */
     protected String getText(String key, Locale locale) {
-        return i18n != null ? i18n.getText(bundle, key, i18n.getText(bundle, key, key, Locale.ENGLISH), locale) : key;
+        return translationProvider != null
+                ? translationProvider.getText(bundle, key,
+                        translationProvider.getText(bundle, key, key, Locale.ENGLISH), locale)
+                : key;
     }
 
     /**
